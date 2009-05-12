@@ -1,0 +1,7 @@
+<DataSource ID="SchemaSet" Constructor="SchemaSet" addGlobalId="false">
+    <fields>
+        <field name="schemaNamespace" type="url"/>
+        <field name="qualifyAll" type="boolean"/>
+        <field name="schema" type="DataSource" multiple="true"/>
+    </fields>
+</DataSource>

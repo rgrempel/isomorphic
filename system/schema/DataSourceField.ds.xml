@@ -1,0 +1,79 @@
+<Object ID="DataSourceField" __autoConstruct="DataSource" addGlobalId="false">
+	<fields>
+	    <name type="string" title="Name" required="true" xmlAttribute="true" primaryKey="true"/>
+	    <type type="string" title="Type" xmlAttribute="true"/>
+
+        <!-- value constraints type -->
+	    <required type="boolean" title="Required" xmlAttribute="true"/>
+	    <valueMap type="ValueMap"/>
+	    <validators type="Validator" multiple="true" propertiesOnly="true"/>
+	    <length type="positiveInteger" title="Length" xmlAttribute="true"/>
+
+        <!-- XML notion of required: element must be present, but value is unconstrained (can
+             by empty) -->
+        <xmlRequired type="boolean" visibility="internal"/>
+        <!-- whether XML Schema restrictions exist that indicate value must be non-empty -->
+        <xmlNonEmpty type="boolean" visibility="internal"/>
+        
+        <xsElementRef type="boolean" visibility="internal"/>
+        
+        <canHide type="boolean" title="User can hide"/>
+
+        <!-- whether this field is represented as an attribute in XML -->
+        <xmlAttribute type="boolean" visibility="internal"/>
+        <!-- whether elements generated from this field must be qualified with the
+             schemaNamespace -->
+        <mustQualify type="boolean" visibility="internal"/>
+
+        <!-- XML binding -->
+        <valueXPath type="XPath" title="Value XPath" xmlAttribute="true"/>
+        <!-- for tree XML binding -->
+        <childrenProperty type="boolean"/>
+
+		<!-- DataBinding -->
+	    <title type="string" title="Title" xmlAttribute="true"/>
+		<!-- whether this field is a detail field, ie should probably be omitted in a summary
+		     view.  If absent, assumed false. -->
+	    <detail type="boolean" title="Detail" xmlAttribute="true"/>
+        <canEdit type="boolean" title="Can Edit" xmlAttribute="true"/>
+        <canSave type="boolean" title="Can Save" xmlAttribute="true"/>
+
+        <!-- field is inherited, and should be considered inapplicable to the current class -->
+	    <inapplicable type="boolean" title="Inapplicable" inapplicable="true"/>
+        <!-- subcomponents provided as the field's value should not be auto-created -->
+        <!--  -->
+        <!--
+	    <propertiesOnly type="boolean" title="Properties Only" inapplicable="true"/>
+        -->
+        <!-- field is advanced (generally set in JSDoc) -->
+	    <advanced type="boolean" title="Advanced" inapplicable="true"/>
+        <!-- field visibility -->
+	    <visibility type="string" title="Visibility" inapplicable="true"/>
+		<!-- generic hidden flag - typically for applications or for visualBuilder -->
+	    <hidden type="boolean" title="Hidden" inapplicable="true" xmlAttribute="true"/>
+
+        <!-- unique constraints / relations -->
+		<primaryKey type="boolean" title="Is Primary Key" xmlAttribute="true"/>
+	    <foreignKey type="string" title="Foreign Key" xmlAttribute="true"/>
+        <!-- for tree relations -->
+	    <rootValue type="string" title="Tree Root Value" xmlAttribute="true"/> 
+
+        <!-- 
+        nativeName specifies the name of the corresponding column for this field in the database
+        table; if omitted it is assumed to be the value of the name property.
+        fieldName is the equivalent of nativeName and is deprecated; nativeName takes precedence
+        if both are specified.
+        -->
+        <!-- hiding from visualBuilder because this is for sql prototyping -->
+        <nativeName type="string" title="Native Name" hidden="true"/>
+        <fieldName type="string" title="Field Name" hidden="true"/>
+        <!-- HACK: DataSourceField is used as the type of the DataSource.types field,
+             which currently can contain either a simple or DataSource type definition, 
+             so by adding DataSourceField.fields, we allow DataSource.types.fields -->
+	    <fields type="DataSourceField" multiple="true" propertiesOnly="true" uniqueProperty="name" hidden="true"/>
+
+        <multiple type="boolean"/>
+
+	<pickListFields type="Object" multiple="true"/>
+	</fields>
+</Object>

@@ -1,0 +1,29 @@
+<DataSource	ID="HTMLFlow" inheritsFrom="Canvas" Constructor="HTMLFlow">
+    <fields>
+        <field name="contents" type="HTML"/>	
+		<field name="dynamicContents" type="boolean" defaultValue="false"/>
+
+        <!-- for loading content -->
+        <field name="contentsURL" type="url"/>	
+        <field name="contentsURLParams" type="Object"/>	
+        <field name="httpMethod" type="SendMethod"/>
+        <field name="contentsType" type="enum" defaultValue="fragment">
+            <valueMap>
+                <value>page</value>
+                <value>fragment</value>
+            </valueMap>
+        </field>
+        <field name="evalScriptBlocks" type="boolean" />
+        <field name="loadingMessage" type="html"/>	
+
+        <!-- inapplicable since the point of HTMLFlow is to have some HTML, not children -->
+        <field name="peers"			type="Canvas" multiple="true"   propertiesOnly="true"
+               inapplicable="true"/>
+		<field name="children"		type="Canvas" multiple="true"	propertiesOnly="true"
+               inapplicable="true"/>	
+    </fields>
+
+    <methods>
+        <method title="Set URL" name="setContentsURL" action="true"/>
+    </methods>
+</DataSource>

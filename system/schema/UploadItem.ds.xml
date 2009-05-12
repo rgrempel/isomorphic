@@ -1,0 +1,11 @@
+<DataSource ID="UploadItem" inheritsFrom="TextItem" Constructor="UploadItem">
+    <fields>
+        <field name="defaultValue"      type="string"  title="Default Value" inapplicable="true"/>
+   		<field name="length" type="positiveInteger" title="Length" inapplicable="true"/>                
+        <field name="defaultDynamicValue" type="expression" title="Default Dynamic Value" inapplicable="true"
+            hint="JS expression to evaluate on redraw"
+            prompt="JS expression - evaluates to default value"/>
+        
+    </fields>
+</DataSource>
+

@@ -1,0 +1,20 @@
+<DataSource	ID="Label"	inheritsFrom="Button" Constructor="Label">
+	<fields>
+        <field name="contents" type="HTML"/>	
+		<field name="dynamicContents" type="boolean" defaultValue="false"/>
+		<field name="align" type="alignEnum" />	
+		<field name="valign" type="valignEnum" />
+        <field name="autoFit" type="boolean" />
+		<field name="padding" type="positiveInteger" />	
+		<field name="wrap" type="boolean" />
+
+        <field name="peers" inapplicable="true"/>
+		<field name="children" inapplicable="true"/>	
+    </fields>
+    <groups>
+        <group>basics</group>
+        <group>contents</group>
+        <group>sizing</group>
+        <group>appearance</group>
+    </groups>
+</DataSource>

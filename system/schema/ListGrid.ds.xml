@@ -1,0 +1,266 @@
+<DataSource ID="ListGrid"	inheritsFrom="Canvas"	Constructor="ListGrid">
+	<fields>
+        <field name="initialCriteria" type="Object"/>
+		<field name="data" multiple="true" type="ListGridRecord"/>
+        <field name="dataProperties" type="ResultSet"/>
+		<field name="dataPageSize" type="positiveInteger"/>
+		<field name="fields" type="ListGridField" multiple="true"/>
+        
+		<field name="emptyCellValue" type="HTML"/>
+		<field name="minHeight" type="positiveInteger" visibility="internal"/>
+		<field name="cellHeight" type="positiveInteger"/>
+		<field name="fixedFieldWidths" type="boolean" visibility="internal"/>
+		<field name="fastCellUpdates" type="boolean"/>
+		<field name="showDetailFields" type="boolean"/>
+		<field name="drawAheadRatio" type="float"/>
+		<field name="fixedRecordHeights" type="boolean"/>
+		<field name="canHover" type="boolean"/>
+		<field name="showHover" type="boolean"/>
+		<field name="editByCell" type="boolean"/>
+		<field name="saveByCell" type="boolean"/>
+		<field name="autoSaveEdits" type="boolean"/>
+        <field name="modalEditing" type="boolean"/>
+		<field name="stopOnErrors" type="boolean"/>
+		<field name="waitForSave" type="boolean"/>
+		<field name="leaveScrollbarGap" type="boolean"/>
+        <field name="titleField" type="string"/>        
+        
+		<field name="addNewBeforeEditing" type="boolean" visibility="advancedInlineEdit"/>
+		<field name="rowEndEditAction" type="rowEndEditActionEnum"/>
+		<field name="listEndEditAction" type="rowEndEditActionEnum"/>
+		<field name="enterKeyEditAction">
+            <valueMap>
+                <value>done</value>
+                <value>nextCell</value>
+                <value>nextRow</value>
+                <value>nextRowStart</value>
+            </valueMap>
+        </field>
+		<field name="escapeKeyEditAction">
+            <valueMap>
+                <value>cancel</value>
+                <value>done</value>
+            </valueMap>
+        </field>
+        <field name="generateClickOnSpace" type="boolean"/>
+        <field name="generateClickOnEnter" type="boolean"/>
+        <field name="generateDoubleClickOnSpace" type="boolean"/>
+        <field name="generateDoubleClickOnEnter" type="boolean"/>
+
+		<field name="wrapCells" type="boolean"/>
+		<field name="showAllRecords" type="boolean"/>
+		<field name="showFilterEditor" type="boolean"/>
+        <field name="filterEditorHeight" type="positiveInteger"/>
+		<field name="filterByCell" type="boolean"/>
+        <field name="filterOnKeypress" type="boolean"/>
+        
+        <!-- don't want to support this, very complex
+		<field name="cellSpacing" type="positiveInteger"/>
+        -->
+		<field name="cellPadding" type="positiveInteger"/>
+		<field name="canEdit" type="boolean"/>
+		<field name="listEndEditAction" type="enum">
+            <valueMap same="same" next="next" done="done" stop="stop"/>
+        </field>
+		<field name="rowEndEditAction" type="enum">
+            <valueMap same="same" next="next" done="done" stop="stop"/>
+        </field>
+		<field name="enterKeyEditAction" type="enum">
+            <valueMap done="done" nextCell="nextCell" nextRow="nextRow" 
+                      nextRowStart="nextRowStart"/>
+        </field>
+		<field name="escapeKeyEditAction" type="enum">
+            <valueMap cancel="cancel" done="done"/>
+        </field>
+		<field name="confirmCancelEditing" type="boolean"/>
+		<field name="cancelEditingConfirmationMessage" type="string"/>
+        <field name="validateOnChange" type="boolean"/>
+        <field name="validateByCell" type="boolean"/>
+        <field name="neverValidate" type="boolean"/>
+        
+        <!-- can't be edited in vISC yet -->
+		<field name="canDragSelect" type="boolean" hidden="true"/>
+		<field name="selectOnEdit" type="boolean"/>
+
+        <field name="recordEditProperty" type="string"/>
+		<field name="editEvent" type="enum">
+			<valueMap>
+				<value>click</value>
+				<value>doubleClick</value>
+			</valueMap>
+		</field>
+        <field name="headerButtonConstructor" type="string"/>
+        <field name="sorterConstructor" type="string"/>
+        <field name="headerHeight" type="positiveInteger"/>
+        <field name="showHeader" type="boolean"/>
+        <field name="showHeaderContextMenu" type="boolean"/>
+		<field name="headerBackgroundColor" type="color"/>
+        <field name="headerBarStyle" type="cssClass" />
+        <field name="headerBaseStyle" type="cssClass" />
+        <field name="headerTitleStyle" type="cssClass" />
+        <field name="bodyBackgroundColor" type="color" />
+        <field name="bodyStyleName" type="cssClass" />
+		<field name="baseStyle" type="cssClass"/>
+        <field name="recordBaseStyleProperty" type="string"/>
+        <field name="recordCustomStyleProperty" type="string"/>
+        <field name="alternateRecordStyles" type="boolean"/>
+		<field name="alternateRecordFrequency" type="positiveInteger"/>
+		<field name="headerDefaults" type="Toolbar" propertiesOnly="true" hidden="true"/>
+        <field name="headerButtonDefaults" type="Button" propertiesOnly="true" hidden="true"/>
+        <field name="headerButtonProperties" type="Button" propertiesOnly="true" hidden="true"/>
+        <field name="sorterDefaults"  type="Button" propertiesOnly="true" hidden="true"/>
+        <field name="sorterProperties"  type="Button" propertiesOnly="true" hidden="true"/>
+		<field name="printHeaderStyle" type="cssClass" visibility="internal"/>
+		<field name="printCellStyle" type="cssClass" visibility="internal"/>
+		<field name="showRollOver" type="boolean"/>
+        <field name="hoverByCell" type="boolean" visibility="internal" />
+		<field name="showHiliteInCells" type="boolean" visibility="internal"/>
+		<field name="selectionType" type="enum">
+			<valueMap>
+				<value>none</value>
+				<value>single</value>
+				<value>multiple</value>
+				<value>simple</value>
+			</valueMap>
+		</field>
+		<field name="showEmptyMessage" type="boolean"/>
+		<field name="emptyMessage" type="HTML"/>
+		<field name="emptyMessageStyle" type="cssClass"/>
+        
+        <field name="singleCellValueProperty" type="string"/>
+        <field name="isSeparatorProperty" type="string"/>
+
+        <field name="arrowKeyAction">
+            <valueMap>
+                <value>select</value>
+                <value>focus</value>
+                <value>active</value>
+                <value>none</value>
+            </valueMap>
+        </field>
+		<field name="loadingDataMessage" type="HTML"/>
+        <field name="loadingMessage" type="HTML"/>
+        <field name="loadingDataMessageStyle" type="cssClass"/>
+		<field name="canSort" type="boolean"/>
+		<field name="sortFieldNum" type="positiveInteger"/>
+		<field name="sortDirection" type="boolean"/>
+		<field name="showSortArrow" type="enum">
+			<valueMap>
+				<value>none</value>
+				<value>corner</value>
+				<value>field</value>
+				<value>both</value>
+			</valueMap>
+		</field>
+		<field name="canDragRecordsOut" type="boolean"/>
+		<field name="canAcceptDroppedRecords" type="boolean"/>
+		<field name="canReorderRecords" type="boolean"/>
+        <field name="dragTrackerMode" type="enum">
+            <valueMap>
+                <value>none</value>
+                <value>icon</value>
+                <value>title</value>
+                <value>row</value>
+            </valueMap>
+        </field>
+		<field name="canReorderFields" type="boolean"/>
+		<field name="canResizeFields" type="boolean"/>
+		<field name="resizeFieldsInRealTime" type="boolean"/>
+		<field name="canFreezeFields" type="boolean"/>
+		<field name="freezeFieldText" type="string"/>
+        <field name="unfreezeFieldText" type="string"/>
+        <field name="canGroupBy" type="boolean"/>
+        <field name="groupByText" type="string"/>
+		<field name="dragDataAction" type="enum">
+			<valueMap>
+				<value>none</value>
+				<value>copy</value>
+				<value>move</value>
+			</valueMap>
+		</field>
+		<field name="sortAscendingImage"	type="imageProperty"/>
+		<field name="sortDescendingImage"	type="imageProperty"/>
+		<field name="trackerImage" 			type="imageProperty"/>
+		
+		<field name="selectionProperty" type="string" visibility="internal"/>
+		<field name="fieldIdProperty" type="string" visibility="internal"/>
+
+        <field name="longTextEditorThreshold" type="positiveInteger" title="Long Text Editor Threshold"/>
+        <field name="longTextEditorType"      type="string" title="Long Text Editor Type"/>
+        
+        <field name="timeFormatter" type="string"/>
+        <field name="dateFormatter" type="string"/>
+        <field name="dateInputFormat" type="string"/>
+        
+        <field name="bodyOverflow" type="overflowEnum"/>
+        
+        <field name="autoFitData" type="string"/>
+        <field name="autoFitMaxRecords" type="integer"/>
+        <field name="autoFitMaxHeight" type="integer"/>
+        <field name="autoFitMaxColumns" type="integer"/>
+        <field name="autoFitMaxWidth" type="integer"/>
+        
+        <field name="editFailedBaseStyle" type="cssClass"/>
+        <field name="editFailedCSSText" type="string"/>
+        <field name="editPendingCSSText" type="string"/>
+        <field name="editOnFocus"        type="boolean"/>
+        <field name="confirmDiscardEdits" type="boolean"/>
+        <field name="discardEditsSaveButtonTitle" type="string"/>
+        <field name="confirmDiscardEditsMessage" type="string"/>
+
+        <field name="imageSize" type="number"/>
+        <!-- valueIcons properties -->
+        <field name="valueIconWidth" type="number"/>
+        <field name="valueIconHeight" type="number"/>
+        <field name="valueIconSize" type="number"/>
+        <field name="valueIconLeftPadding" type="number"/>
+        <field name="valueIconRightPadding" type="number"/>
+        <field name="booleanTrueImage"  type="string"/>
+        <field name="booleanFalseImage"  type="string"/>
+        <field name="booleanImageWidth" type="number"/>
+        <field name="booleanImageHeight" type="number"/>
+        
+        <!-- mark superclass fields as not relevant -->
+        <field name="children" inapplicable="true"/>
+        <field name="peers" inapplicable="true"/>
+
+        <!-- visualBuilder: enable databinding on this component -->
+		<field name="dataSource"		type="DataSource" hidden="false"/>
+
+	</fields>
+
+    <types>
+        <type ID="rowEndEditActionEnum" inheritsFrom="enum">
+            <valueMap>
+                <value>next</value>
+                <value>same</value>
+                <value>done</value>
+            </valueMap>
+        </type>
+    </types>
+
+    <groups>
+        <group>dragging</group>
+        <group>cellStyling</group>
+        <group>emptyMessage</group>
+        <group>sizing</group>
+        <group>selection</group>
+        <group>sorting</group>
+        <group>editing</group>
+    </groups>
+
+    <methods>
+        <method title="Fetch Data" name="fetchData" action="true"
+                icon="[SKINIMG]/actions/search.png"/>
+        <method title="Filter Data" name="filterData" action="true"
+                icon="[SKINIMG]/actions/filter.png"/>
+        <method title="Fetch Related Data" name="fetchRelatedData" action="true"
+                icon="[SKINIMG]/actions/search.png"/>
+        <method title="Remove Selected Data" name="removeSelectedData" action="true"
+                icon="[SKINIMG]/actions/remove.png"/>
+        <method title="Start Editing" name="startEditing" action="true"
+                icon="[SKINIMG]/actions/edit.png"/>
+        <method title="Start Editing New" name="startEditingNew" action="true"
+                icon="[SKINIMG]/actions/add.png"/>
+    </methods>
+</DataSource>

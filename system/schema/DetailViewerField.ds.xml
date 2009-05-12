@@ -1,0 +1,12 @@
+<DataSource ID="DetailViewerField">
+	<fields>
+		<field name="showIf"		type="expression" />
+		<field name="type"			type="string" />
+		<field name="title"			type="HTML" />
+		<field name="valueMap"		type="ValueMap" />
+		<field name="asHTML"		type="boolean" visibility="internal"/>
+		<field name="value"			type="HTML" />
+		<field name="width"			type="positiveInteger" visibility="internal"/>
+		<field name="height"		type="positiveInteger" />
+	</fields>
+</DataSource>

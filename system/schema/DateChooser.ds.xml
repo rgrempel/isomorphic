@@ -1,0 +1,14 @@
+<DataSource	ID="DateChooser" inheritsFrom="Canvas" Constructor="DateChooser">
+    <fields>
+        <field name="showTodayButton" type="boolean" />
+        <field name="showCancelButton" type="boolean" />
+        <field name="todayButtonTitle" type="string" />
+        <field name="cancelButtonTitle" type="string" />
+        <field name="firstDayOfWeek" type="int" />
+        <field name="baseButtonStyle" type="string" />
+        <field name="baseWeekdayStyle" type="string" />
+        <field name="baseWeekendStyle" type="string" />
+        <field name="headerStyle" type="string" />
+    </fields>
+</DataSource>
+

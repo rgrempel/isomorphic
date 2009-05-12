@@ -1,0 +1,9 @@
+<DataSource ID="WebService" Constructor="WebService" addGlobalId="false">
+    <fields>
+        <field name="location" type="url"/>
+        <field name="targetNamespace" type="url"/>
+        <field name="operations" type="WebServiceOperation" multiple="true"/>
+        <field name="messages" type="WSDLMessage" multiple="true"/>
+        <field name="globalNamespaces" type="Object"/>
+    </fields>
+</DataSource>

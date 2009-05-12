@@ -1,0 +1,13 @@
+<DataSource ID="GridHilite">
+    <fields>
+        <field  name="id"   type="string" />
+        <field  name="title"    type="string" />
+        <field  name="htmlBefore"   type="html" />
+        <field  name="htmlAfter"    type="html" />
+        <field  name="style"    type="cssText" />
+        <field  name="disabled" type="boolean" />
+    </fields>
+    <types>
+        <type   ID="cssText"    inheritsFrom="text" />
+    </types>
+</DataSource>

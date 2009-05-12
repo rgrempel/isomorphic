@@ -1,0 +1,22 @@
+<DataSource	ID="Menu" Constructor="Menu" inheritsFrom="ListGrid" showSuperClassActions="false">
+	<fields>
+		<field name="items"	type="MenuItem" multiple="true"/>
+		<field name="data"	type="MenuItem"	multiple="true"/>
+		<field name="useKeys"			type="boolean"	/>
+		<field name="showKeys"			type="boolean"	/>
+		<field name="showIcons"			type="boolean"	/>
+		<field name="showSubmenus"		type="boolean"	/>
+        <field name="canSelectParentItems" type="boolean" />
+		<field name="showEmptyMessage"	type="boolean"	/>
+		<field name="cellSpacing"		type="positiveInteger" visibility="internal"/>
+		<field name="cellPadding"		type="positiveInteger" visibility="internal"/>
+		<field name="iconWidth"			type="positiveInteger"/>
+		<field name="iconHeight"		type="positiveInteger"/>
+        <field name="showAnimationEffect"   type="string"   visibility="animation"/>
+		<field name="autoSetDynamicItems"	type="boolean" visibility="internal"/>
+		<field name="submenuImage"		type="imageProperty"/>
+		<field name="submenuDisabledImage"	type="imageProperty"/>
+		<field name="checkmarkImage"	type="imageProperty"/>
+		<field name="checkmarkDisabledImage"	type="imageProperty"/>
+	</fields>
+</DataSource>

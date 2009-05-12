@@ -1,0 +1,7 @@
+<DataSource ID="ValuesManager" Constructor="ValuesManager">
+	<fields>
+		<field name="dataSource" type="string"/>
+		<field name="unknownErrorMessage" type="string"/>
+		<field name="members" type="DynamicForm" multiple="true" propertiesOnly="true"/>
+    </fields>
+</DataSource>

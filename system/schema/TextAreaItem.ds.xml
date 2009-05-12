@@ -1,0 +1,9 @@
+<DataSource	ID="TextAreaItem" inheritsFrom="TextItem" Constructor="TextAreaItem" >
+	<fields>
+		<field name="wrap"		type="enum" title="Wrap Style">
+			<valueMap OFF="off" SOFT="soft" HARD="hard"/>
+		</field>
+        <!-- not implemented -->
+   		<field name="length" type="positiveInteger" title="Length" visibility="internal" hidden="true"/>
+	</fields>
+</DataSource>
