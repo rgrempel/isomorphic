@@ -58,6 +58,7 @@
 		   <field name="defaultMinimizeHeight" type="positiveInteger"/>
 		   <field name="animateMinimize" type="boolean"/>
 		   <field name="minimizeTime" type="positiveInteger"/>
+           <field name="minimizeHeight" type="number"/>
            
            <!-- animation -->
            <field name="animateMinimize" type="boolean"/>
@@ -103,6 +104,10 @@
 
         <!-- Leave this field at the end of the list for Visual ISC D&D -->
 		<field name="items" type="Canvas" multiple="true"/>
+        
+        <field name="showModalMask" type="boolean"/>
+        <field name="modalMaskOpacity" type="number"/>
+        
     </fields>
 </DataSource>
         

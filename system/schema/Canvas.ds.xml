@@ -218,6 +218,18 @@
         <field name="htmlPosition" type="string" visibility="internal"/>
         <field name="matchElement" type="boolean" visibility="internal"/>
         
+        <field name="snapToGrid" type="boolean"/>
+        <field name="snapResizeToGrid" type="boolean"/>
+        <field name="childrenSnapToGrid" type="boolean"/>
+        <field name="childrenSnapResizeToGrid" type="boolean"/>
+        <field name="snapOnDrop" type="boolean"/>
+        
+        <field name="snapOffsetLeft" type="number"/>
+        <field name="snapOffsetTop" type="number"/>
+        <field name="snapHGap" type="number"/>
+        <field name="snapVGap" type="number"/>
+        <field name="edgeOffset" type="number"/>
+        <field name="edgeOpacity" type="number"/>
 	</fields>
 
 	<types>

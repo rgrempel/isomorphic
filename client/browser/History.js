@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -207,7 +207,10 @@ setHistoryTitle : function (title) {
 // @visibility external
 //<
 addHistoryEntry : function (id, title, data) {
-    this.logDebug("addHistoryEntry: " + id);    
+    this.logDebug("addHistoryEntry: id=" + id + " data=" + isc.echoAll(data));
+
+    // Avoid #null situations. Unfortunately we can't remove the anchor entirely (see below)
+    if (id == null) id = "";
 
     if (isc.Browser.isSafari) {
         // We'd like to simply change the hash in the URL and call it a day.  That would at
@@ -237,6 +240,7 @@ addHistoryEntry : function (id, title, data) {
     // disallow sequentual duplicate entries - treat it as overwrite of data
     if (currentId == id) {
         this.historyState.data[id] = data;
+        this._saveHistoryState();
         return;
     }
 
@@ -252,6 +256,7 @@ addHistoryEntry : function (id, title, data) {
     }
     this.historyState.stack.add(id);
     this.historyState.data[id] = data;
+    this.logDebug("historyState[id]: " + isc.echoAll(this.historyState.data[id]));
 
     this._saveHistoryState();
 
@@ -410,7 +415,7 @@ _completeInit : function () {
     // grab the serialized historyState from form auto-fill
     var historyState = this._getFormValue();
     if (historyState) {
-        historyState = new Function("return "+historyState)();
+        historyState = new Function("return ("+historyState + ")")();
     }
 
     // historyState = {
@@ -424,7 +429,7 @@ _completeInit : function () {
     // }
     
     // if we had no persisted historyState, init a skeleton
-    if (!historyState) historyState = { stack: [], data: [] };
+    if (!historyState) historyState = { stack: [], data: {} };
     this.historyState = historyState;
     this.logInfo("History init complete");
 

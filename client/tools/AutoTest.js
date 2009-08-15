@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -118,7 +118,7 @@ isc.Canvas.addMethods({
         } else {
             baseLocator = parent.getLocator() + "/" +
                           parent.getChildLocator(this);
-        }        
+        }
         if (element) return [baseLocator, this.getInteriorLocator(element)].join("/");
         return baseLocator;
     },
@@ -577,6 +577,14 @@ if (isc.DynamicForm) {
                          '][Class="', item.getClassName(), '"]/',
                          "canvas"].join(isc.emptyString); 
             }
+            if (isc.isA.PickListMenu(canvas)) {
+                var item = canvas.formItem;
+                return ["item[",
+                         (item.name ? "name='" + item.name + "'" 
+                                    : "index='" + this.items.indexOf(item) + "'"),
+                         '][Class="', item.getClassName(), '"]/',
+                         "pickList"].join(isc.emptyString);  
+            }
             return this.Super("getChildLocator", arguments);
         },
         
@@ -631,6 +639,13 @@ if (isc.DynamicForm) {
                     }
                 }
                 
+                // pickList
+                if (part == "pickList") {
+                    if (!this.pickList) this.makePickList(false);
+                    locatorArray.removeAt(0);
+                    return this.pickList.getElementFromSplitLocator(locatorArray);
+                }
+                
                 // If passed an icon, return a pointer to the img element 
                 // Event if there is a link element, it'll be above that in the DOM
                 var iconSplit = part.match("\\[icon='(.+)'\\]"),
@@ -641,6 +656,16 @@ if (isc.DynamicForm) {
             }
         }
     });
+    
+    
+    if (isc.PickListMenu) {
+        isc.PickListMenu.addProperties({
+            getLocatorParent : function () {
+                if (this.formItem) return this.formItem.form;
+                return this.Super("getLocatorParent", arguments);
+            }
+        });
+    }
 }
 
 
@@ -649,7 +674,7 @@ if (isc.GridRenderer) {
     // returns "/row[index]/col[index]"
     
     isc.GridRenderer.addProperties({
-        getInteriorLocator : function (element) {     
+        getInteriorLocator : function (element) {
             var origElement = element,
                 handle = this.getHandle(),
                 table = this.getTableElement();
@@ -660,7 +685,6 @@ if (isc.GridRenderer) {
                 row, cell,
                 tr = "tr", TR = "TR",
                 td = "td", TD = "TD";
-                
             while (element && element != table && element != handle) {
                 
                 tagName = element.tagName;           
@@ -813,7 +837,7 @@ if (isc.StatefulCanvas) {
         }
     });
 }
-            
+
 }
 
 // Hold off applying the AutoTest interface methods to widget classes until the page is done loading

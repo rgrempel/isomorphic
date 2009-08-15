@@ -66,6 +66,10 @@ isc.DataSource.create({
         createStandalone:{type:"boolean"},
         useFlatFields:{type:"boolean"},
         showLocalFieldsOnly:{type:"boolean", xmlAttribute:"true"},
-        globalNamespaces:{type:"Object"}
+        globalNamespaces:{type:"Object"},
+        autoDeriveSchema:{type:"boolean"},
+        useLocalValidators:{type:"boolean"},
+        autoDeriveTitles:{type:"boolean"},
+        qualifyColumnNames:{type:"boolean"}
     }
 })

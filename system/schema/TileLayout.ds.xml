@@ -10,7 +10,7 @@
         <field name="tileHMargin" type="positiveInteger"/>
         <field name="tileVMargin" type="positiveInteger"/>
         <field name="expandMargins" type="boolean"/>
-        
+        <field name="layoutMargin" type="number"/>
         <field name="layoutPolicy" type="enum" >
             <valueMap>
 				<value>fit</value>
@@ -21,6 +21,8 @@
         <field name="tilesPerLine" type="positiveInteger"/>
         <field name="autoWrapLines" type="boolean"/>
         
+        <field name="paddingAsLayoutMargin" type="boolean"/>
+        <field name="animateTileChange" type="boolean"/>
 	</fields>
     <groups>
         <group>layoutPolicy</group>

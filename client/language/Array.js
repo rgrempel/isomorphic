@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -98,6 +98,61 @@ Array.isLoading = function (row) {
             !isc.isAn.XMLNode(row) &&
             
             (row === Array.LOADING);
+}
+
+//> @classAttr Array.CASE_INSENSITIVE (Function : See below : )
+// This is a built-in comparator for the +link{array.find,find} and +link{array.findIndex,findIndex}
+// methods of Array.  Passing this comparator to those methods will find case-insensitively,
+// so, eg, <code>find("foo", "bar")</code> would find objects with a "foo" property set to 
+// "Bar", "BAR" or "bar"
+// @visibility external
+//<
+Array.CASE_INSENSITIVE = function(arrayMemberProperty, comparisonProperty, propertyName) {
+    if (isc.isA.String(arrayMemberProperty) && isc.isA.String(comparisonProperty) && 
+        arrayMemberProperty.toLowerCase() == comparisonProperty.toLowerCase()) {
+        return true;
+    } else {
+        return arrayMemberProperty == comparisonProperty;
+    }
+}
+
+//> @classAttr Array.DATE_VALUES (Function : See below : )
+// This is a built-in comparator for the +link{array.find,find} and +link{array.findIndex,findIndex}
+// methods of Array.  Passing this comparator to those methods will find instances where Dates  
+// in the search criteria match Dates in the array members (ordinarily, Javascript only regards
+// Dates as equal if they refer to the exact same object).  This comparator compares <i>logical</i>
+// dates; the time elements of the values being compared are ignored, so two Dates representing
+// different times on the same day will be considered equal.
+// @see Array.DATETIME_VALUES
+// @visibility external
+//<
+Array.DATE_VALUES = function(arrayMemberProperty, comparisonProperty, propertyName) {
+    if (isc.isA.Date(arrayMemberProperty) && isc.isA.Date(comparisonProperty) && 
+        Date.compareLogicalDates(arrayMemberProperty, comparisonProperty) == 0) {
+        return true;
+    } else {
+        return arrayMemberProperty == comparisonProperty;
+    }
+}
+
+//> @classAttr Array.DATETIME_VALUES (Function : See below : )
+// This is a built-in comparator for the +link{array.find,find} and +link{array.findIndex,findIndex}
+// methods of Array.  Passing this comparator to those methods will find instances where Dates  
+// in the search criteria match Dates in the array members (ordinarily, Javascript only regards
+// Dates as equal if they refer to the exact same object).  This comparator compares entire
+// date values, including the time elements of the values being compared, so two Dates 
+// representing different times on the same day (even if they are only a millisecond apart) will 
+// be considered equal.
+// @see Array.DATE_VALUES
+// @visibility external
+//<
+Array.DATETIME_VALUES = function(arrayMemberProperty, comparisonProperty, propertyName) {
+    if (isc.isA.Date(arrayMemberProperty) && isc.isA.Date(comparisonProperty) && 
+        Date.compareDates(arrayMemberProperty, comparisonProperty) == 0) {
+        return true;
+    } else {
+        return arrayMemberProperty == comparisonProperty;
+    }
 }
 
 // add a bunch of methods to the Array prototype so all arrays can use them
@@ -746,14 +801,14 @@ slice :
 //>	@method array.findIndex()
 // @include list.findIndex
 //<
-findIndex : function (property, value) {
-    return this.findNextIndex(0, property, value);
+findIndex : function (property, value, comparator) {
+    return this.findNextIndex(0, property, value, null, comparator);
 },
 
 //>	@method array.findNextIndex()
 // @include list.findNextIndex
 //<
-findNextIndex : function (start, property, value, endPos) {
+findNextIndex : function (start, property, value, endPos, comparator) {
     if (start == null) start = 0;
     else if (start >= this.length) return -1;
     if (endPos == null) endPos = this.length - 1;
@@ -762,31 +817,55 @@ findNextIndex : function (start, property, value, endPos) {
 
 	if (isc.isA.String(property)) {
         // single property to match
-		for (var i = start; i <= endPos; i++) {
-			if (this[i] && this[i][property] == value) return i;
-        }
+        if (comparator) {
+            for (var i = start; i <= endPos; i++) {
+                if (this[i] && comparator(this[i][property], value, property)) return i;
+            }
+        } else {
+            for (var i = start; i <= endPos; i++) {
+                if (this[i] && this[i][property] == value) return i;
+            }
+        } 
         return -1;
 	} else {
         // "property" is an object specifying a set of properties to match
-        return this.findNextMatch(property, start, endPos);
+        return this.findNextMatch(property, start, endPos, comparator);
 	}
 },
 
 // internal: assumes multiple properties
-findNextMatch : function (properties, start, end) {
+findNextMatch : function (properties, start, end, comparator) {
     var propertyNames = isc.getKeys(properties);
-    for (var i = start; i <= end; i++) {
-        var item = this.get(i);
-        if (!item) continue;
-        var found = true;
-        for (var j = 0; j < propertyNames.length; j++) {
-            var propertyName = propertyNames[j];
-            if (item[propertyName] != properties[propertyName]) {
-                found = false;
-                break;
+
+    // This processing is largely duplicated, to avoid a check on comparator in the inner loop
+    if (comparator) {
+        for (var i = start; i <= end; i++) {
+            var item = this.get(i);
+            if (!item) continue;
+            var found = true;
+            for (var j = 0; j < propertyNames.length; j++) {
+                var propertyName = propertyNames[j];
+                if (!comparator(item[propertyName], properties[propertyName], propertyName)) {
+                    found = false;
+                    break;
+                }
             }
+            if (found) return i;
         }
-        if (found) return i;
+    } else {
+        for (var i = start; i <= end; i++) {
+            var item = this.get(i);
+            if (!item) continue;
+            var found = true;
+            for (var j = 0; j < propertyNames.length; j++) {
+                var propertyName = propertyNames[j];
+                if (item[propertyName] != properties[propertyName]) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) return i;
+        }
     }
     return -1;
 },
@@ -794,8 +873,8 @@ findNextMatch : function (properties, start, end) {
 //>	@method array.find()
 // @include list.find
 //<
-find : function (property, value) {
-    var index = this.findIndex(property, value);
+find : function (property, value, comparator) {
+    var index = this.findIndex(property, value, comparator);
     return (index != -1) ? this.get(index) : null;
 },
 

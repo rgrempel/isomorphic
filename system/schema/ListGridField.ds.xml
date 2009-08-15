@@ -113,6 +113,13 @@
         <field name="filterEditorValueMap" type="object" />
         <field name="filterEditorType"  type="className" />
         <field name="filterEditorProperties" type="ListGrid"/>
+        
+        <field name="canGroupBy" type="boolean"/>
+        <field name="groupPrecision" type="number"/>
+        <field name="groupGranularity" type="number"/>
+        <field name="canSortClientOnly" type="boolean"/>
+        <field name="autoFetchDisplayMap" type="boolean"/>
+        
 	</fields>
     
     <types>

@@ -37,6 +37,7 @@
         <field name="hiliteColor" type="color" hidden="true" />
         <field name="hiliteTextColor" type="color" hidden="true" />
 
+        <field name="defaultToFirstOption" type="boolean"/>
 	</fields>
     <groups>
         <group>Basics</group>

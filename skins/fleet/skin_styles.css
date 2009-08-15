@@ -436,6 +436,7 @@
 .selectItemTextError,
 .selectItemTextDisabled,
 .selectItemTextFocused,
+.selectItemTextHint,
 .comboBoxItem,
 .comboBoxItemFocused,
 .comboBoxItemError,
@@ -487,7 +488,8 @@
 
 .selectItemText,
 .selectItemTextFocused,
-.selectItemTextError {
+.selectItemTextError,
+.selectItemTextHint {
     margin:2px;
 }
 .selectItemTextFocused {
@@ -498,6 +500,10 @@
 .selectItemTextDisabled {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; margin:2px;
     color:#ACA899; 
+}
+
+.selectItemTextHint {
+    color:#666666; 
 }
 
 .selectItemControl,

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -38,7 +38,16 @@
 
 isc.ClassFactory.defineClass("UploadItem", "TextItem");
 isc.UploadItem.addProperties({
-	_elementType:"FILE"
+	_elementType:"FILE",
+    
+    // _nativeEventHandlers is a place to specify native event handlers to be applied to the
+    // form item element once it has been written into the DOM (without having to override 
+    // '_applyHandlersToElement()'
+    _nativeEventHandlers : {
+        // apply a native 'onchange' hander to notify us of changes.
+        
+        onchange : isc.FormItem._nativeChangeHandler
+    }    
 });
 
 
@@ -67,7 +76,6 @@ isc.UploadItem.addMethods({
     // Override _updateValue - if the change handler etc attempts to modify the value 
     // log a warning that we can't support this and save the value the user entered.
     _updateValue : function (newValue) {
-
         // unmap the value if necessary 
         newValue = this.mapDisplayToValue(newValue);
 
@@ -104,11 +112,18 @@ isc.UploadItem.addMethods({
     // @visibility external
 	//<
 	setValue : function (newValue) {
+        var val = this.getValue();
         if (newValue == null || isc.isAn.emptyString(newValue)) {
-            var val = this.getValue();
             if (val == null || isc.isAn.emptyString(val)) return;
             return this.Super("setValue", arguments);
         }
+        if (newValue == val) {
+            this.logInfo("Attempting to set the value for an upload form item to:" + newValue +
+                    " This is the current value for the item so no action to take, but setting " +
+                    "UploadItems to a new value is always disabled.");
+            return;
+        }
+            
         this.logWarn("Attempting to set the value for an upload form item. This is disallowed " +
                      "for security reasons - returning the current value of the form item");
 	},

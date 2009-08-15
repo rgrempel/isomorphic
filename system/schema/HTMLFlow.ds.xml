@@ -20,7 +20,10 @@
         <field name="peers"			type="Canvas" multiple="true"   propertiesOnly="true"
                inapplicable="true"/>
 		<field name="children"		type="Canvas" multiple="true"	propertiesOnly="true"
-               inapplicable="true"/>	
+               inapplicable="true"/>
+               
+        <field name="allowCaching" type="boolean"/>
+        <field name="captureSCComponents" type="boolean"/>
     </fields>
 
     <methods>

@@ -97,6 +97,7 @@
 		<field name="headerBackgroundColor" type="color"/>
         <field name="headerBarStyle" type="cssClass" />
         <field name="headerBaseStyle" type="cssClass" />
+        <field name="headerSpanHeight" type="number"/>
         <field name="headerTitleStyle" type="cssClass" />
         <field name="bodyBackgroundColor" type="color" />
         <field name="bodyStyleName" type="cssClass" />
@@ -171,6 +172,9 @@
         <field name="unfreezeFieldText" type="string"/>
         <field name="canGroupBy" type="boolean"/>
         <field name="groupByText" type="string"/>
+        <field name="groupIconSize" type="number"/>
+        <field name="groupIndentSize" type="number"/>
+        <field name="groupByMaxRecords" type="number"/>
 		<field name="dragDataAction" type="enum">
 			<valueMap>
 				<value>none</value>
@@ -227,6 +231,28 @@
         <!-- visualBuilder: enable databinding on this component -->
 		<field name="dataSource"		type="DataSource" hidden="false"/>
 
+        <field name="autoFetchDisplayMap" type="boolean"/>
+        <field name="fetchDelay" type="number"/>
+        <field name="scrollRedrawDelay" type="number"/>
+        <field name="saveLocally" type="boolean"/>
+        <field name="showTreeColumnPicker" type="boolean"/>
+        <field name="shrinkForFreeze" type="boolean"/>
+        <field name="canRemoveRecords" type="boolean"/>
+        <field name="animateRemoveRecord" type="boolean"/>
+        <field name="canPickFields" type="boolean"/>
+        <field name="canAddFormulaFields" type="boolean"/>
+        <field name="canAddSummaryFields" type="boolean"/>
+        <field name="showHeaderMenuButton" type="boolean"/>
+        
+        <field name="animateRemoveTile" type="number"/>
+        <field name="animateRemoveSpeed" type="number"/>
+        <!-- skinning properties that shouldn't be set in the Visual Builder property sheet-->
+        <field name="headerMenuButtonIconWidth" type="number" advanced="true"/>
+        <field name="headerMenuButtonIconHeight" type="number" advanced="true"/>
+        <field name="headerMenuButtonWidth" type="number" advanced="true"/>
+        <field name="headerMenuButtonHeight" type="number" advanced="true"/>
+        <field name="checkboxFieldImageWidth" type="number" advanced="true"/>
+        <field name="checkboxFieldImageHeight" type="number" advanced="true"/>
 	</fields>
 
     <types>

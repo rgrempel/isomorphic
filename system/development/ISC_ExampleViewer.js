@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0RC/LGPL Development Only (2009-04-21)
+  Version 7.0rc2/LGPL Development Only (2009-05-30)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -151,26 +151,27 @@ this.showExample(_5,_2);_3.openFolders(_3.getParents(_4));var _8=_3.indexOf(_4);
 _5.append("</table>");return _5.toString()}
 ,isc.A.$49j=function(_1,_2){var _3=this.exampleTree;var _4=_3.data;if(!_1){_2.append("<td>&nbsp;</td>");return}
 var _5=_4.isFolder(_1)?"[ISO_DOCS_SKIN]/images/explorerTree/folder_closed.png":"[ISO_DOCS_SKIN]/images/explorerTree/gears.png";_5=isc.Page.getURL(_5);_2.append("<td>",isc.Canvas.imgHTML(_5,16,16),"&nbsp;<a href='' onclick='",this.getID(),".jumpToExample(\"",this.genExampleId(_1),"\");return false;'>",_4.getTitle(_1),"</a></td>")}
-,isc.A.genExampleId=function(_1){var _2=_1.id!=null?_1.id:this.exampleTree.data.getPath(_1);return _2.replace(/ /g,".")}
+,isc.A.genExampleId=function(_1){var _2=this.exampleTree.data.getPath(_1),_3=_1.ref!=null?_2:_1.id!=null?_1.id:_2;return _3.replace(/ /g,".")}
 ,isc.A.hideRightPane=function(){this.exampleTree.showResizeBar=false;this.rightPane.hide()}
 ,isc.A.clearState=function(){delete this.currentExampleConfig}
-,isc.A.showExample=function(_1,_2){if(this.exampleTree.data.isFolder(_1))_1.titlePage="true";if(!_2)isc.History.addHistoryEntry(this.genExampleId(_1));this.currentExampleConfig=_1;if(_1.ref){var _3=this.exampleTree.data.findById(_1.ref);if(_3!=null){var _4=_1.description,_5=_1.title,_6=_1.requiresModules;_3=this.exampleTree.data.getCleanNodeData(_3);isc.addProperties(_1,_3);if(_4)_1.description=_4;if(_5)_1.title=_5;if(_6)_1.requiresModules=_6}else{this.logWarn("Couldn't find example by id for ref: "+_1.ref)}
+,isc.A.showExample=function(_1,_2){if(this.exampleTree.data.isFolder(_1))_1.titlePage="true";if(!_2)isc.History.addHistoryEntry(this.genExampleId(_1));this.currentExampleConfig=_1;if(_1.ref){var _3=this.exampleTree.data.findById(_1.ref);if(_3!=null){var _4=_1.description,_5=_1.title,_6=_1.requiresModules,_7=_1.ref;_3=this.exampleTree.data.getCleanNodeData(_3);isc.addProperties(_1,_3);if(_4)_1.description=_4;if(_5)_1.title=_5;if(_5)_1.ref=_7;if(_6)_1.requiresModules=_6}else{this.logWarn("Couldn't find example by id for ref: "+_1.ref)}
 _1.ref=null}
 if(_1.bestSkin!=null&&isc.currentSkin!=_1.bestSkin&&(_1.badSkins==null||_1.badSkins.contains(isc.currentSkin)))
 {isc.warn("This example is best viewed in the "+_1.bestSkin+" skin.",this.getID()+".exampleViewer.setSkin('"+_1.bestSkin+"');");return}
-if(_1.titlePage=="true"){this.examplePage.hide();var _7=this.titlePage.titlePagePane;_7.titlePageHeader.setContents(_1.title||_1.name);_7.titlePageDescription.setContents(_1.description);_7.folderList.setContents(this.formatFolderList(_1));if(_1.screenshot){_7.screenshot.setSrc(_1.screenshot);_7.screenshot.resizeTo(_1.screenshotWidth,_1.screenshotHeight);_7.screenshot.show()}else{_7.screenshot.hide()}
-this.titlePage.show()}else{this.titlePage.hide();this.examplePage.show();this.exampleTitle.setContents(_1.title||_1.name);this.exampleDescription.setVAlign("top");if(this.descriptionHeight)this.exampleDescription.setHeight(this.descriptionHeight);var _8=[];for(var i=0;i<this.exampleChecks.length;i++){var _10=this.exampleChecks[i];var _11=_1[_10.flag];if(_11!=null&&!_10.test(_1)){var _12=_11;if(_12=="true")_12=_10.message;_12=isc.isA.Function(_12)?_12(_1):_12;_8.add(_12)}}
-var _6=_1.requiresModules,_13=_6?_6.indexOf("SCServer")>=0:false,_14="",_15=isc.hasOptionalModules("SCServer"),_16=false;var _17="",_18="",_19="";if(_6){var _20=_6.split(","),_21=/^\s+/,_22=/\s+$/;for(i=0;i<_20.length;i++){var _23=_20[i].replace(_21,"").replace(_22,""),_24=isc.getOptionalModule(_23),_25=isc.hasOptionalModule(_23);if(_24.isPro)continue;if(_24.isFeature){if(_17.length>0)_17+=", ";_17+=_24.name}else{if(_18.length>0)_18+=", ";_18+=_24.name;if(!_25){if(_19.length>0)_19+=", ";_19+=_24.name}}}
-var _26=_18.lastIndexOf(", ");if(_26>=0)_18=_18.substr(0,_26)+" and "+_18.substring(_26+2);_26=_17.lastIndexOf(", ");if(_26>=0)_17=_17.substr(0,_26)+" and "+enterpriseFeature.substring(_26+2);_26=_19.lastIndexOf(", ");if(_26>=0)_19=_19.substr(0,_26)+" and "+_19.substring(_26+2)}
-var _27=((_13&&!_15)||(!_16&&_17.length>0));if(_27){_12="This example is disabled in this SDK because it requires ";if(_13&&!_15){_12+="<a href='"+isc.licensingPage+"' target=_blank>SmartClient Pro</a>"}
-if(!_16&&_17.length>0){if(_13&&!_15)_12+=" and ";_12+="the following features from SmartClient Enterprise: <a href='"+isc.licensingPage+"' target=_blank>"+_17+"</a>"}
-_8.add(_12)}
-if(_19.length>0){if(_27){_12="This example also "}else{_12="This example is disabled in this SDK because it "}
-_8.add(_12+"requires the "+" following optional SmartClient components: <a href='"+isc.licensingPage+"' target=_blank>"+_19+"</a>")}
-if(_8.length>0){_8.add("<p>Click <a target=_blank href='http://www.smartclient.com/#"+isc.History.getCurrentHistoryId()+"'>here</a> to see this example on smartclient.com.")}
-var _28=isc.StringBuffer.create();if(_8.length>0){this.exampleViewer.hide();_28.append("<div class='explorerCheckErrorMessage'>");for(var i=0;i<_8.length;i++){_28.append(_8[i],"<BR><BR>")}
-_28.append("</div>");_28.append(_1.description);this.exampleDescription.setContents(_28.toString());this.exampleDescription.setHeight("*");return}
-_28.append(_1.description);this.exampleDescription.setContents(_28.toString());if(_1.url||_1.jsURL||_1.xmlURL){this.exampleViewer.loadExample(_1);this.exampleDescription.setHeight(_1.descriptionHeight||92);this.exampleDescription.setVAlign("center")}else{this.exampleViewer.hide();this.exampleDescription.setHeight("*")}}}
+if(_1.titlePage=="true"){this.examplePage.hide();var _8=this.titlePage.titlePagePane;_8.titlePageHeader.setContents(_1.title||_1.name);_8.titlePageDescription.setContents(_1.description);_8.folderList.setContents(this.formatFolderList(_1));if(_1.screenshot){_8.screenshot.setSrc(_1.screenshot);_8.screenshot.resizeTo(_1.screenshotWidth,_1.screenshotHeight);_8.screenshot.show()}else{_8.screenshot.hide()}
+this.titlePage.show()}else{this.titlePage.hide();this.examplePage.show();this.exampleTitle.setContents(_1.title||_1.name);this.exampleDescription.setVAlign("top");if(this.descriptionHeight)this.exampleDescription.setHeight(this.descriptionHeight);var _9=[];for(var i=0;i<this.exampleChecks.length;i++){var _11=this.exampleChecks[i];var _12=_1[_11.flag];if(_12!=null&&!_11.test(_1)){var _13=_12;if(_13=="true")_13=_11.message;_13=isc.isA.Function(_13)?_13(_1):_13;_9.add(_13)}}
+var _6=_1.requiresModules,_14=_6?_6.indexOf("SCServer")>=0:false,_15="",_16=isc.hasOptionalModules("SCServer"),_17=false;var _18="",_19="",_20="";if(_6){var _21=_6.split(","),_22=/^\s+/,_23=/\s+$/;for(i=0;i<_21.length;i++){var _24=_21[i].replace(_22,"").replace(_23,""),_25=isc.getOptionalModule(_24),_26=isc.hasOptionalModule(_24);if(_25.isPro)continue;if(_24=="Calendar"){if(_26)continue}
+if(_25.isFeature){if(_18.length>0)_18+=", ";_18+=_25.name}else{if(_19.length>0)_19+=", ";_19+=_25.name;if(!_26){if(_20.length>0)_20+=", ";_20+=_25.name}}}
+var _27=_19.lastIndexOf(", ");if(_27>=0)_19=_19.substr(0,_27)+" and "+_19.substring(_27+2);_27=_18.lastIndexOf(", ");if(_27>=0)_18=_18.substr(0,_27)+" and "+_18.substring(_27+2);_27=_20.lastIndexOf(", ");if(_27>=0)_20=_20.substr(0,_27)+" and "+_20.substring(_27+2)}
+var _28=((_14&&!_16)||(!_17&&_18.length>0));if(_28){_13="This example is disabled in this SDK because it requires ";if(_14&&!_16){_13+="<a href='"+isc.licensingPage+"' target=_blank>SmartClient Pro</a>"}
+if(!_17&&_18.length>0){if(_14&&!_16)_13+=" and ";_13+="the following features from SmartClient Enterprise: <a href='"+isc.licensingPage+"' target=_blank>"+_18+"</a>"}
+_9.add(_13)}
+if(_20.length>0){if(_28){_13="This example also "}else{_13="This example is disabled in this SDK because it "}
+_9.add(_13+"requires the "+" following optional SmartClient components: <a href='"+isc.licensingPage+"' target=_blank>"+_20+"</a>")}
+if(_9.length>0){_9.add("<p>Click <a target=_blank href='http://www.smartclient.com/#"+isc.History.getCurrentHistoryId()+"'>here</a> to see this example on smartclient.com.")}
+var _29=isc.StringBuffer.create();if(_9.length>0){this.exampleViewer.hide();_29.append("<div class='explorerCheckErrorMessage'>");for(var i=0;i<_9.length;i++){_29.append(_9[i],"<BR><BR>")}
+_29.append("</div>");_29.append(_1.description);this.exampleDescription.setContents(_29.toString());this.exampleDescription.setHeight("*");return}
+_29.append(_1.description);this.exampleDescription.setContents(_29.toString());if(_1.url||_1.jsURL||_1.xmlURL){this.exampleViewer.loadExample(_1);this.exampleDescription.setHeight(_1.descriptionHeight||92);this.exampleDescription.setVAlign("center")}else{this.exampleViewer.hide();this.exampleDescription.setHeight("*")}}}
 );isc.B._maxIndex=isc.C+10;isc.defineClass("ExampleTree","Tree");isc.A=isc.ExampleTree.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.nameProperty="title";isc.A.pathDelim="_";isc.B.push(isc.A.init=function(){this.Super("init",arguments);var _1=this.getDescendants(this.root);var _2={};for(var i=0;i<_1.length;i++){var _4=_1[i];if(_4.requiresModules){if(!isc.hasOptionalModules(_4.requiresModules));_4.missingModules=isc.getMissingModules(_4.requiresModules).getProperty("name").join(", ")}
 if(_4.title.contains(".")||_4.title.contains("_")){this.logWarn("Node title: "+_4.title+" contains invalid char '.' or '_'")}
 if(_4.id&&(_4.id.contains(".")||_4.id.contains("_"))){this.logWarn("Node id: "+_4.id+" (titled: "+_4.title+") contains invalid char '.' or '_'")}
@@ -183,7 +184,7 @@ if(!this.isFolder(_5))continue;var _6=this.getChildren(_5);if(!_6||!_6.length)co
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0RC/LGPL Development Only (2009-04-21)
+  Version 7.0rc2/LGPL Development Only (2009-05-30)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

@@ -30,6 +30,8 @@
         <!-- mark superclass fields as not relevant -->
         <field name="children" inapplicable="true"/>
         <field name="peers" inapplicable="true"/>
+        
+        <field name="wrapValues" type="boolean"/>
     </fields>
 
     <methods>

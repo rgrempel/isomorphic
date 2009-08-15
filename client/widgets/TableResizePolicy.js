@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -295,9 +295,9 @@ applyTableResizePolicy : function (items, totalWidth, totalHeight,
 
 		var width = colWidths[c];
 		if (isc.isA.String(width)) {
-			if (width == "*") colWidths[c] = [0, 1000, 0, 1];
-			else if (width.contains("*")) colWidths[c] = [0, 1000, 0, parseInt(width)];
-			else if (width.contains("%")) colWidths[c] = [0,1000, parseInt(width), 0];
+			if (width == "*") colWidths[c] = [0, 10000, 0, 1];
+			else if (width.contains("*")) colWidths[c] = [0, 10000, 0, parseInt(width)];
+			else if (width.contains("%")) colWidths[c] = [0, 10000, parseInt(width), 0];
             // catch a quoted number and convert it to a real number
             else {
                 var parsed = parseInt(width);
@@ -306,7 +306,7 @@ applyTableResizePolicy : function (items, totalWidth, totalHeight,
                 } else {
                     this.logWarn("Failed to understand specified colWidth:"+ width);
                     // treat as "*"
-                    colWidths[c] = [0,1000,0,1];
+                    colWidths[c] = [0,10000,0,1];
                 }
             }
 		}

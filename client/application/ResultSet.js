@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -532,6 +532,15 @@ init : function () {
     this.resultSize = (context && context.dataPageSize != null ?
                         context.dataPageSize : this.resultSize);
 
+    if (this.allRows) {
+        // complete dataset provided, use local filter and sort
+        this.fetchMode = "local";
+    } else {
+        // respect component settings, defaulting to paged
+        this.fetchMode = (context && context.dataFetchMode != null ?
+                          context.dataFetchMode : this.fetchMode || "paged");
+    }
+
     // whether to invalidate our cache when an update occurs on one of our datasources.
     // Default is update the current cache in place.
     if (this.dropCacheOnUpdate == null) {
@@ -551,7 +560,6 @@ init : function () {
 
     // if we're given the set of all rows on construction, derive the current filter set right
     // away, so that this.localData is not null, making us think we have no data
-    if (this.fetchMode == null) this.fetchMode = (this.allRows ? "local" : "paged");
     if (this.allRows != null && (this.isLocal() || this.shouldUseClientFiltering()) && 
         this.localData == null) 
     {
@@ -1333,10 +1341,10 @@ setCriteria : function (newCriteria) {
         // If one of the criteria objects is an AdvancedCriteria, convert the other one to 
         // enable comparison
         if (ds.isAdvancedCriteria(newCriteria) && !ds.isAdvancedCriteria(oldCriteria)) {
-            oldCriteria = ds.convertCriteria(oldCriteria, this._textMatchStyle);
+            oldCriteria = isc.DataSource.convertCriteria(oldCriteria, this._textMatchStyle);
         }
         if (!ds.isAdvancedCriteria(newCriteria) && ds.isAdvancedCriteria(oldCriteria)) {
-            newCriteria = ds.convertCriteria(newCriteria, this._textMatchStyle);
+            newCriteria = isc.DataSource.convertCriteria(newCriteria, this._textMatchStyle);
             this.criteria = newCriteria;
         }
         var criteriaResult = this.compareCriteria(newCriteria, 
@@ -1518,6 +1526,11 @@ sortByProperty : function (property, sortDirection, normalizer, context) {
     
 	if (this._sortProperty == property && this._sortDirection == sortDirection && 
 		this._normalizer == normalizer) return;
+
+    var field;
+    // make sure optional parameter 'context' was actually passed in before using it
+    if (context) field = context.getField(property);
+    if (field && field.displayField) property = field.displayField;
 	
 	// remember sort and direction
 	this._sortProperty = property;
@@ -1795,7 +1808,7 @@ updateCache : function (operationType, updateData, dsRequest) {
 	//>DEBUG
     if (this.logIsInfoEnabled()) {
         var compStr = (dsRequest.componentId ? " submitted by '" + dsRequest.componentId + "'" :
-                        " (no compnentID) ");
+                        " (no componentID) ");
         this.logInfo("Updating cache: operationType '" + operationType + "'" + compStr + "," + 
                      updateData.length + " rows update data" +
                      (this.logIsDebugEnabled() ? 

@@ -10,6 +10,8 @@
         
         <field name="metaDataPrefix" type="string"/>
         
+        <field name="prettyPrintJSON" type="boolean"/>
+        <field name="sendMetaData" type="boolean"/>
     </fields>
 </DataSource>
 

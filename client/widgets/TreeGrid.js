@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -265,6 +265,16 @@ isc.TreeGrid.addProperties({
     // @example initialData
     //<
     
+
+    //> @attr treeGrid.autoFetchAsFilter (boolean : false : IR)
+    // With +link{loadDataOnDemand:true}, TreeGrids fetch data by selecting the child nodes of
+    // each parent, which should be exact match, so default to autoFetchAsFilter:false.
+    // See +link{listGrid.autoFetchAsFilter} for details.
+    //
+    // @group dataBinding
+    // @visibility external
+    //<
+    autoFetchAsFilter:false,
     
     //> @attr treeGrid.treeRootValue (any : null : IRA)
     // For databound trees, use this attribute to supply a +link{DataSourceField.rootValue} for this
@@ -1019,11 +1029,11 @@ isEmpty : function () {
 //>	@method	treeGrid.getOpenState() 
 // Returns a snapshot of the current open state of this grid's data as
 // a +link{type:treeGridOpenState} object.<br>
-// This object can be passed to +link{treeGrid.getOpenState()} to open the same set of folders
+// This object can be passed to +link{treeGrid.setOpenState()} to open the same set of folders
 // within the treeGrid's data (assuming the nodes are still present in the data).
 // @return (treeGridOpenState) current sort state for the grid.
 // @group viewState
-// @see treeGrid.getOpenState()
+// @see treeGrid.setOpenState()
 // @visibility external
 //<
 getOpenState : function () {
@@ -2037,6 +2047,13 @@ drop : function () {
 	return false;
 },
 
+//> @method treeGrid.recordDrop()
+// The superclass event +link{listGrid.recordDrop} does not fire on a TreeGrid, use
+// +link{folderDrop} instead.
+//
+// @visibility external
+//<
+
 //> @method treeGrid.folderDrop() [A]
 //
 // This method processes the drop on a folder in the TreeGrid.  The default implementation
@@ -2072,7 +2089,7 @@ drop : function () {
 // @param nodes (List of TreeNode) List of nodes being dropped
 // @param folder (TreeNode) The folder being dropped on
 // @param index (integer) Within the folder being dropped on, the index at which the drop is
-//                        occurring.
+//                        occurring.  Only passed if +link{canReorderRecords} is true.
 // @param sourceWidget (Canvas) The component that is the source of the nodes (where the nodes
 //                              were dragged from).
 //
@@ -2186,7 +2203,7 @@ transferNodes : function (nodes, folder, index, sourceWidget) {
             }
             isc.addProperties(node, 
                 this.getDropValues(data, sourceDS, folder, index, sourceWidget));
-            this._addIfNotDuplicate(data, sourceDS, null, index, folder);
+                this._addIfNotDuplicate(data, sourceDS, null, null, index, folder);
         }
         // send the queue unless we didn't initiate queuing
         if (!wasAlreadyQueuing) isc.rpc.sendQueue();
@@ -2196,7 +2213,7 @@ transferNodes : function (nodes, folder, index, sourceWidget) {
         //this.logWarn("adding dragData at parent: " + newParent + ", position: " + position);
         nodes = sourceWidget.transferDragData();
         for (var i = 0; i < nodes.length; i++) {
-            this._addIfNotDuplicate(nodes[i], sourceDS, null, index, folder);
+            this._addIfNotDuplicate(nodes[i], sourceDS, null, null, index, folder);
         }
     }
 },

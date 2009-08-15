@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1095,7 +1095,47 @@ setCanFocus : function (canFocus) {
     if (this._thumb != null) this._thumb.setCanFocus(canFocus);
     if (this._track != null) this._track.setCanFocus(canFocus);
     
+},
+
+//>	@method	slider.setMinValue()   ([])
+// Sets the +link{slider.minValue, minimum value} of the slider 
+//
+// @param newValue (float) the new minimum value
+// @visibility external
+//<
+setMinValue : function (newValue) {
+    
+    this.minValue = newValue;
+    this._minLabel.setContents(newValue);
+    this.setValue(this.minValue);
+      
+},
+
+//>	@method	slider.setMaxValue()   ([])
+// Sets the +link{slider.maxValue, maximum value} of the slider 
+//
+// @param newValue (float) the new maximum value
+// @visibility external
+//<
+setMaxValue : function (newValue) {
+    this.maxValue = newValue;
+    this._maxLabel.setContents(newValue);
+    this.setValue(this.minValue);
+    
+},
+
+//>	@method	slider.setNumValues()   ([])
+// Sets the +link{slider.numValues, number of values} for the slider 
+//
+// @param newNumValues (float) the new number of values
+// @visibility external
+//<
+setNumValues : function (newNumValues) {
+    this.numValues = newNumValues;
+    this._stepSize = this._usableLength/(this.numValues-1);
+    this.setValue(this.minValue);
 }
+
 });
 
 

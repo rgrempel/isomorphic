@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -142,8 +142,10 @@ isc.TextItem.addProperties({
     // @visibility internal
     //<
 
-    //>@attr TextItem.hintInField (boolean : null : IRWA)
+    //>@attr TextItem.showHintInField (boolean : null : IRWA)
     // If showing hint for this form item, should it be shown within the field?
+    // <P>Note when this property is true, +link{formItem.hintStyle} is not used -
+    // class "textItemHint" is always used.
     // @group appearance
     // @see FormItem.hint
     // @visibility external
@@ -255,7 +257,7 @@ isc.TextItem.addMethods({
         }
         
         if (this.containerWidget.isPrinting && value != null && value != isc.emptyString) {
-            template[template.length] = " value=" + value;
+            template[template.length] = " value='" + value + "'";
         }
         
         // disable native autoComplete 
@@ -323,6 +325,19 @@ isc.TextItem.addMethods({
             }
             if (this._value != elementValue) this.form.elementChanged(this);
         }
+        
+        
+        // If not showing hint within data field, nothing more to do
+        if (!this.showHint || !this.showHintInField || !this.getHint()) return returnVal;
+
+        var undef;
+        var value = this.getElementValue();
+        if (this.showHintInField && 
+            (value === undef || value == null || isc.is.emptyString(value)))
+        {
+            this._showInFieldHint();
+        }
+
         
         return returnVal;
     },
@@ -472,7 +487,7 @@ isc.TextItem.addMethods({
         value = this.invokeSuper(isc.TextItem, "setValue", value,b,c,d);
 
         // See if the in-field hint needs to be shown
-        if (this.showHint && this.hintInField && this.getHint()) {
+        if (this.showHint && this.showHintInField && this.getHint()) {
             if (value === undef || value == null || isc.is.emptyString(value)) {
                 this._showInFieldHint();
             }
@@ -488,31 +503,13 @@ isc.TextItem.addMethods({
         return this.getFieldName();
     },
 
-    // When focus is received, the hint should be hidden if TextItem.hintInField is true.
+    // When focus is received, the hint should be hidden if TextItem.showHintInField is true.
     _nativeElementFocus : function (element, itemID) {
         var returnVal = this.Super("_nativeElementFocus", arguments);
         // If not showing a hint with data field, nothing more to do
-        if (!this.showHint || !this.hintInField || !this.getHint()) return;
+        if (!this.showHint || !this.showHintInField || !this.getHint()) return returnVal;
 
         this._hideInFieldHint();
-
-        return returnVal;
-    },
-
-    // When focus is lost, the hint should be shown if still needed
-    _nativeElementBlur : function (element, itemID) {
-        var returnVal = this.Super("_nativeElementBlur", arguments);
-
-        // If not showing hint within data field, nothing more to do
-        if (!this.showHint || !this.hintInField || !this.getHint()) return returnVal;
-
-        var undef;
-        var value = this.getElementValue();
-        if (this.hintInField && 
-            (value === undef || value == null || isc.is.emptyString(value)))
-        {
-            this._showInFieldHint();
-        }
 
         return returnVal;
     },
@@ -531,6 +528,9 @@ isc.TextItem.addMethods({
     },
     _hideInFieldHint : function () {
         if (this._showingInFieldHint) {
+            // Reset field class to the default style
+            var element = this.getDataElement();
+            if (element) element.className = this.getTextBoxStyle();
             // Clear the hint text from the field
             this.setElementValue(isc.emptyString);
             this._showingInFieldHint = false;
@@ -547,6 +547,7 @@ isc.TextItem.addMethods({
     //> @attr   textItem.characterCasing   (CharacterCasing : isc.TextItem.DEFAULT : IRWA)
     // Should entered characters be converted to upper or lowercase?
     // Also applies to values applied with +link{formItem.setValue}.
+    // @example formFilters
     // @visibility  external
     //<    
     characterCasing: isc.TextItem.DEFAULT,
@@ -557,6 +558,7 @@ isc.TextItem.addMethods({
     // regular expression are allowed; all others are suppressed. The
     // filter is applied after character casing, if defined.
     // @see textItem.characterCasing
+    // @example formFilters
     // @visibility  external
     //<    
 
@@ -647,7 +649,7 @@ isc.TextItem.addMethods({
 
     // Helper methods to determine valid typed characters
     _isTypableCharacter : function (characterValue) {
-        return (characterValue >= 32 && characterValue <= 126);
+        return ((characterValue >= 32 && characterValue <= 126) || characterValue > 127);
     },
     _isAlphaCharacter : function (characterValue) {
         return (characterValue >= 65 && characterValue <= 90) ||

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -149,6 +149,12 @@ isc.FileItem.addProperties({
             redrawOnResize:false,
             canSubmit:true,
             action:this.action,
+            targetItem:this,
+            getSaveOperationType:function () {
+                if (this.targetItem && this.targetItem.form) 
+                    return this.targetItem.form.getSaveOperationType();
+                return this.Super("getSaveOperationType", arguments);
+            },
             items:[
                 {targetItem:this, type:"upload", name:this.getFieldName(), showTitle:false,
                     saveValue : function (a,b,c,d) {
@@ -172,7 +178,7 @@ isc.FileItem.addProperties({
     // support setValue() only if the newValue is empty (to clear a programmatically set value)
     setValue:function (newValue) {
         if (newValue == null || isc.isA.emptyString(newValue)) {
-            this.canvas.setValue(this.getFieldName(), null);
+            this.canvas.setValue(this.getFieldName(), newValue);
             return this.Super("setValue", arguments);
         } else {
             this.logWarn("Cannot programatically set the value of an upload field due to security restraints");

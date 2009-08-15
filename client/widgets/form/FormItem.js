@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -340,11 +340,11 @@ isc.FormItem.addProperties({
     //<    
 
     //> @attr formItem.defaultValue       (any : null : IRW)
-	// Value used when no value is provided for this item. Note that whenever this item's value
-    // is cleared by the user or set to <code>null</code> programatically, it will be reverted
-    // to the <code>defaultValue</code>. Developers should use the +link{DynamicForm.values} 
-    // object if their intention is to provide an initial value for a field in a form rather 
-    // than a value to use in place of <code>null</code>.
+    // Value used when no value is provided for this item. Note that whenever this item's value
+    // is cleared programatically (for example via <code>item.setValue(null)</code>), it will be
+    // reverted to the <code>defaultValue</code>. Developers should use the
+    // +link{DynamicForm.values} object if their intention is to provide an initial value for a
+    // field in a form rather than a value to use in place of <code>null</code>.
     // 
     // @see method:defaultDynamicValue
     // @group basics
@@ -680,7 +680,7 @@ isc.FormItem.addProperties({
     //> @attr formItem.pickerIconDefaults (FormItemIcon Properties : null : [IRWA])
     // Block of default properties to apply to the pickerIcon for this widget.
     // Intended for class-level customization: To modifying this value we recommend using
-    // +link{isc.changeDefaults()} rather than directly assigning a value to the property.
+    // +link{Class.changeDefaults()} rather than directly assigning a value to the property.
     // @visibility external
     //< 
     
@@ -716,11 +716,11 @@ isc.FormItem.addProperties({
     // on the +link{showPickerIcon,pickerIcon}.
     // <P>
     // Can be specified directly as a Canvas, or created automatically via the
-    // +link{group:AutoChild} pattern.
+    // +link{type:AutoChild} pattern.
     // <P>
     // Note that the picker is not automatically destroyed with the FormItem that uses it, in
     // order to allow possibly recycling of picker components.  To destroy a single-use picker,
-    // override +link{formItem.destroy()}.
+    // override +link{Canvas.destroy()}.
     //
     // @visibility external
 	//<
@@ -741,7 +741,7 @@ isc.FormItem.addProperties({
     // Validation
 	// -----------------------------------------------------------------------------------------
 
-    //> @attr   formItem.validators     (Array of Validator : null : IR)
+    //> @attr formItem.validators     (Array of Validator : null : IR)
     // Validators for this form item.  
     // <P>
     // <b>Note:</b> these validators will only be run on the client; to
@@ -749,9 +749,12 @@ isc.FormItem.addProperties({
     // @visibility external
     //<
 
-    //> @attr   formItem.required       (boolean : false : [IR])
+    //> @attr formItem.required       (boolean : null : [IR])
     // Whether a non-empty value is required for this field to pass validation.
-    // <BR>
+    // <P>
+    // If the user does not fill in the required field, the +link{Validator.requiredField}
+    // error message will be shown.
+    // <P>
     // <b>Note:</b> if specified on a FormItem, <code>required</code> is only enforced on the
     // client.  <code>required</code> should generally be specified on a
     // +link{class:DataSourceField}.
@@ -2199,6 +2202,7 @@ isc.FormItem.addMethods({
     // the size of the entire formItem cell, so we don't need to worry about the styling applied
     // to the cell.
     
+    
     getInnerHeight : function () {
         var form = this.containerWidget;
 
@@ -2995,7 +2999,7 @@ isc.FormItem.addMethods({
     getInnerHTML : function (value, includeHint, includeErrors, returnArray) {
     
         
-        this._gotHintHTML = includeHint;
+        this._gotHintHTML = includeHint && !this.showHintInField;
             
         var output;
         // If this element is disabled we write an event mask over it to capture mouse events.
@@ -3013,7 +3017,7 @@ isc.FormItem.addMethods({
         }
 
         // If displaying hint in-field, suppress displaying hint in surrounding table.
-        if (this.hintInField) includeHint = false;
+        if (this.showHintInField) includeHint = false;
 
         // Note that the tableHTML is an array
         var tableHTML = this._getTableHTML(value, includeHint, includeErrors);
@@ -3834,7 +3838,10 @@ isc.FormItem.addMethods({
     // @visibility external
 	//<
 	getErrorHTML : function (error) {
-        if (!this.shouldShowErrorText() && !this.shouldShowErrorIcon()) return isc.emptyString;
+        var showErrorText = this.shouldShowErrorText(),
+            showErrorIcon = this.shouldShowErrorIcon();
+            
+        if (!showErrorText && !showErrorIcon) return isc.emptyString;
         
 		var form = this.form,
             // If we are writing out an error icon, use a table to insure:
@@ -3843,19 +3850,25 @@ isc.FormItem.addMethods({
             // - if we're showing multiple error messages in a bulleted list the icon
             //   appears to the left of the list rather than appearing above it on a 
             //   separate line
-            writeTable = this.shouldShowErrorIcon() && this.shouldShowErrorText(),
+            writeTable = showErrorIcon && showErrorText,
+            
+            
+            writeDivInline = !writeTable && showErrorIcon && 
+                            ((this.getErrorOrientation() == isc.Canvas.LEFT) || 
+                             (this.getErrorOrientation() == isc.Canvas.RIGHT)),
+            
                         // We may want to make this setting hierachical - so it can be set at 
                         // the item or validator level as well
-            titleText = (this.shouldShowErrorText() && this.form.showTitlesWithErrorMessages &&
+            titleText = (showErrorText && this.form.showTitlesWithErrorMessages &&
                          this.getTitle() != null ? this.getTitle() + ": " : null),
-            output;
+            output,
             
-            var messageString = this.shouldShowErrorText() ? this.getErrorMessage(error) : null;
+            messageString = showErrorText ? this.getErrorMessage(error) : null;
             
             if (!writeTable) {
-    			output = isc.SB.concat("<DIV style='display:inline;' CLASS='" 
-                        , this.getCellStyle() , "'>" 
-                        , (this.shouldShowErrorIcon() ? this.getErrorIconHTML(error) + "&nbsp;" : null)
+    			output = isc.SB.concat("<DIV ",(writeDivInline ? "style='display:inline;'" : null)
+                        ," CLASS='", this.getCellStyle() , "'>" 
+                        , (showErrorIcon ? this.getErrorIconHTML(error) + "&nbsp;" : null)
                         , titleText
 						, messageString
 						, "</DIV>"
@@ -5010,7 +5023,7 @@ isc.FormItem.addMethods({
     // Method to show a picker for this item. By default this method is called if the user
     // clicks on a +link{showPickerIcon,pickerIcon}.  May also be called programatically.
     // <P>
-    // Default implementation lazily creates the +link{picker,Picker Autochild}.  Note that
+    // Default implementation lazily creates the +link{FormItem.picker,Picker Autochild}.  Note that
     // auto
     //
     // @param [modal] (boolean) Is this a modal picker
@@ -6833,10 +6846,11 @@ isc.FormItem.addMethods({
             range.moveEnd(this._$character, (end-start));            
             range.select();
         } else {
-            // DOM API, known to be supported by Moz and Safari
+            // DOM API, known to be supported by Moz and Safari (as-of circa 2.0 (2006?))
             element.focus();
             element.setSelectionRange(start, end);
         }
+        
     },
     
     // Returns the indices of the start/end of the current selection
@@ -6912,6 +6926,7 @@ isc.FormItem.addMethods({
         } else if (isc.Browser.isMoz || isc.Browser.isSafari) {
             return [element.selectionStart, element.selectionEnd];
         }
+        
     },
     
     // return the selected text within the form item
@@ -6920,6 +6935,7 @@ isc.FormItem.addMethods({
         if (!isc.isA.TextItem(this) && !isc.isA.TextAreaItem(this)) {
             return;
         }
+        
 
         if (isc.Browser.isIE) {
             

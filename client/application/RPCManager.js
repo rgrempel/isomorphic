@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1368,6 +1368,21 @@ isc.RPCManager.addClassProperties({
 
 isc.RPCManager.addClassMethods({
     
+    //> @classMethod RPCManager.queueSent()
+    //
+    // This method is called by the RPCManager every time it sends a queue of requests to the 
+    // server (note that if you not using queuing, the system simply sends queues containing
+    // just one request, so this API is valid regardless).<p>
+    // There is no default implementation of this method; it is simply an override point.  
+    // It is intended to be used by user code that needs to be notified when SmartClient sends 
+    // requests to the server.  Note that the list of +link{class:RPCRequest}s passed to this
+    // method is strictly <b>read-only</b>.
+    //
+    // @param requests (List of RPCRequest) The queue of +link{class:RPCRequest}s that was sent
+    //
+    // @visibility external
+    //<
+    
     //> @classMethod RPCManager.xmlHttpRequestAvailable()
     //
     // Returns true if the XMLHttpRequest object is available, false otherwise.  See
@@ -1762,9 +1777,11 @@ isLocalURL : function (url) {
     // send a request immediately, bypassing the current queue.
     sendNoQueue : function (request) {
         var currentTransaction = this.currentTransaction;
+        var queuing = this.queuing;
         this.currentTransaction = this._createTransaction();
         this._addRequestToTransaction(request, this.currentTransaction);
         var sendResult = this.sendQueue();
+        this.queuing = queuing;
         this.currentTransaction = currentTransaction;
         return sendResult;
     },
@@ -2435,7 +2452,7 @@ isLocalURL : function (url) {
             }
             return output.toString();
         } if (!isc.isA.String(paramValue)) {
-            paramValue = isc.JSON.encode(paramValue);
+            paramValue = isc.JSON.encode(paramValue, {prettyPrint:false});
         }
         return isc.SB.concat(encodeURIComponent(paramName), "=",
                              encodeURIComponent(paramValue));
@@ -2654,11 +2671,10 @@ isLocalURL : function (url) {
 		//>DEBUG
 		transaction.sendTime = isc.timeStamp();
 		//<DEBUG
-        
+                
         // about to send
         transaction.changed();
-        
-        
+                
         // call performTransactionReply when the transaction completes (regardless of transport)
         //if (callback) transaction.callback = callback;
         transaction.callback = "isc.RPCManager.performTransactionReply(transactionNum,results,wd)";
@@ -2703,6 +2719,9 @@ isLocalURL : function (url) {
             });
 
         
+
+        // Invoke user hook
+        if (isc.isA.Function(this.queueSent)) this.queueSent(transaction.operations);
 
 		return request;
 	},
@@ -3126,6 +3145,17 @@ isLocalURL : function (url) {
 
         var origAutoDraw = isc.Canvas.getInstanceProperty("autoDraw");
         if (request.suppressAutoDraw) isc.Canvas.setInstanceProperty("autoDraw", false);
+        
+        
+        // results at this point is the string to eval
+        // eval barfs on "{ ...  }", thinking it's a closure - work around this so developers
+        // can return simple JSON format objects
+        // Note: FF1.0.7 bug: curly must be escaped in the following regex.  Not an issue in IE
+        // or FF1.5
+        if (results.match(/^\s*\{/)) {
+            
+            results = "var evalText=" + results + ";evalText;"
+        }
         
         var evalResult = isc.Class.evalWithVars(results, evalVars);
         if (request.suppressAutoDraw) isc.Canvas.setInstanceProperty("autoDraw", origAutoDraw);

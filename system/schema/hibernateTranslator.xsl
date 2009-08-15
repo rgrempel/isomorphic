@@ -28,18 +28,15 @@
                     </xsl:variable>
                     <xsl:element name="{$tagName}">
                         <xsl:attribute name="name"><xsl:value-of select="@name"/></xsl:attribute>
-                        <!-- We default to quotedColumnNames, so if the property is either true or not present,
-                             quote the column names -->
-                        <xsl:choose>
-                            <xsl:when test="/DataSource/@quotedColumnNames">
-                                <xsl:if test="/DataSource/@quotedColumnNames = 'true'">
-                                    <xsl:attribute name="column">`<xsl:value-of select="@name"/>`</xsl:attribute>
-                                </xsl:if>
-                            </xsl:when>
-                            <xsl:otherwise>
+                    <!-- We default to quotedColumnNames, so if the property is either true or not present,
+                         quote the column names.
+                          May 2009 - quotedColumnNames is now NOT the default, since we added 
+                          the ability to coerce case in SQLTransform.  Reversing this logic. -->
+                        <xsl:if test="/DataSource/@quotedColumnNames">
+                            <xsl:if test="/DataSource/@quotedColumnNames = 'true'">
                                 <xsl:attribute name="column">`<xsl:value-of select="@name"/>`</xsl:attribute>
-                            </xsl:otherwise>
-                        </xsl:choose>
+                            </xsl:if>
+                        </xsl:if>
     
                         <xsl:variable name="type">
                             <xsl:choose>

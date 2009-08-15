@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -990,7 +990,6 @@ isc.Canvas.addMethods({
     _$T:"T", _$L:"L",
     _showEffectAnimationMap:{slide:"show", wipe:"show", fly:"move", fade:"fade"},
     animateShow : function (effect, callback, duration, acceleration) {
-        
         // have a way to default the animate show / hide effect for all calls to these methods
         if (effect == null) effect = this.animateShowEffect;
         
@@ -999,17 +998,20 @@ isc.Canvas.addMethods({
             effectConfig = effect;
             effect = effect.effect;
         }
-        
         // If we're in the process of doing an animateHide(), finish that before we do the
         // animateShow() - this is required to avoid a no-op due to the fact that the widget
         // is currently drawn/visible.
         if (this._animatingHide != null) this.finishAnimation(this._animatingHide);
         
         // Could fire callback if it's already showing?
-        if (this.isDrawn() && this.isVisible()) return;
+        if (this.isDrawn() && this.isVisible()) {
+            return;
+        }
         // Also - if we're in mid 'animateShow()' just bail
         
-        if (this._animatingShow != null) return;
+        if (this._animatingShow != null) {
+            return;
+        }
         
         // If we're undrawn, draw() if _drawOnShow() is true - true for top level widgets 
         // that are not peers.
@@ -1020,7 +1022,7 @@ isc.Canvas.addMethods({
                 this.show(); 
                 this.logInfo("not animating show, component not drawn", "animation");
                 // again - this is an 'early finish'
-                if (callback) this.animateShowComplete(true);                
+                this.animateShowComplete(true);                
                 return;
             } else {
                 this.draw();
@@ -1082,13 +1084,12 @@ isc.Canvas.addMethods({
                                         duration, acceleration);
             }
         }
-         
         // If we can't animate the show, just show and fire callback
         if (!this._canAnimateClip(effect)) {
             this.logInfo("not animating show, can't do clip animations", "animation");            
             this.show();
             // essentially this is an 'early finish'
-            if (callback) this.animateShowComplete(true);
+            this.animateShowComplete(true);
             return;
         } 
         
@@ -1623,7 +1624,6 @@ isc.Canvas.addMethods({
     _$hide:"hide",
     _hideEffectAnimationMap:{slide:"hide", wipe:"hide", fly:"move", fade:"fade"},
     animateHide : function (effect, callback, duration, acceleration, synchronousCallback) {
-        
         // have a way to default the animate show / hide effect for all calls to these methods
         if (effect == null) effect = this.animateHideEffect;
         
@@ -1692,7 +1692,6 @@ isc.Canvas.addMethods({
                                         duration, acceleration, synchronousCallback);
             }
         }
-        
         // at this point we're doing a standard hide type animation with wipe / slide effect
         // HACK: LayoutSpacer never reports itself drawn, but can animate
         if ((!this._canAnimateClip(effect) || !this.isDrawn()) && 
@@ -1701,7 +1700,7 @@ isc.Canvas.addMethods({
             this.logInfo("not animating hide, can't do clip animations", "animation");
             this.hide();
             // pass the early-finish parameter
-            if (callback) this._animateHideComplete(true);
+            this._animateHideComplete(true);
             return;
         }
 
@@ -1732,6 +1731,7 @@ isc.Canvas.addMethods({
                 info._scrollThumbLength = this.hscrollbar.thumb.getWidth();
             }           
         }
+        
         // If overflow is visible, set to hidden so the content will clip as we shrink 
         
         this.resizeTo(drawnWidth, drawnHeight, true);
@@ -1773,7 +1773,7 @@ isc.Canvas.addMethods({
             this._assignSize(this._edgedCanvas.getHandle().firstChild.style,
                              (vertical ? "height" : "width"),
                              (vertical ? this._edgedCanvas.getHeight() : this._edgedCanvas.getWidth()));
-        }                         
+        }
         return this._startAnimation(this._$hide, info, duration, acceleration);
     },
     

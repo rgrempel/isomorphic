@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -155,14 +155,14 @@ autoHideCheckBoxDefaults: { type: "boolean"
 //<
 builderTypeText: "Formula",
 
-//> @attr formulaBuilder.helpTextIntro (String : "The following functions are available:" : IR)
+//> @attr formulaBuilder.helpTextIntro (String : "For basic arithmetic, type in symbols (+-/%) directly.<P>The following functions are also available:" : IR)
 // Text that appears in the hover from the +link{helpIcon}, as a pre-amble to the list of
 // available functions.
 //
 // @group i18nMessages
 // @visibility external
 //<
-helpTextIntro: "The following functions are available:",
+helpTextIntro: "For basic arithmetic, type in symbols (+-/%) directly.<P>The following functions are also available:",
 
 //> @attr formulaBuilder.mathFunctions (Array of String : null : IR)
 // The list of math functions available in this FormulaBuilder, as an array of 
@@ -313,7 +313,7 @@ saveButtonDefaults: {_constructor: "Button",
     title: "Save", 
     width: 70, 
     click: function () {
-        if (this.creator.titleForm.validate()) this.creator.doneEditing();
+        if (this.creator.titleForm.validate()) this.creator.save();
     }
 },
 
@@ -332,6 +332,24 @@ setValue : function (newValue) {
     if (this.formulaField) {
         this.formulaField.setValue(newValue);
     }
+},
+
+//> @method formulaBuilder.setFormula()
+// Call to set the formula-string in this FormulaBuilder.
+// <P>
+// Note that calling setFormula() will update the UI, generate the formula's funtion and 
+// test it automatically.
+//
+// @param (String) The new formula-string for this builder
+// @group formulaFields
+// @visibility external
+//<
+setFormula : function (newValue) {
+    this.setValue(newValue);
+},
+
+getFieldIdProperty : function () {
+    return this.getClass().getFieldIdProperty(this.component);
 },
 
 getTitle : function () {
@@ -356,7 +374,7 @@ getFieldFromMappingKey : function (mappingKey) {
 
 getFields : function () {
     if (this.fields) return this.fields;
-    
+
     if (this.component) return this.component.getAllFields();
     return isc.getValues(this.dataSource.getFields());
 },
@@ -385,6 +403,15 @@ initWidget : function () {
     // get the dataSource so we know what fields to support
     this.dataSource = isc.DataSource.get(this.dataSource);
 
+    if (!this.field) {
+        this.field = {
+            name: this.getUniqueFieldName(),
+            title: "New Field",
+            width: "50",
+            canFilter: false,
+            canSortClientOnly: true
+        };
+    }
     // --------------
     // draw the layout
 
@@ -484,6 +511,30 @@ initWidget : function () {
     if (this.editMode && this.autoTest) this.testFunction();
 },
 
+getUniqueFieldName : function () {
+    return this.getNewUniqueFieldName("formulaField");
+},
+
+getNewUniqueFieldName : function (namePrefix) {
+    // assume return values in the format "fieldXXX" if namePrefix isn't passed
+    if (!namePrefix || namePrefix == "") namePrefix = "field";
+    var fields = this.getFields(),
+        maxIncrement = 1,
+        keyLength = namePrefix.length;
+
+    // find the next available increment for the namePrefix
+    for (var i = 0; i<fields.length; i++) {
+        var item = fields.get(i);
+        if (item.name.startsWith(namePrefix)) {
+            var suffix = item.name.substr(keyLength),
+                increment = new Number(suffix);
+            if (increment && increment >= maxIncrement) maxIncrement = increment + 1;
+        }
+    }
+    // return the new fieldName
+    return namePrefix + maxIncrement;
+},
+
 destroy : function () {
     if (this.fieldKeyDS) this.fieldKeyDS.destroy();
     this.Super("destroy", arguments);
@@ -501,14 +552,23 @@ setInitialValue : function () {
 },
 
 showHelpWindow : function () {
-    var window = this.locatorParent;
-    window.centerInPage();
+    var window = this.locatorParent,
+        top = window ? window.getTop() : this.top,
+        left = window ? window.getLeft() : this.left,
+        width = window ? window.getWidth() : this.width,
+        height = window ? window.getVisibleHeight() : this.getVisibleHeight();
+
+    if (window) window.centerInPage();
+
     if (this.helpWindow && this.helpWindow != null) {
         this.hideHelpWindow();
     } else {
         this.helpIcon.prompt = null;
         this.formulaField.stopHover();
-        window.setLeft(window.left - (window.width / 2));
+
+        left -= (width / 2);
+        if (window) window.setLeft(left);
+
         this.helpWindow = isc.Window.create({
             autoDraw:true,
             title: this.builderTypeText + " Help",
@@ -525,8 +585,8 @@ showHelpWindow : function () {
                 padding: 10
             })]
         });
-        this.helpWindow.moveTo(window.getLeft() + window.getWidth(), window.getTop());
-        this.helpWindow.resizeTo(window.getWidth(), window.getVisibleHeight());
+        this.helpWindow.moveTo(left + width, top);
+        this.helpWindow.resizeTo(width, height);
     }
 },
 
@@ -570,13 +630,15 @@ getCompleteValueObject : function () {
         func = this.generateFunction(),
         properties = { sortNormalizer: func, _generatedFormulaFunc: func,
             userFormula : { text: this.getValue(), formulaVars: {} }
-        };
+        },
+	    fieldIdProperty = this.getFieldIdProperty();
+
 
     if (this.allowEscapedKeys) properties.userFormula.allowEscapedKeys = true;
 
     for (var i=0; i<usedFields.length; i++) {
         var item = usedFields.get(i);
-        properties.userFormula.formulaVars[item.mappingKey] = item[this.component.fieldIdProperty];
+        properties.userFormula.formulaVars[item.mappingKey] = item[fieldIdProperty];
     }
 
     return properties;    
@@ -584,13 +646,14 @@ getCompleteValueObject : function () {
 
 getBasicValueObject : function () {
     var usedFields = this.getUsedFields(),
-        userFormula = { text: this.getValue(), formulaVars: {} };
+        userFormula = { text: this.getValue(), formulaVars: {} },
+	    fieldIdProperty = this.getFieldIdProperty();
 
     if (this.allowEscapedKeys) userFormula.allowEscapedKeys = true;
 
     for (var i=0; i<usedFields.length; i++) {
         var item = usedFields.get(i);
-        userFormula.formulaVars[item.mappingKey] = item[this.component.fieldIdProperty];
+        userFormula.formulaVars[item.mappingKey] = item[fieldIdProperty];
     }
 
     return userFormula;    
@@ -620,7 +683,7 @@ getUpdatedFieldObject : function () {
 testFunction : function () {
     var result = this.getClass().testFunction(this.field, this.getBasicValueObject(), 
         this.component, 
-        this.getUsedFields()
+        this.getFields()
     );
     if (result.failedGeneration || result.failedExecution) {
         this.setTestMessage("Invalid " + this.builderTypeText + ": " + result.errorText);
@@ -642,7 +705,7 @@ testFunction : function () {
 //<
 getTestRecord : function () {
     if (this.testRecord) return this.testRecord;
-    return this.getClass().getTestRecord(this.component);
+    return this.getClass().getTestRecord(this.component, this.getAvailableFields());
 },
 
 setTestMessage: function (message) {
@@ -662,8 +725,15 @@ generateFunction : function () {
         this.component);
 },
 
-// call this to finish working, test the formula and call fireOnClose()
-doneEditing : function () {
+//> @method formulaBuilder.save()
+// Call to finish working, test the formula and call 
+// +link{FormulaBuilder.fireOnClose(), fireOnClose()}.  Called automatically
+// when the Save button is clicked.
+//
+// @group formulaFields
+// @visibility external
+//<
+save : function () {
     var result = this.testFunction();
 
     if (result.emptyTestValue) {
@@ -769,8 +839,8 @@ samplePrompt : "<nobr>For Record: ${title}</nobr><br><nobr>Output: ${output}</no
 //<
 getSamplePrompt : function (result) {
     var titleField = this.dataSource.getTitleField(),
-        output = result.result || "Invalid " + this.builderTypeText,
-        title = this.component.getTitleFieldValue(result.record);
+        output = result.result != null ? result.result : "Invalid " + this.builderTypeText,
+        title = result.record[titleField];
 
     return this.samplePrompt.evalDynamicString(this, { title: title, output: output });
 }
@@ -783,27 +853,32 @@ isc.FormulaBuilder.addClassMethods({
 mappingKeyForIndex : function (index) {
     // Use ascii table for range of A-Z, then repeat as AA, AB, etc.
     // A = 65, Z = 90
-    var key = "";
-    var div = Math.floor(index/26);
+    var key = "",
+        div = Math.floor(index/26);
     for (var i = 0; i < div; i++) key += "A";
     key += String.fromCharCode(65+index%26);
     return key;
 },
 
+getFieldIdProperty : function (component) {
+    return component ? component.fieldIdProperty : "name";
+},
+
 // Get an array of those fields available for use in the formula (based on visibility and 
 // numeric type)
 getAvailableFields : function (fields) {
-    var availableFields = [];
+    var availableFields = [],
+        j=0;
 
     if (!fields) return availableFields;
 
-    for (var i = 0, j = 0; i < fields.getLength(); i++) {
+    for (var i = 0; i < fields.getLength(); i++) {
         var item = fields.get(i),
             type = item.type;
-        
-        if (!item.hidden && 
-            (isc.SimpleType.inheritsFrom(type, "integer") || 
-            isc.SimpleType.inheritsFrom(type, "float")))
+
+        if (item.userFormula ||
+            isc.SimpleType.inheritsFrom(type, "integer") || 
+            isc.SimpleType.inheritsFrom(type, "float"))
         {
             item.mappingKey = isc.FormulaBuilder.mappingKeyForIndex(j++);
             availableFields.add(item);
@@ -839,16 +914,17 @@ getUsedFields : function (formula, fields) {
 // Get an array of those fields used in the formula-string
 getUsedFieldsFromValue : function (value, fields, component) {
     var used = value,
+        fieldIdProperty = this.getFieldIdProperty(component),
         usedFields = [];
 
     for (var key in used) {
         var item = used[key],
-            fieldID = fields.findIndex("name", item);
+            fieldID = fields.findIndex(fieldIdProperty, item);
 
         if (!fields[fieldID]) {
             isc.logWarn("Field " + item + " is not in the list of available-fields");
         } else {
-            var field = isc.clone(fields[fieldID]);
+            var field = isc.addProperties({}, fields[fieldID]);
             field.mappingKey = key;
             usedFields.add(field);
         }
@@ -862,13 +938,13 @@ testFunction : function (field, userFormula, component, usedFields) {
     var result = {};
     try {
         result.component = component;
-        result.record = this.getTestRecord(component);
+        result.record = this.getTestRecord(component, usedFields);
         if (userFormula.text == "") {
             result.emptyTestValue = true;
             return result;
         }
         result.jsFunction = this.generateFunction(userFormula, usedFields, component);
-        result.result = result.jsFunction(result.record);
+        result.result = result.jsFunction(result.record, component);
     } catch (err) {
         if (!result.jsFunction) result.failedGeneration = true;
         result.failedExecution = true;
@@ -877,25 +953,44 @@ testFunction : function (field, userFormula, component, usedFields) {
     return result;
 },
 
-getTestRecord : function (component) {
+getTestRecord : function (component, fields) {
+    var fieldIdProperty = this.getFieldIdProperty(component),
+        record;
 
-    var record = component.getSelectedRecord();
+    if (component) {
+    	record = component.getSelectedRecord();
 
-    if (!record) {
-        if (component.body) {
-            var visibleRows = component.body.getVisibleRows();
-            record = visibleRows ? component.getRecord(visibleRows[0]) : component.data.get(0);
-        } else {
-            record = component.data.get(0);
+        if (!record) {
+            if (component.body) {
+                var visibleRows = component.body.getVisibleRows();
+                record = visibleRows ? component.getRecord(visibleRows[0]) : component.data.get(0);
+            } else {
+                record = component.data.get(0);
+            }
         }
     }
-    if (!record) {
-        // no data to use, build a dummy record from the usedFields
-        var usedFields = this.getUsedFields();
-        record = {};
-        for (var i = 0; i < usedFields.length; i++) {
-            var item = usedFields.get(i);
-            record[item[component.fieldIdProperty]] = 1;
+    if (!record && fields) {
+        // no data to use, build a dummy record from the passed fields
+        record = [];
+        for (var i = 0; i < fields.length; i++) {
+            var item = fields.get(i);
+            
+            if (item.userFormula) {
+                item._generatedFormulaFunc = item.sortNormalizer =
+                    isc.FormulaBuilder.generateFunction(item.userFormula, fields, component);
+            }
+            
+            if (item._generatedFormulaFunc) {
+                // this is a formula - get the value of its _generatedFormulaFunc()
+                record[item[fieldIdProperty]] = item._generatedFormulaFunc(record, component);
+            } else if (item.type) 
+                if (isc.SimpleType.inheritsFrom(item.type, "integer") ||
+                    isc.SimpleType.inheritsFrom(item.type, "float"))
+                {
+                    record[item[fieldIdProperty]] = 1;
+                } else record[item[fieldIdProperty]] = item[fieldIdProperty];
+            else 
+                record[item[fieldIdProperty]] = item[fieldIdProperty]
         }
     }
     return record;
@@ -906,6 +1001,7 @@ getTestRecord : function (component) {
 generateFunction : function (userFormula, fields, component) {
 	var output = isc.SB.create(),
         formula = userFormula.text,
+        fieldIdProperty = this.getFieldIdProperty(component),
         usedFields = this.getUsedFieldsFromValue(userFormula.formulaVars, fields, component);
 
     usedFields = usedFields.sortByProperties([ "mappingKey" ], [false]);
@@ -916,7 +1012,10 @@ generateFunction : function (userFormula, fields, component) {
         for (var i = 0; i < usedFields.length; i++) {
             var item = usedFields.get(i);
             if (i > 0) output.append("        ");
-            output.append(item.mappingKey, "=record.", item[component.fieldIdProperty]);
+            output.append(item.mappingKey, "= (record.", item[fieldIdProperty], " ? ",
+                "record.", item[fieldIdProperty], " : component ? ", 
+                "component.getSpecificFieldValue(record, '",
+                item[fieldIdProperty], "', true) : 0)");
             output.append(i == usedFields.length - 1 ? ";" : ",", "\n");
             if (userFormula.allowEscapedKeys) {
                 formula = formula.replaceAll("#" + item.mappingKey, item.mappingKey);
@@ -943,7 +1042,8 @@ generateFunction : function (userFormula, fields, component) {
 
 	// return the wrapped function
     var content = output.toString();
-    var func = new Function("record", content);
+    
+    var func = new Function("record,component", content);
 	return func;
 
 }
@@ -1075,6 +1175,20 @@ allowBasicMultiCharKeys: false
 
 isc.SummaryBuilder.addMethods({
 
+//> @method summaryBuilder.setSummary()
+// Call to set the format-string in this SummaryBuilder.
+// <P>
+// Note that calling setSummary() will update the UI, generate the summary's function and 
+// test it automatically.
+//
+// @param (String) The new format-string for the summary
+// @group formulaFields
+// @visibility external
+//<
+setSummary : function (newValue) {
+    this.setValue(newValue);
+},
+
 //> @method summaryBuilder.getHelpText()
 // Call to retrieve the text the SummaryBuilder would show by default for help, or override to
 // provide alternate help text.
@@ -1093,16 +1207,20 @@ setInitialValue : function () {
     this.setValue(this.initialValue);
 },
 
+getUniqueFieldName : function () {
+    return this.getNewUniqueFieldName("summaryField");
+},
 
 // Override providing help-text specific to building Summary columns
 getHoverText : function () {
 	var output = isc.SB.create(),
             record = this.getTestRecord(), 
+            fieldIdProperty = this.getFieldIdProperty(),
             fieldA = this.getFieldFromMappingKey("A"),
-            fieldAName = fieldA[this.component.fieldIdProperty],
+            fieldAName = fieldA[fieldIdProperty],
             fieldATitle = fieldA.title,
             fieldB = this.getFieldFromMappingKey("B"),
-            fieldBName = fieldB ? fieldB[this.component.fieldIdProperty] : null,
+            fieldBName = fieldB ? fieldB[fieldIdProperty] : null,
             fieldBTitle = fieldB ? fieldB.title : null
         ;
 
@@ -1144,6 +1262,7 @@ getUsedFields : function () {
 getCompleteValueObject : function () {
     var usedFields = this.getUsedFields(),
         func = this.generateFunction(),
+        fieldIdProperty = this.getFieldIdProperty(),
         properties = { sortNormalizer: func, _generatedSummaryFunc: func,
             userSummary : { text: this.getValue()
             }
@@ -1154,7 +1273,7 @@ getCompleteValueObject : function () {
         for (var i = 0; i < usedFields.length; i++) {
             var item = usedFields.get(i);
             properties.userSummary.summaryVars[item.mappingKey] = 
-                item[this.component.fieldIdProperty];
+                item[fieldIdProperty];
         }
     }
 
@@ -1164,11 +1283,12 @@ getCompleteValueObject : function () {
 // return the basic set of properties for the builder-type, excluding field-title and functions
 getBasicValueObject : function () {
     var usedFields = this.getUsedFields(),
+        fieldIdProperty = this.getFieldIdProperty(),
         userSummary = { text: this.getValue(), summaryVars: {} };
 
     for (var i=0; i<usedFields.length; i++) {
         var item = usedFields.get(i);
-        userSummary.summaryVars[item.mappingKey] = item[this.component.fieldIdProperty];
+        userSummary.summaryVars[item.mappingKey] = item[fieldIdProperty];
     }
 
     return userSummary;    
@@ -1194,7 +1314,6 @@ initWidget: function(){
 // @visibility external
 //<
 
-
 });
 
 isc.SummaryBuilder.addClassMethods({
@@ -1207,7 +1326,7 @@ getAvailableFields : function (fields) {
 
     for (var i = 0, j = 0; i < fields.getLength(); i++) {
         var item = fields.get(i);
-        if (!item.hidden && !item.userSummary) {
+        if (!item.userSummary) {
             item.mappingKey = isc.FormulaBuilder.mappingKeyForIndex(j++);
             availableFields.add(item);
         }
@@ -1236,40 +1355,20 @@ getUsedFields : function (formula, fields, allowBasicMultiCharKeys) {
     return usedFields;
 },
 
-// Get an array of those fields used in the format-string
-getUsedFieldsFromValue : function (value, fields, component) {
-    var used = value,
-        usedFields = [];
-
-    for (var key in used) {
-        var item = used[key],
-            fieldID = fields.findIndex(component.fieldIdProperty, item);
-        
-        if (!fields[fieldID]) {
-            isc.logWarn("Field " + item + " is not in the list of available-fields");
-        } else {
-            var field = isc.clone(fields[fieldID]);
-            field.mappingKey = key;
-            usedFields.add(field)
-        }
-    }
-
-    return usedFields;
-},
-
 // Test the format-string by generating it's function and trying to run it.
 // "userSummary" is the properties in field.userSummary
 testFunction : function (field, userSummary, component, usedFields){
-    var result = {};
+    var result = {},
+        fieldIdProperty = this.getFieldIdProperty(component);
     try {
         result.component = component;
-        result.record = this.getTestRecord(component);
+        result.record = this.getTestRecord(component, usedFields);
         if (userSummary.text == "") {
             result.emptyTestValue = true;
             return result;
         }
         result.jsFunction = this.generateFunction(userSummary, usedFields, component);
-        result.result = result.jsFunction(result.record, field[component.fieldIdProperty], component);
+        result.result = result.jsFunction(result.record, field[fieldIdProperty], component);
 
     } catch (err) {
         if (!result.jsFunction) result.failedGeneration = true;
@@ -1283,6 +1382,7 @@ testFunction : function (field, userSummary, component, usedFields){
 generateFunction : function (userSummary, fields, component) {
 	var output = isc.SB.create(),
         format = userSummary.text,
+        fieldIdProperty = this.getFieldIdProperty(component),
         usedFields = this.getUsedFieldsFromValue(userSummary.summaryVars, fields, component);
 
     usedFields = usedFields.sortByProperties([ "mappingKey" ], [false]);
@@ -1293,8 +1393,9 @@ generateFunction : function (userSummary, fields, component) {
         for (var i = 0; i < usedFields.length; i++) {
             var item = usedFields.get(i);
             if (i > 0) output.append("        ");
-            output.append(item.mappingKey, "=component.getSpecificFieldValue(record,'",
-                item[component.fieldIdProperty], "'");
+            output.append(item.mappingKey, "=(component ? component.getSpecificFieldValue(record,'",
+                item[fieldIdProperty], "') : record['", item[fieldIdProperty],
+                "']");
             output.append(i == usedFields.length - 1 ? ");" : "),", "\n");
             // first replace tokens in the format #{key}, then in the format #key
             format = format.replaceAll("#{" + item.mappingKey + "}", "'+" + item.mappingKey + "+'");

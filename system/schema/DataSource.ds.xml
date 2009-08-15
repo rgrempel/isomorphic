@@ -112,6 +112,12 @@ Validator.ds.xml
         <showLocalFieldsOnly type="boolean" xmlAttribute="true"/>
 
         <globalNamespaces type="Object"/>
+        
+        <autoDeriveSchema type="boolean"/>
+        <useLocalValidators type="boolean"/>
+        <autoDeriveTitles type="boolean"/>
+        <qualifyColumnNames type="boolean"/>
+        
     </fields>
 </Object>
 

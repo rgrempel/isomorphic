@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -38,7 +38,7 @@ isc.ListEditor.addProperties({
     //> @attr listEditor.vertical (boolean : false : IR)
     // Whether the form and grid should be shown vertically stacked or horizontally adjacent.
     // <P>
-    // Ignored when +link{inlinEdit} is true, since form is then shown in a pop-up.
+    // Ignored when +link{inlineEdit} is true, since form is then shown in a pop-up.
     //
     // @visibility listEditor
     //< 
@@ -53,8 +53,12 @@ isc.ListEditor.addProperties({
         autoParent:"listLayout",
         selectionType:isc.Selection.SINGLE,
         recordClick:"this.creator.recordClick(record)",
-        editorEnter:"this.creator.moreButton.enable()",
-        selectionChanged:"if (this.anySelected()) this.creator.moreButton.enable()",
+        editorEnter:"if (this.creator.moreButton) this.creator.moreButton.enable()",
+        selectionChanged: function() {
+            if (this.anySelected() && this.creator.moreButton) {
+                this.creator.moreButton.enable();
+            }
+        },
         contextMenu : {
             data : [
                 {title:"Remove", click: "target.creator.removeRecord()" }
@@ -217,7 +221,10 @@ isc.ListEditor.addProperties({
         }
     },
     setData : function (data) {
-        if (data != null && data.dataSource) this.setDataSource(data.dataSource);
+
+        if (data == null) data = [];
+    
+        if (data.dataSource) this.setDataSource(data.dataSource);
         if (this.list != null) {
             this.list.setData(data);
             this.form.clearValues();
@@ -258,14 +265,19 @@ isc.ListEditor.addProperties({
         if (this.inlineEdit) return;
         
         
-        var proceed  = function () {
-            if (!this.inlineEdit) this.editRecord(record);
-            this.form.setValues(isc.addProperties({}, this.list.getSelectedRecord()));
+        var _this = this;
+        
+        var proceed  = function (ok) {
+            if (ok) {
+                _this.currentRecord = record;
+                if (!_this.inlineEdit) _this.form.editRecord(record);
+                _this.form.setValues(isc.addProperties({}, _this.list.getSelectedRecord()));
+            }
         }
 
         // editing in parallel form: if there are changes, pop up a warning that this will
         // abandon changes to the currently edited item
-        if (!this.form.valuesHaveChanged()) proceed();
+        if (!this.form.valuesHaveChanged()) proceed(true);
         else this.confirmLoseChanges(proceed);
     },
 
@@ -280,22 +292,27 @@ isc.ListEditor.addProperties({
 
     // More... button, inlineEdit only
     editMore : function () {
+        this.currentRecord = this.getEditRecord();
         this.showForm();
-        this.form.setValues(this.getEditRecord());
+        this.form.setValues(this.currentRecord);
     },
 
     newRecord : function () {
-        if (this.inlineEdit) return this.list.startEditingNew()
+        if (this.inlineEdit) return this.list.startEditingNew();
+        
+        var _this = this;
 
-        var proceed = function () {
-            this.list.deselectAllRecords();
-            this.showForm();
-            this.form.editNewRecord();
+        var proceed = function (ok) {
+            if (ok) {
+                _this.list.deselectAllRecords();
+                _this.showForm();
+                _this.form.editNewRecord();
+            }
         }
 
         // editing in parallel form: if there are changes, pop up a warning that this will
         // abandon changes to the currently edited item
-        if (!this.form.valuesHaveChanges()) proceed();
+        if (!this.form.valuesHaveChanged()) proceed(true);
         else this.confirmLoseChanges(proceed);
     },
 
@@ -330,7 +347,7 @@ isc.ListEditor.addProperties({
     },
 
     confirmLoseChanges : function (callback) {
-        isc.confirm(this.confirmLoseChangesMessages, callback);
+        isc.confirm(this.confirmLoseChangesMessage, callback);
     },
 
     //

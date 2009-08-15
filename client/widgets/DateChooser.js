@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -347,8 +347,9 @@ isc.DateChooser.addMethods({
     // @return (Date) current date
     // @visibility external
     //<
+    
     getData : function () {
-        return this.lastSelectedDate || this.chosenDate;
+        return this.chosenDate;
     },    
 
 	getInnerHTML : function () {
@@ -579,6 +580,7 @@ isc.DateChooser.addMethods({
         if (date == null) 
             return this.getCellButtonHTML("&nbsp;", null, style, false, false, isc.Canvas.CENTER);
         
+        
 		var selected = (this.chosenDate && (date.toShortDate() == this.chosenDate.toShortDate())),
             disabled = (date.getMonth() != this.month);
 
@@ -716,7 +718,7 @@ isc.DateChooser.addMethods({
 	},
 
 	dateClick : function (year, month, day) {
-		var date = this.lastSelectedDate = new Date(year, month, day);
+        var date = this.chosenDate = new Date(year, month, day);
 
         this.dataChanged();
 
@@ -731,6 +733,11 @@ isc.DateChooser.addMethods({
 
         if (this.autoHide) this.hide();
 		if (this.autoClose) this.close();
+        
+        // If we're still drawn, redraw to show the selected styling on the new selected date
+        // button.
+        if (this.isDrawn()) this.markForRedraw();
+        
 		return date;
 	},
     

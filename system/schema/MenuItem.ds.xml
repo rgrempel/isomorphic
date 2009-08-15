@@ -18,6 +18,7 @@
         <field name="dynamicTitle" type="expression"/>
         <field name="dynamicIcon" type="expression"/>
         <field name="action" type="Action" editorType="ActionMenuItem"/>
+        <field name="canSelectParent" type="boolean"/>
 	</fields>
 	<types>
 		<type ID="key">

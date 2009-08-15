@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -380,7 +380,7 @@ layoutTiles : function (mode) {
         if (this.shouldUseIncrRendering()) {
             var tileRange = this.getVisibleTiles();
             // store visible tile range for subclasses that may want to use it (TileGrid, etc.)
-            // these values will be return by getDrawnStartIndex() getDrawnEndIndex(), which subclasses
+            // these values will be returned by getDrawnStartIndex() getDrawnEndIndex(), which subclasses
             // should use to access these values
             this._lastVisibleTiles = tileRange;
             tileNum = tileRange[0];
@@ -388,16 +388,18 @@ layoutTiles : function (mode) {
             var lineRange = this.getVisibleLines();
             startLine = lineRange[0];
             endLine = lineRange[0] + lineRange[1];
-            
+            // make sure all visible tiles are present. If not, return. 
+            // Relevent for databound subclasses (TileGrid etc)
+            if (!this.hasAllVisibleTiles(tileRange, true)) return;
         } else {
             totalTiles = numTiles;
             tileNum = 0;
             startLine = 0;
             endLine = Math.ceil(totalTiles / tPerLine);
             tHMargin = this.getTileHMargin();
-            tVMargin = this.getTileVMargin();
-                        
+            tVMargin = this.getTileVMargin();       
         }
+        
         // set up the spacer canvas for all rendering options so that the layoutMargin can 
         // always be created and show up on the bottom.
         var totNumLines = Math.ceil(numTiles / tPerLine);
@@ -416,6 +418,7 @@ layoutTiles : function (mode) {
         
         // get the extra pixels before begining actual tile layout
         extraPixels = this.getExtraMarginPixels(tPerLine, tHeight, tWidth, tHMargin, tVMargin);
+        //isc.logWarn('layoutTiles:' + [tileRange[0], tileRange[1]]);
         for (var i = startLine; i < endLine; i++) {
             // keep track of extra pixels to divide among tiles 
             var exPixels = extraPixels;
@@ -449,7 +452,12 @@ layoutTiles : function (mode) {
             if (tileNum >= totalTiles) break;
         }
     }
+   
 },
+
+// This function is more for the sake of databound superclasses (TileGrid). 
+// For tilelayout just return true.
+hasAllVisibleTiles : function () { return true; },
 
 // flag so that superclasses (i.e. TileGrid) can turn manual tile hiding off
 _enableUserHiding: true,
@@ -466,6 +474,7 @@ getUserVisibleTiles : function () {
 // tileNum can be the index of a given tile (TileGrid), or the tile itself (TileLayout)
 processTile : function (tileNum, top, left, height , width) {
     var tile;
+    
     if (this._animating) {
         
         if (isc.isA.Canvas(tileNum)) tile = tileNum;
@@ -494,8 +503,11 @@ processTile : function (tileNum, top, left, height , width) {
              this._visibleTiles.add(tile);
         }
     } else {
+        //isc.logWarn('processing tile: ' + tileNum);
         if (isc.isA.Canvas(tileNum)) tile = tileNum;
         else tile = this.getTile(tileNum);
+       
+       
         // redraw dirty tiles
         if (tile.isDirty()) tile.redraw();
         // set height and width here
@@ -630,7 +642,9 @@ scrolled : function () {
 
 layoutAfterScroll : function () {
     this.logDebug('layoutAfterScroll', "TileLayout");
-    if (this.shouldLayoutTiles()) this.layoutTiles(); 
+    if (this.shouldLayoutTiles()) {
+        this.layoutTiles();
+    } 
 },
 
 shouldLayoutTiles : function () {

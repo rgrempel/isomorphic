@@ -8,5 +8,8 @@
 		<field name="value"			type="HTML" />
 		<field name="width"			type="positiveInteger" visibility="internal"/>
 		<field name="height"		type="positiveInteger" />
+        <field name="imageSize" type="number"/>
+        <field name="imageWidth" type="number"/>
+        <field name="imageHeight" type="number"/>
 	</fields>
 </DataSource>

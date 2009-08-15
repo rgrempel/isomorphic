@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2038,7 +2038,8 @@ dataChanged : function () {},
 //	                                        the node. 
 // @param	[position]	(number)	Position of the new node in the children list. If not
 //	                                specified, the node will be added at the end of the list.
-// @return				(TreeNode)      The added node.
+// @return (TreeNode or null) The added node. Will return null if the node was not added (typically
+//    because the specified <code>parent</code> could not be found in the tree).
 //
 // @see group:sharingNodes
 // @see method:Tree.addList
@@ -2052,8 +2053,9 @@ add : function (node, parent, position) {
 	if (isc.isA.String(parent)) parent = this.find(parent);
     else if (!this.getParent(parent) && parent !== this.getRoot()) {
         // if parent is not in the tree, bail
-        isc.logWarn('Tree.add(): parent is not in the tree, returning');
-        return;
+        isc.logWarn('Tree.add(): specified parent node:' + this.echo(parent) +
+                    ' is not in the tree, returning');
+        return null;
     }
 	// if the parent wasn't found, return null
 	// XXX note that we could actually add to the root, but that's probably not what you want
@@ -2061,7 +2063,7 @@ add : function (node, parent, position) {
 		// get the parentName of the node
 		var parentPath = this.getParentPath(node);
 		if (parentPath) parent = this.find(parentPath);
-		if (! parent) return false;
+		if (! parent) return null;
 	}
 
     this._add(node, parent, position);
@@ -2916,7 +2918,7 @@ _makeOpenNormalizer : function () {
 
     // optionally sort by sortProp
     if (property && property != "title") {
-        script.append("var prop = obj.", property, ";",
+        script.append("var prop = obj['", property, "'];",
                       
                       "if (isc.isA.Number(prop)) prop = prop.stringify(12);",
                       "if (isc.isA.Date(prop)) prop = prop.getTime();",

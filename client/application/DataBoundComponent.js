@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -75,6 +75,17 @@ isc.Canvas.addProperties({
 // @visibility external
 // @example dataSourceFields
 //<										
+
+//> @attr dataBoundComponent.dataFetchMode (FetchMode : "paged" : IRW)
+// How to fetch and manage records retrieve from the server.  See +link{type:FetchMode}.
+// <P>
+// This setting only applies to the +link{ResultSet} automatically created by calling
+// +link{fetchData()}.  If a pre-existing ResultSet is passed to setData() instead, it's
+// existing setting for +link{resultSet.fetchMode} applies.
+//
+// @group databinding
+// @visibility external
+//< 
 
 //> @attr dataBoundComponent.dataPageSize (number : 75 : IRW)
 // When using data paging, how many records to fetch at a time.  The value of this
@@ -459,6 +470,10 @@ getField : function (fieldId) {
 
 getFieldNum : function (fieldId) {
     if (!this.fields) return -1;
+    // handle being passed a field object (or a clone of a field object)
+    if (isc.isA.Object(fieldId) && (fieldId[this.fieldIdProperty] != null)) {
+        fieldId = fieldId[this.fieldIdProperty];
+    }
     return isc.Class.getArrayItemIndex(fieldId, this.fields, this.fieldIdProperty);
 },
 
@@ -485,9 +500,49 @@ evalViewState : function (state, stateName, suppressWarning) {
     
 },
 
+// DBC-level fieldState methods
+getFieldState : function (includeTitle) {
+    var fieldStates = [];
+    var allFields = this.getAllFields();
+    if (allFields) {
+        for (var i = 0; i < allFields.length; i++) {
+            var field = allFields[i],
+                fieldName = field[this.fieldIdProperty],
+                fieldState = this.getStateForField(fieldName)
+            ;
+            fieldStates.add(fieldState);
+        }
+    }
+
+    return isc.Comm.serialize(fieldStates);
+},
+
+// get the state for a given field by name
+getStateForField : function (fieldName, includeTitle) {
+    var field = this.getAllFields().find(this.fieldIdProperty, fieldName),
+        fieldState = { name:fieldName };
+
+    if (!this.fieldShouldBeVisible(field)) fieldState.visible = false;
+    // store the userFormula if this is a formula field
+    if (field.userFormula) fieldState.userFormula = field.userFormula;
+    // store the userSummary if one is present
+    if (field.userSummary) fieldState.userSummary = field.userSummary;
+
+    // auto-persist title for formula / summary fields, since it's user entered
+    if (includeTitle || field.userSummary || field.userFormula) {
+    	fieldState.title = field.title;
+    }
+
+    if (this.getSpecifiedFieldWidth) fieldState.width = this.getSpecifiedFieldWidth(field);
+
+    return fieldState;
+},
+
 // internal method that modifies this.completeFields according to the fieldState argument
 // doesn't redraw the LG; call setFieldState instead.
-_setFieldState : function (fieldState) {
+// -- DetailViewer has no way of removing unwanted fields from the fields array, so add an
+// optional param hideExtraDSFields to add the additional fields from the DS with showIf:"false"
+_setFieldState : function (fieldState, hideExtraDSFields) {
     if (fieldState == null) return;
     var allFields = this.getAllFields();
     var remainingFields = allFields.getProperty(this.fieldIdProperty),
@@ -525,29 +580,33 @@ _setFieldState : function (fieldState) {
     //   otherwise, place it after the last visible field if it's visible, or last field
     //    altogether if not
     for (var i = 0; i < remainingFields.length; i++) {
-        var name = remainingFields[i],
-            index = allFields.findIndex(this.fieldIdProperty, name),
-            field = allFields[index],
-            precedingField = allFields[index-1]
-        ;
+        var name = remainingFields[i], 
+            index = allFields.findIndex(this.fieldIdProperty, name), 
+            field = allFields[index], 
+            precedingField = allFields[index - 1];
+
+        if (hideExtraDSFields) field.showIf = this._$false;
         
         if (precedingField != null) {
             var precedingIndex = completeFields.indexOf(precedingField);
             if (precedingIndex != -1) {
-                completeFields.addAt(field, precedingIndex+1);
+                completeFields.addAt(field, precedingIndex + 1);
                 continue;
             }
         }
-        if (this.fieldShouldBeVisible(field, index)) {
-            completeFields.addAt(field, this._lastVisibleFieldIndex(completeFields)+1);
+
+        if (this.fieldShouldBeVisible(field, index) && !hideExtraDSFields) {
+            completeFields.addAt(field, this._lastVisibleFieldIndex(completeFields) + 1);
         } else {
             completeFields.add(field);
         }
     }
-    
     //this.completeFields = completeFields;
     return completeFields;
 },
+
+// observe this method to be notified on column resize or reorder and show/hide field
+fieldStateChanged : function () {},
 
 // returns the last visible field in an array of fields
 _lastVisibleFieldIndex : function (fields) {
@@ -690,7 +749,7 @@ fieldValuesAreEqual : function (field, value1, value2) {
             return (Date.compareDates(value1, value2) == 0);
         }
     } else if (field.type == "valueMap") {
-        if (isc.isAnArray(value1) && isc.isAn.Array(value2)) {
+        if (isc.isAn.Array(value1) && isc.isAn.Array(value2)) {
             return value1.equals(value2)
             
         } else if (isc.isAn.Object(value1) && isc.isAn.Object(value2)) {
@@ -1162,7 +1221,10 @@ exportData : function (requestProperties) {
             vFields = [];
             for (var i = 0; i < this.fields.length; i++) {
                 var field = this.fields.get(i);
-                if (!field.hidden && !field.userFormula && !field.userSummary) vFields.add(field.name);
+                if (!field.hidden && !field.userFormula && !field.userSummary) {
+                    vFields.add(field.name);
+                    if (field.displayField) vFields.add(field.displayField);
+                }
             }
         }
         if (vFields && vFields.length > 0) requestProperties.exportFields = vFields;
@@ -1389,6 +1451,9 @@ requestVisibleRows : function () {
 //<
 invalidateCache : function () {
     if (this.data && this.data.invalidateCache != null) return this.data.invalidateCache();
+    // currently only valid for ListGrid: make sure when invalideCache() is called we re-fetch 
+    // (and regroup) the data if grouped. 
+    else if (this.isGrouped) this.fetchData();
 },
 
 
@@ -1512,7 +1577,7 @@ _performDSOperation : function (operationType, data, callback, requestProperties
 // If no records are selected, no action is taken. The grid will automatically be
 // updated if the record deletion succeeds.
 //
-// @param [callback] (callback) callback to fire when the data has been removed
+// @param [callback] (DSCallback) callback to fire when the data has been removed
 // @param [requestProperties] (DSRequest)   additional properties to set on the DSRequest
 //                                          that will be issued
 //
@@ -1620,6 +1685,9 @@ createSelectionModel : function () {
 
     
     if (this.canSelectCells && this.fields != null) params.numCols = this.fields.length;
+    
+    // Copy our "enabled" property across if we have one.
+    if (this.recordEnabledProperty != null) params.enabledProperty = this.recordEnabledProperty;
     
 	// if the data object supports a special selection class, use it
 	if (this.data.getNewSelection) {
@@ -2314,18 +2382,39 @@ editHilites : function () {
 // such as +link{ListGrid,listGrid}, +link{TreeGrid,treeGrid} or +link{TileGrid,tileGrid}
 // <P>
 // This method implements the automatic drag-copy and drag-move behaviors of components like
-// +link{ListGrid}.
+// +link{ListGrid}, and calling it is equivalent to completing a drag and drop of the
+// <code>dropRecords</code>.
+// <P>
+// See also +link{transferSelectedData}.
 //
 // @param dropRecords (Array of Record) Records to transfer to this component
 // @param targetRecord (Record) The target record (eg, of a drop interaction), for context
 // @param index (integer) Insert point in this component's data for the transferred records
-// @param sourceWidget Canvas The databound or non-databound component from which the records
+// @param sourceWidget (Canvas) The databound or non-databound component from which the records
 //                            are to be transferred. 
 //
 // @group dragdrop
 // @visibility external
 //<
 transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
+
+    if (!isc.isAn.Array(this._dropRecords)) this._dropRecords = [];
+    this._dropRecords.add({
+        dropRecords: dropRecords,
+        targetRecord: targetRecord,
+        index: index,
+        sourceWidget: sourceWidget
+    });
+
+    if (this._transferDuplicateQuery && this._transferDuplicateQuery != 0) {
+        isc.logWarn("transferRecords was invoked but the prior transfer is not yet complete - \
+                     the transfer will be queued up to run after the current transfer");
+        return;
+    }
+
+    this._transferringRecords = true;
+    this._transferExceptionList = [];
+    this._transferDuplicateQuery = 0;
 
     // If this component is databound but has not yet issued a fetchData(), we need to 
     // initialize the ResultSet before adding records, otherwise cache sync will not be in
@@ -2354,12 +2443,14 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
         // an update to the source nodes - by default, changing them to match the current 
         // filter criteria of this grid
         if (dataSource && dataSource == sourceDS && sourceWidget.dragDataAction == isc.Canvas.MOVE) {
+            var wasAlreadyQueuing = isc.rpc.startQueue();
             for (var i = 0; i < dropRecords.length; i++) {
                 var record = dropRecords[i];
                 isc.addProperties(record, this.getDropValues(record, sourceDS, 
                                           targetRecord, index, sourceWidget));
                 this._updateDataViaDataSource(record, sourceDS);                          
             }
+            if (!wasAlreadyQueuing) isc.rpc.sendQueue();
         } else {
     		if (!isc.isAn.Array(dropRecords)) dropRecords = [dropRecords];
 
@@ -2377,7 +2468,7 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
 
             
             if (dataSource) {
-                var wasAlreadyQueuing = isc.rpc.startQueue();
+                this._wasAlreadyQueuing = isc.rpc.startQueue();
                 for (var i = 0; i < dropRecords.length; i++) {
                     // groups contain circular references which will hang at clone - skip
                     if (dropRecords[i]._isGroup) continue;
@@ -2428,10 +2519,8 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
                         }
                     }
                                             
-                    this._addIfNotDuplicate(record, sourceDS, fks, null);
+                    this._addIfNotDuplicate(record, sourceDS, sourceWidget, fks);
                 }
-                // send the queue unless we didn't initiate queuing
-                if (!wasAlreadyQueuing) isc.rpc.sendQueue();
             } else {
                 // handle grouping
                 if (this.isGrouped) {
@@ -2439,13 +2528,17 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
                     for (var i = 0; i < dropRecords.length; i++) {
                         if (!this._isDuplicateOnClient(dropRecords[i])) {
                             this._addRecordToGroup(dropRecords[i], true);
-                            if (index != null) this.originalData.addAt(dropRecords, index);
-                            else this.originalData.add(dropRecords);
+                            
+                            // add to originalData
+                            // Ignore the index in this case - it will refer to the position within
+                            // the tree which doesn't map to a position within the original data
+                            // array
+                            this.originalData.add(dropRecords[i]);
                         }
                     }
                     // add to originalData
-                    if (index != null) this.originalData.addListAt(dropRecords, index);
-                    else this.originalData.addList(dropRecords);
+                    //if (index != null) this.originalData.addListAt(dropRecords, index);
+                    //else this.originalData.addList(dropRecords);
                    
                 } else {
                     // If we've been passed an index respect it - this will happen if canReorderRecords
@@ -2453,12 +2546,20 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
                     
                     for (var i = 0; i < dropRecords.length; i++) {
                         if (index != null) {
-                            this._addIfNotDuplicate(dropRecords[i], null, null, index);
-                            // Because we're adding one-at-a-time, increment the index - otherwise, the 
-                            // effect will be to insert into the grid in reverse order
-                            index++;
+                        
+                            // Although _addIfNotDuplicate is an asynchronous method, we know
+                            // that this particular invocation of it will be synchronous (because
+                            // there's no DataSource and thus no server contact), so if it returns
+                            // false, we know authoritatively that no data was added and thus 
+                            // index should not be incremented
+                            if (this._addIfNotDuplicate(dropRecords[i], null, sourceWidget, 
+                                                                        null, index)) {
+                                // Because we're adding one-at-a-time, increment the index - otherwise,
+                                // the effect will be to insert into the grid in reverse order
+                                index++;
+                            }
                         } else {
-                            this._addIfNotDuplicate(dropRecords[i]);
+                            this._addIfNotDuplicate(dropRecords[i], null, sourceWidget);
                         }
                     }  
                 }
@@ -2471,13 +2572,25 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
 	if (this.canReorderRecords && this._getSortFieldNum() != null) {
 		this.unsort();
 	}
+
+    // If this._transferDuplicateQuery is undefined or 0,we didn't need to fire any server 
+    // queries, so we can call transferDragData to complete the transfer and send the queue 
+    // of updates to the server 
+    if (!this._transferDuplicateQuery) {
+        isc.Log.logDebug("Invoking transferDragData from inside transferRecords - no server \
+                         queries needed?", "dragDrop");
+        sourceWidget.transferDragData(this._transferExceptionList, this);
+        if (dataSource) {
+            // send the queue unless we didn't initiate queuing
+            if (!this._wasAlreadyQueuing) isc.rpc.sendQueue();
+        }
+    }
+    
+    this._transferringRecords = false;
+    
 },
 
-// Helper to update via the dataSource if there are no duplicates (or dups are allowed)
-// This method is called as a result of a drag-move, and as such it should not do a PK
-// check.  Rather, it should always do a check on the entire record, to see if it 
-// already exists in the target grid.  If it does, that is not an error - we should 
-// scroll to and/or flash the existing record, rather than alerting an error.
+
 _updateDataViaDataSource : function(record, ds, updateProperties) {
     
     if (!this.preventDuplicates) {
@@ -2487,7 +2600,7 @@ _updateDataViaDataSource : function(record, ds, updateProperties) {
     
     var criteria = this.getCleanRecordData(record);
     
-    if (this.data.find(criteria)) {
+    if (this.data.find(criteria, null, Array.DATETIME_VALUES)) {
         // WXX - position to the duplicate record here
     } else {
         // If we have a full cache, we can go ahead and update now
@@ -2498,8 +2611,7 @@ _updateDataViaDataSource : function(record, ds, updateProperties) {
             ds.fetchData(criteria, 
                          function (dsResponse, data, dsRequest) {
                             if (data && data.length > 0) {
-                                // WXX - position to the duplicate record here - we know it isn't 
-                                // in the cache, so it's going to cause us some fun...
+                                
                             } else {
                                 ds.updateData(record, null, updateProperties);
                             }
@@ -2511,7 +2623,7 @@ _updateDataViaDataSource : function(record, ds, updateProperties) {
 },
 
 //> IDocument
-// Helper to add a record if it is not a duplicate, or duplicates are allowed.
+// Helper to add a record if it is not a duplicate, or if duplicates are allowed.
 // There are four distinct different types of dup-checking we need to do:
 // 1. Source DS is the same as target DS, and it has a primary key
 // 2. Source DS is the same as target DS, and it does not have a primary key
@@ -2539,7 +2651,7 @@ _updateDataViaDataSource : function(record, ds, updateProperties) {
 // whose data model is List, Tree, ResultSet or ResultTree); the "folder" parameter
 // is only used if the underlying dataset is a Tree or ResultTree.
 //< IDocument
-_addIfNotDuplicate : function(record, sourceDS, foreignKeys, index, folder) {
+_addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, index, folder) {
     var ds = this.getDataSource(), 
         pks;
         
@@ -2574,7 +2686,7 @@ _addIfNotDuplicate : function(record, sourceDS, foreignKeys, index, folder) {
                 record[field] = undef;
             }
             ds.addData(record);
-            return;
+            return true;
         }
     }
     
@@ -2589,28 +2701,33 @@ _addIfNotDuplicate : function(record, sourceDS, foreignKeys, index, folder) {
                 else this.data.add(record);
             }
         }
-        return;
+        return true;
     }        
  
     if (this._isDuplicateOnClient(record, sourceDS, foreignKeys)) {
         isc.warn(this.duplicateDragMessage);
+        isc.Log.logDebug("Found client-side duplicate, adding '" + 
+                         record[isc.firstKey(record)] + 
+                         "' to exception list", "dragDrop");
+        this._transferExceptionList.add(this.getCleanRecordData(record));
+        return false;
     } else {
         if (!ds) {
             // Simplest case - no DS and no dup on client-side, so go ahead and add the record to
             // the underlying data model
             if (isc.Tree && isc.isA.Tree(this.data)) {
                 this.data.add(record, folder, index);
+                return true;
             } else {
                 if (index != null) this.data.addAt(record, index);
                 else this.data.add(record);
+                return true;
             }
         } else { 
             if (!isc.ResultSet || !isc.isA.ResultSet(this.data)) {
-                // Weird.  We have a DataSource but our data model is not a ResultSet.  Since there's no 
-                // server to query, we'll just treat the failed client-side dup-search as if it were 
-                // authoritative and allow the add.  This is definitely an edge case...
+                
                 ds.addData(record);
-                return;
+                return true
             } else {
                 // If we're dropping in a grid bound to a DS different from the source DS
                 // and the two are related by foreignKey(s) (ie, the fks object is non-null), this is a 
@@ -2619,9 +2736,10 @@ _addIfNotDuplicate : function(record, sourceDS, foreignKeys, index, folder) {
                 // complete cache for the current filter criteria, we don't need to query the server.
                 // This is not true for other copying scenarios, where we need a complete, unfiltered
                 // cache to avoid the server query.
-                if (this.data.allRowsCached() || (foreignKeys && this.data.allMatchingRowsCached())) {
+                if (this.data.allRowsCached() || 
+                    (foreignKeys && isc.firstKey(foreignKeys) && this.data.allMatchingRowsCached())) {
                     ds.addData(record);
-                    return;
+                    return true;
                 }
                 // We have a dataSource and client-side search failed to find a duplicate.  We need a 
                 // server turnaround to know for sure whether we're proposing to add a duplicate
@@ -2633,7 +2751,7 @@ _addIfNotDuplicate : function(record, sourceDS, foreignKeys, index, folder) {
                         // Source DS and target DS are the same and we have no primary key
                         criteria = this.getCleanRecordData(record);
                     }
-                } else if (foreignKeys) {
+                } else if (foreignKeys && isc.firstKey(foreignKeys)) {
                     // Source DS and target DS are different but related via a foreign key
                     criteria = isc.addProperties({}, this.data.getCriteria());
                     isc.addProperties(criteria, foreignKeys);
@@ -2642,21 +2760,39 @@ _addIfNotDuplicate : function(record, sourceDS, foreignKeys, index, folder) {
                     criteria = this.getCleanRecordData(record);
                 }
                 var _listGrid = this;
-                ds.fetchData(criteria, 
-                             function (dsResponse, data, dsRequest) {
-                                if (data && data.length > 0) {
-// WXX - It is possible to get to this point having done a drag-move to a databound grid, where
-// the source widget is either not databound, or bound to a different DS, but nevertheless we 
-// have managed to establish that there is a duplicate involved - perhaps the dataSources have 
-// the same synthetic key field name, or one grid is based on a simple memory array with the 
-// same structure as the DS, or something.  What we should really do is detect this occurence
-// and scroll to the duplicate row/node; but for now we'll just report it as an error.
-                                    isc.warn(_listGrid.duplicateDragMessage);
-                                } else {
-                                    ds.addData(record);
-                                }
-                            },
-                        {sendNoQueue: true});
+                isc.Log.logDebug("Incrementing dup query count: was " + 
+                                 _listGrid._transferDuplicateQuery, "dragDrop");
+                this._transferDuplicateQuery++;
+                ds.fetchData(criteria, function (dsResponse, data, dsRequest) {
+                    if (data && data.length > 0) {
+
+                        isc.warn(_listGrid.duplicateDragMessage);
+                        isc.Log.logDebug("Found server-side duplicate, adding '" + 
+                                     record[isc.firstKey(record)] + 
+                                     "' to exception list", "dragDrop");
+                        _listGrid._transferExceptionList.add(_listGrid.getCleanRecordData(record));
+                    } else {
+                        ds.addData(record, null, {sendNoQueue: false});
+                    }
+                    // If there are no further duplicate queries pending, we know exactly which
+                    // attempted transfers were duplicates (if any), so we're in a position to 
+                    // remove the source records if this was a MOVE, and to send the queue of 
+                    // updates to the server
+                    isc.Log.logDebug("Decrementing dup query count: was " + 
+                                     _listGrid._transferDuplicateQuery, "dragDrop");
+                    if (--_listGrid._transferDuplicateQuery == 0 && 
+                        !_listGrid._transferringRecords) {
+                        if (sourceWidget.dragDataAction == isc.Canvas.MOVE) {
+                            isc.Log.logDebug("Invoking transferDragData from inside callback", "dragDrop");
+                            sourceWidget.transferDragData(_listGrid._transferExceptionList, _listGrid);
+                            delete _listGrid._transferExceptionList;
+                            // send the queue unless we didn't initiate queuing
+                            if (!_listGrid._wasAlreadyQueuing) isc.rpc.sendQueue();
+                        }
+                    }
+                    
+                    },
+                    {sendNoQueue: true});
             }
         }
     }
@@ -2700,7 +2836,8 @@ _isDuplicateOnClient : function (record, sourceDS, foreignKeys) {
             // Source DS and target DS are the same and we have no primary key - compare all fields
             criteria = this.getCleanRecordData(record);
         }
-    } else if (foreignKeys) {
+        // no foreignKeys is supplied as {} rather than null, hence the firstKey check
+    } else if (foreignKeys && isc.firstKey(foreignKeys)) {
         // Source DS and target DS are different but related via a foreign key - check for a record
         // that matches for the combination of the foreign key values and current filter criteria
         criteria = {};
@@ -2717,13 +2854,13 @@ _isDuplicateOnClient : function (record, sourceDS, foreignKeys) {
         criteria = this.getCleanRecordData(record);
     }
 
-    if (this.data.find(criteria)) return true;
+    if (this.data.find(criteria, null, Array.DATETIME_VALUES)) return true;
     else return false;
 },
 
 getCleanRecordData : function (record) {
     if (isc.ResultTree && isc.isA.ResultTree(this.data)) {
-        return this.data._getCleanNodeData(record, false);
+        return this.data.getCleanNodeData(record, false);
     }
     var clean = {};
     for (var key in record) {
@@ -2803,13 +2940,12 @@ getDropValues : function (record, sourceDS, targetRecord, index, sourceWidget, d
 //>	@method	dataBoundComponent.transferDragData()	(A)
 //
 // During a drag-and-drop interaction, this method is called to transfer a set of records that
-// were dropped onto some other component.  This method is called once it has already been
-// determined that the other component can accept the drop.  What is returned and whether or
-// not this component's data is modified is determined by the value of
-// +link{dataBoundComponent.dragDataAction}.
+// were dropped onto some other component.  This method is called after the set of records has
+// been copied to the other component.  Whether or not this component's data is modified is 
+// determined by the value of +link{dataBoundComponent.dragDataAction}.
 // <P>
 // With a <code>dragDataAction</code> of "move", a databound component will issue "remove"
-// dsRequests against it's DataSource to actually remove the data, via
+// dsRequests against its DataSource to actually remove the data, via
 // +link{dataSource.removeData()}.
 //
 // @return		(Array)		Array of objects that were dragged out of this ListGrid.
@@ -2820,8 +2956,15 @@ getDropValues : function (record, sourceDS, targetRecord, index, sourceWidget, d
 //
 // @visibility external
 //<
-transferDragData : function () {
-	var selection = this.getDragData();
+
+transferDragData : function (transferExceptionList, targetWidget) {
+    var selection;
+
+    if (targetWidget && targetWidget._dropRecords) {
+        selection = targetWidget._dropRecords.shift().dropRecords;
+    } else {
+        selection = this.getDragData();
+    }
     
     var copyData = this.dragDataAction == isc.Canvas.COPY || 
                    this.dragDataAction == isc.Canvas.CLONE;
@@ -2839,20 +2982,53 @@ transferDragData : function () {
 		selection = isc.clone(selection);
 	} else if (this.dragDataAction == isc.Canvas.MOVE) {
     	// de-select the selection in the context of this list
-		//	so if it is dragged *back* into the list, it won't already be selected!
-		this.selection.deselectList(selection);
-    	    
+		// so if it is dragged *back* into the list, it won't already be selected!
+		if (this.selection && this.selection.deselectList) this.selection.deselectList(selection);
+        
         if (this.dataSource) {
-            var wasAlreadyQueuing = isc.rpc.startQueue();
-            for (var i = 0; i < selection.length; i++) {
-                this.getDataSource().removeData(selection[i]);
+        
+            // In the special case of a MOVE between two components bound to the same dataSource,
+            // transferRecords() handles the transfer with update operations rather than removing
+            // and adding. So in that case, we don't want to remove anything from the source 
+            // component (since it's databound, it will be sync'd automatically)
+            var targetDS = targetWidget ? targetWidget.getDataSource() : null;
+            if (targetDS != this.getDataSource()) {
+                var wasAlreadyQueuing = isc.rpc.startQueue();
+
+                for (var i = 0; i < selection.length; i++) {
+                    // If the record exists in transferExceptionList, don't remove it
+                    var clean = this.getCleanRecordData(selection[i]);
+                    if (!transferExceptionList || !transferExceptionList.find(clean, null, Array.DATETIME_VALUES)) {
+                        this.getDataSource().removeData(selection[i]);
+                    }
+                }
+                // send the queue unless we didn't initiate queuing
+                if (!wasAlreadyQueuing) isc.rpc.sendQueue();
             }
-            // send the queue unless we didn't initiate queuing
-            if (!wasAlreadyQueuing) isc.rpc.sendQueue();
-        } else {
-    		this.data.removeList(selection);
+        } else if (this.data) {
+            for (var i = 0; i < selection.length; i++) {
+                // If the record exists in transferExceptionList, don't remove it
+                var clean = this.getCleanRecordData(selection[i]);
+                if (!transferExceptionList || !transferExceptionList.find(clean, null, Array.DATETIME_VALUES)) {
+                    this.data.remove(selection[i]);
+                    this.data.remove(selection[i]);
+                    if (this.isGrouped) {
+                        this.originalData.remove(selection[i]);
+                    }
+                }
+            }
         }
 	}
+    
+    // If the target widget's _dropRecords member still has entries, we've got drag and drop
+    // transactions queuing up for it, so schedule the next one before ending.
+    if (targetWidget && targetWidget._dropRecords && targetWidget._dropRecords.length > 0) {
+        var next = targetWidget._dropRecords.shift();
+        isc.Timer.setTimeout(function () {
+            targetWidget.transferRecords(next.dropRecords, next.targetRecord, 
+                                         next.index, next.sourceWidget);
+        }, 0);
+    }
     
     
 	return selection;
@@ -2875,7 +3051,8 @@ transferDragData : function () {
 // @visibility external
 //<
 getDragData : function () {
-    var selection = this.selection.getSelection();
+    var selection = (this.selection && this.selection.getSelection) ?
+                                        this.selection.getSelection() : null;
     return selection;
 },
 
@@ -2887,6 +3064,7 @@ getDragData : function () {
 //      @example gridsDragMove
 //      @example gridsDragCopy
 //<
+
 dragDataAction: isc.Canvas.MOVE,
 
 //> @method dataBoundComponent.transferSelectedData()
@@ -2916,19 +3094,12 @@ transferSelectedData : function (source, index) {
     if (index == null) index = this.data.getLength()
     else index = Math.min(index, this.data.getLength());
         
-    // Call transferDragData to pull the records out of our dataset
+    // Call getDragData to pull the records out of our dataset
+    
+    
     
 
-    // Databound dragging - if this is a databound grid, bound to the same dataSource as the source
-    // widget, we're going to update the record.  We can't use transferDragData() because that will
-    // delete the record we want to update.
-    var dataSource = this.getDataSource(),
-        sourceDS = source.getDataSource();
-    if (dataSource && dataSource == sourceDS) {
-        var dropRecords = source.getDragData();
-    } else {        
-        dropRecords = source.transferDragData();
-    }
+    var dropRecords = source.getDragData();
     var targetRecord = this.data.get(index);
     
     this.transferRecords(dropRecords, targetRecord, index, source);
@@ -3110,8 +3281,8 @@ editFormulaFieldText: "Edit formula...",
 // @visibility external
 //<
 editFormulaField : function (field) {
-    // return if a code-call has been made but the flag isn't true
-    if (!this.canAddFormulaFields) return;
+    // return if FormulaBuilder isn't available
+    if (isc.FormulaBuilder == null) return;
 
     var component = this,
         editMode = !field ? false : true;
@@ -3159,7 +3330,7 @@ editFormulaField : function (field) {
 // @visibility external
 //<
 getFormulaFieldValue : function (field, record) {
-    return this.getFormulaFunction(field)(record);
+    return this.getFormulaFunction(field)(record, this);
 },
 
 // for a field with a userFormula, get the function that will generate formula outputs for a
@@ -3225,8 +3396,8 @@ editSummaryFieldText: "Edit summary format...",
 // @visibility external
 //<
 editSummaryField : function (field) {
-    // return if a code-call has been made but the flag isn't true
-    if (!this.canAddSummaryFields) return;
+    // return if FormulaBuilder isn't available
+    if (isc.FormulaBuilder == null) return;
 
     var component = this,
         editMode = !field ? false : true;
@@ -3308,7 +3479,7 @@ userFieldCallback : function (builder) {
 },
 
 getUniqueFieldName : function (namePrefix) {
-    // assume eturn values in the format "fieldXXX" if namePrefix isn't passed
+    // assume return values in the format "fieldXXX" if namePrefix isn't passed
     if (!namePrefix || namePrefix == "") namePrefix = "field";
     var fields = this.getFields(),
         maxIncrement = 1,
@@ -3823,7 +3994,10 @@ isc.MathFunction.registerFunction(
         usage: "toPrecision(value,precision)",
         defaultSortPosition: 20,
         jsFunction: function (value, precision) {
-            return value.toPrecision(precision);
+            var localValue=value;
+            if (isc.isA.String(localValue)) localValue = parseFloat(localValue);
+            if (isNaN(localValue)) return value;
+            return localValue.toPrecision(precision);
         }
     })
 );
@@ -3838,7 +4012,10 @@ isc.MathFunction.registerFunction(
         usage: "toFixed(value,digits)",
         defaultSortPosition: 21,
         jsFunction: function (value, digits) {
-            return value.toFixed(digits);
+            var localValue=value;
+            if (isc.isA.String(localValue)) localValue = parseFloat(localValue);
+            if (isNaN(localValue)) return value;
+            return localValue.toFixed(digits);
         }
     })
 );

@@ -274,7 +274,8 @@ with (theWindow) {
             capSize:5,
             showRollOver:true,
             showDown:false,
-            showDisabled:false,
+            showDisabled:true,
+            showDisabledIcon:false,
             titleStyle:"tabTitle"
         })
     }
@@ -769,7 +770,15 @@ with (theWindow) {
             height: 18
         });
     }
-    
+// -------------------------------------------
+// ExampleViewPane - used in the feature explorer
+// -------------------------------------------
+    if (isc.ExampleViewPane) {
+        isc.ExampleViewPane.addProperties({
+            styleName:"normal"
+        });
+    }    
+
 // specify where the browser should redirect if not supported
 isc.Page.checkBrowserAndRedirect("[SKIN]/unsupported_browser.html");
 

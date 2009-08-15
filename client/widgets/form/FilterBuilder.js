@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -84,6 +84,14 @@ showFieldTitles: true,
 //<
 showRemoveButton:true,
 
+//> @attr filterBuilder.removeButtonPrompt (string : "Remove" : IR)
+// The hover prompt text for the remove button.
+//
+// @group i18nMessages 
+// @visibility external
+//<
+removeButtonPrompt: "Remove",
+
 //> @attr filterBuilder.removeButton (AutoChild : null : IR)
 // The clause removal ImgButton that appears after each clause if
 // +link{showRemoveButton} is set.
@@ -95,7 +103,7 @@ removeButtonDefaults : {
     src:"[SKIN]/actions/remove.png",
     showRollOver:false, showDown:false,
     showDisabled:false, // XXX
-    prompt:"Remove",
+    //prompt:"Remove",
     click: function () { this.creator.removeButtonClick(this.clause) }
 },
 
@@ -105,6 +113,14 @@ removeButtonDefaults : {
 // @visibility external
 //<
 showAddButton:true,
+
+//> @attr filterBuilder.addButtonPrompt (string : "Add" : IR)
+// The hover prompt text for the add button.
+//
+// @group i18nMessages 
+// @visibility external
+//<
+addButtonPrompt: "Add", 
 
 //> @attr filterBuilder.addButton (AutoChild : null : IR)
 // An ImgButton that allows new clauses to be added if +link{showAddButton}
@@ -117,7 +133,7 @@ addButtonDefaults : {
     width:18, height:18, 
     src:"[SKIN]/actions/add.png",
     showRollOver:false, showDown:false, 
-    prompt:"Add",
+    //prompt:"Add",
     click: function () { this.creator.addButtonClick(this.clause) }
 },
 
@@ -295,6 +311,12 @@ defaultSubClauseOperator:"or",
 initWidget : function () {
     this.Super("initWidget", arguments);
     
+    // set strings for button defaults
+    this.addButtonDefaults.prompt = this.addButtonPrompt;
+    this.removeButtonDefaults.prompt = this.removeButtonPrompt;
+    this.subClauseButtonDefaults.prompt = this.subClauseButtonPrompt;
+    this.subClauseButtonDefaults.title = this.subClauseButtonTitle;
+    
     var undef;
     if (this.showSubClauseButton == undef) {
         this.showSubClauseButton = (this.topOperatorAppearance != "radio");
@@ -396,7 +418,7 @@ clauseStackDefaults : {
     height:1,
     membersMargin:1, // otherwise brackets on subclauses are flush
     animateMembers: true,
-    animateMemberTime: 300
+    animateMemberTime: 150
 },
 
 // hstack for each clause
@@ -506,9 +528,12 @@ addNewClause : function (criterion) {
 rangeSeparator: "and",
 
 buildValueItemList : function (field, operator) {
-    
+    // Sanity check only - we don't expect the operator to be unset but if it is log a warning
+    if (operator == null) {
+        this.logWarn("buildValueItemList passed null operator");
+    }
     var fieldName = field.name,
-        valueType = operator.valueType,
+        valueType = operator ? operator.valueType : "text",
         baseFieldType = isc.SimpleType.getType(field.type) || isc.SimpleType.getType("text"),
         items = [];
 
@@ -527,18 +552,23 @@ buildValueItemList : function (field, operator) {
     // a value of the same type as the field
     } else if (valueType == "fieldType" || valueType == "custom")  {
         var editorType = null;
-        if (valueType == "custom" && operator.editorType) {
+        if (valueType == "custom" && operator && operator.editorType) {
             editorType = operator.editorType;
         }
         
         var fieldDef = isc.addProperties({
-            type: baseFieldType, name: "value", showTitle: false,
+            type: baseFieldType, name: field.name, showTitle: false,
             width: 150, editorType: editorType,    
             changed : function () { this.form.creator.valueChanged(this, this.form) }
         }, this.getValueFieldProperties(field.type, fieldName));
         
+        // Pick up DataSource presentation hints
+        fieldDef = this.getDataSource().combineFieldData(fieldDef);
+        
+        fieldDef.name = "value";
+        
         if (field.type == "enum") {
-            fieldDef - isc.addProperties(fieldDef, {
+            fieldDef = isc.addProperties(fieldDef, {
                 valueMap: field.valueMap
             });
         }
@@ -617,31 +647,56 @@ operatorChanged : function (form) {
 },
 
 updateFields : function (form) {
-
     var fieldName = form.getValue("fieldName");
     if (fieldName == null) return;
 
     var field = this.getDataSource().getField(fieldName);
-    var operator = this.getDataSource().getSearchOperator(form.getValue("operator"));
+
+    var operator = form.getValue("operator");
 
     // note this setValueMap() call means if an operator was already chosen, it will be
     // preserved unless no longer valid for the new field
     form.getItem("operator").setValueMap(
-        this.getDataSource().getFieldOperatorMap(field, false, "criteria", true));
+        this.getDataSource().getFieldOperatorMap(field, false, "criteria", true)
+    );
+    if (operator == null || form.getValue("operator") != operator) {
+        // if the operator was lost from the valueMap, the value will have been cleared
+        // Reset to the first option
+        
+        if (form.getValue("operator") == null) {
+            form.getItem("operator").setValue(form.getItem("operator").getFirstOptionValue());
+        }
+        operator = form.getValue("operator");
+    }
     
-    // if the field is of the same type, leave the "value" field alone
-    if (form.getItem("value") && (field.type || "text") == form.getItem("value").type) return;
-
-    // otherwise rebuild the value fields and clear out the currently entered value.
-    // This prevents eg a Date value from appearing when we swap to a text item
+    // Now we've got the operator type we want, normalize it to a config object
+    operator = this.getDataSource().getSearchOperator(operator);
+    
+    var typeChanged;
+    if (form.getItem("value")) {
+        var currentType = form.getItem("value").type,
+            newType = field.type || "text";
+        typeChanged = (currentType != newType);
+    }
+    
+    // otherwise rebuild the value fields
     this.removeValueFields(form);
+    form.addItems(this.buildValueItemList(field, operator));
 
-    form.setValue("value", null);
-    // likewise for range fields
+    // Clear out the curently entered value if the valueField data type has changed
+    // or the new value doesn't fit the valueMap for the valueField
+    if (typeChanged) form.clearValue("value");
+    else {
+        var valueItem = form.getItem("value");
+        if (valueItem && valueItem.getValueMap() && valueItem._valueInValueMap && 
+            !valueItem._valueInValueMap(valueItem.getValue())) 
+        {
+            valueItem.clearValue();
+        }
+    }
+    // For now always clear out range fields
     if (form.getItem("start")) form.setValue("start", null);
     if (form.getItem("end")) form.setValue("end", null);
-
-    form.addItems(this.buildValueItemList(field, operator));
 },
 
 //> @method filterBuilder.getFieldOperators()
@@ -678,6 +733,22 @@ getValueFieldProperties : function (type, fieldName) {
 // @visibility external
 //<
 
+//> @attr filterBuilder.subClauseButtonTitle (string : "+()" : IR)
+// The hover title text of the subClauseButton
+//
+// @group i18nMessages 
+// @visibility external
+//<
+subClauseButtonTitle: "+()",
+
+//> @attr filterBuilder.subClauseButtonPrompt (string : "Add Subclause" : IR)
+// The hover prompt text for the subClauseButton.
+//
+// @group i18nMessages 
+// @visibility external
+//<
+subClauseButtonPrompt: "Add Subclause",
+
 //> @attr filterBuilder.subClauseButton (AutoChild : null : IR)
 // Button allowing the user to add subclauses grouped by a +link{type:LogicalOperator}.
 // @visibility external
@@ -685,9 +756,9 @@ getValueFieldProperties : function (type, fieldName) {
 subClauseButtonDefaults : {
     _constructor:"IButton",
     autoParent:"buttonBar",
-    title:"+()", // need an icon for this
+    //title:"+()", // need an icon for this
     autoFit:true,
-    prompt:"Add Subclause",
+    //prompt:"Add Subclause",
     click : function () { this.creator.addSubClause(this.clause) }
 },
 

@@ -436,7 +436,8 @@
 /* selectItem */
 
 .selectItemText,
-.selectItemTextError {
+.selectItemTextError,
+.selectItemTextItemHint {
     font-family:Verdana,Bitstream Vera Sans,Helvetica,sans-serif; font-size:11px; margin:2px;
 }
 .selectItemTextFocused {
@@ -447,6 +448,10 @@
 .selectItemTextDisabled {
     font-family:Verdana,Bitstream Vera Sans,Helvetica,sans-serif; font-size:11px; margin:2px;
     color:#ACA899; 
+}
+
+.selectItemTextItemHint {
+    color:#666666;
 }
 
 .selectItemControl,

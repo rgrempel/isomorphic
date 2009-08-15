@@ -37,9 +37,11 @@ isc.ExampleTree.create({
                     {icon:"[ISO_DOCS_SKIN]/images/silkicons/sc_insertformula.png",
                      ref:"filterBuilderBracket", title:"Advanced Filter"},
                     {icon:"[ISO_DOCS_SKIN]/images/silkicons/application_view_detail.png",
-                     ref:"dynamicFreeze", title:"Dynamic Frozen Columns"},
+                     ref:"adaptiveFilter", title:"Adaptive Filter"},
                     {icon:"[ISO_DOCS_SKIN]/images/silkicons/application_side_tree.png",
                      ref:"dynamicGrouping", title:"Dynamic Grouping"},
+                    {icon:"[ISO_DOCS_SKIN]/images/silkicons/application_view_detail.png",
+                     ref:"dynamicFreeze", title:"Dynamic Frozen Columns"},
                     {icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png", ref:"massUpdate",
                      title:"Mass Update"},
                     {icon:"[ISO_DOCS_SKIN]/images/silkicons/application_split.png",
@@ -67,11 +69,9 @@ isc.ExampleTree.create({
                         id:"showcaseApp",
                         title:"Complete Application"
                     },
-                    {ref:"serverExamples", isOpen:false, title:"Server Examples"},
+                    {ref:"serverExamples", isOpen:true, title:"Server Examples"},
                     {icon:"[ISO_DOCS_SKIN]/images/silkicons/application_view_tile.png",
                      ref:"tilingFilter", title:"Tile Sort & Filter"},
-                    {icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png", ref:"export",
-                     title:"Excel Export"},
                     {icon:"[ISO_DOCS_SKIN]/images/silkicons/cube_simple.png", ref:"basicCube",
                      title:"Simple Cube"},
                     {icon:"[ISO_DOCS_SKIN]/images/silkicons/cube_simple.png", ref:"analytics",
@@ -92,352 +92,6 @@ isc.ExampleTree.create({
                     {jsURL:"docs/docs.js",
                      description:"\n        SmartClient contains over 100 documented components with more than 2000 documented,\n        supported APIs.  All of SmartClient's documentation is integrated into a\n        SmartClient-based, searchable documentation browser, including API reference, concepts,\n        tutorials, live examples, architectural blueprints and deployment instructions.\n        ", showSkinSwitcher:false,
                      showSource:false, title:"SmartClient Docs"}
-                ]
-            },
-            {
-                icon:"[ISO_DOCS_SKIN]/images/silkicons/overlays.png",
-                description:"\n    Basic capabilities shared by all SmartClient visual components.\n",
-                isOpen:false,
-                title:"Basics",
-                children:[
-                    {
-                        description:"\n    Basic capabilities shared by all SmartClient visual components.\n",
-                        isOpen:false,
-                        title:"Components",
-                        children:[
-                            {jsURL:"basics/create.js",
-                             description:"\n        Click the button to create new cube objects.\n        ", id:"create",
-                             title:"Create"},
-                            {jsURL:"basics/draw.js",
-                             description:"\n        Click the button to draw another Label component. The first Label is configured\n        to draw automatically.\n        ", id:"autodraw",
-                             title:"Draw"},
-                            {jsURL:"basics/show.js",
-                             description:"\n        Click the buttons to show or hide the message.\n        ", id:"showAndHide",
-                             title:"Show & Hide"},
-                            {jsURL:"basics/move.js",
-                             description:"\n        Click and hold the arrow to move the van. Click on the solid circle to return to\n        the starting position.\n        ", id:"move",
-                             title:"Move"},
-                            {jsURL:"basics/resize.js",
-                             description:"\n        Click the buttons to expand or collapse the text box.\n        ", id:"resize",
-                             title:"Resize"},
-                            {jsURL:"basics/layer.js",
-                             description:"\n        Click the buttons to move the draggable box above or below the other boxes.\n        ", id:"layer",
-                             title:"Layer"},
-                            {jsURL:"basics/stack.js",
-                             description:"\n        <code>HStack</code> and <code>VStack</code> containers manage the stacked positions\n        of multiple member components.\n        ", title:"Stack"},
-                            {jsURL:"basics/layout.js",
-                             description:"\n        <code>HLayout</code> and <code>VLayout</code> containers manage the stacked positions and\n        sizes of multiple member components. Resize the browser window to reflow these layouts.\n        ", title:"Layout"},
-                            {
-                                doEval:"false",
-                                iframe:"true",
-                                url:"inlineComponents/inlineComponents.html",
-                                description:"\n        SmartClient GUI components are assembled from the same standard HTML and CSS as\n        plain old web pages. So you can add SmartClient controls above, below, inline,\n        and inside your existing web page elements.\n        ",
-                                tabs:[
-                                    {title:"cssLayout.css", url:"inlineComponents/cssLayout.css"}
-                                ],
-                                id:"inlineComponents",
-                                title:"Inline components"
-                            }
-                        ]
-                    },
-                    {
-                        description:"\n    Mixing SmartClient components with HTML pages, chunks, and elements.\n",
-                        isOpen:false,
-                        title:"HTML",
-                        children:[
-                            {ref:"inlineComponents", title:"Inline Components"},
-                            {description:"\n        SmartClient supports browser history management.  Click your browser's Back button to go\n        to a previous example, and click forward to return to this example.  You can even\n        navigate off the SmartClient site and navigate back.  SmartClient's History module\n        allows you to pick which application events create history entries.\n        ",
-                             title:"Back Button"},
-                            {jsURL:"html/htmlFlow.js", xmlURL:"html/htmlFlow.xml",
-                             description:"\n        The <code>HTMLFlow</code> component displays a chunk of standard HTML in a free-form,\n        flowable region.\n        ", id:"htmlFlow",
-                             title:"HTMLFlow"},
-                            {jsURL:"html/htmlPane.js", xmlURL:"html/htmlPane.xml",
-                             description:"\n        The <code>HTMLPane</code> component displays a chunk or page of standard HTML in a\n        sizeable, scrollable pane.\n        ", id:"htmlPane",
-                             title:"HTMLPane"},
-                            {jsURL:"html/htmlLabel.js", xmlURL:"html/htmlLabel.xml",
-                             description:"\n        The <code>Label</code> component adds alignment, text wrapping, and icon support for\n        small chunks of standard HTML.\n        ", id:"label",
-                             title:"Label"},
-                            {jsURL:"html/richTextEditor.js", requiresModules:"RichTextEditor",
-                             xmlURL:"html/richTextEditor.xml", description:"RichTextEditor supports editing of HTML with a configurable set of\n       styling controls",
-                             id:"RichTextEditor", title:"Editing HTML"},
-                            {jsURL:"html/htmlImg.js",
-                             description:"\n        The <code>Img</code> component displays images in the standard web formats\n        (png, gif, jpg) and other image formats supported by the web browser.\n        ", id:"img",
-                             title:"Img"},
-                            {jsURL:"html/htmlDynamic1.js",
-                             description:"\n        Embed JavaScript expressions inside chunks of HTML to create simple dynamic elements.\n        ", id:"dynamicContents",
-                             title:"Dynamic HTML (inline)"},
-                            {jsURL:"html/htmlDynamic2.js",
-                             description:"\n        Click the buttons to display different chunks of HTML.\n        ", id:"setContents",
-                             title:"Dynamic HTML (set)"},
-                            {jsURL:"html/htmlLoadImg.js",
-                             description:"\n        Click the buttons to load different images.\n        ", id:"loadImages",
-                             title:"Load images"},
-                            {jsURL:"html/htmlLoadChunks.js",
-                             description:"\n        Click the buttons to load different chunks of HTML.\n        ", title:"Load HTML chunks"},
-                            {jsURL:"html/htmlLoadPages.js",
-                             description:"\n        Click the buttons to display different websites.\n        ", id:"loadHtmlPages",
-                             title:"Load HTML pages"}
-                        ]
-                    },
-                    {
-                        description:"\n    Basic interactive component capabilities.\n    <BR>\n    <BR>\n    SmartClient components provide hundreds of hooks for event handlers, including\n    all the standard mouse, keyboard, and communication events.\n",
-                        isOpen:false,
-                        title:"Interaction",
-                        children:[
-                            {jsURL:"interact/mouseEvents.js",
-                             description:"\n        Mouse over the blue square to see the color respond to your position.  Click and hold\n        to see a fade.  If you have a mousewheel, roll up and down to change size.\n        SmartClient components support the standard mouse events in addition to custom events\n        like \"mouseStillDown\".\n        ", id:"customMouseEvents",
-                             title:"Mouse events"},
-                            {jsURL:"interact/dragEvents.js",
-                             description:"\n        Click and drag the pawn over \"Show Drop Reticle\" to see a simple custom drag and drop\n        interaction.\n        ", id:"customDrag",
-                             title:"Drag events"},
-                            {css:"interact/hover.css", jsURL:"interact/hover.js",
-                             description:"\n        Hover over the button, the image, the \"Interesting Facts\" field of the grid, and the\n        \"Severity\" form label to see various hovers.\n        ", showSkinSwitcher:true,
-                             id:"customHovers", title:"Hovers / Tooltips"},
-                            {jsURL:"interact/contextmenu.js",
-                             description:"\n        Right click (or option-click on Macs) on the Yin Yang image to access a context menu.\n        You can also click on the \"Widget\" button to access the identical menu.\n        ", showSkinSwitcher:true,
-                             id:"contextMenus", title:"Context menus"},
-                            {ref:"fieldEnableDisable", title:"Enable / Disable"},
-                            {jsURL:"interact/focus.js",
-                             description:"\n        Press the Tab key to cycle through through the tab order starting from the blue\n        piece.  Then drag reorder either piece, click on the leftmost piece and use Tab to\n        cycle through again. Tab order is automatically updated to reflect the visual order.\n        ", id:"focus",
-                             title:"Focus & Tabbing"},
-                            {jsURL:"interact/cursor.js",
-                             description:"\n        Mouse over the draggable labels for a 4-way move cursor.  Move over drag resizeable\n        edges to see resize cursors.  Mouse over the \"Save\" button to see the hand cursor,\n        which is not shown if the \"Save\" button is disabled.\n        ", id:"cursors",
-                             title:"Cursors"},
-                            {jsURL:"interact/keyboard.js",
-                             description:"\n        Click the \"Move Me\" label, then use the arrow keys to move it around.  Hold down keys to see the\n        component respond to key repetition. SmartClient unifies keyboard event handling across browsers.\n        ", id:"keyboardEvents",
-                             title:"Keyboard events"},
-                            {jsURL:"interact/modality.js",
-                             description:"\n        Click on \"Show Window\" to show a modal window.  Note that the \"Touch This\" button no\n        longer shows rollovers or an interactive cursor, nothing outside the window can be\n        clicked, clicks outside the window cause the window to flash, and tabbing remains in a\n        closed loop cycling through only the contents of the window.\n        ", showSkinSwitcher:true,
-                             id:"modality", title:"Modality"}
-                        ]
-                    },
-                    {
-                        jsURL:"basics/printing.js",
-                        description:"\n        SmartClient provides comprehensive support for rendering your UI in a print-friendly\n        fashion.  Click the \"Print Preview\" button and note the following things:\n        <ul>\n        <li>All components have simplified appearance (eg gradients omitted) to be legible in \n        black and white\n        <li>The ListGrid had a scrollbar because it wasn't big enough to show all records, \n        but the printable view shows all data\n        <li>Buttons and other interactive controls that are not meaningful in print view are omitted\n        \n        ",
-                        showSkinSwitcher:true,
-                        tabs:[
-                            {canEdit:"false", title:"worldDS", url:"grids/ds/worldSQLDS.ds.xml"}
-                        ],
-                        id:"printing",
-                        title:"Printing"
-                    }
-                ]
-            },
-            {
-                icon:"[ISO_DOCS_SKIN]/images/silkicons/layers.png",
-                description:"\n    Effects for creating a polished, branded, appealing application.\n    <BR>\n    <BR>\n    SmartClient supports rich skinning and styling capabilities, drag and drop interactions,\n    and built-in animations.\n",
-                isOpen:true,
-                title:"Effects",
-                children:[
-                    {
-                        description:"\n    Drag & drop services and built-in drag & drop interactions.\n",
-                        isOpen:false,
-                        title:"Drag & Drop",
-                        children:[
-                            {
-                                jsURL:"dragdrop/dragListCopy.js",
-                                description:"\n        Drag and drop to copy items from the first list to the second list.\n        You can drag over the top or bottom edge of a scrolling list to scroll\n        in that direction before dropping.\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {title:"exampleData", url:"dragdrop/dragList_data.js"}
-                                ],
-                                title:"Drag list (copy)"
-                            },
-                            {
-                                jsURL:"dragdrop/dragListMove.js",
-                                description:"\n        Drag and drop to move items within or between the lists.\n        You can drag over the top or bottom edge of a scrolling list to scroll\n        in that direction before dropping.\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {title:"exampleData", url:"dragdrop/dragList_data.js"}
-                                ],
-                                id:"dragListMove",
-                                title:"Drag list (move)"
-                            },
-                            {
-                                jsURL:"dragdrop/dragListSelect.js",
-                                description:"\n        Drag to select items in the first list. The second list will\n        mirror your selection.\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {title:"exampleData", url:"dragdrop/dragList_data.js"}
-                                ],
-                                id:"dragListSelect",
-                                title:"Drag list (select)"
-                            },
-                            {
-                                jsURL:"dragdrop/dragTreeMove.js",
-                                description:"\n        Drag and drop to move parts and folders within and between the trees.\n        You can open a closed folder by pausing over it during a drag interaction\n        (aka \"spring loaded folders\").\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {title:"exampleData", url:"dragdrop/dragTree_data.js"}
-                                ],
-                                id:"dragTree",
-                                title:"Drag tree (move)"
-                            },
-                            {
-                                jsURL:"dragdrop/dragFromMenu.js",
-                                description:"\n        Open the parts menu and drag parts from the menu onto the grid.\n        Menus support all the drag and drop behaviors supported by grids.\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {title:"exampleData", url:"dragdrop/dragList_data.js"}
-                                ],
-                                id:"dragMenu",
-                                title:"Drag from Menu"
-                            },
-                            {
-                                jsURL:"dragdrop/dragTilesMove.js",
-                                description:"\n        Drag and drop animals from the ListGrid on the left to the TileGrid on the right. \n        Animals can also be dragged from the TileGrid back to the ListGrid.\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {title:"animalData", url:"grids/data/animalData2.js"}
-                                ],
-                                id:"dragTiles",
-                                title:"Drag tiles (move)"
-                            },
-                            {
-                                jsURL:"dragdrop/recategorizeTile.js",
-                                description:"\n        Drag and drop animals between the grids in either direction, and the status of the dropped tile will change to \n        match the filtered status of the TileGrid in which it was dropped. Select different values\n        in the drop down lists above each TileGrid to change the animals that will appear in each grid.\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {canEdit:"false", title:"animalsDS",
-                                     url:"grids/ds/animalsSQLDS.ds.xml"}
-                                ],
-                                id:"recategorizeTiles",
-                                title:"Recategorize (Tile)"
-                            },
-                            {jsURL:"dragdrop/dragMove.js",
-                             description:"\n        Drag and drop to move pieces between the boxes. The green box sets a thicker green\n        \"drop line\" indicator to match its border. The blue box shows a \"drag placeholder\"\n        outline at the original location of the dragged object while dragging.\n        ", id:"dragMove",
-                             title:"Drag move"},
-                            {jsURL:"dragdrop/dragReorder.js",
-                             description:"\n        Drag and drop to rearrange the order of the pieces.\n        ", title:"Drag reorder"},
-                            {jsURL:"dragdrop/dragTypes.js",
-                             description:"\n        Drag and drop to move pieces between the three boxes.\n        The gray box accepts any piece.\n        The blue and green boxes accept pieces of the same color only.\n        ", title:"Drag types"},
-                            {jsURL:"dragdrop/dragCreate.js",
-                             description:"\n        Drag the large cubes into the boxes to create new small cubes.\n        The blue, yellow, and green boxes accept cubes with the same color only.\n        The gray box accepts any color.\n        Right-click on the small cubes to remove them from the boxes.\n        ", id:"dragCreate",
-                             title:"Drag create"},
-                            {jsURL:"dragdrop/dragEffects.js",
-                             description:"\n        Click and drag to move the labels.\n        ", id:"dragEffects",
-                             title:"Drag effects"},
-                            {jsURL:"dragdrop/dragReposition.js", visibility:"sdk",
-                             description:"\n        Click and drag to move the piece.\n        ", title:"Drag reposition"},
-                            {jsURL:"dragdrop/dragResize.js",
-                             description:"\n        Click and drag on the edges of the labels to resize.\n        ", id:"dragResize",
-                             title:"Drag resize"},
-                            {jsURL:"dragdrop/dragTracker.js",
-                             description:"\n        Drag and drop the pieces onto the box.\n        ", id:"dragTracker",
-                             title:"Drag tracker"},
-                            {jsURL:"dragdrop/dragPan.js",
-                             description:"\n        Click and drag to pan the image inside its frame.\n        ", id:"dragPan",
-                             title:"Drag pan"},
-                            {jsURL:"dragdrop/dragSnapTo.js",
-                             description:"\n        Drag the box around the grid. It will snap into alignment according to the values you \n        set in the radio buttons below. Snap-to-grid dragging can be enabled separately for \n        moving and resizing; toggle the checkboxes to see this working.\n        ", showSkinSwitcher:true,
-                             id:"dragSnapTo", title:"Snap-to-grid Dragging"}
-                        ]
-                    },
-                    {
-                        description:"\n    Animation services and built-in animation effects.\n",
-                        isOpen:false,
-                        title:"Animation",
-                        children:[
-                            {
-                                jsURL:"animate/animateTree.js",
-                                description:"\n        Click the open/close icon for any folder.\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {title:"exampleData", url:"animate/animateTreeData.js"}
-                                ],
-                                id:"animateTree",
-                                title:"Tree Folders"
-                            },
-                            {jsURL:"animate/animateMinimize.js",
-                             description:"\n        Click on the minimize button (round button in header with flat line).\n        ", showSkinSwitcher:true,
-                             id:"windowMinimize", title:"Window Minimize"},
-                            {jsURL:"animate/animateSections.xml",
-                             description:"\n        Click on any section header to expand/collapse sections.\n        ", showSkinSwitcher:true,
-                             id:"animateSections", title:"Section Reveal"},
-                            {jsURL:"animate/animateLayout.js",
-                             description:"\n        Click on the buttons to hide and show the green star.\n        ", id:"animateLayout",
-                             title:"Layout Add & Remove"},
-                            {jsURL:"animate/animateMove.js",
-                             description:"\n        Click the buttons to move the Label into view or out of view.\n        ", id:"animateMove",
-                             title:"Fly Onscreen"},
-                            {jsURL:"animate/animateResize.js",
-                             description:"\n        Click the buttons to expand or collapse the text box.\n        ", id:"animateResize",
-                             title:"Resize"},
-                            {jsURL:"animate/animateWipe.js",
-                             description:"\n        Click the buttons to show or hide the Label with a \"wipe\" effect.\n        ", id:"animateWipe",
-                             title:"Wipe Show & Hide"},
-                            {jsURL:"animate/animateSlide.js",
-                             description:"\n        Click the buttons to show or hide the Label with a \"slide\" effect.\n        ", title:"Slide Show & Hide"},
-                            {jsURL:"animate/animateFade.js",
-                             description:"\n        Click the buttons to fade the image.\n        ", id:"animateFade",
-                             title:"Fade Show & Hide"},
-                            {jsURL:"animate/animateZoom.js",
-                             description:"\n        Click the buttons to zoom or shrink the image.\n        ", id:"animateZoom",
-                             title:"Zoom & Shrink"},
-                            {jsURL:"animate/animateSeqSimple.js",
-                             description:"\n        Click the buttons for a 2-stage expand or collapse effect.\n        ", title:"Sequence (simple)"},
-                            {jsURL:"animate/animateSeqComplex.js",
-                             description:"\n        Click to select and zoom each piece.\n        ", title:"Sequence (complex)"},
-                            {jsURL:"animate/animateCustom.js",
-                             description:"\n        Click on the globe for a custom \"orbit\" animation.\n        ", id:"customAnimation",
-                             title:"Custom Animation"},
-                            {ref:"tilingFilter", title:"Tile Filter & Sort"},
-                            {fullScreen:"true", jsURL:"animate/portal.js", needServer:"true",
-                             screenshot:"animate/portal.png", screenshotHeight:"337",
-                             screenshotWidth:"480", description:"Animations built into SmartClient layouts can be used to create a drag and drop portal\n      experience.  Click on the portlet list to the left to create portlets and see them\n      animate into place.  Drag portlets around to new locations and they animate into place.\n        ",
-                             showSkinSwitcher:true, id:"portalAnimation", title:"Simple Portal"}
-                        ]
-                    },
-                    {
-                        description:"\n    Apply rich visual styles to SmartClient components.\n",
-                        isOpen:false,
-                        title:"Look & Feel",
-                        children:[
-                            {jsURL:"lookfeel/edges.js",
-                             description:"\n        Drag the text boxes. These boxes show customized frame and glow effects\n        using edge images.\n        ", id:"edges",
-                             title:"Edges"},
-                            {jsURL:"lookfeel/corners.js",
-                             description:"\n        Drag the text boxes. These boxes show customized rounded-corner effects\n        using edge images.        \n        ", id:"corners",
-                             title:"Corners"},
-                            {jsURL:"lookfeel/shadows.js",
-                             description:"\n        Drag the slider to change the shadow depth for the text box.\n        ", badSkins:"BlackOps",
-                             bestSkin:"TreeFrog", id:"shadows", title:"Shadows"},
-                            {jsURL:"lookfeel/bgColor.js", visibility:"sdk",
-                             description:"\n        Click on the color picker to select a background color for the box.\n        ", title:"Background color"},
-                            {jsURL:"lookfeel/bgImage.js", visibility:"sdk",
-                             description:"\n        Click any button to change the background texture for the box.\n        ", title:"Background texture"},
-                            {jsURL:"lookfeel/opacity.js",
-                             description:"\n        Drag the slider to change opacity.\n        ", id:"translucency",
-                             title:"Translucency"},
-                            {jsURL:"lookfeel/boxAttrs.js", visibility:"sdk",
-                             description:"\n        Drag the sliders to change the CSS box attributes.\n        <P>\n        Containers in SmartClient automatically react to changes in CSS styling on contained elements\n        \n        ", title:"Box attributes"},
-                            {
-                                jsURL:"lookfeel/styles.js",
-                                description:"\n        Click the radio buttons to apply different CSS styles to the text. Click the CSS tab for\n        CSS class definitions.<BR>\n        This container auto-sizes to the styled text.\n        ",
-                                badSkins:"BlackOps",
-                                bestSkin:"TreeFrog",
-                                tabs:[
-                                    {title:"CSS", url:"lookfeel/styles.css"}
-                                ],
-                                id:"styles",
-                                title:"CSS styles"
-                            },
-                            {css:"lookfeel/consistentSizing.css",
-                             jsURL:"lookfeel/consistentSizing.js", description:"\n      Drag the slider to resize all three text boxes. The box sizes match despite different\n      edge styling specified in CSS, enabling CSS-based skinning without affecting\n      application layout.\n    ",
-                             id:"consistentSizing", title:"Consistent sizing"},
-                            {
-                                jsURL:"grids/formatting/cellStyles.js",
-                                description:"\n        Mouse over the rows and click-drag to select rows, to see the effects of different\n        base styles on these two grids.\n        ",
-                                showSkinSwitcher:true,
-                                tabs:[
-                                    {title:"CSS", url:"grids/formatting/cellStyles.css"},
-                                    {title:"countryData", url:"grids/data/countryData.js"}
-                                ],
-                                id:"gridCells",
-                                title:"Grid cells"
-                            }
-                        ]
-                    }
                 ]
             },
             {
@@ -1095,6 +749,16 @@ isc.ExampleTree.create({
                                 title:"Custom Grouping"
                             }
                         ]
+                    },
+                    {
+                        jsURL:"grids/customColumns.js",
+                        descriptionHeight:"220",
+                        description:"\n        <b>Formula and Summary fields</b> provide built-in wizards for end users to define \n        formula fields that can compute values using other fields, or summary fields that can \n        combine other fields with intervening / surrounding text. Available in all \n        DataBoundComponents and easy to persist as preferences.\n        <P>\n        The Formula and Summary Builders are accessible from the grid header context menu. They \n        can also be invoked programatically as demonstrated by clicking the buttons in this \n        sample.\n        <P>\n        Launch the Formula Builder and enter the title of the new field, and the desired \n        formula. For example, enter <b>Population Density</b> for the field title and in the \n        formula field enter <b>A / B</b>. As indicated in the dialog, <b>A</b> represents the \n        Population field, and <b>B</b> represents the Area field. Notice that you can now sort on this \n        newly added <b>Population Density</b> field just like any other field. Click the help \n        icon to view the various supported inbuilt functions.\n        <P>\n        Next launch the Summary Builder and enter the title of the new field, and the Summary \n        formulation. For example, enter <b>County (Flag)</b> for the field name and enter \n        <b>#B (#A)</b> in the summary field.\n        <P>\n        Once some additional user-fields have been added, all you need to persist the column-layout\n        for later restoration to another grid, is the ability to save a string.  Click the \n        button below to store the grid's state by calling <i>getFieldState()</i>, destroy the \n        grid and restore it's state to another grid using <i>setFieldState()</i>. \n        \n    ",
+                        tabs:[
+                            {canEdit:"false", title:"countryDS", url:"grids/ds/countrySQLDS.ds.xml"}
+                        ],
+                        id:"customColumns",
+                        title:"Custom Columns"
                     },
                     {
                         description:"\n    Using the TileGrid to display data in a tiled format.\n",
@@ -1924,8 +1588,7 @@ isc.ExampleTree.create({
                              description:"\n            Open the \"File\" menu to see the \"New file in..\" item initially disabled.  Select a\n            project and note that the menu item has become enabled, changed title and changed\n            icon.  Pick \"Project Listing\" to show and hide the project list, and note the item\n            checks and unchecks itself.\n            ", id:"menuDynamicItems",
                              title:"Dynamic Items"},
                             {ref:"fullMenu",
-                             description:"\n            Click \"File\" and navigate over \"Recent Documents\" or \"Export as...\" to see\n            submenus.\n            ", id:"subMenus",
-                             title:"Submenus"},
+                             description:"\n            Click \"File\" and navigate over \"Recent Documents\" or \"Export as...\" to see\n            submenus.\n            ", title:"Submenus"},
                             {jsURL:"actions/menus/columns.js",
                              description:"\n            Open the menu to see a standard column showing item titles, and an additional\n            column showing an option to close menu items. Clicking in the second column will\n            remove the item from the menu.\n            ", id:"menuColumns",
                              title:"Custom Columns"},
@@ -2015,31 +1678,31 @@ isc.ExampleTree.create({
                         title:"Dragging",
                         children:[
                             {dataSource:"employees", jsURL:"databind/drag/treeReparent.js",
-                             description:"\n            Dragging employees between managers in this tree automatically saves the new\n            relationship to a DataSource, without writing any code.  Make changes, then \n            reload the page: your changes persist.\n            ", id:"treeReparent",
+                             ref:"treeReparent", description:"\n            Dragging employees between managers in this tree automatically saves the new\n            relationship to a DataSource, without writing any code.  Make changes, then \n            reload the page: your changes persist.\n            ",
                              title:"Tree Reparent"},
                             {
                                 dataSource:"supplyCategory",
                                 jsURL:"databind/drag/treeRecategorize.js",
+                                ref:"treeRecategorize",
                                 description:"\n            Dragging items from the list and dropping them on categories in the tree automatically\n            re-categorizes the item, without any code needed.  Make changes, then \n            reload the page: your changes persist.  This behavior is (optionally) automatic where\n            SmartClient can establish a relationship via foreign key between the DataSources\n            two components are bound to.\n            ",
                                 tabs:[
                                     {title:"supplyItem", url:"supplyItem.ds.xml"}
                                 ],
-                                id:"treeRecategorize",
                                 title:"Recategorize (Tree)"
                             },
                             {dataSource:"supplyItem", jsURL:"databind/drag/listRecategorize.js",
-                             description:"\n            The two lists are showing items in different categories.  Drag items from one list to\n            another to automatically recategorize the items without writing any code.  Make\n            changes, then reload the page; your changes persist.\n            ", id:"listRecategorize",
+                             ref:"listRecategorize", description:"\n            The two lists are showing items in different categories.  Drag items from one list to\n            another to automatically recategorize the items without writing any code.  Make\n            changes, then reload the page; your changes persist.\n            ",
                              title:"Recategorize (List)"},
                             {ref:"recategorizeTiles", title:"Recategorize (Tile)"},
                             {
                                 dataSource:"employees",
                                 jsURL:"databind/drag/listCopy.js",
+                                ref:"databoundDragCopy",
                                 description:"\n            Drag employee records into the Project Team Members list.  SmartClient recognizes that the \n            two dataSources are linked by a foreign key relationship, and automatically uses that \n            relationship to populate values in the record that is added when you drop. SmartClient\n            also populates fields based on current criteria and maps explicit titleFields as \n            necessary.<p>\n            In this example, note that SmartClient is automatically populating all three\n            of the fields in the teamMembers dataSource, even though none of those fields is present \n            in the employees dataSource we are dragging from.  Change the \"Team for Project\" select \n            box, then try dragging employees across; note that the Project Code column is being \n            correctly populated for the dropped records.\n            ",
                                 showSkinSwitcher:true,
                                 tabs:[
                                     {title:"teamMembers", url:"teamMembers.ds.xml"}
                                 ],
-                                id:"databoundDragCopy",
                                 title:"Copy"
                             }
                         ]
@@ -2209,7 +1872,7 @@ isc.ExampleTree.create({
             },
             {
                 icon:"[ISO_DOCS_SKIN]/images/silkicons/server_lightning.png",
-                description:"\n    The SmartClient Server is a collection of .jar files and optional servlets that works with\n    any J2EE or J2SE container and is easily integrated into existing applications.  Its major\n    features include<ul>\n    <li>Secure, flexible, built-in support for SQL databases</li>\n    <li>Built-in support for Hibernate, using either normal Javabean mappings or a special\n        \"beanless\" mode that requires no server-side code or Hibernate config</li>\n    <li>Robust, complete, bi-directional translation between Java and Javascript objects, including\n        full support for things like lists of objects within objects</li>\n    <li>Server enforcement of Validators.  A single file specificies validation rules which are\n        enforced both client and server side</li>\n    <li>High speed data delivery / data compression</li>\n    <li>Transparent file uploads</li>\n    <li>Transparent queuing / Batch operations</li>\n    </ul>\n    The SmartClient Server is an optional, commercially-licensed package.  See the \n    <a href=http://www.smartclient.com/product/licensing.jsp>licensing page</a> for details.\n    \n",
+                description:"\n    The SmartClient Server framework is a collection of .jar files and optional servlets that works with\n    any J2EE or J2SE container and is easily integrated into existing applications.  Its major\n    features include:<ul>\n    <li><b>Simplified server integration:</b> A pre-built network protocol for browser-server\n        communication, which handles data paging, transactions/batch operations, server-side\n        sort, automatic cache updates, validation and other error handling, optimistic\n        concurrency (aka long transactions) and binary file uploads.<P></li>\n    <li><b>Rapid integration with Java Beans:</b> Robust, complete,\n        bi-directional translation between Java and Javascript objects for \n        rapid integration with any Java beans-based persistence system, including Hibernate,\n        JPA, EJB3, Ibatis, Toplink and custom/homegrown ORM systems.  Send and receive complex\n        structures including Java Enums and Java Generics without the need to write mapping or\n        validation code.  Declaratively trim and rearrange data so that only selected data is\n        sent to the client<P></li>\n    <li><b>SQL Connector:</b> Secure, flexible, built-in support for SQL databases<P></li>\n    <li><b>Hibernate Connector:</b> Built-in support for Hibernate, using either normal\n        Java bean mappings or a special \"beanless\" mode that requires no server-side code or\n        Hibernate config<P></li>\n    <li><b>Server enforcement of Validators:</b> A single file specificies validation rules\n        which are enforced both client and server side<P></li>\n    <li><b>High speed data delivery / data compression<br></li>\n    </ul>\n    The SmartClient Server framework is an optional, commercially-licensed package.  See the \n    <a href=http://www.smartclient.com/product/index.jsp>products page</a> for details.\n    \n",
                 isOpen:false,
                 id:"serverExamples",
                 title:"Server examples",
@@ -2226,7 +1889,20 @@ isc.ExampleTree.create({
                             {icon:"[ISO_DOCS_SKIN]/images/silkicons/database_gear.png",
                              jsURL:"serverExamples/sql/vb_Database.js", requiresModules:"SCServer",
                              description:"\n            SmartClient's Visual Builder tool provides an extremely easy and completely codeless \n            way to create DataSources for instantly connecting to existing database tables.  Just\n            click the \"New\" button, select \"Existing SQL Table\", and the Database Browser will\n            show you your tables, column details and the actual data.  Select a table, and \n            Visual Builder will create a fully-functioning DataSource that can perform\n            all four CRUD operations on that table, including - for systems with the Enterprise \n            license - complex searches enabled by SmartClient Advanced Criteria system.\n            ", showSkinSwitcher:false,
-                             showSource:false, title:"Database Wizard"},
+                             showSource:false, id:"sqlWizard", title:"Database Wizard"},
+                            {
+                                icon:"[ISO_DOCS_SKIN]/images/silkicons/database_gear.png",
+                                jsURL:"serverExamples/sql/basicConnector.js",
+                                requiresModules:"SCServer",
+                                descriptionHeight:"180",
+                                description:"\n            The basic SQL Connector gives you the ability to immediately connect SmartClient components to\n            SQL databases without writing any code.  \n            <P>\n            You can either use the SQL Wizard in Visual Builder to generate a DataSource descriptor\n            (.ds.xml file) from an existing SQL table, or use the Admin Console to generate a SQL table\n            from a DataSource descriptor you write.  Either way, you get the immediate ability to perform\n            all 4 basic SQL operations (select, insert, update, delete) from any of SmartClient's\n            data-aware components.\n            <P>\n            The grid below is connected to a SQL DataSource and has settings enabled to allow this grid to\n            perform all 4 operations.  Type in the input boxes above each column to do query by example.\n            Note that data paging is automatically enabled - just scroll to load data on demand.  Click on\n            a red X to delete a record.  Click on a record to edit it and click \"Add New\" to add a new record.\n            <P>\n            It's easy to add business logic that takes place before and after SQL operations to enforce\n            security or add additional data validation rules.\n            <P>\n            Even if your primary data storage approach is non-SQL or if you choose to use JPA or other ORM\n            systems for most objects, the SQL connector is still valuable for initial prototypes and for\n            lightweight storage when a full ORM approach would be overkill.\n            ",
+                                tabs:[
+                                    {canEdit:"false", title:"worldDS",
+                                     url:"grids/ds/worldSQLDS.ds.xml"}
+                                ],
+                                id:"sqlConnector",
+                                title:"Basic Connector"
+                            },
                             {icon:"[ISO_DOCS_SKIN]/images/iconexperience/funnel.png",
                              ref:"filterBuilderBracket", requiresModules:"SCServer,serverCriteria",
                              descriptionHeight:"150", description:"\n            Use the FilterBuilder to construct queries of arbitrary complexity.  The FilterBuilder,\n            and the underlying AdvancedCriteria system, support building queries with subclauses\n            nested to any depth. Add clauses to your query with the \"+\" icon; add nested subclauses \n            with the \"+()\" button. Click \"Filter\" to see the result in the ListGrid.\n            <P>\n            Note that this example is backed by a \"sql\" dataSource; the SmartClient Server is \n            automatically generating the SQL queries required to implement the filters that the \n            FilterBuilder can assemble.  This works adaptively and seamlessly with client-side \n            Advanced Filtering: the generated SQL query will yield exactly the same resultset \n            as the client-side filtering.  This means SmartClient is able to switch to client-side\n            filtering when its cache is full, giving a more responsive, more scalable application.\n            ",
@@ -2236,7 +1912,7 @@ isc.ExampleTree.create({
                                 jsURL:"serverExamples/sql/largeValueMap/largeValueMap.js",
                                 requiresModules:"SCServer,customSQL",
                                 descriptionHeight:"180",
-                                description:"\n            This example shows the simple use of custom SQL clauses to provide a DataSource that\n            joins multiple tables while retaining SmartClient's automatic paging and filtering\n            behavior.  When trying this example, remember that this is <b>automatic</b> \n            dataset-handling behavior that works without any coding, even though the data is being \n            provided by a custom SQL query.<p>\n            \n            The list contains order items; each order item holds an itemID, which is being used\n            to join to the supplyItem table and obtain the itemName.  Note that you can filter on\n            the itemName - either select a full item name or just enter a partial value in the \n            combo box.  Pagination is also active - try quickly dragging the scrollbar down, and\n            you'll see SmartClient contacting the server for more records.<p>\n            \n            Editing is also enabled in this example.  Try filtering to a small sample of items,\n            then edit one of them by double-clicking it and choose a different item.  Note how \n            that order item is immediately filtered out of the list: SmartClient's intelligent \n            cache sync also automatically handles custom SQL statements.\n            ",
+                                description:"\n            This example shows the simple use of custom SQL clauses to provide a DataSource that\n            joins multiple tables while retaining SmartClient's automatic paging and filtering\n            behavior.  When trying this example, remember that this is <b>automatic</b> \n            dataset-handling behavior that works without any coding, even though the data is being \n            provided by a custom SQL query.<p>\n            \n            The list contains order items; each order item holds an itemID, which is being used\n            to join to the supplyItem table and obtain the itemName.  Note that you can filter on\n            the itemName - either select a full item name or just enter a partial value in the \n            combo box.  Pagination is also active - try quickly dragging the scrollbar down, and\n            you'll see SmartClient contacting the server for more records.\n            ",
                                 tabs:[
                                     {canEdit:"false", dataSource:"largeValueMap_orderItem",
                                      name:"orderItem"}
@@ -2249,7 +1925,7 @@ isc.ExampleTree.create({
                                 jsURL:"serverExamples/sql/userSpecificData/userSpecificData.js",
                                 requiresModules:"SCServer,customSQL",
                                 descriptionHeight:"200",
-                                description:"\n            This example shows the use of some simple user-written server code in conjunction with\n            SmartClient databound dragging features and the SmartClient SQL DataSource to implement\n            a simple, but secure, shopping cart example.\n            <p>\n            Via DMI (Direct Method Invocation), the <code>cartItem</code> DataSource declares\n            that all DataSource operations should go through a custom Java method\n            <code>CartDMI.enforceUserAccess()</code> <b>before</b> proceeding to read or write\n            the database.  &nbsp;&nbsp<code>CartDMI.enforceUserAccess()</code> adds the current sessionId to the\n            DSRequest, so that the user can only read and write his own shopping cart.\n            <P>\n            Drag items from the left-hand grid to the right-hand grid.  You can edit the quantity\n            in the right-hand grid, and you can delete records.  You can verify that the example\n            is protecting each user's data from others by running the example in two different\n            browsers (eg one Firefox and IE) - this creates distinct sessions with separate\n            carts.\n            ",
+                                description:"\n            This example shows the use of some simple user-written server code in conjunction with\n            SmartClient databound dragging features and the SmartClient SQL DataSource to implement\n            a simple, but secure, shopping cart example.\n            <p>\n            Via DMI (Direct Method Invocation), the <code>cartItem</code> DataSource declares\n            that all DataSource operations should go through a custom Java method\n            <code>CartDMI.enforceUserAccess()</code> <b>before</b> proceeding to read or write\n            the database.  &nbsp;&nbsp<code>CartDMI.enforceUserAccess()</code> adds the current sessionId to the\n            DSRequest, so that the user can only read and write his own shopping cart.\n            <P>\n            Drag items from the left-hand grid to the right-hand grid.  You can edit the quantity\n            in the right-hand grid, and you can delete records.  You can verify that the example\n            is protecting each user's data from others by running the example in two different\n            browsers (eg one Firefox and one IE) - this creates distinct sessions with separate\n            carts.\n            ",
                                 tabs:[
                                     {canEdit:"false", dataSource:"cartItem", name:"cartItem"},
                                     {canEdit:"false", title:"supplyItem", url:"supplyItem.ds.xml"},
@@ -2264,7 +1940,7 @@ isc.ExampleTree.create({
                                 jsURL:"serverExamples/sql/dynamicReporting/dynamicReporting.js",
                                 requiresModules:"SCServer,customSQL",
                                 descriptionHeight:"210",
-                                description:"\n            This example shows the use of custom SQL clauses to build a fairly complex query, including\n            both standard and bespoke WHERE conditions and the use of aggregate functions and a \n            GROUP BY.  It is important to note that we can do this whilst still keeping the normal \n            benefits of SmartClient DataSources, such as automatic dataset paging and arbitrary\n            filtering and sorting.  Also note that this example, though it makes heavy use of custom\n            SQL clauses, is also portable across different database products.  This is possible\n            because its custom SQL makes use of the <code>$fields</code> and <code>$qfields</code> \n            context variables, allowing SmartClient to provide column names that are correctly \n            qualified and quoted for the target database.<p>\n            \n            The list contains a summary of orders in a given date range, summarized by item - each\n            item appears just once in the list, alongside the total quantity of that item ordered \n            in the given date range.  Change the date range to be more restrictive (all the rows\n            in the sample database have dates in February 2009) and click \"Filter\", and you will see\n            the quantities change, and items disappear from the list.  You can also use the \n            filter editor at the top of the grid to arbitrarily filter the records, or click\n            the column headings to sort.<p>\n            Scroll the grid quickly to the bottom, and you will see a brief notification as \n            SmartClient contacts the server - pagination is still working, despite the unusual\n            and complex query.\n            ",
+                                description:"\n            This example shows the use of custom SQL clauses to build a fairly complex query, including\n            both standard and bespoke WHERE conditions and the use of aggregate functions and a \n            GROUP BY.  It is important to note that we can do this whilst still keeping the normal \n            benefits of SmartClient DataSources, such as automatic dataset paging and arbitrary\n            filtering and sorting.  Also note that this example, though it makes heavy use of custom\n            SQL clauses, doesn't make use of any database-specific syntax or functions, so it is \n            portable across different database products.<p>\n            \n            The list contains a summary of orders in a given date range, summarized by item - each\n            item appears just once in the list, alongside the total quantity of that item ordered \n            in the given date range.  Change the date range to be more restrictive (all the rows\n            in the sample database have dates in February 2009) and click \"Filter\", and you will see\n            the quantities change, and items disappear from the list.  You can also use the \n            filter editor at the top of the grid to arbitrarily filter the records, or click\n            the column headings to sort.<p>\n            \n            Scroll the grid quickly to the bottom, and you will see a brief notification as \n            SmartClient contacts the server - pagination is still working, despite the unusual\n            and complex query.\n            ",
                                 tabs:[
                                     {canEdit:"false", dataSource:"dynamicReporting_orderItem",
                                      name:"orderItem"}
@@ -2283,7 +1959,7 @@ isc.ExampleTree.create({
                             {icon:"[ISO_DOCS_SKIN]/images/iconexperience/coffeebean_view.png",
                              jsURL:"serverExamples/hibernate/vb_Hibernate.js", requiresModules:"SCServer",
                              description:"\n            SmartClient's Visual Builder tool provides an extremely easy and completely codeless \n            way to create DataSources for instantly connecting to existing Hibernate mapped \n            entitites.  Just click the \"New\" button, select \"Hibernate Bean\", and the Hibernate \n            Browser will show your mapped entities, properties and even the data in the actual \n            table to which the entity is mapped.  Select an entity, and \n            Visual Builder will create a fully-functioning DataSource that can perform\n            all four CRUD operations via Hibernate on that entity, including - for systems with \n            the Enterprise license - complex searches enabled by SmartClient's Advanced \n            Criteria system.\n            ", showSkinSwitcher:false,
-                             showSource:false, title:"Hibernate Wizard"},
+                             showSource:false, id:"hibernateWizard", title:"Hibernate Wizard"},
                             {dataSource:"supplyItemHB",
                              icon:"[ISO_DOCS_SKIN]/images/iconexperience/coffeebean_delete.png", jsURL:"dataIntegration/java/hibernatePrototyping.js",
                              requiresModules:"SCServer", description:"\n            SmartClient supports beanless integration with Hibernate for rapid prototyping.\n            Simply declaring a DataSource with <code>serverType:\"hibernate\"</code> enables you\n            to automatically generate tables, import sample data and perform all four\n            DataSource operations, without writing any Java code or creating Hibernate mapping\n            files.  The DataSource is the only file you create.\n            <P>\n            As with all SmartClient DataSources, you can later add business logic that executes\n            before or after SmartClient's default Hibernate behavior, or, you can switch this\n            DataSource to use an actual Java bean, or switch to a completely different data\n            provider (eg a WSDL web service).  In all of these cases nothing in your UI needs\n            to be updated.\n            ",
@@ -2398,6 +2074,7 @@ isc.ExampleTree.create({
                         icon:"[ISO_DOCS_SKIN]/images/silkicons/server_lightning.png",
                         description:"\n            SmartClient provides robust support for transactional applications.\n            <P>\n            <b>Queuing</b> allows you to easily combine operations together into a single\n            transaction, for more efficient data loading and transactional saves.\n            <P>\n            <b>Transaction Chaining</b> allows you to declaratively handle data dependencies\n            between operations submitted together in a queue.\n     ",
                         isOpen:false,
+                        id:"transactionsFolder",
                         title:"Transactions",
                         children:[
                             {
@@ -2421,7 +2098,7 @@ isc.ExampleTree.create({
                                 jsURL:"serverExamples/sql/queuedAdd/queuedMasterDetailAdd.js",
                                 requiresModules:"SCServer, chaining",
                                 descriptionHeight:"150",
-                                description:"\n            This example makes use of the SmartClient server's support for setting DSRequest \n            properties dynamically at runtime, based on responses to requests earlier in the \n            same queue.<p>\n            Edit the order header details, then add one or more lines.  When you click \"Save \n            Order\", SmartClient will send multiple DataSource requests to the server - one to\n            save the order header, and one each for however many lines you enter - but it will combine\n            them into single HTTP request, so that a transactional commit is possible.<p>\n            New orders are given an automatically generated sequence value as a primary\n            key, and the orderItems need this value in order to establish a relationship with\n            their order.<P>\n            As a result of the <code>&lt;value&gt;</code> tag in the <code>queuedAdd_orderItem</code>\n            DataSource definition, the server will set the \"orderID\" property on each order\n            item to the unique sequence value assigned to the order header when it was\n            saved.<P>\n            This entire interaction is accomplished by simply re-using the capability of the\n            DataSource to add new records, without the need to write any server-side\n            code.  SQL DataSources are shown, but this interaction works with any DataSource\n            that can support CRUD operations, include custom DataSources and even a mix of\n            DataSources that use different storage systems.<P>\n            The <code>&lt;value&gt;</code> tag (and the similar \n            property <code>&lt;criteria&gt;</code> tag) are specified using the Velocity\n            Template Language, so the support is very flexible.<P>\n            ",
+                                description:"\n            This example makes use of the SmartClient server's support for setting DSRequest \n            properties dynamically at runtime, based on responses to requests earlier in the \n            same queue.<p>\n            Edit the order header details, then add one or more lines.  When you click \"Save \n            Order\", SmartClient will send multiple DataSource requests to the server - one to\n            save the order header, and one each for however many lines you enter - but it will combine\n            them into a single HTTP request, so that a transactional commit is possible.<p>\n            New orders are given an automatically generated sequence value as a primary\n            key, and the orderItems need this value in order to establish a relationship with\n            their order.<P>\n            As a result of the <code>&lt;values&gt;</code> tag in the <code>queuedAdd_orderItem</code>\n            DataSource definition, the server will set the \"orderID\" property on each order\n            item to the unique sequence value assigned to the order header when it was\n            saved.<P>\n            This entire interaction is accomplished by simply re-using the capability of the\n            DataSource to add new records, without the need to write any server-side\n            code.  SQL DataSources are shown, but this interaction works with any DataSource\n            that can support CRUD operations, include custom DataSources and even a mix of\n            DataSources that use different storage systems.<P>\n            The <code>&lt;values&gt;</code> tag (and the similar \n            property <code>&lt;criteria&gt;</code> tag) are specified using the Velocity\n            Template Language, so the support is very flexible.<P>\n            ",
                                 tabs:[
                                     {canEdit:"false", dataSource:"queuedAdd_order", name:"order"},
                                     {canEdit:"false", dataSource:"queuedAdd_orderItem",
@@ -2432,6 +2109,440 @@ isc.ExampleTree.create({
                                 ],
                                 id:"queuedAdd",
                                 title:"Master/Detail Add"
+                            },
+                            {icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png", ref:"massUpdate",
+                             descriptionHeight:"120", description:"\n        <b>Click</b> on any cell to start editing, then <b>Tab</b> or <b>Down Arrow</b> past the\n        last row in the grid to create a new row. Alternatively, click the <b>Edit New</b> button\n        to create a new data-entry row at the end of the grid.  When you click the \"Save\" button\n        all your changes - changed rows and new ones - are sent to the server in a queue, as a \n        single HTTP request.<p>\n        Because all your changes arrive on the server at once, committing \n        them as a single transaction becomes possible.  And because SmartClient's queuing support\n        is completely inobtrusive and requires no extra code on either client or server, as soon\n        as you have an operation that can update a single record, you automatically have an \n        operation that can participate in SmartClient queued updates and potentially transactional\n        commits.\n        ",
+                             title:"Mass Update"},
+                            {icon:"[ISO_DOCS_SKIN]/images/silkicons/database_link.png",
+                             ref:"databoundDragCopy", descriptionHeight:"160",
+                             description:"\n        Drag employee records into the Project Team Members list.  SmartClient recognizes that the \n        two dataSources are linked by a foreign key relationship, and automatically uses that \n        relationship to populate values in the records that are added when you drop. SmartClient \n        also populates fields based on current criteria and maps explicit titleFields as necessary.<p>\n        Multi-row selection is enabled on the Employees grid, so you can select multiple employees \n        and drag them to the Teams grid in one go.  Because the grids are databound, this drag and \n        drop action will send data operations to the server automatically, using SmartClient \n        queuing to ensure all the updates arrive on the server together.<p>\n        All of this just works, there is no coding needed to enable it.\n         ", title:"Multi-Row Drag & Save"}
+                        ]
+                    },
+                    {
+                        icon:"[ISO_DOCS_SKIN]/images/silkicons/server_lightning.png",
+                        description:"\n        Examples showing how to leverage the SmartClient Server to create partially or completely\n        customized DataSource implementations.\n    ",
+                        isOpen:false,
+                        title:"Custom DataSources",
+                        children:[
+                            {
+                                icon:"[ISO_DOCS_SKIN]/images/silkicons/table_row_insert.png",
+                                jsURL:"serverExamples/other/customDataSource/customDataSource.js",
+                                requiresModules:"SCServer",
+                                descriptionHeight:"150",
+                                description:"\n            This example shows an entirely custom DataSource.  It is created by extending \n            <code>BasicDataSource</code> and implementing the four core CRUD methods.  In this \n            case, we maintain a static List of Maps that is initialized with hard-coded data\n            every time the server starts; but of course, this code could do <i>anything</i>. This \n            approach allows completely custom data operations to be simply plugged in to the\n            SmartClient Server framework.<p>\n            Note also that this code deals directly with Java <code>Map</code>s and \n            <code>List</code>s, without worrying about format conversions - even custom code \n            leverages the SmartClient Server's automatic and transparent translation of request\n            data, from JSON to Java and back to JSON.\n            ",
+                                tabs:[
+                                    {canEdit:"false", dataSource:"customDataSource_user", name:"user"},
+                                    {canEdit:"false", doEval:"false", title:"UserDataSource.java",
+                                     url:"serverExamples/other/customDataSource/UserDataSource.java"}
+                                ],
+                                id:"customDataSource",
+                                title:"Simple (Hardcoded)"
+                            },
+                            {
+                                icon:"[ISO_DOCS_SKIN]/images/iconexperience/objects_exchange.png",
+                                jsURL:"serverExamples/other/ormDataSource/ormDataSource.js",
+                                requiresModules:"SCServer",
+                                descriptionHeight:"200",
+                                description:"\n            This example shows an entirely custom DataSource that connects SmartClient Server to\n            Hibernate (note that this is just an example of the principles involved - SmartClient \n            Server's built-in Hibernate support is considerably more sophisticated than the \n            simple adapter shown here).  It is created by extending <code>BasicDataSource</code>\n            and implementing the four core CRUD methods.  In this case, we connect DataSource\n            requests to Hibernate <code>Criteria</code> queries and the <code>saveOrUpdate</code>  \n            method.<p>\n            This implementation, though simple, is fully functional and could be used unchanged\n            in a real application.  It supports all four CRUD operations, plus data pagination,\n            server-side sorting and filtering, client cache synchronization, and of course it \n            is actually persisting the data to a real database.  Creating an equivalent adapter \n            for Toplink or Ibatis or some other ORM solution would be a fairly simple matter of \n            replacing the Hibernate-specific code in this example with the equivalent specifics \n            from the other ORM system.\n            <p>\n            As with the other custom DataSource examples, note how the <code>ORMDataSource.java</code> \n            code deals entirely in native Java objects - even entirely custom DataSources benefit\n            from SmartClient Server's robust and comprehensive Javascript<->Java translation.\n            ",
+                                tabs:[
+                                    {canEdit:"false", dataSource:"ormDataSource_country",
+                                     name:"country"},
+                                    {canEdit:"false", doEval:"false", title:"ORMDataSource.java",
+                                     url:"serverExamples/other/ormDataSource/ORMDataSource.java"},
+                                    {canEdit:"false", doEval:"false", title:"Country.java",
+                                     url:"serverExamples/other/ormDataSource/Country.java"},
+                                    {canEdit:"false", doEval:"false", title:"Country.hbm.xml",
+                                     url:"serverExamples/other/ormDataSource/Country.hbm.xml"}
+                                ],
+                                id:"ormDataSource",
+                                title:"ORM DataSource"
+                            }
+                        ]
+                    },
+                    {icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png", ref:"export",
+                     title:"Excel Export"},
+                    {ref:"rssFeed", descriptionHeight:"150",
+                     description:"\n            The SmartClient Server includes an HTTP Proxy servlet which allows you to contact REST and\n            WSDL web services as though they were hosted by your web server, avoiding the \"same origin\n            policy\" restriction which normally prevents web applications from accessing remote\n            services.\n            <P>\n            The proxy is used automatically whenever you attempt to contact a URL on another host - no\n            special code is needed.  In this example, a DataSource is configured to download the\n            Slashdot RSS feed, with no server-side code or proxy configuration required.\n            <P>\n            Configuration files allow you to restrict proxying to specific\n            services you wish to allow users to contact through your application.\n        ", title:"HTTP Proxy"}
+                ]
+            },
+            {ref:"dragDropExamples", isOpen:false, title:"Drag & Drop"},
+            {
+                icon:"[ISO_DOCS_SKIN]/images/silkicons/overlays.png",
+                description:"\n    Basic capabilities shared by all SmartClient visual components.\n",
+                isOpen:false,
+                title:"Basics",
+                children:[
+                    {
+                        description:"\n    Basic capabilities shared by all SmartClient visual components.\n",
+                        isOpen:false,
+                        title:"Components",
+                        children:[
+                            {jsURL:"basics/create.js",
+                             description:"\n        Click the button to create new cube objects.\n        ", id:"create",
+                             title:"Create"},
+                            {jsURL:"basics/draw.js",
+                             description:"\n        Click the button to draw another Label component. The first Label is configured\n        to draw automatically.\n        ", id:"autodraw",
+                             title:"Draw"},
+                            {jsURL:"basics/show.js",
+                             description:"\n        Click the buttons to show or hide the message.\n        ", id:"showAndHide",
+                             title:"Show & Hide"},
+                            {jsURL:"basics/move.js",
+                             description:"\n        Click and hold the arrow to move the van. Click on the solid circle to return to\n        the starting position.\n        ", id:"move",
+                             title:"Move"},
+                            {jsURL:"basics/resize.js",
+                             description:"\n        Click the buttons to expand or collapse the text box.\n        ", id:"resize",
+                             title:"Resize"},
+                            {jsURL:"basics/layer.js",
+                             description:"\n        Click the buttons to move the draggable box above or below the other boxes.\n        ", id:"layer",
+                             title:"Layer"},
+                            {jsURL:"basics/stack.js",
+                             description:"\n        <code>HStack</code> and <code>VStack</code> containers manage the stacked positions\n        of multiple member components.\n        ", title:"Stack"},
+                            {jsURL:"basics/layout.js",
+                             description:"\n        <code>HLayout</code> and <code>VLayout</code> containers manage the stacked positions and\n        sizes of multiple member components. Resize the browser window to reflow these layouts.\n        ", title:"Layout"},
+                            {
+                                doEval:"false",
+                                iframe:"true",
+                                url:"inlineComponents/inlineComponents.html",
+                                description:"\n        SmartClient GUI components are assembled from the same standard HTML and CSS as\n        plain old web pages. So you can add SmartClient controls above, below, inline,\n        and inside your existing web page elements.\n        ",
+                                tabs:[
+                                    {title:"cssLayout.css", url:"inlineComponents/cssLayout.css"}
+                                ],
+                                id:"inlineComponents",
+                                title:"Inline components"
+                            }
+                        ]
+                    },
+                    {
+                        description:"\n    Mixing SmartClient components with HTML pages, chunks, and elements.\n",
+                        isOpen:false,
+                        title:"HTML",
+                        children:[
+                            {ref:"inlineComponents", title:"Inline Components"},
+                            {description:"\n        SmartClient supports browser history management.  Click your browser's Back button to go\n        to a previous example, and click forward to return to this example.  You can even\n        navigate off the SmartClient site and navigate back.  SmartClient's History module\n        allows you to pick which application events create history entries.\n        ",
+                             title:"Back Button"},
+                            {jsURL:"html/htmlFlow.js", xmlURL:"html/htmlFlow.xml",
+                             description:"\n        The <code>HTMLFlow</code> component displays a chunk of standard HTML in a free-form,\n        flowable region.\n        ", id:"htmlFlow",
+                             title:"HTMLFlow"},
+                            {jsURL:"html/htmlPane.js", xmlURL:"html/htmlPane.xml",
+                             description:"\n        The <code>HTMLPane</code> component displays a chunk or page of standard HTML in a\n        sizeable, scrollable pane.\n        ", id:"htmlPane",
+                             title:"HTMLPane"},
+                            {jsURL:"html/htmlLabel.js", xmlURL:"html/htmlLabel.xml",
+                             description:"\n        The <code>Label</code> component adds alignment, text wrapping, and icon support for\n        small chunks of standard HTML.\n        ", id:"label",
+                             title:"Label"},
+                            {jsURL:"html/richTextEditor.js", requiresModules:"RichTextEditor",
+                             xmlURL:"html/richTextEditor.xml", description:"RichTextEditor supports editing of HTML with a configurable set of\n       styling controls",
+                             id:"RichTextEditor", title:"Editing HTML"},
+                            {jsURL:"html/htmlImg.js",
+                             description:"\n        The <code>Img</code> component displays images in the standard web formats\n        (png, gif, jpg) and other image formats supported by the web browser.\n        ", id:"img",
+                             title:"Img"},
+                            {jsURL:"html/htmlDynamic1.js",
+                             description:"\n        Embed JavaScript expressions inside chunks of HTML to create simple dynamic elements.\n        ", id:"dynamicContents",
+                             title:"Dynamic HTML (inline)"},
+                            {jsURL:"html/htmlDynamic2.js",
+                             description:"\n        Click the buttons to display different chunks of HTML.\n        ", id:"setContents",
+                             title:"Dynamic HTML (set)"},
+                            {jsURL:"html/htmlLoadImg.js",
+                             description:"\n        Click the buttons to load different images.\n        ", id:"loadImages",
+                             title:"Load images"},
+                            {jsURL:"html/htmlLoadChunks.js",
+                             description:"\n        Click the buttons to load different chunks of HTML.\n        ", title:"Load HTML chunks"},
+                            {jsURL:"html/htmlLoadPages.js",
+                             description:"\n        Click the buttons to display different websites.\n        ", id:"loadHtmlPages",
+                             title:"Load HTML pages"}
+                        ]
+                    },
+                    {
+                        description:"\n    Basic interactive component capabilities.\n    <BR>\n    <BR>\n    SmartClient components provide hundreds of hooks for event handlers, including\n    all the standard mouse, keyboard, and communication events.\n",
+                        isOpen:false,
+                        title:"Interaction",
+                        children:[
+                            {jsURL:"interact/mouseEvents.js",
+                             description:"\n        Mouse over the blue square to see the color respond to your position.  Click and hold\n        to see a fade.  If you have a mousewheel, roll up and down to change size.\n        SmartClient components support the standard mouse events in addition to custom events\n        like \"mouseStillDown\".\n        ", id:"customMouseEvents",
+                             title:"Mouse events"},
+                            {jsURL:"interact/dragEvents.js",
+                             description:"\n        Click and drag the pawn over \"Show Drop Reticle\" to see a simple custom drag and drop\n        interaction.\n        ", id:"customDrag",
+                             title:"Drag events"},
+                            {css:"interact/hover.css", jsURL:"interact/hover.js",
+                             description:"\n        Hover over the button, the image, the \"Interesting Facts\" field of the grid, and the\n        \"Severity\" form label to see various hovers.\n        ", showSkinSwitcher:true,
+                             id:"customHovers", title:"Hovers / Tooltips"},
+                            {jsURL:"interact/contextmenu.js",
+                             description:"\n        Right click (or option-click on Macs) on the Yin Yang image to access a context menu.\n        You can also click on the \"Widget\" button to access the identical menu.\n        ", showSkinSwitcher:true,
+                             id:"contextMenus", title:"Context menus"},
+                            {ref:"fieldEnableDisable", title:"Enable / Disable"},
+                            {jsURL:"interact/focus.js",
+                             description:"\n        Press the Tab key to cycle through through the tab order starting from the blue\n        piece.  Then drag reorder either piece, click on the leftmost piece and use Tab to\n        cycle through again. Tab order is automatically updated to reflect the visual order.\n        ", id:"focus",
+                             title:"Focus & Tabbing"},
+                            {jsURL:"interact/cursor.js",
+                             description:"\n        Mouse over the draggable labels for a 4-way move cursor.  Move over drag resizeable\n        edges to see resize cursors.  Mouse over the \"Save\" button to see the hand cursor,\n        which is not shown if the \"Save\" button is disabled.\n        ", id:"cursors",
+                             title:"Cursors"},
+                            {jsURL:"interact/keyboard.js",
+                             description:"\n        Click the \"Move Me\" label, then use the arrow keys to move it around.  Hold down keys to see the\n        component respond to key repetition. SmartClient unifies keyboard event handling across browsers.\n        ", id:"keyboardEvents",
+                             title:"Keyboard events"},
+                            {jsURL:"interact/modality.js",
+                             description:"\n        Click on \"Show Window\" to show a modal window.  Note that the \"Touch This\" button no\n        longer shows rollovers or an interactive cursor, nothing outside the window can be\n        clicked, clicks outside the window cause the window to flash, and tabbing remains in a\n        closed loop cycling through only the contents of the window.\n        ", showSkinSwitcher:true,
+                             id:"modality", title:"Modality"}
+                        ]
+                    },
+                    {
+                        jsURL:"basics/printing.js",
+                        description:"\n        SmartClient provides comprehensive support for rendering your UI in a print-friendly\n        fashion.  Click the \"Print Preview\" button and note the following things:\n        <ul>\n        <li>All components have simplified appearance (eg gradients omitted) to be legible in \n        black and white\n        <li>The ListGrid had a scrollbar because it wasn't big enough to show all records, \n        but the printable view shows all data\n        <li>Buttons and other interactive controls that are not meaningful in print view are omitted\n        \n        ",
+                        showSkinSwitcher:true,
+                        tabs:[
+                            {canEdit:"false", title:"worldDS", url:"grids/ds/worldSQLDS.ds.xml"}
+                        ],
+                        id:"printing",
+                        title:"Printing"
+                    }
+                ]
+            },
+            {
+                icon:"[ISO_DOCS_SKIN]/images/silkicons/layers.png",
+                description:"\n    Effects for creating a polished, branded, appealing application.\n    <BR>\n    <BR>\n    SmartClient supports rich skinning and styling capabilities, drag and drop interactions,\n    and built-in animations.\n",
+                isOpen:false,
+                title:"Effects",
+                children:[
+                    {
+                        description:"\n    Drag & drop services and built-in drag & drop interactions.\n",
+                        isOpen:false,
+                        id:"dragDropExamples",
+                        title:"Drag & Drop",
+                        children:[
+                            {
+                                jsURL:"dragdrop/dragListCopy.js",
+                                description:"\n        Drag and drop to copy items from the first list to the second list.\n        You can drag over the top or bottom edge of a scrolling list to scroll\n        in that direction before dropping.\n        ",
+                                showSkinSwitcher:true,
+                                tabs:[
+                                    {title:"exampleData", url:"dragdrop/dragList_data.js"}
+                                ],
+                                title:"Drag list (copy)"
+                            },
+                            {
+                                jsURL:"dragdrop/dragListMove.js",
+                                description:"\n        Drag and drop to move items within or between the lists.\n        You can drag over the top or bottom edge of a scrolling list to scroll\n        in that direction before dropping.\n        ",
+                                showSkinSwitcher:true,
+                                tabs:[
+                                    {title:"exampleData", url:"dragdrop/dragList_data.js"}
+                                ],
+                                id:"dragListMove",
+                                title:"Drag list (move)"
+                            },
+                            {
+                                jsURL:"dragdrop/dragListSelect.js",
+                                description:"\n        Drag to select items in the first list. The second list will\n        mirror your selection.\n        ",
+                                showSkinSwitcher:true,
+                                tabs:[
+                                    {title:"exampleData", url:"dragdrop/dragList_data.js"}
+                                ],
+                                id:"dragListSelect",
+                                title:"Drag list (select)"
+                            },
+                            {
+                                jsURL:"dragdrop/dragTreeMove.js",
+                                description:"\n        Drag and drop to move parts and folders within and between the trees.\n        You can open a closed folder by pausing over it during a drag interaction\n        (aka \"spring loaded folders\").\n        ",
+                                showSkinSwitcher:true,
+                                tabs:[
+                                    {title:"exampleData", url:"dragdrop/dragTree_data.js"}
+                                ],
+                                id:"dragTree",
+                                title:"Drag tree (move)"
+                            },
+                            {
+                                jsURL:"dragdrop/dragTilesMove.js",
+                                description:"\n        Drag and drop animals from the ListGrid on the left to the TileGrid on the right. \n        Animals can also be dragged from the TileGrid back to the ListGrid.\n        ",
+                                showSkinSwitcher:true,
+                                tabs:[
+                                    {title:"animalData", url:"grids/data/animalData2.js"}
+                                ],
+                                id:"dragTiles",
+                                title:"Drag tiles (move)"
+                            },
+                            {
+                                description:"\n        Databound components have built-in dragging behaviors that operate on persistent\n        datasets.\n    ",
+                                isOpen:false,
+                                id:"dataDraggingCopy",
+                                title:"Data Binding",
+                                children:[
+                                    {dataSource:"employees", jsURL:"databind/drag/treeReparent.js",
+                                     description:"\n            Dragging employees between managers in this tree automatically saves the new\n            relationship to a DataSource, without writing any code.  Make changes, then \n            reload the page: your changes persist.\n            ", id:"treeReparent",
+                                     title:"Tree Reparent"},
+                                    {
+                                        dataSource:"supplyCategory",
+                                        jsURL:"databind/drag/treeRecategorize.js",
+                                        description:"\n            Dragging items from the list and dropping them on categories in the tree automatically\n            re-categorizes the item, without any code needed.  Make changes, then \n            reload the page: your changes persist.  This behavior is (optionally) automatic where\n            SmartClient can establish a relationship via foreign key between the DataSources\n            two components are bound to.\n            ",
+                                        tabs:[
+                                            {title:"supplyItem", url:"supplyItem.ds.xml"}
+                                        ],
+                                        id:"treeRecategorize",
+                                        title:"Recategorize (Tree)"
+                                    },
+                                    {dataSource:"supplyItem",
+                                     jsURL:"databind/drag/listRecategorize.js", description:"\n            The two lists are showing items in different categories.  Drag items from one list to\n            another to automatically recategorize the items without writing any code.  Make\n            changes, then reload the page; your changes persist.\n            ",
+                                     id:"listRecategorize", title:"Recategorize (List)"},
+                                    {
+                                        jsURL:"dragdrop/recategorizeTile.js",
+                                        description:"\n            Drag and drop animals between the grids in either direction, and the status of the dropped tile will change to \n            match the filtered status of the TileGrid in which it was dropped. Select different values\n            in the drop down lists above each TileGrid to change the animals that will appear in each grid.\n            ",
+                                        showSkinSwitcher:true,
+                                        tabs:[
+                                            {canEdit:"false", title:"animalsDS",
+                                             url:"grids/ds/animalsSQLDS.ds.xml"}
+                                        ],
+                                        id:"recategorizeTiles",
+                                        title:"Recategorize (Tile)"
+                                    },
+                                    {
+                                        dataSource:"employees",
+                                        jsURL:"databind/drag/listCopy.js",
+                                        description:"\n            Drag employee records into the Project Team Members list.  SmartClient recognizes that the \n            two dataSources are linked by a foreign key relationship, and automatically uses that \n            relationship to populate values in the record that is added when you drop. SmartClient\n            also populates fields based on current criteria and maps explicit titleFields as \n            necessary.<p>\n            In this example, note that SmartClient is automatically populating all three\n            of the fields in the teamMembers dataSource, even though none of those fields is present \n            in the employees dataSource we are dragging from.  Change the \"Team for Project\" select \n            box, then try dragging employees across; note that the Project Code column is being \n            correctly populated for the dropped records.\n            ",
+                                        showSkinSwitcher:true,
+                                        tabs:[
+                                            {title:"teamMembers", url:"teamMembers.ds.xml"}
+                                        ],
+                                        id:"databoundDragCopy",
+                                        title:"Copy"
+                                    }
+                                ]
+                            },
+                            {
+                                jsURL:"dragdrop/dragFromMenu.js",
+                                description:"\n        Open the parts menu and drag parts from the menu onto the grid.\n        Menus support all the drag and drop behaviors supported by grids.\n        ",
+                                showSkinSwitcher:true,
+                                tabs:[
+                                    {title:"exampleData", url:"dragdrop/dragList_data.js"}
+                                ],
+                                id:"dragMenu",
+                                title:"Drag from Menu"
+                            },
+                            {jsURL:"dragdrop/dragMove.js",
+                             description:"\n        Drag and drop to move pieces between the boxes. The green box sets a thicker green\n        \"drop line\" indicator to match its border. The blue box shows a \"drag placeholder\"\n        outline at the original location of the dragged object while dragging.\n        ", id:"dragMove",
+                             title:"Drag move"},
+                            {jsURL:"dragdrop/dragReorder.js",
+                             description:"\n        Drag and drop to rearrange the order of the pieces.\n        ", title:"Drag reorder"},
+                            {jsURL:"dragdrop/dragTypes.js",
+                             description:"\n        Drag and drop to move pieces between the three boxes.\n        The gray box accepts any piece.\n        The blue and green boxes accept pieces of the same color only.\n        ", title:"Drag types"},
+                            {jsURL:"dragdrop/dragCreate.js",
+                             description:"\n        Drag the large cubes into the boxes to create new small cubes.\n        The blue, yellow, and green boxes accept cubes with the same color only.\n        The gray box accepts any color.\n        Right-click on the small cubes to remove them from the boxes.\n        ", id:"dragCreate",
+                             title:"Drag create"},
+                            {jsURL:"dragdrop/dragEffects.js",
+                             description:"\n        Click and drag to move the labels.\n        ", id:"dragEffects",
+                             title:"Drag effects"},
+                            {jsURL:"dragdrop/dragReposition.js", visibility:"sdk",
+                             description:"\n        Click and drag to move the piece.\n        ", title:"Drag reposition"},
+                            {jsURL:"dragdrop/dragResize.js",
+                             description:"\n        Click and drag on the edges of the labels to resize.\n        ", id:"dragResize",
+                             title:"Drag resize"},
+                            {jsURL:"dragdrop/dragTracker.js",
+                             description:"\n        Drag and drop the pieces onto the box.\n        ", id:"dragTracker",
+                             title:"Drag tracker"},
+                            {jsURL:"dragdrop/dragPan.js",
+                             description:"\n        Click and drag to pan the image inside its frame.\n        ", id:"dragPan",
+                             title:"Drag pan"},
+                            {jsURL:"dragdrop/dragSnapTo.js",
+                             description:"\n        Drag the box around the grid. It will snap into alignment according to the values you \n        set in the radio buttons below. Snap-to-grid dragging can be enabled separately for \n        moving and resizing; toggle the checkboxes to see this working.\n        ", showSkinSwitcher:true,
+                             id:"dragSnapTo", title:"Snap-to-grid Dragging"}
+                        ]
+                    },
+                    {
+                        description:"\n    Animation services and built-in animation effects.\n",
+                        isOpen:false,
+                        title:"Animation",
+                        children:[
+                            {
+                                jsURL:"animate/animateTree.js",
+                                description:"\n        Click the open/close icon for any folder.\n        ",
+                                showSkinSwitcher:true,
+                                tabs:[
+                                    {title:"exampleData", url:"animate/animateTreeData.js"}
+                                ],
+                                id:"animateTree",
+                                title:"Tree Folders"
+                            },
+                            {jsURL:"animate/animateMinimize.js",
+                             description:"\n        Click on the minimize button (round button in header with flat line).\n        ", showSkinSwitcher:true,
+                             id:"windowMinimize", title:"Window Minimize"},
+                            {jsURL:"animate/animateSections.xml",
+                             description:"\n        Click on any section header to expand/collapse sections.\n        ", showSkinSwitcher:true,
+                             id:"animateSections", title:"Section Reveal"},
+                            {jsURL:"animate/animateLayout.js",
+                             description:"\n        Click on the buttons to hide and show the green star.\n        ", id:"animateLayout",
+                             title:"Layout Add & Remove"},
+                            {jsURL:"animate/animateMove.js",
+                             description:"\n        Click the buttons to move the Label into view or out of view.\n        ", id:"animateMove",
+                             title:"Fly Onscreen"},
+                            {jsURL:"animate/animateResize.js",
+                             description:"\n        Click the buttons to expand or collapse the text box.\n        ", id:"animateResize",
+                             title:"Resize"},
+                            {jsURL:"animate/animateWipe.js",
+                             description:"\n        Click the buttons to show or hide the Label with a \"wipe\" effect.\n        ", id:"animateWipe",
+                             title:"Wipe Show & Hide"},
+                            {jsURL:"animate/animateSlide.js",
+                             description:"\n        Click the buttons to show or hide the Label with a \"slide\" effect.\n        ", title:"Slide Show & Hide"},
+                            {jsURL:"animate/animateFade.js",
+                             description:"\n        Click the buttons to fade the image.\n        ", id:"animateFade",
+                             title:"Fade Show & Hide"},
+                            {jsURL:"animate/animateZoom.js",
+                             description:"\n        Click the buttons to zoom or shrink the image.\n        ", id:"animateZoom",
+                             title:"Zoom & Shrink"},
+                            {jsURL:"animate/animateSeqSimple.js",
+                             description:"\n        Click the buttons for a 2-stage expand or collapse effect.\n        ", title:"Sequence (simple)"},
+                            {jsURL:"animate/animateSeqComplex.js",
+                             description:"\n        Click to select and zoom each piece.\n        ", title:"Sequence (complex)"},
+                            {jsURL:"animate/animateCustom.js",
+                             description:"\n        Click on the globe for a custom \"orbit\" animation.\n        ", id:"customAnimation",
+                             title:"Custom Animation"},
+                            {ref:"tilingFilter", title:"Tile Filter & Sort"},
+                            {fullScreen:"true", jsURL:"animate/portal.js", needServer:"true",
+                             screenshot:"animate/portal.png", screenshotHeight:"337",
+                             screenshotWidth:"480", description:"Animations built into SmartClient layouts can be used to create a drag and drop portal\n      experience.  Click on the portlet list to the left to create portlets and see them\n      animate into place.  Drag portlets around to new locations and they animate into place.\n        ",
+                             showSkinSwitcher:true, id:"portalAnimation", title:"Simple Portal"}
+                        ]
+                    },
+                    {
+                        description:"\n    Apply rich visual styles to SmartClient components.\n",
+                        isOpen:false,
+                        title:"Look & Feel",
+                        children:[
+                            {jsURL:"lookfeel/edges.js",
+                             description:"\n        Drag the text boxes. These boxes show customized frame and glow effects\n        using edge images.\n        ", id:"edges",
+                             title:"Edges"},
+                            {jsURL:"lookfeel/corners.js",
+                             description:"\n        Drag the text boxes. These boxes show customized rounded-corner effects\n        using edge images.        \n        ", id:"corners",
+                             title:"Corners"},
+                            {jsURL:"lookfeel/shadows.js",
+                             description:"\n        Drag the slider to change the shadow depth for the text box.\n        ", badSkins:"BlackOps",
+                             bestSkin:"TreeFrog", id:"shadows", title:"Shadows"},
+                            {jsURL:"lookfeel/bgColor.js", visibility:"sdk",
+                             description:"\n        Click on the color picker to select a background color for the box.\n        ", title:"Background color"},
+                            {jsURL:"lookfeel/bgImage.js", visibility:"sdk",
+                             description:"\n        Click any button to change the background texture for the box.\n        ", title:"Background texture"},
+                            {jsURL:"lookfeel/opacity.js",
+                             description:"\n        Drag the slider to change opacity.\n        ", id:"translucency",
+                             title:"Translucency"},
+                            {jsURL:"lookfeel/boxAttrs.js", visibility:"sdk",
+                             description:"\n        Drag the sliders to change the CSS box attributes.\n        <P>\n        Containers in SmartClient automatically react to changes in CSS styling on contained elements\n        \n        ", title:"Box attributes"},
+                            {
+                                jsURL:"lookfeel/styles.js",
+                                description:"\n        Click the radio buttons to apply different CSS styles to the text. Click the CSS tab for\n        CSS class definitions.<BR>\n        This container auto-sizes to the styled text.\n        ",
+                                badSkins:"BlackOps",
+                                bestSkin:"TreeFrog",
+                                tabs:[
+                                    {title:"CSS", url:"lookfeel/styles.css"}
+                                ],
+                                id:"styles",
+                                title:"CSS styles"
+                            },
+                            {css:"lookfeel/consistentSizing.css",
+                             jsURL:"lookfeel/consistentSizing.js", description:"\n      Drag the slider to resize all three text boxes. The box sizes match despite different\n      edge styling specified in CSS, enabling CSS-based skinning without affecting\n      application layout.\n    ",
+                             id:"consistentSizing", title:"Consistent sizing"},
+                            {
+                                jsURL:"grids/formatting/cellStyles.js",
+                                description:"\n        Mouse over the rows and click-drag to select rows, to see the effects of different\n        base styles on these two grids.\n        ",
+                                showSkinSwitcher:true,
+                                tabs:[
+                                    {title:"CSS", url:"grids/formatting/cellStyles.css"},
+                                    {title:"countryData", url:"grids/data/countryData.js"}
+                                ],
+                                id:"gridCells",
+                                title:"Grid cells"
                             }
                         ]
                     }

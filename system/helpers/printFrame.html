@@ -15,7 +15,7 @@ if (window.parent && window.parent.isc) {
 }
 </SCRIPT>
 </HEAD>
-<BODY overflow="hidden" onload="pageLoaded()" onafterprint="printed()">
+<BODY STYLE="overflow:hidden;" onload="pageLoaded()" onafterprint="printed()">
 <SCRIPT>
 if (window.parent && window.parent.isc) {
     // note that we need the parent.isc object to resolve the skinImgDir
@@ -23,7 +23,7 @@ if (window.parent && window.parent.isc) {
                    window.parent.isc.Page.getURL("[SKIN]/skin_styles.css")+
                    ">");
 }
-</script>
+</SCRIPT>
 
 <SCRIPT>
 function pageLoaded() {
@@ -54,6 +54,5 @@ function doPrint(callback) {
 
 <span id='printElement'></span>
 
-</SCRIPT>
 </BODY>
 </HTML>

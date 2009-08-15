@@ -98,6 +98,11 @@
 		<field name="autoSendTargetFieldName" type="propertyName" visibility="internal"/>
 		<field name="showTitlesWithErrorMessages" 	type="boolean"/>
         <field name="valuesManager" type="ValuesManager"/>
+        
+        <field name="showErrorIcons" type="boolean"/>
+        <field name="showErrorText" type="boolean"/>
+        <field name="showErrorStyle" type="boolean"/>
+        
     </fields>
 
     <groups>

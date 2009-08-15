@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -112,6 +112,9 @@ var libs =
 
     	
         "widgets/ColorPicker",     // Helper for picking colors - supersedes the old ColorChooser
+
+        "widgets/form/NestedEditorItem",     // Item for auto-editing a single complex sub-object
+        "widgets/form/NestedListEditorItem", // Item for auto-editing a list of complex sub-objects
 
                 
 	];

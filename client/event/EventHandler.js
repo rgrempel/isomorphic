@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2502,7 +2502,7 @@ handleDragStart : function (){
     // We're not checking for the lastHoverCanvas matching the drag target etc since dragging could
     // be delegated from one drag target to another and there are no obvious cases where we'd
     // want the hover to be visible during dragging
-    if (isc.Hover) isc.Hover.hide();
+    if (isc.Hover) isc.Hover.clear();
 
     // remember the drag offset; this is the distance between the point where the mouse went
     // down to start D&D and the top/left corner of the element being dragged.  We want to
@@ -3833,6 +3833,17 @@ bubbleEvent : function (target, eventType, eventInfo, targetIsMasked) {
             }
 		}
 
+        if (target.bubbleEvents == false ||
+            (target.bubbleMouseEvents == false && EH.isMouseEvent(eventType))) 
+        {
+            if (logBubble) {
+                this.logDebug("Bubbling for event '" + eventType + 
+                              "' stopped by '" + target + 
+                              "' which does not allow bubbling");
+            }
+            return true;
+        }
+
         target = nextTarget;
 	}
 	// we got to the end and noone failed -- return true to keep propagating the event!
@@ -4086,6 +4097,19 @@ handleMouseWheel : function (DOMevent) {
     }
     // Return true to avoid interfering with native events
     return true;
+},
+
+//> @classMethod EventHandler.getWheelDelta()
+// Applies to +link{canvas.mouseWheel(),mouseWheel} events only.
+// Returns an integer indicating how far the mouse wheel was rotated. This value will be
+// positive if the user scrolled the mousewheel forward or up, or negative if scrolled in the
+// other direction and will be a multiple of 1 where 1 indicates the smallest possible rotation
+// of the wheel.
+// @return (integer) integer indicating how far the mouse wheel was rotated.
+// @visibility external
+//<
+getWheelDelta : function (event) {
+    return (event || this.lastEvent).wheelDelta;
 },
 
 // Handle a "DOMMouseScroll" event
@@ -5906,6 +5930,8 @@ _addDescendantsToList : function (widget, list, recursive) {
             this._addDescendantsToList(widget.children[i], list, true);
         }
     }
+    
+    
 },
 
 // Helper methods for determining targets to mask/unmask - takes a list of widgets and 

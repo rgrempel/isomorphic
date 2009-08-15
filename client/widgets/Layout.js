@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -150,6 +150,14 @@ isc.Layout.addProperties({
 	//<   
     hPolicy:isc.Layout.FILL,
  
+    //> @attr layout.minMemberSize (int : 1 : IR)
+    // Minimum size, in pixels, below which members should never be shrunk, even if this
+    // requires the Layout to overflow.
+    // @group layoutPolicy
+    // @visibility external
+    //<
+    minMemberSize:1,
+
 	//> @attr layout.enforcePolicy (boolean : true : IRWA)
 	// Whether the layout policy is continuously enforced as new members are added or removed
     // and as members are resized.
@@ -1980,7 +1988,7 @@ _getMemberSizes : function (totalSpace, overflowAsFixed, sizes, layoutInfo) {
 	// apply the sizing policy
     this._getPolicyLengths(sizes, layoutInfo);
     
-    return this.getClass().applyStretchResizePolicy(sizes, totalSpace, true, this);
+    return this.getClass().applyStretchResizePolicy(sizes, totalSpace, this.minMemberSize, true, this);
     
 },
 
@@ -2872,6 +2880,20 @@ _animateMemberHide : function (member, callback) {
     member = this.getMember(member);
     member.animateHide(this.animateMemberEffect, callback, this.animateMemberTime);
     if (member.isAnimating()) this._animateMargin(member);
+},
+
+//> @method layout.setVisibleMember()
+// Hide all other members and make the single parameter member visible.
+//
+// @param member (Canvas) member to show
+//
+// @visibility external
+//<
+setVisibleMember : function (member) {
+    var theMem = this.getMember(member);
+    if (theMem == null) return;
+    this.hideMembers(this.members);
+    this.showMember(theMem);
 },
 
 // Reordering Members

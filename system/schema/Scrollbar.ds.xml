@@ -9,5 +9,10 @@
 		<field 	name="thumbMinSize"	type="positiveInteger"	/>
 		<field 	name="thumbOverlap"	type="number" />
 		<field 	name="scrollTarget"	type="Canvas"	/>
+        
+        <!-- skinning properties that shouldn't be set in the Visual Builder property sheet-->
+        <field name="trackEndWidth" type="number" advanced="true"/>
+        <field name="trackEndHeight" type="number" advanced="true"/>
+        <field name="cornerSize" type="number" advanced="true"/>
 	</fields>
 </DataSource>

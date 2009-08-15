@@ -570,7 +570,8 @@
 .textItemHint,
 .selectItemText,
 .selectItemTextError,
-.selectItemTextFocused { 
+.selectItemTextFocused,
+.selectItemTextHint { 
     padding:2px; border:1px solid #114A58;
     background:#FFFFFF url(./images/shared/shadow.gif) repeat-x scroll;
 }
@@ -582,7 +583,8 @@
     border:1px solid #809DA2;
 }
 
-.textItemHint {
+.textItemHint,
+.selectItemTextHint {
     color:#666666;
 }
 

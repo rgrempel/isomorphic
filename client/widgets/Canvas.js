@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -740,20 +740,43 @@ isc.Canvas.addProperties({
     
     // Positioning
 	// --------------------------------------------------------------------------------------------
-
+    
     //>	@attr	canvas.position		(Positioning : null : IRWA)
     // Absolute or relative, corresponding to the "absolute" (with respect to parent) or
-    // "relative" (with respect to document flow) values for the CSS position attribute. 
+    // "relative" (with respect to document flow) values for the CSS position attribute.
     // <P>
-    // Defaults to "absolute" unless +link{canvas.htmlElement} has been set, in which case
-    // "relative" is used.
+    // Setting <code>position:"relative"</code> enables SmartClient components to be embedded
+    // directly into the native HTML flow of a page, causing the component to be rendered 
+    // within an existing DOM structure. 
+    // This attribute should only be set to <code>"relative"</code> on a top level component 
+    // (a component with no +link{canvas.parentElement}). 
     // <P>
+    // There are 2 ways to embed relatively positioned canvases in the DOM - by default the
+    // component will be written out inline when it gets +link{canvas.draw(),drawn()n}. For example
+    // to embed a canvas in an HTML table you could use this code: 
+    // <pre>
+    // &lt;table&gt;
+    //   &lt;tr&gt;
+    //     &lt;td&gt;
+    //       &lt;script&gt;
+    //         isc.Canvas.create({autoDraw:true, backgroundColor:"red", position:"relative"});
+    //       &lt;/script&gt;
+    //     &lt;td&gt;
+    //   &lt;/tr&gt;
+    // &lt;/table&gt;
+    // </pre>
+    // Alternatively you can make use of the +link{canvas.htmlElement} attribute.
+    // <P>
+    // Relative positioning is intended as a short-term integration scenario while incrementally
+    // upgrading existing applications.
+    // Note that relative positioning is not used to manage layout within SmartClient components -
+    // instead the +link{class:Layout} class would typically be used.
     // For best consistency and flexibility across browsers, all SmartClient layout managers
-    // use absolute positioning.  Relative positioning should be used only as a short-term
-    // integration scenario while incrementally upgrading existing applications.  
+    // use absolute positioning.
     // <P>
-    // When relative positioning is used, only the outermost SmartClient component should have
-    // position:"relative" set, none of it's children should.
+    // For canvases with a specified +link{canvas.htmlElement}, this attribute defaults to
+    // <code>"relative"</code>. In all other cases the default value will be 
+    // <code>"aboslute"</code>.
     //
     // @visibility external
     // @group positioning
@@ -16105,6 +16128,7 @@ _allowNativeTextSelection : function (event) {
 // @return (boolean) false to prevent this event from bubbling to this widget's parent, true or
 // undefined to bubble.
 // @group widgetEvents
+// @see EventHandler.getWheelDelta()
 // @see getOffsetX()
 // @see getOffsetY()
 // @visibility external
@@ -19127,7 +19151,7 @@ snapToEdge : function (targetRect, snapTo, snapRect, snapEdge) {
     // If we're snapping to an edge within our parent, use internal sizing 
     // determine origin for first transform (inside borders, sb's etc).
     // Param targetRect can also be an array [left, top, width, height] 
-    var targetDims;
+    var targetDims, insideCoords, targetOrigin;
     if (isc.isAn.Array(targetRect)) {
         insideCoords = false;
         targetOrigin = [targetRect[1], targetRect[0]];
@@ -19205,7 +19229,8 @@ isc.Canvas.registerStringMethods({
     // NOTE: event handlers are all legal to register as string methods.  We do this below.
 
     // Other legal stringMethods    
-    resized:"",
+    resized:"deltaX,deltaY", // note these args are intentionally not doc'd, but framework
+                             // code in GR.addEmbeddedComponent() currently relies on them
     showIf:"canvas",
     childRemoved:"child,name",
     peerRemoved:"peer,name",
