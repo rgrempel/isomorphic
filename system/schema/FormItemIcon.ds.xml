@@ -6,5 +6,6 @@
         <field  name="width"      type="number" />
         <field  name="height"     type="number" />
         <field  name="neverDisable" type="boolean" />
+        <field name="showFocused" type="boolean"/>
     </fields>
 </DataSource>

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -171,7 +171,30 @@ isc.SliderItem.addMethods({
         } else {
             this.saveValue(val);
         }
+    },
+    
+    //>	@method	sliderItem.setMinValue()   ([])
+    // @include slider.setMinValue()
+    //<
+    setMinValue : function (newValue) {
+        this.canvas.setMinValue(newValue);
+          
+    },
+    
+    //>	@method	sliderItem.setMaxValue()   ([])
+    // @include slider.setMaxValue()
+    //<
+    setMaxValue : function (newValue) {
+        this.canvas.setMaxValue(newValue);
+    },
+    
+    //>	@method	sliderItem.setNumValues()   ([])
+    // @include slider.setNumValues()
+    //<
+    setNumValues : function (newNumValues) {
+        this.canvas.setNumValues(newNumValues);
     }
+
     
 
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1331,6 +1331,8 @@ isc.PickList.addInterfaceMethods({
                 if (hasFocus) this.focusInItem();
             } else {
                 list.setHeight(this.getPickListHeight());
+                var position = this.getPickListPosition();
+                list.placeNear(position[0], position[1]);
             }
 		} else {
             // if we set the flag to show the list after the filter, show it now!

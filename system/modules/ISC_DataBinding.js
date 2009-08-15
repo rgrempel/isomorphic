@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -279,9 +279,12 @@ _4=[_4]}else{if(!isc.isAn.Array(_5))_5=[_5];_4=[];for(var i=0;i<_5.length;i++){_
 if(this.logIsDebugEnabled("ResultSet")){this.logDebug("Submitted data to be integrated into the cache:"+this.echoAll(_4),"ResultSet")}}}
 return _4}
 ,isc.A.serializeFields=function(_1,_2){if(!_1)_1=_2.data;if(!_1)return _1;if(isc.DS.isSimpleTypeValue(_1))return _1;if(isc.isAn.Array(_1)){var _3=[];for(var i=0;i<_1.length;i++){_3[i]=this.serializeFields(_1[i],_2)}
-return _3}
+return _3}else if(this.isAdvancedCriteria(_1)){return this.serializeAdvancedCriteria(_1)}
 _1=isc.addProperties({},_1);var _5=this.getFields();for(var _6 in _5){var _7=_5[_6];if(isc.isA.Date(_1[_6])&&isc.SimpleType.getBaseType(_7.type)=="date"&&!isc.SimpleType.inheritsFrom(_7.type,"datetime"))
 {_1[_6].logicalDate=true}}
+return _1}
+,isc.A.serializeAdvancedCriteria=function(_1){_1=isc.clone(_1);if(_1.criteria){for(var i=0;i<_1.criteria.length;i++){_1.criteria[i]=this.serializeAdvancedCriteria(_1.criteria[i])}}else{if(isc.isA.Date(_1.value)||isc.isA.Date(_1.start)||isc.isA.Date(_1.end)){var _3=this.getField(_1.fieldName);if(_3!=null&&isc.SimpleType.getBaseType(_3.type)=="date"&&!isc.SimpleType.inheritsFrom(_3.type,"datetime"))
+{if(_1.value)_1.value.logicalDate=true;if(_1.start)_1.start.logicalDate=true;if(_1.end)_1.end.logicalDate=true}}}
 return _1}
 ,isc.A.getDataProtocol=function(_1){var _2=this.getOperationBinding(_1),_3=this.getWebService(_1);return(_2.dataProtocol!=null?_2.dataProtocol:isc.isA.WebService(_3)?"soap":this.dataProtocol||"getParams")}
 ,isc.A.getServiceInputs=function(_1){var _2=this.getOperationBinding(_1),_3=this.getWebService(_1),_4=this.getWSOperation(_1);var _5=_2.defaultCriteria||this.defaultCriteria;if(_5&&_1.operationType=="fetch"){_1.data=isc.addProperties({},_5,_1.data)}
@@ -299,10 +302,10 @@ if(_6=="soap"){var _19=this.$du(_2.soapAction,_4.soapAction);if(_19!=null){if(is
 var _20=isc.isA.WebService(_3)&&this.$du(_2.spoofResponses,this.spoofResponses);if(_20){_17.spoofedResponse=_3.getSampleResponse(_4.name);this.logInfo("Using spoofed response:\n"+_17.spoofedResponse,"xmlBinding")}}
 if(this.logIsDebugEnabled("xmlBinding")){this.logDebug("serviceInputs are: "+this.echo(_17),"xmlBinding")}
 return _17}
-,isc.A.processResponse=function(_1,_2){var _3=this.$624[_1];if(_3==null){this.logWarn("DataSource.provedResponse(): Unable to find request corresponding to ID "+_1+", taking no action.");return}
+,isc.A.processResponse=function(_1,_2){var _3=this.$624[_1];if(_3==null){this.logWarn("DataSource.processResponse(): Unable to find request corresponding to ID "+_1+", taking no action.");return}
 delete this.$624[_1];if(_2.status==null)_2.status=0;if(_2.status==0){var _4=_2.data;if(_4==null)_2.data=_4=[];if(_2.startRow==null)_2.startRow=_3.startRow||0;if(_2.endRow==null)_2.endRow=_2.startRow+_4.length;if(_2.totalRows==null){_2.totalRows=Math.max(_2.endRow,_4.length)}}
 this.$38b(_4,_2,_3)}
-,isc.A.$50e=function(_1,_2,_3){var _4=this.getClientOnlyResult(_3),_5=_3.$374;this.$38b(_2,_4,_5,_1,_3)}
+,isc.A.$50e=function(_1,_2,_3){var _4=this.getClientOnlyResponse(_3.$374),_5=_3.$374;this.$38b(_2,_4,_5,_1,_3)}
 ,isc.A.$38a=function(_1,_2,_3){var _4={data:_2,startRow:0,endRow:0,totalRows:0,status:0};var _5=_3.$374;this.$38b(_2,_4,_5,_1,_3)}
 ,isc.A.$377=function(_1,_2,_3){var _4=_3.$374,_5=this.getOperationBinding(_4).recordXPath||this.recordXPath;if(_1.$38c&&this.logIsDebugEnabled("xmlBinding")){this.logDebug("Raw response data: "+isc.Comm.serialize(_2,true),"xmlBinding")}
 var _6=_2;if(_2){if(_5){_2=isc.xml.selectObjects(_2,_5);this.logInfo("JSON recordXPath: '"+_5+"', selected: "+this.echoLeaf(_2),"xmlBinding")}
@@ -483,11 +486,11 @@ return this.titleField}
 return this.iconField}
 ,isc.A.initViewSources=function(){var _1=this.fields={};for(var _2 in this.sources){var _3=isc.DS.get(_2);if(!_3)continue;var _4=this.sources[_2].fields;for(var _5 in _4){var _6=_4[_5],_7=null;if(_6=="*"){_7=_3.fields[_5]}else if(isc.isA.String(_6)){_7=_3.fields[_6]}else if(isc.isAn.Object(_6)){_7=isc.addProperties({},_3.fields[_3.fields[_6.field]]);isc.addProperties(_7,_6)}
 if(_7)_1[_5]=_7}}}
-,isc.A.inheritsSchema=function(_1){if(_1==null)return false;if(isc.isA.String(_1))_1=this.getSchema(_1);if(_1==this||_1==isc.DS.get("Object"))return true;if(!this.hasSuperDS())return false;return this.superDS().inheritsSchema(_1)}
+);isc.evalBoundary;isc.B.push(isc.A.inheritsSchema=function(_1){if(_1==null)return false;if(isc.isA.String(_1))_1=this.getSchema(_1);if(_1==this||_1==isc.DS.get("Object"))return true;if(!this.hasSuperDS())return false;return this.superDS().inheritsSchema(_1)}
 ,isc.A.getInheritedProperty=function(_1){if(this[_1])return this[_1];var _2=this.superDS();return _2?_2.getInheritedProperty(_1):null}
 ,isc.A.hasSuperDS=function(){if(this.inheritsFrom)return true;return false}
 ,isc.A.superDS=function(){if(this.hasSuperDS())return this.getSchema(this.inheritsFrom);return null}
-);isc.evalBoundary;isc.B.push(isc.A.getField=function(_1){var _2=this.getFields();return _2?_2[_1]:null}
+,isc.A.getField=function(_1){var _2=this.getFields();return _2?_2[_1]:null}
 ,isc.A.getFieldNames=function(_1){if(isc.$cv)arguments.$cw=this;if(!_1)return isc.getKeys(this.getFields());var _2=this.getFields(),_3=[],_4=0;for(var _5 in _2){if(!_2[_5].hidden)_3[_4++]=_5}
 return _3}
 ,isc.A.getLocalFields=function(_1){if(this.$38k)return this.fields;if(_1)return this.fields;this.$38l();this.$63p();this.$38k=true;return this.fields}
@@ -539,7 +542,8 @@ return _2}
 ,isc.A.getChildDataSources=function(){return this.$38m}
 ,isc.A.getChildDataSource=function(_1){var _2=this.getChildDataSources();if(_2==null)return null;var _3;for(var i=0;i<_2.length;i++){if(!_2[i]||(_1&&_2[i]==this))continue;if(!_3){_3=_2[i]}else if(_3!=_2[i]){this.logInfo("getChildDatasource(): This DataSource has multiple child "+"DataSources defined making getChildDataSource() ambiguous. Returning the "+"first child dataSource only - call getChildDataSources() to retrieve a "+"complete list.");break}}
 return _3}
-,isc.A.getTreeRelationship=function(_1,_2){if(isc.isA.String(_1))_1=this.getSchema(_1);var _3=this.getFields();if(_2==null){for(var _4 in _3){var _5=_3[_4];if(_5.foreignKey!=null){_2=_4;break}}}
+,isc.A.getTreeRelationship=function(_1,_2){if(isc.isA.String(_1))_1=this.getSchema(_1);var _3=this.getFields();if(_2==null){for(var _4 in _3){var _5=_3[_4];if(_5.foreignKey!=null){if(!_1||(_1.getID()==isc.DataSource.getForeignDSName(_5,this)))
+{_2=_4;break}}}}
 var _6;if(_2==null&&_1){_2=_6=isc.getKeys(this.fields).intersect(isc.getKeys(_1.fields))[0];this.logWarn("matched tree relationship field by name: "+_2)}
 var _7;if(_2)_7=_3[_2];if(_7==null){this.logDebug("getTreeRelationship(): Unable to find foreignKeyField."+"foreignKeyFieldName specified as:"+_2)}
 if(!_1){if(!_7)_1=this;else{var _8=isc.DataSource.getForeignDSName(_7,this);_1=this.getSchema(_8)}}
@@ -565,22 +569,22 @@ return _1}
 {_3.required=_3.xmlRequired&&_3.xmlNonEmpty}
 if(_3&&(_3.childrenProperty||_3.name==this.childrenField)){if(!_3.type)_3.type=this.ID}
 isc.SimpleType.addTypeDefaults(_3,this)}}
-,isc.A.$63p=function(){if(!this.autoDeriveTitles)return;for(var _1 in this.fields){var _2=this.fields[_1];if(_2.title&&_2.title!="")continue;_2.title=this.getAutoTitle(_1)}}
+,isc.A.$63p=function(){if(!this.autoDeriveTitles)return;for(var _1 in this.fields){var _2=this.fields[_1];if(_2.title!=null)continue;_2.title=this.getAutoTitle(_1)}}
 ,isc.A.getAutoTitle=function(_1){return isc.DataSource.getAutoTitle(_1)}
 ,isc.A.getType=function(_1){var _2=isc.SimpleType.getType(_1);if(_2!=null)return _2;if(this.types&&this.types[_1])return this.types[_1];return null}
 ,isc.A.fetchingClientOnlyData=function(_1){if(this.clientOnly)_1.clientOnly=true;if(this.$498){this.$498.add(_1);return true}
 if(this.clientOnly&&!this.testData&&(this.testFileName||this.dataURL)){this.$498=[_1];var _2=this.dataURL||this.testFileName;var _3=this.getDataFormat(_1);if(_3=="iscServer")_3=_2.match(/\.xml$/i)?"xml":"json";var _4=this.getOperationBinding(_1);var _5=isc.DataSource.create({ID:this.ID+"$499",inheritsFrom:this.ID,dataURL:_2,dataFormat:_3,recordXPath:this.recordXPath,transformRequest:this.transformRequest,transformResponse:this.transformResponse,recordName:_4.recordName||this.ID,showPrompt:this.showPrompt});this.logInfo("clientOnly datasource performing one-time "+_3+" fetch via: "+_2);this.addProperties({transformRequest:isc.DataSource.getInstanceProperty("transformRequest"),transformResponse:isc.DataSource.getInstanceProperty("transformResponse")});var _6=this;_5.sendDSRequest({operationType:"fetch",callback:function(_9,_10){if(_9.status!=isc.DSResponse.STATUS_SUCCESS){_6.logWarn("one-time fetch failed with status: "+_9.status+" and messsage: "+(_10?_10:"N/A")+".  Initializing an empty Array as testData.");_6.testData=[]}else{_6.logInfo("One-time fetch complete: "+(_10?_10.length:"null")+" records");_6.testData=_6.initializeSequenceFields(_10)}
 var _7=_6.$498;delete _6.$498;for(var i=0;i<_7.length;i++){_6.sendDSRequest(_7[i])}
 _5.destroy()},willHandleError:true});return true}}
-,isc.A.getClientOnlyResult=function(_1){var _2=_1.$374;var _3=this.testData;if(!_3||isc.isA.String(_3)){if(isc.isA.String(_3)){this.logInfo(this.ID+" datasource: using testData property as data");this.testData=isc.eval(_3)}else if(window[this.ID+"TestData"]){this.logInfo(this.ID+" datasource: using "+this.ID+"TestData object as data");this.testData=window[this.ID+"TestData"]}else{this.logInfo(this.ID+" datasource: testData property and "+this.ID+"TestData object not found, using empty list as data");this.testData=[]}}
-_3=this.testData;var _4=_2.operationType,_5={status:0};switch(_4){case"fetch":case"select":case"filter":var _6=_2.data;if(isc.isAn.Array(_6))_6=_6[0];var _7=this.applyFilter(_3,_6,_2),_8=_7;if(_2.startRow!=null){var _9=_2.startRow,_10=_2.endRow,_11=_7.length;var _12=_2.sortBy;if(_12){var _13=true;if(_12.startsWith("-")){_12=_12.substring(1);_13=false}
-_7.sortByProperty(_12,_13)}
-_10=Math.min(_10,_11-1);_8=_7.slice(_9,_10+1);_5.startRow=_9;_5.endRow=_10;_5.totalRows=_11}
-if(this.copyLocalResults){for(var i=0;i<_8.length;i++){_8[i]=isc.addProperties({},_8[i])}}
-_5.data=_8;break;case"remove":case"delete":var _15=this.findByKeys(_2.data,_3);if(_15==-1){this.logWarn("clientOnly remove operation: Unable to find record matching criteria:"+this.echo(_2.data))}else{_3.removeAt(_15);_5.data=isc.addProperties({},_2.data)}
-break;case"add":case"insert":var _16=isc.addProperties({},_2.data);_16=this.applySequenceFields(_16);_3.add(_16);_5.data=isc.addProperties({},_16);break;case"replace":case"update":var _15=this.findByKeys(_2.data,_3);if(_15==-1){this.logWarn("clientOnly update operation: Unable to find record matching criteria:"+this.echo(_2.data))}else{var _16=_3[_15];isc.addProperties(_16,_2.data);_5.data=isc.addProperties({},_16)}
+,isc.A.getClientOnlyResponse=function(_1){var _2=this.testData;if(!_2||isc.isA.String(_2)){if(isc.isA.String(_2)){this.logInfo(this.ID+" datasource: using testData property as data");this.testData=isc.eval(_2)}else if(window[this.ID+"TestData"]){this.logInfo(this.ID+" datasource: using "+this.ID+"TestData object as data");this.testData=window[this.ID+"TestData"]}else{this.logInfo(this.ID+" datasource: testData property and "+this.ID+"TestData object not found, using empty list as data");this.testData=[]}}
+_2=this.testData;var _3=_1.operationType,_4={status:0};switch(_3){case"fetch":case"select":case"filter":var _5=_1.data;if(isc.isAn.Array(_5))_5=_5[0];var _6=this.applyFilter(_2,_5,_1),_7=_6;if(_1.startRow!=null){var _8=_1.startRow,_9=_1.endRow,_10=_6.length;var _11=_1.sortBy;if(_11){var _12=true;if(_11.startsWith("-")){_11=_11.substring(1);_12=false}
+_6.sortByProperty(_11,_12)}
+_9=Math.min(_9,_10-1);_7=_6.slice(_8,_9+1);_4.startRow=_8;_4.endRow=_9;_4.totalRows=_10}
+if(this.copyLocalResults){for(var i=0;i<_7.length;i++){_7[i]=isc.addProperties({},_7[i])}}
+_4.data=_7;break;case"remove":case"delete":var _14=this.findByKeys(_1.data,_2);if(_14==-1){this.logWarn("clientOnly remove operation: Unable to find record matching criteria:"+this.echo(_1.data))}else{_2.removeAt(_14);_4.data=isc.addProperties({},_1.data)}
+break;case"add":case"insert":var _15=isc.addProperties({},_1.data);_15=this.applySequenceFields(_15);_2.add(_15);_4.data=isc.addProperties({},_15);break;case"replace":case"update":var _14=this.findByKeys(_1.data,_2);if(_14==-1){this.logWarn("clientOnly update operation: Unable to find record matching criteria:"+this.echo(_1.data))}else{var _15=_2[_14];isc.addProperties(_15,_1.data);_4.data=isc.addProperties({},_15)}
 break;case"validate":default:break}
-return _5}
+return _4}
 ,isc.A.getNextSequenceValue=function(_1){var _2=this.testData,_3=0;for(var i=0;i<_2.length;i++){var _5=_2[i][_1.name];if(_5!=null&&_5>_3)_3=_5}
 return _3+1}
 ,isc.A.applySequenceFields=function(_1){if(!this.clientOnly){return}
@@ -592,10 +596,10 @@ return _1}
 ,isc.A.findByKeys=function(_1,_2,_3,_4){return _2.findByKeys(_1,this,_3,_4)}
 ,isc.A.applyFilter=function(_1,_2,_3){var _4=[];if(!_1||_1.length==0)return _4;if(this.isAdvancedCriteria(_2)){return this.recordsMatchingAdvancedFilter(_1,_2,_3)}
 return this.recordsMatchingFilter(_1,_2,_3)}
-,isc.A.recordsMatchingFilter=function(_1,_2,_3){var _4=isc.getKeys(_2),_5=_4.length,_6=[],_7,_8,_9,_10,_11,j;if(_3&&_3.operation&&this.operationBindings){var _13=this.operationBindings.find("operationId",_3.operation.ID)
-if(_13){var _14=_13.customCriteriaFields;if(isc.isA.String(_14)){_14=_14.split(",");for(var k=0;k<_14.length;k++){_14[k]=_14[k].replace(/^\s+|\s+$/g,'')}}}}
-for(var i=0,l=_1.length;i<l;i++){_7=_1[i];if(_7==null)continue;_8=true;for(j=0;j<_5;j++){_9=_4[j];if(_9==null)continue;if(this.dropUnknownCriteria&&!this.getField(_9))continue;var _18=false;if(isc.isA.List(_14)&&_14.contains(_9)){_18=true}
-if(!_18&&this.getField(_9).customSQL)continue;_10=_7[_9];_11=_2[_9];if(!this.fieldMatchesFilter(_10,_11,_3)){_8=false;break}}
+,isc.A.recordsMatchingFilter=function(_1,_2,_3){var _4=isc.getKeys(_2),_5=_4.length,_6=[],_7,_8,_9,_10,_11,j;if(_3&&_3.operation&&this.operationBindings){var _13=_3.operation;if(_13.ID==_13.dataSource+"_"+_13.type){var _14=this.operationBindings.find("operationId",null)}else{var _14=this.operationBindings.find("operationId",_3.operation.ID)}
+if(_14){var _15=_14.customCriteriaFields;if(isc.isA.String(_15)){_15=_15.split(",");for(var k=0;k<_15.length;k++){_15[k]=_15[k].replace(/^\s+|\s+$/g,'')}}}}
+for(var i=0,l=_1.length;i<l;i++){_7=_1[i];if(_7==null)continue;_8=true;for(j=0;j<_5;j++){_9=_4[j];if(_9==null)continue;if(this.dropUnknownCriteria&&!this.getField(_9))continue;var _19=false;if(isc.isA.List(_15)&&_15.contains(_9)){_19=true}
+if(!_19&&this.getField(_9).customSQL)continue;_10=_7[_9];_11=_2[_9];if(!this.fieldMatchesFilter(_10,_11,_3)){_8=false;break}}
 if(_8)_6.add(_7)}
 return _6}
 ,isc.A.recordMatchesFilter=function(_1,_2,_3){return this.recordsMatchingFilter([_1],_2,_3).length>0}
@@ -613,7 +617,7 @@ return _1}
 ,isc.A.compareTextMatchStyle=function(_1,_2){_1=this.getTextMatchStyle(_1);_2=this.getTextMatchStyle(_2);if(_1==_2)return 0;if(_1==this.$50i)return 1;if(_2==this.$50i)return-1;if(_1==this.$45y)return 1;return-1}
 ,isc.A.compareCriteria=function(_1,_2,_3,_4){if(this.logIsInfoEnabled()){this.logInfo("Comparing criteria, oldCriteria:\n"+this.echo(_2)+"\nnewCriteria:\n"+this.echo(_1)+", policy: "+(_4||this.criteriaPolicy))}
 if(_2==null)return-1;var _5=this.getTextMatchStyle(_3?_3.textMatchStyle:null);if(this.isAdvancedCriteria(_1)||this.isAdvancedCriteria(_2)){var _6,_7;if(this.isAdvancedCriteria(_1)){if(this.isAdvancedCriteria(_2)){_7=this.compareAdvancedCriteria(_1,_2,_3)}else{var j=0;for(var i in _2)j++;if(j==0)_7=1}
-if(_7==_6){_2=this.convertCriteria(_2,_5);_7=this.compareAdvancedCriteria(_1,_2,_3)}}else{_1=this.convertCriteria(_1,_5);_7=this.compareAdvancedCriteria(_1,_2,_3)}
+if(_7==_6){_2=isc.DataSource.convertCriteria(_2,_5);_7=this.compareAdvancedCriteria(_1,_2,_3)}}else{_1=isc.DataSource.convertCriteria(_1,_5);_7=this.compareAdvancedCriteria(_1,_2,_3)}
 if(_7==_6)_7=-1;_4=_4||this.criteriaPolicy;if(_4=="dropOnShortening"){return _7}else{return _7==0?0:-1}}
 _4=_4||this.criteriaPolicy;if(_4=="dropOnShortening"){if(_5==this.$50i){return this.dropOnFieldChange(_1,_2,_3)}else{return this.dropOnShortening(_1,_2,_3)}}else{return this.dropOnChange(_1,_2,_3)}}
 ,isc.A.dropOnChange=function(_1,_2,_3){if(isc.getKeys(_2).length!=isc.getKeys(_1).length)return-1;for(var _4 in _2){var _5=_2[_4],_6=_1[_4];if(isc.isAn.Array(_5)){if(!isc.isAn.Array(_6))return-1;if(_5.length!=_6.length)return-1;if(_5.intersect(_6).length!=_5.length)
@@ -633,7 +637,7 @@ return-1;if(isc.isAn.Array(_9)){if(!isc.isAn.Array(_10))return-1;if(_9.length!=_
 if(_6>0){_4.removeList(_5);for(var i=0;i<_4.length;i++){if(this.getField(_4[i])==null)return-1}
 return 1}
 return _7}
-);isc.B._maxIndex=isc.C+133;isc.A=isc.DataSource;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$628=0;isc.B.push(isc.A.addSearchOperator=function(_1){if(!_1||!_1.ID){isc.logWarn("Attempted to add null search operator, or operator with no ID");return}
+);isc.B._maxIndex=isc.C+134;isc.A=isc.DataSource;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$628=0;isc.B.push(isc.A.addSearchOperator=function(_1){if(!_1||!_1.ID){isc.logWarn("Attempted to add null search operator, or operator with no ID");return}
 if(!isc.DataSource.$57z)isc.DataSource.$57z=[];var _2=isc.DataSource.$57z;if(_2.containsProperty("ID",_1.ID)){isc.logWarn("Attempted to add existing operator "+_1.ID+" - replacing");var _3=_2.findIndex("ID",_1.ID);if(_3>=0)_2.removeAt(_3)}
 isc.DataSource.$57z.add(_1)}
 ,isc.A.setTypeOperators=function(_1,_2){if(!_2)return;if(!isc.isAn.Array(_2))_2=[_2];if(!isc.DataSource.$570)isc.DataSource.$570={};isc.DataSource.$570[_1||"_all_"]=_2}
@@ -644,7 +648,20 @@ if(_8&&_7==_7.toUpperCase()){_9=true}
 if(!_8&&_7==_7.toUpperCase()){_3=_3+" "}
 _8=_7==_7.toUpperCase();_3=_3+_7}}
 return _3}
-);isc.B._maxIndex=isc.C+4;isc.A=isc.DataSource.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.isAdvancedCriteria=function(_1){if(!_1)return false;if(_1._constructor=="AdvancedCriteria")return true;if(this.getField("fieldName")||this.getField("operator"))return false;if(this.getField(_1.fieldName)&&this.getSearchOperator(_1.operator)){return true}
+,isc.A.convertCriteria=function(_1,_2){var _3={_constructor:"AdvancedCriteria",operator:"and"}
+var _4=[];for(var _5 in _1){if(_2=="equals"||isc.isA.Number(_1[_5])){var _6="equals"}else{_6="iContains"}
+if(isc.isA.Array(_1[_5])){var _7={_constructor:"AdvancedCriteria",operator:"or",criteria:[]}
+for(var i=0;i<_1[_5].length;i++){_7.criteria.add({fieldName:_5,operator:_6,value:_1[_5][i]})}
+_4.add(_7)}else{_4.add({fieldName:_5,operator:_6,value:_1[_5]})}}
+_3.criteria=_4;return _3}
+,isc.A.combineCriteria=function(_1,_2,_3,_4){if(!_3)_3="and";if(_3!="and"&&_3!="or"){isc.logWarn("combineCriteria called with invalid outerOperator '"+_3+"'");return null}
+var _5,_6;if(_1._constructor!="AdvancedCriteria"&&_2._constructor!="AdvancedCriteria"&&_3=="and"){for(var _7 in _1){if(_2[_7]!=_5){_6=true;break}}}else{_6=true}
+if(!_6){return isc.addProperties({},_1,_2)}
+var _8,_9;if(_1._constructor=="AdvancedCriteria"){_8=_1}else{_8=isc.DataSource.convertCriteria(_1,_4)}
+if(_2._constructor=="AdvancedCriteria"){_9=_2}else{_9=isc.DataSource.convertCriteria(_2,_4)}
+var _10={_constructor:"AdvancedCriteria",operator:_3};if(_8.operator==_3&&_9.operator==_3){_10.criteria=[];_10.criteria.addAll(_8.criteria);_10.criteria.addAll(_9.criteria)}else{_10.criteria=[_8,_9]}
+return _10}
+);isc.B._maxIndex=isc.C+6;isc.A=isc.DataSource.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.isAdvancedCriteria=function(_1){if(!_1)return false;if(_1._constructor=="AdvancedCriteria")return true;if(this.getField("fieldName")||this.getField("operator"))return false;if(this.getField(_1.fieldName)&&this.getSearchOperator(_1.operator)){return true}
 return false}
 ,isc.A.addSearchOperator=function(_1,_2){if(!_1||!_1.ID){isc.logWarn("Attempted to add null search operator, or operator with no ID");return}
 if(!isc.DataSource.$57z[_1.ID]){isc.DataSource.addSearchOperator(_1)}
@@ -675,13 +692,7 @@ return _3.condition(_2.value,_1,_2.fieldName,_2,_3,this)}
 return _4}
 ,isc.A.compareAdvancedCriteria=function(_1,_2,_3){var _4=this.getSearchOperator(_2.operator);if(_4!=this.getSearchOperator(_1.operator)){return-1}
 return _4.compareCriteria(_1,_2,_4,this)}
-,isc.A.convertCriteria=function(_1,_2){var _3={_constructor:"AdvancedCriteria",operator:"and"}
-var _4=[];for(var _5 in _1){if(_2=="equals")var _6="equals"
-else _6="iContains";if(isc.isA.Array(_1[_5])){var _7={_constructor:"AdvancedCriteria",operator:"or",criteria:[]}
-for(var i=0;i<_1[_5].length;i++){_7.criteria.add({fieldName:_5,operator:_6,value:_1[_5][i]})}
-_4.add(_7)}else{_4.add({fieldName:_5,operator:_6,value:_1[_5]})}}
-_3.criteria=_4;return _3}
-);isc.B._maxIndex=isc.C+4;isc.$571=function(){var _1=function(_57,_58,_59,_60,_61,_62){var _2;if(!_60.criteria){_60.criteria=[]}
+);isc.B._maxIndex=isc.C+3;isc.$571=function(){var _1=function(_57,_58,_59,_60,_61,_62){var _2;if(!_60.criteria){_60.criteria=[]}
 if(!isc.isAn.Array(_60.criteria)){isc.logWarn("AdvancedCriteria: found boolean operator where subcriteria was not "+"an array.  Subcriteria was: "+isc.Comm.serialize(_60.criteria));return false}
 if(_61.isNot)_62.$59u=!_62.$59u;for(var _3=0;_3<_60.criteria.length;_3++){var _4=_62.evaluateCriterion(_58,_60.criteria[_3]);if(_61.isAnd&&!_4)_2=false;if(_61.isNot&&_4)_2=false;if(_61.isOr&&_4)_2=true;if(_2!=null)break}
 if(_2==null){if(_61.isOr)_2=false;else _2=true}
@@ -785,7 +796,7 @@ if(_1.sendNoQueue||_1.transport=="scriptInclude")return false;var _4=(this.curre
 if(_4&&(this.currentTransaction.transport!=_1.transport))
 {this.logWarn("RPCRequest with conflicting transport while queuing, sending request to"+" server and continuing to queue.");return false}
 return true}
-,isc.A.sendNoQueue=function(_1){var _2=this.currentTransaction;this.currentTransaction=this.$385();this.$386(_1,this.currentTransaction);var _3=this.sendQueue();this.currentTransaction=_2;return _3}
+,isc.A.sendNoQueue=function(_1){var _2=this.currentTransaction;var _3=this.queuing;this.currentTransaction=this.$385();this.$386(_1,this.currentTransaction);var _4=this.sendQueue();this.queuing=_3;this.currentTransaction=_2;return _4}
 ,isc.A.$385=function(){var _1=this.$452++;var _2={timeout:this.defaultTimeout,transactionNum:_1,operations:[],responses:[],requestData:{transactionNum:_1,operations:[]},prompt:this.defaultPrompt,showPrompt:false,changed:function(){isc.RPCManager.$38z.setLastChanged(this);isc.RPCManager.$38z.dataChanged();isc.RPCManager.$38z.clearLastChanged()}}
 this.$38z.addTrack(_2);this.$38z.clearLastChanged();return _2}
 ,isc.A.$386=function(_1,_2){_2.URL=_1.actionURL;if(_1.containsCredentials)_2.containsCredentials=true;if(_1.exportFilename)_2.URL+="/"+_1.exportFilename;if(!_2.download_filename)_2.download_filename=_1.download_filename;if((_1.downloadResult||_1.downloadToNewWindow)&&_1.download_filename){_2.download_filename=_1.download_filename;_2.URL+="/"+_1.download_filename;_2.ignoreError=true}
@@ -841,7 +852,7 @@ this.currentTransaction=_2}
 _2.sendData()}
 ,isc.A.transactionAsGetRequest=function(_1,_2,_3){_1=this.getTransaction(_1)||this.getCurrentTransaction();_2=(_2||_1.URL||this.getActionURL());if(!_3)_3={};_3._transaction=this.serializeTransaction(_1);return this.addParamsToURL(this.markURLAsRPC(_2),_3)}
 ,isc.A.encodeParameter=function(_1,_2){if(isc.isA.Date(_2)){isc.Comm.xmlSchemaMode=true;_2=_2.toSchemaDate();isc.Comm.xmlSchemaMode=null}else if(isc.isA.Array(_2)){var _3=isc.SB.create();for(var i=0;i<_2.length;i++){_3.append(this.encodeParameter(_1,_2[i]));if(i<_2.length-1)_3.append("&")}
-return _3.toString()}if(!isc.isA.String(_2)){_2=isc.JSON.encode(_2)}
+return _3.toString()}if(!isc.isA.String(_2)){_2=isc.JSON.encode(_2,{prettyPrint:false})}
 return isc.SB.concat(encodeURIComponent(_1),"=",encodeURIComponent(_2))}
 ,isc.A.addParamsToURL=function(_1,_2){var _3=_1;if(!_2)return _1;for(var _4 in _2){var _5=_2[_4];_3+=_3.contains("?")?"&":"?";_3+=this.encodeParameter(_4,_5)}
 return _3}
@@ -865,7 +876,7 @@ if(_11&&!isc.isAn.Object(_11)){this.logWarn("params value: "+_13+" for RPCreques
 if(_11){isc.addProperties(_8,_11);_9=true}}}
 if(this.logIsInfoEnabled()){this.logInfo("sendQueue["+_4.transactionNum+"]: "+_4.operations.length+" RPCRequest(s); transport: "+_4.transport+"; target: "+_3)}
 _4.sendTime=isc.timeStamp();_4.changed();_4.callback="isc.RPCManager.performTransactionReply(transactionNum,results,wd)";if(_1)_4.$40c=_1;var _11=_8;var _14=_4.transport,_15="send"+(_14.substring(0,1).toUpperCase())+_14.substring(1);if(isc.Comm[_15]==null){this.logWarn("Attempt to send transaction with specified transport '"+_4.transport+"' failed - unsupported transaction type.");return}
-this.$39a(_4);isc.RPCManager.$410.push(_4.transactionNum);_4.transactionRequest=isc.Comm[_15]({URL:_3,httpMethod:_5.httpMethod,contentType:_5.contentType,httpHeaders:_5.httpHeaders,bypassCache:_5.bypassCache,data:_5.useSimpleHttp?_5.data:null,fields:_11,target:_5.target,callbackParam:_5.callbackParam,transport:_4.transport,blocking:_5.blocking,useSimpleHttp:_5.useSimpleHttp,transactionNum:_4.transactionNum,transaction:_4});return _5}
+this.$39a(_4);isc.RPCManager.$410.push(_4.transactionNum);_4.transactionRequest=isc.Comm[_15]({URL:_3,httpMethod:_5.httpMethod,contentType:_5.contentType,httpHeaders:_5.httpHeaders,bypassCache:_5.bypassCache,data:_5.useSimpleHttp?_5.data:null,fields:_11,target:_5.target,callbackParam:_5.callbackParam,transport:_4.transport,blocking:_5.blocking,useSimpleHttp:_5.useSimpleHttp,transactionNum:_4.transactionNum,transaction:_4});if(isc.isA.Function(this.queueSent))this.queueSent(_4.operations);return _5}
 ,isc.A.performTransactionReply=function(_1,_2,_3){var _4=this.getTransaction(_1);if(!_4){this.logWarn("performTransactionReply: No such transaction "+_1);return false}
 delete _4.$66o;delete _4.abortCallbacks;_4.receiveTime=isc.timeStamp();_4.changed();isc.RPCManager.$410.remove(_1);this.logInfo("transaction "+_1+" arrived after "+(_4.receiveTime-_4.sendTime)+"ms");if(_2==null){this.logFatal("No results for transaction "+_1);return false}
 if(_4.transport=="xmlHttpRequest"){var _5=_2;_4.xmlHttpRequest=_5;_2=_5.responseText;var _6;try{_6=_5.status}catch(e){this.logWarn("Unable to access XHR.status - network cable unplugged?");_6=-1}
@@ -898,7 +909,8 @@ delete _2.abortCallbacks;delete _2.$66n;if(_2.offline)this.playbackNextOfflineTr
 ,isc.A.performOperationReply=function(_1,_2){var _3=_2.results,_4=_1.operation;if(this.logIsInfoEnabled()){this.logInfo("rpcResponse(unstructured) results -->"+isc.Log.echoAll(_3)+"<--")}
 if(this.processLoginStatusCode(_2,_2.transactionNum))return;return this.fireReplyCallbacks(_1,_2)}
 ,isc.A.fireReplyCallback=function(_1,_2,_3,_4){var _5=_2.application?_2.application:this.getDefaultApplication();if(isc.isA.String(_5))_5=window[_5];var _6=_5.fireCallback(_1,"rpcResponse,data,rpcRequest",[_3,_4,_2]);return _6}
-,isc.A.evalResult=function(_1,_2,_3){var _4=_1.evalVars;this.logDebug("evaling result"+(_4?" with evalVars: "+isc.Log.echo(_4):""));var _5=isc.Canvas.getInstanceProperty("autoDraw");if(_1.suppressAutoDraw)isc.Canvas.setInstanceProperty("autoDraw",false);var _6=isc.Class.evalWithVars(_3,_4);if(_1.suppressAutoDraw)isc.Canvas.setInstanceProperty("autoDraw",_5);return _6}
+,isc.A.evalResult=function(_1,_2,_3){var _4=_1.evalVars;this.logDebug("evaling result"+(_4?" with evalVars: "+isc.Log.echo(_4):""));var _5=isc.Canvas.getInstanceProperty("autoDraw");if(_1.suppressAutoDraw)isc.Canvas.setInstanceProperty("autoDraw",false);if(_3.match(/^\s*\{/)){_3="var evalText="+_3+";evalText;"}
+var _6=isc.Class.evalWithVars(_3,_4);if(_1.suppressAutoDraw)isc.Canvas.setInstanceProperty("autoDraw",_5);return _6}
 ,isc.A.fireReplyCallbacks=function(_1,_2){var _3=_1.operation,_4=_2.results,_5=_1.evalResult&&_1.transport!="scriptInclude"?this.evalResult(_1,_2,_4):null;var _6;_6=(_1.evalResult?_5:_4);_2.data=_6;var _7=this.getTransaction(_2.transactionNum);var _8=_1.callback;if(_8!=null){this.fireReplyCallback(_8,_1,_2,_6)}}
 ,isc.A.$a0=function(_1,_2){if(_1.ignoreError)return;if(_2.dataSource){var _3=isc.DataSource.get(_2.dataSource);if(_3&&_3.handleError){var _4=_3.handleError(_1,_2);if(_4==false)return}}
 this.handleError(_1,_2)}
@@ -936,9 +948,10 @@ window[_2]=_5;return _5},makeDMIMethod:function(_1,_2,_3,_4){var _5={appID:_1,cl
 ,isc.A.shouldNeverDropUpdatedRows=function(){if(!isc.RPCManager.onLine)return true;return this.neverDropUpdatedRows}
 ,isc.A.shouldUpdatePartialCache=function(){if(!isc.RPCManager.onLine)return true;return this.updatePartialCache}
 );isc.B._maxIndex=isc.C+4;isc.A=isc.ResultSet.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$39r=0;isc.A.notifyOnUnchangedCache=false;isc.B.push(isc.A.init=function(){isc.ClassFactory.addGlobalID(this);if(this.operation!=null)this.fetchOperation=this.operation;var _1=this.getOperation("fetch");var _2=_1.dataSource;if(!isc.isAn.Array(_2))_2=[_2];for(var i=0;i<_2.length;i++){var _4=isc.DS.get(_2[i]);this.observe(_4,"dataChanged","observer.dataSourceDataChanged(dsRequest,dsResponse)");if(!this.$39s)this.$39s=[];this.$39s.add(_4);if(!this.dataSource)this.dataSource=_4}
-var _5=this.context;this.resultSize=(_5&&_5.dataPageSize!=null?_5.dataPageSize:this.resultSize);if(this.dropCacheOnUpdate==null){this.dropCacheOnUpdate=this.$du(_1.dropCacheOnUpdate,this.getDataSource().dropCacheOnUpdate)}
+var _5=this.context;this.resultSize=(_5&&_5.dataPageSize!=null?_5.dataPageSize:this.resultSize);if(this.allRows){this.fetchMode="local"}else{this.fetchMode=(_5&&_5.dataFetchMode!=null?_5.dataFetchMode:this.fetchMode||"paged")}
+if(this.dropCacheOnUpdate==null){this.dropCacheOnUpdate=this.$du(_1.dropCacheOnUpdate,this.getDataSource().dropCacheOnUpdate)}
 this.context=this.context||{};this.criteria=this.criteria||this.filter||{};if(this.criteria){var _6=this.criteria;this.criteria=null;this.setCriteria(_6)}
-if(this.fetchMode==null)this.fetchMode=(this.allRows?"local":"paged");if(this.allRows!=null&&(this.isLocal()||this.shouldUseClientFiltering())&&this.localData==null)
+if(this.allRows!=null&&(this.isLocal()||this.shouldUseClientFiltering())&&this.localData==null)
 {this.filterLocalData()}
 if(this.initialData){this.fillCacheData(this.initialData);this.setFullLength(this.initialLength||this.totalRows||this.initialData.length)}else if(this.isPaged()){this.localData=[]}
 this.observe(isc,"goOffline",this.getID()+".goOffline()");this.observe(isc.RPCManager,"offlineTransactionPlaybackComplete",this.getID()+".offlinePlaybackComplete()")}
@@ -1007,8 +1020,8 @@ if(this.canSortOnClient())this.$391()}
 this.$ee()}
 ,isc.A.setContext=function(_1){this.context=_1}
 ,isc.A.setCriteria=function(_1){var _2=this.allRowsCached();this.$39t=(isc.getKeys(_1).length==0);var _3=this.criteria||{},_4=this.$51w,_5=this.getDataSource();if(!_5.isAdvancedCriteria(_1)){_1=isc.clone(_1)}
-this.criteria=_1;this.$51w=(this.context&&this.context.textMatchStyle)?this.context.textMatchStyle:null;var _6=this.compareTextMatchStyle(this.$51w,_4);if(_6>=0){if(_5.isAdvancedCriteria(_1)&&!_5.isAdvancedCriteria(_3)){_3=_5.convertCriteria(_3,this.$51w)}
-if(!_5.isAdvancedCriteria(_1)&&_5.isAdvancedCriteria(_3)){_1=_5.convertCriteria(_1,this.$51w);this.criteria=_1}
+this.criteria=_1;this.$51w=(this.context&&this.context.textMatchStyle)?this.context.textMatchStyle:null;var _6=this.compareTextMatchStyle(this.$51w,_4);if(_6>=0){if(_5.isAdvancedCriteria(_1)&&!_5.isAdvancedCriteria(_3)){_3=isc.DataSource.convertCriteria(_3,this.$51w)}
+if(!_5.isAdvancedCriteria(_1)&&_5.isAdvancedCriteria(_3)){_1=isc.DataSource.convertCriteria(_1,this.$51w);this.criteria=_1}
 var _7=this.compareCriteria(_1,this.allRowsCriteria?this.allRowsCriteria:_3,this.context);if(_7!=0)_6=_7}
 if(_6==-1){if(this.isLocal()||(!this.allRowsCriteria&&this.allRows&&this.shouldUseClientFiltering()))
 {if(this.allRows!=null)this.filterLocalData()}else{this.logInfo("setCriteria: filter criteria changed, invalidating cache");this.invalidateCache();this.allRowsCriteria=null;delete this.$505}
@@ -1022,7 +1035,7 @@ this.logInfo("setCriteria: filter criteria unchanged");return false}
 ,isc.A.willFetchData=function(_1,_2){var _3,_4;if(_2!==_3){_4=this.compareTextMatchStyle(_2,this.$51w);if(_4==-1)return true}
 var _5=this.allRows?this.allRowsCriteria:this.criteria;_4=this.compareCriteria(_1,_5);if(_4==0)return false;if(!this.shouldUseClientFiltering())return true;if(!this.allMatchingRowsCached())return true;return(_4==-1)}
 ,isc.A.sortByProperty=function(_1,_2,_3,_4){if(_3==null){var _5=this.getDataSource().getField(_1);if(_5)_3=_5.type}
-if(this.$395==_1&&this.$392==_2&&this.$393==_3)return;this.$395=_1;this.$392=_2;this.$393=_3;this.$45g=_4;if(this.isPaged()||!this.shouldUseClientSorting()){this.$39x=(this.$392?"":"-")+this.$395}
+if(this.$395==_1&&this.$392==_2&&this.$393==_3)return;var _5;if(_4)_5=_4.getField(_1);if(_5&&_5.displayField)_1=_5.displayField;this.$395=_1;this.$392=_2;this.$393=_3;this.$45g=_4;if(this.isPaged()||!this.shouldUseClientSorting()){this.$39x=(this.$392?"":"-")+this.$395}
 this.$391()}
 ,isc.A.unsort=function(){if(!this.allMatchingRowsCached())return false;this.$395=null;if(this.localData)this.localData.unsort();return true}
 ,isc.A.$391=function(){var _1=this.$395,_2=this.$392;if(this.localData==null||_1==null)return;if(this.canSortOnClient()){this.logInfo("sortByProperty("+_1+", "+_2+"): full cache allows local sort");if(_1!=null){this.localData.sortByProperty(_1,_2,this.$393,this.$45g);delete this.$572;delete this.$573;delete this.$574;delete this.$575;if(!this.$52z())this.dataChanged()}
@@ -1039,7 +1052,7 @@ this.updateCache(_1,_2,_4);this.$ee()}
 ,isc.A.$ee=function(){var _1;if(!this.notifyOnUnchangedCache&&this.$573&&this.$575==null){_1=true}
 var _2,_3,_4;if(!_1&&this.$573){_2=this.$572;_3=this.$574;_4=this.$575}
 if(--this.$ef==0&&!_1){this.dataChanged(_2,_3,_4,this.$573);delete this.$572;delete this.$574;delete this.$575;delete this.$576;delete this.$573}}
-,isc.A.updateCache=function(_1,_2,_3){if(_2==null)return;_1=isc.DS.$372(_1);if(!isc.isAn.Array(_2))_2=[_2];if(this.logIsInfoEnabled()){var _4=(_3.componentId?" submitted by '"+_3.componentId+"'":" (no compnentID) ");this.logInfo("Updating cache: operationType '"+_1+"'"+_4+","+_2.length+" rows update data"+(this.logIsDebugEnabled()?":\n"+this.echoAll(_2):""))}
+,isc.A.updateCache=function(_1,_2,_3){if(_2==null)return;_1=isc.DS.$372(_1);if(!isc.isAn.Array(_2))_2=[_2];if(this.logIsInfoEnabled()){var _4=(_3.componentId?" submitted by '"+_3.componentId+"'":" (no componentID) ");this.logInfo("Updating cache: operationType '"+_1+"'"+_4+","+_2.length+" rows update data"+(this.logIsDebugEnabled()?":\n"+this.echoAll(_2):""))}
 switch(_1){case"remove":this.removeCacheData(_2,_3);break;case"add":this.addCacheData(_2,_3);break;case"replace":case"update":this.updateCacheData(_2,_3);break}
 if(this.shouldUpdatePartialCache()&&_1!="remove"&&!this.allMatchingRowsCached())
 {this.invalidateRowOrder()}
@@ -1161,12 +1174,12 @@ this.removeList(_2)}
 ,isc.A.indexOf=function(_1,_2,_3,_4,_5){var _6=this.getDataSource().getPrimaryKeyFieldNames();for(var i=0;i<_6.length;i++){var _8=_6[i];if(_1[_8]!=null)return this.findIndex(_8,_1[_8])}
 return this.invokeSuper(isc.ResultTree,"indexOf",_1,_2,_3,_4,_5)}
 );isc.B._maxIndex=isc.C+22;isc.ResultTree.getPrototype().toString=isc.$63a;isc.ResultTree.getPrototype().logMessage=isc.$63b;isc.ResultTree.registerStringMethods({dataArrived:"parentNode"});isc.A=isc.Canvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.buildRequest=function(_1,_2,_3){if(!_1)_1={};if(_3)_1.afterFlowCallback=_3;if(_2=="filter"){_2="fetch";if(_1.textMatchStyle==null)_1.textMatchStyle="substring"}
-if(this.textMatchStyle!=null)_1.textMatchStyle=this.textMatchStyle;_2=isc.DS.$372(_2);if(this.dataPageSize)_1.dataPageSize=this.dataPageSize;var _4=_1.operationId||_1.operation;if(_4==null){switch(_2){case"fetch":_4=this.fetchOperation;break;case"add":_4=this.addOperation||this.saveOperation;break;case"update":_4=this.updateOperation||this.saveOperation;break;case"remove":_4=this.removeOperation||this.deleteOperation;break;case"validate":_4=this.validateOperation;break}}
+if(this.textMatchStyle!=null)_1.textMatchStyle=this.textMatchStyle;_2=isc.DS.$372(_2);if(this.dataPageSize)_1.dataPageSize=this.dataPageSize;if(this.dataFetchMode)_1.dataFetchMode=this.dataFetchMode;var _4=_1.operationId||_1.operation;if(_4==null){switch(_2){case"fetch":_4=this.fetchOperation;break;case"add":_4=this.addOperation||this.saveOperation;break;case"update":_4=this.updateOperation||this.saveOperation;break;case"remove":_4=this.removeOperation||this.deleteOperation;break;case"validate":_4=this.validateOperation;break}}
 _1.operation=_4||this.operation;_1.componentId=this.ID;return isc.rpc.addDefaultOperation(_1,this.dataSource,_2)}
 ,isc.A.createResultTree=function(_1,_2,_3,_4){this.$53w=_2;if(_4==null)_4="fetch";if(_3==null)_3={};_3.afterFlowCallback={target:this,methodName:"$53x"};var _5=isc.addProperties({initialData:this.initialData},this.dataProperties,_3.dataProperties,this.treeProperties,_3.treeProperties);_5.criteria=_1;_5.operation=_3.operation;_5.context=_3;_5.dataSource=this.dataSource;_5.componentId=this.ID;_5.$31k=true;if(this.loadDataOnDemand!=null)_5.loadDataOnDemand=this.loadDataOnDemand;if(this.treeRootValue!=null)_5.rootValue=this.treeRootValue;if(this.treeDataRelations)_5.treeRelations=this.treeDataRelations;if(this.multiDSTree!=null)_5.multiDSTree=this.multiDSTree;var _6=this.getDataSource().resultTreeClass||"ResultTree";return isc.ClassFactory.getClass(_6).create(_5)}
 ,isc.A.$53x=function(_1,_2,_3){if(this.$53w){this.fireCallback(this.$53w,"dsResponse,data,dsRequest",arguments);delete this.$53w}}
 );isc.B._maxIndex=isc.C+3;if(isc.ValuesManager){isc.A=isc.ValuesManager.getPrototype();isc.A.buildRequest=isc.Canvas.getInstanceProperty("buildRequest")}
-isc.ClassFactory.defineInterface("EditorActionMethods");isc.EditorActionMethods.addInterfaceMethods({save:function(_1){return this.saveData(_1)},editSelected:function(_1,_2){return this.editSelectedData(_1,_2)},editNew:function(_1,_2){return this.editNewRecord(_1,_2)},editNewRecord:function(_1){this.setSaveOperationType("add");this.$39m(_1)},editRecord:function(_1){this.setSaveOperationType("update");this.$39m(_1)},$39m:function(_1){delete this.$50l;delete this.$39l;var _1=isc.addProperties({},_1);this.setData(_1)},editSelectedData:function(_1){if(isc.isA.String(_1))_1=window[_1];if(!_1)return;var _2=_1.selection.getSelection();if(_2&&_2.length>0)this.editList(_2)},editList:function(_1){this.setSaveOperationType("update");this.$50b(_1)},$50b:function(_1){this.$50l=0;this.$39l=_1;var _2=isc.addProperties({},_1[this.$50l]);this.setData(_2)},editNextRecord:function(){this.editOtherRecord(true)},editPrevRecord:function(){this.editOtherRecord(false)},editOtherRecord:function(_1){if(!this.$39l)return;if(this.isVisible()&&this.valuesHaveChanged()){this.$39n=_1;this.saveData({target:this,methodName:"editOtherReply"});return};if(_1&&this.$50l>=this.$39l.length-1){this.logWarn("Unable to edit next record - this is the last selected record");return false}
+isc.ClassFactory.defineInterface("EditorActionMethods");isc.EditorActionMethods.addInterfaceMethods({save:function(_1){return this.saveData(_1)},editSelected:function(_1,_2){return this.editSelectedData(_1,_2)},editNew:function(_1,_2){return this.editNewRecord(_1,_2)},editNewRecord:function(_1){this.setSaveOperationType("add");this.$39m(_1)},editRecord:function(_1){this.setSaveOperationType("update");this.$39m(_1)},$39m:function(_1){delete this.$50l;delete this.$39l;var _1=isc.addProperties({},_1);this.setData(_1)},editSelectedData:function(_1){if(isc.isA.String(_1))_1=window[_1];if(!_1)return;var _2=_1.selection.getSelection();if(_2&&_2.length>0)this.editList(_2)},editList:function(_1){this.setSaveOperationType("update");this.$50b(_1)},$50b:function(_1){this.$50l=0;this.$39l=_1;var _2=isc.addProperties({},_1[this.$50l]);this.editRecord(_2)},editNextRecord:function(){this.editOtherRecord(true)},editPrevRecord:function(){this.editOtherRecord(false)},editOtherRecord:function(_1){if(!this.$39l)return;if(this.isVisible()&&this.valuesHaveChanged()){this.$39n=_1;this.saveData({target:this,methodName:"editOtherReply"});return};if(_1&&this.$50l>=this.$39l.length-1){this.logWarn("Unable to edit next record - this is the last selected record");return false}
 if(!_1&&this.$50l<=0){this.logWarn("Unable to edit previous record - this is the first selected record");return false}
 this.$50l+=(_1?1:-1);var _2=isc.addProperties({},this.$39l[this.$50l]);this.setData(_2)},editOtherReply:function(_1,_2,_3){var _4=this.$39n;delete this.$39n;if(_1.status<0&&_1.errors){return this.setErrors(_1.errors,true)}
 if(_1.status<0)return isc.RPCManager.$a0(_1,_3);this.rememberValues();this.$39l[this.$50l]=this.getValues();this.editOtherRecord(_4)
@@ -1183,7 +1196,7 @@ var _6=this.getSaveOperationType(_2);this.$40c=_1;_1=this.getID()+".$49z(dsReque
 if(this.method!=isc.DynamicForm.getInstanceProperty("method")){_2.httpMethod=this.method}}
 if(!this.validate())return false
 var _8=this.getValues();if((isc.DynamicForm&&isc.isA.DynamicForm(this)&&this.isMultipart())||this.canSubmit||_7)
-{return this.submitEditorValues(_8,_2.operation,_2.callback,_2)}else{return this.saveEditorValues(_8,_2.operation,_2.callback,_2)}},updateFileItemForm:function(){var _1=this.getFileItemForm();if(_1==null)return;var _2=_1.getValues(),_3=this.getValues(),_4=_1.getItem(0).getFieldName();for(var _5 in _2){if(_5==_4)continue;_1.clearValue(_5)}
+{return this.submitEditorValues(_8,_2.operation,_2.callback,_2)}else{return this.saveEditorValues(_8,_2.operation,_2.callback,_2)}},updateFileItemForm:function(){var _1=this.getFileItemForm();if(_1==null)return;var _2=_1.getValues(),_3=this.getValues(),_4=_1.getItem(0).getFieldName();for(var _5 in _2){if(_5==_4)continue;_1.setValue(_5,null)}
 for(var _5 in _3){if(_5==_4)continue;_1.setValue(_5,_3[_5])}
 if(this.$66g)_1.setAction(this.action);_1.dataSource=this.dataSource},isNewRecord:function(){return this.getSaveOperationType()=="add"},setSaveOperationType:function(_1){this.saveOperationType=_1},getSaveOperationType:function(_1){var _2;if(!_1||!_1.operation){_2=(_1&&_1.operationType)?_1.operationType:this.saveOperationType;if(!_2&&this.dataSource!=null){var _3=isc.DataSource.getDataSource(this.dataSource).getPrimaryKeyFieldNames(),_4=this.getValues(),_5;for(var i=0;i<_3.length;i++){var _7=_3[i],_8=_4[_3];if(_8==null){_2="add";break}
 if(this.$10s[_7]!==_5&&this.$10s[_7]!=_8){_2="add"}
@@ -1346,29 +1359,28 @@ var _10=_1[_8];if(_9.multiple){if(!_10)_10=_1[_8]=[];_10.add(_7)}else{_1[_8]=_7}
 ,isc.A.convertActions=function(_1,_2,_3){for(var _4 in _2){var _5=_2[_4];if(!isc.isAn.Object(_5)||isc.isA.StringMethod(_5))continue;var _6;if(_3.getField)_6=_3.getField(_4).type;if(_6&&(_6!="StringMethod"))continue;var _7=_1.liveObject[_4],_8=_7?_7.iscAction:null,_9;if(_8)_9=true;if(_9)_2[_4]=isc.StringMethod.create({value:_5})}}
 );isc.B._maxIndex=isc.C+16}
 if(isc.DynamicForm){isc.defineClass("PropertySheet","DynamicForm");isc.A=isc.PropertySheet.getPrototype();isc.A.autoChildItems=true;isc.A.browserSpellCheck=false;isc.A.autoChildDefaults={cellStyle:"propSheetValue",titleStyle:"propSheetTitle",showHint:false};isc.A.GroupItemDefaults={cellStyle:null};isc.A.ExpressionItemDefaults={width:"*",height:18,showActionIcon:true};isc.A.ActionMenuItemDefaults={width:"*",height:18};isc.A.SelectItemDefaults={controlStyle:"propSheetSelectControl",pickListProperties:{cellHeight:16,border:"1px solid black"},height:20,width:"*",pickerIconHeight:15,pickerIconWidth:15,pickerIconSrc:"[SKIN]/DynamicForm/PropSheet_pickbutton.gif",showOver:false};isc.A.DateItemDefaults={width:"*"};isc.A.TextItemDefaults={width:"*",height:16,textBoxStyle:"propSheetField"};isc.A.ColorItemDefaults={width:"*",height:16,pickerIconHeight:16,pickerIconWidth:16,pickerIconSrc:"[SKIN]/DynamicForm/PropSheet_ColorPicker_icon.png",textBoxStyle:"propSheetField"};isc.A.HeaderItemDefaults={cellStyle:"propSheetHeading"};isc.A.TextAreaItemProperties={width:"*"};isc.A.CheckboxItemDefaults={showTitle:true,showLabel:false,getTitleHTML:function(){if(this[this.form.titleField]!=null)return this[this.form.titleField];return this[this.form.fieldIdProperty]}};isc.A.SectionItemDefaults={cellStyle:"propSheetSectionHeaderCell"};isc.A.titleAlign="left";isc.A.titleWidth=120;isc.A.cellSpacing=0;isc.A.cellPadding=0;isc.A.backgroundColor="white";isc.A.requiredTitlePrefix="<span style='color:green'>";isc.A.requiredTitleSuffix="</span>";isc.A.titleSuffix="";isc.A.clipItemTitles=true}
-if(isc.ListGrid&&isc.DynamicForm){isc.defineClass("ListEditor",isc.Layout);isc.A=isc.ListEditor.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.vertical=false;isc.A.listDefaults={_constructor:isc.ListGrid,editEvent:"click",listEndEditAction:"next",autoParent:"listLayout",selectionType:isc.Selection.SINGLE,recordClick:"this.creator.recordClick(record)",editorEnter:"this.creator.moreButton.enable()",selectionChanged:"if (this.anySelected()) this.creator.moreButton.enable()",contextMenu:{data:[{title:"Remove",click:"target.creator.removeRecord()"}]}};isc.A.listButtonsDefaults={_constructor:isc.HLayout,autoParent:"listLayout",height:10,width:10,layoutMargin:6,membersMargin:10,overflow:isc.Canvas.VISIBLE};isc.A.newButtonTitle="New";isc.A.newButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"listButtons",click:"this.creator.newRecord()"};isc.A.moreButtonTitle="More..";isc.A.moreButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"listButtons",click:"this.creator.editMore()",disabled:true};isc.A.removeButtonTitle="Remove";isc.A.removeButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"listButtons",click:"this.creator.removeRecord()"};isc.A.formDefaults={_constructor:isc.DynamicForm,autoParent:"formLayout",overflow:isc.Canvas.AUTO};isc.A.formButtonsDefaults={_constructor:isc.HLayout,autoParent:"formLayout",height:10,width:10,layoutMargin:6,membersMargin:10,overflow:isc.Canvas.VISIBLE};isc.A.saveButtonTitle="Save";isc.A.saveButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"formButtons",click:"this.creator.saveRecord()"};isc.A.cancelButtonTitle="Cancel";isc.A.cancelButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"formButtons",click:"this.creator.cancelChanges()"};isc.A.resetButtonTitle="Reset";isc.A.resetButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"formButtons",click:"this.creator.form.resetValues()"};isc.A.listLayoutDefaults={_constructor:isc.VLayout};isc.A.listButtonsOrientation="left";isc.A.formLayoutDefaults={_constructor:isc.VLayout,autoFocus:true};isc.A.animateMembers=true;isc.A.membersMargin=10;isc.A.confirmLoseChangesMessage="Discard changes?";isc.A.formGroup=["formLayout","form","formButtons","saveButton","cancelButton","resetButton"];isc.A.listGroup=["listLayout","list","listButtons","newButton","moreButton"];isc.B.push(isc.A.draw=function(){if(isc.$cv)arguments.$cw=this;if(!this.readyToDraw())return this;if(!this.inlineEdit)this.showMoreButton=this.showMoreButton||false;this.addAutoChildren(this.listGroup);this.addAutoChildren(this.formGroup);return this.Super("draw",arguments)}
+if(isc.ListGrid&&isc.DynamicForm){isc.defineClass("ListEditor",isc.Layout);isc.A=isc.ListEditor.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.vertical=false;isc.A.listDefaults={_constructor:isc.ListGrid,editEvent:"click",listEndEditAction:"next",autoParent:"listLayout",selectionType:isc.Selection.SINGLE,recordClick:"this.creator.recordClick(record)",editorEnter:"if (this.creator.moreButton) this.creator.moreButton.enable()",selectionChanged:function(){if(this.anySelected()&&this.creator.moreButton){this.creator.moreButton.enable()}},contextMenu:{data:[{title:"Remove",click:"target.creator.removeRecord()"}]}};isc.A.listButtonsDefaults={_constructor:isc.HLayout,autoParent:"listLayout",height:10,width:10,layoutMargin:6,membersMargin:10,overflow:isc.Canvas.VISIBLE};isc.A.newButtonTitle="New";isc.A.newButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"listButtons",click:"this.creator.newRecord()"};isc.A.moreButtonTitle="More..";isc.A.moreButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"listButtons",click:"this.creator.editMore()",disabled:true};isc.A.removeButtonTitle="Remove";isc.A.removeButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"listButtons",click:"this.creator.removeRecord()"};isc.A.formDefaults={_constructor:isc.DynamicForm,autoParent:"formLayout",overflow:isc.Canvas.AUTO};isc.A.formButtonsDefaults={_constructor:isc.HLayout,autoParent:"formLayout",height:10,width:10,layoutMargin:6,membersMargin:10,overflow:isc.Canvas.VISIBLE};isc.A.saveButtonTitle="Save";isc.A.saveButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"formButtons",click:"this.creator.saveRecord()"};isc.A.cancelButtonTitle="Cancel";isc.A.cancelButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"formButtons",click:"this.creator.cancelChanges()"};isc.A.resetButtonTitle="Reset";isc.A.resetButtonDefaults={_constructor:isc.AutoFitButton,autoParent:"formButtons",click:"this.creator.form.resetValues()"};isc.A.listLayoutDefaults={_constructor:isc.VLayout};isc.A.listButtonsOrientation="left";isc.A.formLayoutDefaults={_constructor:isc.VLayout,autoFocus:true};isc.A.animateMembers=true;isc.A.membersMargin=10;isc.A.confirmLoseChangesMessage="Discard changes?";isc.A.formGroup=["formLayout","form","formButtons","saveButton","cancelButton","resetButton"];isc.A.listGroup=["listLayout","list","listButtons","newButton","moreButton"];isc.B.push(isc.A.draw=function(){if(isc.$cv)arguments.$cw=this;if(!this.readyToDraw())return this;if(!this.inlineEdit)this.showMoreButton=this.showMoreButton||false;this.addAutoChildren(this.listGroup);this.addAutoChildren(this.formGroup);return this.Super("draw",arguments)}
 ,isc.A.configureAutoChild=function(_1,_2){if(isc.isA.Button(_1))_1.title=this[_2+"Title"];if(_1==this.list){_1.dataSource=this.dataSource;_1.fields=this.fields;_1.saveLocally=this.saveLocally;_1.canEdit=this.inlineEdit}
 if(this.listButtonsOrientation==isc.Canvas.RIGHT){if(_1==this.listLayout)_1.vertical=false;if(_1==this.formLayout)_1.vertical=false;if(_1==this.listButtons)_1.vertical=true;if(_1==this.formButtons)_1.vertical=true}
 if(_1==this.form){_1.dataSource=this.dataSource;_1.fields=this.formFields}
 if(this.inlineEdit){if(_1==this.formLayout)_1.visibility=isc.Canvas.HIDDEN}else{if(_1==this.listLayout)_1.showResizeBar=true}}
 ,isc.A.setDataSource=function(_1,_2){this.dataSource=_1||this.dataSource;if(this.list!=null){this.list.setDataSource(_1,_2);this.form.setDataSource(_1,_2)}}
-,isc.A.setData=function(_1){if(_1!=null&&_1.dataSource)this.setDataSource(_1.dataSource);if(this.list!=null){this.list.setData(_1);this.form.clearValues()}else{isc.addProperties(this.listDefaults,{data:_1})}}
+,isc.A.setData=function(_1){if(_1==null)_1=[];if(_1.dataSource)this.setDataSource(_1.dataSource);if(this.list!=null){this.list.setData(_1);this.form.clearValues()}else{isc.addProperties(this.listDefaults,{data:_1})}}
 ,isc.A.getData=function(){if(this.inlineEdit)this.list.endEditing();return this.list.getData()}
 ,isc.A.cancelChanges=function(){this.form.clearValues();this.showList()}
 ,isc.A.showList=function(){if(this.inlineEdit){this.formLayout.animateHide({effect:"wipe",startFrom:"R"});this.listLayout.animateShow({effect:"wipe",startFrom:"R"})}}
 ,isc.A.showForm=function(){if(this.inlineEdit){this.listLayout.animateHide({effect:"wipe",startFrom:"R"});this.formLayout.animateShow({effect:"wipe",startFrom:"R"})}}
-,isc.A.recordClick=function(_1){if(this.inlineEdit)return;var _2=function(){if(!this.inlineEdit)this.editRecord(_1);this.form.setValues(isc.addProperties({},this.list.getSelectedRecord()))}
-if(!this.form.valuesHaveChanged())_2();else this.confirmLoseChanges(_2)}
+,isc.A.recordClick=function(_1){if(this.inlineEdit)return;var _2=this;var _3=function(_4){if(_4){_2.currentRecord=_1;if(!_2.inlineEdit)_2.form.editRecord(_1);_2.form.setValues(isc.addProperties({},_2.list.getSelectedRecord()))}}
+if(!this.form.valuesHaveChanged())_3(true);else this.confirmLoseChanges(_3)}
 ,isc.A.getEditRecord=function(){var _1=this.list.getEditRow();if(_1!=null){return this.list.getEditedRecord(_1)}else{return isc.addProperties({},this.list.getSelectedRecord())}}
-,isc.A.editMore=function(){this.showForm();this.form.setValues(this.getEditRecord())}
-,isc.A.newRecord=function(){if(this.inlineEdit)return this.list.startEditingNew()
-var _1=function(){this.list.deselectAllRecords();this.showForm();this.form.editNewRecord()}
-if(!this.form.valuesHaveChanges())_1();else this.confirmLoseChanges(_1)}
+,isc.A.editMore=function(){this.currentRecord=this.getEditRecord();this.showForm();this.form.setValues(this.currentRecord)}
+,isc.A.newRecord=function(){if(this.inlineEdit)return this.list.startEditingNew();var _1=this;var _2=function(_3){if(_3){_1.list.deselectAllRecords();_1.showForm();_1.form.editNewRecord()}}
+if(!this.form.valuesHaveChanged())_2(true);else this.confirmLoseChanges(_2)}
 ,isc.A.removeRecord=function(){this.form.clearValues();this.list.removeSelectedData()}
 ,isc.A.saveRecord=function(){if(!this.form.validate())return false;var _1=this.form.getValues();this.showList();if(this.form.saveOperationType=="add"){this.list.addData(_1)}else{if(this.inlineEdit&&this.list.getEditRow()!=null){var _2=this.list.getEditRow();if(this.list.data[_2]!=null)this.list.updateData(_1)
 else this.list.setEditValues(_2,_1)}else{this.list.updateData(_1)}}
 return true}
-,isc.A.confirmLoseChanges=function(_1){isc.confirm(this.confirmLoseChangesMessages,_1)}
+,isc.A.confirmLoseChanges=function(_1){isc.confirm(this.confirmLoseChangesMessage,_1)}
 ,isc.A.validate=function(){if(this.form.isVisible()&&this.form.valuesHaveChanged()){return this.form.validate()}
 return true}
 );isc.B._maxIndex=isc.C+16}
@@ -1540,7 +1552,11 @@ showSuperClassActions:{type:"boolean"},
 createStandalone:{type:"boolean"},
 useFlatFields:{type:"boolean"},
 showLocalFieldsOnly:{type:"boolean",xmlAttribute:"true"},
-globalNamespaces:{type:"Object"}
+globalNamespaces:{type:"Object"},
+autoDeriveSchema:{type:"boolean"},
+useLocalValidators:{type:"boolean"},
+autoDeriveTitles:{type:"boolean"},
+qualifyColumnNames:{type:"boolean"}
 }
 })
 isc.DataSource.create({
@@ -1574,10 +1590,13 @@ foreignKey:{title:"Foreign Key",type:"string",xmlAttribute:"true"},
 rootValue:{title:"Tree Root Value",type:"string",xmlAttribute:"true"},
 nativeName:{hidden:"true",title:"Native Name",type:"string"},
 fieldName:{hidden:"true",title:"Field Name",type:"string"},
-fields:{hidden:"true",multiple:"true",propertiesOnly:"true",type:"DataSourceField",
-uniqueProperty:"name"},
+fields:{childTagName:"field",hidden:"true",multiple:"true",propertiesOnly:"true",
+type:"DataSourceField",uniqueProperty:"name"},
 multiple:{type:"boolean"},
-pickListFields:{multiple:"true",type:"Object"}
+pickListFields:{multiple:"true",type:"Object"},
+canFilter:{type:"boolean"},
+ignore:{type:"boolean"},
+canSortClientOnly:{type:"boolean"}
 }
 })
 isc.DataSource.create({
@@ -1658,7 +1677,7 @@ part:{name:"part"}
 },
 addGlobalId:false
 })
-isc.defineClass("Operators","Class");isc.A=isc.Operators;isc.A.equalsTitle="equals";isc.A.notEqualTitle="not equal";isc.A.greaterThanTitle="greater than";isc.A.lessThanTitle="less than";isc.A.greaterOrEqualTitle="greater than or equal to";isc.A.lessOrEqualTitle="less than or equal to";isc.A.betweenTitle="between";isc.A.betweenInclusiveTitle="between (inclusive)";isc.A.iContainsTitle="contains";isc.A.iStartsWithTitle="starts with";isc.A.iEndsWithTitle="ends with";isc.A.containsTitle="contains (match case)";isc.A.startsWithTitle="starts with (match case)";isc.A.endsWithTitle="ends with (match case)";isc.A.iNotContainsTitle="does not contain";isc.A.iNotStartsWithTitle="does not start with";isc.A.iNotEndsWithTitle="does not end with";isc.A.notContainsTitle="does not contain (match case)";isc.A.notStartsWithTitle="does not start with (match case)";isc.A.notEndsWithTitle="does not end with (match case)";isc.A.isNullTitle="is null";isc.A.notNullTitle="not null";isc.A.regexpTitle="matches expression (exact case)";isc.A.iregexpTitle="matches expression";isc.A.inSetTitle="is one of";isc.A.notInSetTitle="is not one of";isc.A.equalsFieldTitle="matches other field";isc.A.notEqualFieldTitle="differs from field";isc.A.andTitle="Match All";isc.A.notTitle="Match None";isc.A.orTitle="Match Any";if(isc.DynamicForm){isc.defineClass("FilterBuilder","Layout");isc.A=isc.FilterBuilder.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.vertical=false;isc.A.vPolicy="none";isc.A.height=1;isc.A.defaultWidth=400;isc.A.showFieldTitles=true;isc.A.showRemoveButton=true;isc.A.removeButtonDefaults={_constructor:isc.ImgButton,width:18,height:18,layoutAlign:"center",src:"[SKIN]/actions/remove.png",showRollOver:false,showDown:false,showDisabled:false,prompt:"Remove",click:function(){this.creator.removeButtonClick(this.clause)}};isc.A.showAddButton=true;isc.A.addButtonDefaults={_constructor:isc.ImgButton,autoParent:"buttonBar",width:18,height:18,src:"[SKIN]/actions/add.png",showRollOver:false,showDown:false,prompt:"Add",click:function(){this.creator.addButtonClick(this.clause)}};isc.A.buttonBarDefaults={_constructor:isc.HStack,autoParent:"clauseStack",membersMargin:4,defaultLayoutAlign:"center",height:1};isc.A.topOperator="and";isc.A.radioOptions=["and","or","not"];isc.A.topOperatorAppearance="bracket";isc.A.radioOperatorFormDefaults={_constructor:isc.DynamicForm,autoParent:"clauseStack",height:1,items:[{name:"operator",type:"radioGroup",showTitle:false,vertical:false,width:250,changed:function(_1,_2,_3){_1.creator.topOperatorChanged(_3)}}]};isc.A.topOperatorFormDefaults={height:1,width:80,numCols:1,colWidths:["*"],layoutAlign:"center",_constructor:isc.DynamicForm,items:[{name:"operator",type:"select",showTitle:false,width:"*",changed:function(_1,_2,_3){_1.creator.topOperatorChanged(_3)}}]};isc.A.defaultSubClauseOperator="or";isc.A.filterRow=[{type:"select",name:"fieldName",showTitle:false,width:150,changed:function(){this.form.creator.fieldNameChanged(this.form)}},{name:"operator",type:"select",showTitle:false,width:150,addUnknownValues:false,defaultToFirstOption:true,changed:function(){this.form.creator.operatorChanged(this.form)}}];isc.A.clauseConstructor=isc.DynamicForm;isc.A.clauseDefaults={$10j:"Enter",handleKeyPress:function(_1,_2){var _3=this.getFocusItem();if(isc.isA.TextItem(_3))_2.firedOnTextItem=true;if(_1.keyName!=this.$10j){return this.Super("handleKeyPress",[_1,_2])}},itemChanged:function(_1,_2,_3){if(this.creator.itemChanged)this.creator.itemChanged()}};isc.A.clauseStackDefaults={_constructor:isc.VStack,height:1,membersMargin:1,animateMembers:true,animateMemberTime:300};isc.A.clauseLayoutDefaults={_constructor:isc.HStack,height:1};isc.A.rangeSeparator="and";isc.A.subClauseButtonDefaults={_constructor:"IButton",autoParent:"buttonBar",title:"+()",autoFit:true,prompt:"Add Subclause",click:function(){this.creator.addSubClause(this.clause)}};isc.A.bracketDefaults={styleName:"bracketBorders",width:10};isc.A.$10j="Enter";isc.B.push(isc.A.setDataSource=function(_1){if(isc.DataSource.get(this.dataSource).ID!=isc.DataSource.get(_1).ID){this.dataSource=_1;this.clearCriteria()}}
+isc.defineClass("Operators","Class");isc.A=isc.Operators;isc.A.equalsTitle="equals";isc.A.notEqualTitle="not equal";isc.A.greaterThanTitle="greater than";isc.A.lessThanTitle="less than";isc.A.greaterOrEqualTitle="greater than or equal to";isc.A.lessOrEqualTitle="less than or equal to";isc.A.betweenTitle="between";isc.A.betweenInclusiveTitle="between (inclusive)";isc.A.iContainsTitle="contains";isc.A.iStartsWithTitle="starts with";isc.A.iEndsWithTitle="ends with";isc.A.containsTitle="contains (match case)";isc.A.startsWithTitle="starts with (match case)";isc.A.endsWithTitle="ends with (match case)";isc.A.iNotContainsTitle="does not contain";isc.A.iNotStartsWithTitle="does not start with";isc.A.iNotEndsWithTitle="does not end with";isc.A.notContainsTitle="does not contain (match case)";isc.A.notStartsWithTitle="does not start with (match case)";isc.A.notEndsWithTitle="does not end with (match case)";isc.A.isNullTitle="is null";isc.A.notNullTitle="not null";isc.A.regexpTitle="matches expression (exact case)";isc.A.iregexpTitle="matches expression";isc.A.inSetTitle="is one of";isc.A.notInSetTitle="is not one of";isc.A.equalsFieldTitle="matches other field";isc.A.notEqualFieldTitle="differs from field";isc.A.andTitle="Match All";isc.A.notTitle="Match None";isc.A.orTitle="Match Any";if(isc.DynamicForm){isc.defineClass("FilterBuilder","Layout");isc.A=isc.FilterBuilder.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.vertical=false;isc.A.vPolicy="none";isc.A.height=1;isc.A.defaultWidth=400;isc.A.showFieldTitles=true;isc.A.showRemoveButton=true;isc.A.removeButtonPrompt="Remove";isc.A.removeButtonDefaults={_constructor:isc.ImgButton,width:18,height:18,layoutAlign:"center",src:"[SKIN]/actions/remove.png",showRollOver:false,showDown:false,showDisabled:false,click:function(){this.creator.removeButtonClick(this.clause)}};isc.A.showAddButton=true;isc.A.addButtonPrompt="Add";isc.A.addButtonDefaults={_constructor:isc.ImgButton,autoParent:"buttonBar",width:18,height:18,src:"[SKIN]/actions/add.png",showRollOver:false,showDown:false,click:function(){this.creator.addButtonClick(this.clause)}};isc.A.buttonBarDefaults={_constructor:isc.HStack,autoParent:"clauseStack",membersMargin:4,defaultLayoutAlign:"center",height:1};isc.A.topOperator="and";isc.A.radioOptions=["and","or","not"];isc.A.topOperatorAppearance="bracket";isc.A.radioOperatorFormDefaults={_constructor:isc.DynamicForm,autoParent:"clauseStack",height:1,items:[{name:"operator",type:"radioGroup",showTitle:false,vertical:false,width:250,changed:function(_1,_2,_3){_1.creator.topOperatorChanged(_3)}}]};isc.A.topOperatorFormDefaults={height:1,width:80,numCols:1,colWidths:["*"],layoutAlign:"center",_constructor:isc.DynamicForm,items:[{name:"operator",type:"select",showTitle:false,width:"*",changed:function(_1,_2,_3){_1.creator.topOperatorChanged(_3)}}]};isc.A.defaultSubClauseOperator="or";isc.A.filterRow=[{type:"select",name:"fieldName",showTitle:false,width:150,changed:function(){this.form.creator.fieldNameChanged(this.form)}},{name:"operator",type:"select",showTitle:false,width:150,addUnknownValues:false,defaultToFirstOption:true,changed:function(){this.form.creator.operatorChanged(this.form)}}];isc.A.clauseConstructor=isc.DynamicForm;isc.A.clauseDefaults={$10j:"Enter",handleKeyPress:function(_1,_2){var _3=this.getFocusItem();if(isc.isA.TextItem(_3))_2.firedOnTextItem=true;if(_1.keyName!=this.$10j){return this.Super("handleKeyPress",[_1,_2])}},itemChanged:function(_1,_2,_3){if(this.creator.itemChanged)this.creator.itemChanged()}};isc.A.clauseStackDefaults={_constructor:isc.VStack,height:1,membersMargin:1,animateMembers:true,animateMemberTime:150};isc.A.clauseLayoutDefaults={_constructor:isc.HStack,height:1};isc.A.rangeSeparator="and";isc.A.subClauseButtonTitle="+()";isc.A.subClauseButtonPrompt="Add Subclause";isc.A.subClauseButtonDefaults={_constructor:"IButton",autoParent:"buttonBar",autoFit:true,click:function(){this.creator.addSubClause(this.clause)}};isc.A.bracketDefaults={styleName:"bracketBorders",width:10};isc.A.$10j="Enter";isc.B.push(isc.A.setDataSource=function(_1){if(isc.DataSource.get(this.dataSource).ID!=isc.DataSource.get(_1).ID){this.dataSource=_1;this.clearCriteria()}}
 ,isc.A.addButtonClick=function(){this.addNewClause()}
 ,isc.A.removeButtonClick=function(_1){this.removeClause(_1)}
 ,isc.A.removeClause=function(_1){this.clauses.remove(_1);var _2=_1.clauseLayout;this.clauseStack.hideMember(_2,function(){_2.destroy()})
@@ -1666,7 +1685,7 @@ if(this.firstRemoveButton)this.updateFirstRemoveButton()}
 ,isc.A.updateFirstRemoveButton=function(){var _1=this.clauses[0];if(this.clauses.length==1&&!this.allowEmpty){_1.removeButton.disable();_1.removeButton.setOpacity(50)}else if(this.clauses.length>1){_1.removeButton.enable();_1.removeButton.setOpacity(100)}}
 ,isc.A.setTopOperator=function(_1){this.topOperator=_1;var _2=this.topOperatorAppearance;if(_2=="bracket"){this.topOperatorForm.setValue("operator",_1)}else if(_2=="radio"){this.radioOperatorForm.setValue("operator",_1)}}
 ,isc.A.topOperatorChanged=function(_1){this.topOperator=_1}
-,isc.A.initWidget=function(){this.Super("initWidget",arguments);var _1;if(this.showSubClauseButton==_1){this.showSubClauseButton=(this.topOperatorAppearance!="radio")}
+,isc.A.initWidget=function(){this.Super("initWidget",arguments);this.addButtonDefaults.prompt=this.addButtonPrompt;this.removeButtonDefaults.prompt=this.removeButtonPrompt;this.subClauseButtonDefaults.prompt=this.subClauseButtonPrompt;this.subClauseButtonDefaults.title=this.subClauseButtonTitle;var _1;if(this.showSubClauseButton==_1){this.showSubClauseButton=(this.topOperatorAppearance!="radio")}
 this.clauses=[];var _2=this.topOperatorAppearance;var _3=this.getDataSource().getTypeOperatorMap("text",true,"criteria"),_4=[];for(var _5 in _3){_4.add(_5)}
 if(_2=="bracket"){if(this.showTopRemoveButton){var _6=this.removeButton=this.createAutoChild("removeButton",{click:function(){this.creator.parentClause.removeButtonClick(this.creator)}});this.clauseLayout=this;this.addMember(_6)}
 this.addAutoChild("topOperatorForm");this.topOperatorForm.items[0].valueMap=_4;this.topOperatorForm.items[0].defaultValue=this.topOperator;this.addAutoChild("bracket")}
@@ -1682,9 +1701,10 @@ var _11=this.buildValueItemList(_10,_9);if(_1){if(_1.value!=null&&_11.containsPr
 if(_1.start!=null&&_11.containsProperty("name","start")){_11.find("name","start").defaultValue=_1.start}
 if(_1.end!=null&&_11.containsProperty("name","end")){_11.find("name","end").defaultValue=_1.end}}
 _2.addList(_11);var _12=this.createAutoChild("clause",{flattenItems:true,items:_2});this.clauses.add(_12);this.updateFields(_12);var _13=this.createAutoChild("removeButton");var _14=[_13];_14.add(_12);var _15=this.createAutoChild("clauseLayout",{visibility:"hidden",members:_14});_12.removeButton=_13;_12.clauseLayout=_15;_13.clause=_12;var _16=this.clauseStack;var _17=Math.max(0,_16.getMemberNumber(this.buttonBar));_16.addMember(_15,_17);_16.showMember(_15,function(){_12.focusInItem("fieldName")});this.updateFirstRemoveButton()}
-,isc.A.buildValueItemList=function(_1,_2){var _3=_1.name,_4=_2.valueType,_5=isc.SimpleType.getType(_1.type)||isc.SimpleType.getType("text"),_6=[];while(_5.inheritsFrom){_5=isc.SimpleType.getType(_5.inheritsFrom)}
-_5=_5.name;if(_4=="valueSet"){return}else if(_4=="fieldType"||_4=="custom"){var _7=null;if(_4=="custom"&&_2.editorType){_7=_2.editorType}
-var _8=isc.addProperties({type:_5,name:"value",showTitle:false,width:150,editorType:_7,changed:function(){this.form.creator.valueChanged(this,this.form)}},this.getValueFieldProperties(_1.type,_3));if(_1.type=="enum"){_8-isc.addProperties(_8,{valueMap:_1.valueMap})}
+,isc.A.buildValueItemList=function(_1,_2){if(_2==null){this.logWarn("buildValueItemList passed null operator")}
+var _3=_1.name,_4=_2?_2.valueType:"text",_5=isc.SimpleType.getType(_1.type)||isc.SimpleType.getType("text"),_6=[];while(_5.inheritsFrom){_5=isc.SimpleType.getType(_5.inheritsFrom)}
+_5=_5.name;if(_4=="valueSet"){return}else if(_4=="fieldType"||_4=="custom"){var _7=null;if(_4=="custom"&&_2&&_2.editorType){_7=_2.editorType}
+var _8=isc.addProperties({type:_5,name:_1.name,showTitle:false,width:150,editorType:_7,changed:function(){this.form.creator.valueChanged(this,this.form)}},this.getValueFieldProperties(_1.type,_3));_8=this.getDataSource().combineFieldData(_8);_8.name="value";if(_1.type=="enum"){_8=isc.addProperties(_8,{valueMap:_1.valueMap})}
 _6.add(_8)}else if(_4=="fieldName"){var _9=this.getDataSource().getFieldNames(true);_9.remove(_3);var _10={};for(var i=0;i<_9.length;i++){_3=_9[i];if(this.showFieldTitles){var _12=this.getDataSource().getField(_3).title;_12=_12?_12:_3;_10[_3]=_12}else{_10[_3]=_3}}
 _6.add(isc.addProperties({type:"select",name:"value",showTitle:false,width:150,valueMap:_10,changed:function(){this.form.creator.valueChanged(this,this.form)}},this.getValueFieldProperties(_1.type,_3)))}else if(_4=="valueRange"){_6.addList([isc.addProperties({type:_5,name:"start",showTitle:false,width:150,changed:function(){this.form.creator.valueChanged(this,this.form)}},this.getValueFieldProperties(_1.type,_3)),isc.addProperties({type:"staticText",name:"rangeSeparator",showTitle:false,width:1,defaultValue:this.rangeSeparator,shouldSaveValue:false,changed:function(){this.form.creator.valueChanged(this,this.form)}},this.getValueFieldProperties(_1.type,_3)),isc.addProperties({type:_5,name:"end",showTitle:false,width:150,changed:function(){this.form.creator.valueChanged(this,this.form)}},this.getValueFieldProperties(_1.type,_3))])}
 return _6}
@@ -1693,7 +1713,12 @@ return _6}
 ,isc.A.removeValueFields=function(_1){if(_1.getItem("value"))_1.removeItem("value");if(_1.getItem("rangeSeparator"))_1.removeItem("rangeSeparator");if(_1.getItem("start"))_1.removeItem("start");if(_1.getItem("end"))_1.removeItem("end")}
 ,isc.A.operatorChanged=function(_1){var _2=_1.getValue("fieldName");if(_2==null)return;var _3=this.getDataSource().getField(_2);var _4=this.getDataSource().getSearchOperator(_1.getValue("operator"));this.removeValueFields(_1);var _5=this.buildValueItemList(_3,_4)
 _1.addItems(_5)}
-,isc.A.updateFields=function(_1){var _2=_1.getValue("fieldName");if(_2==null)return;var _3=this.getDataSource().getField(_2);var _4=this.getDataSource().getSearchOperator(_1.getValue("operator"));_1.getItem("operator").setValueMap(this.getDataSource().getFieldOperatorMap(_3,false,"criteria",true));if(_1.getItem("value")&&(_3.type||"text")==_1.getItem("value").type)return;this.removeValueFields(_1);_1.setValue("value",null);if(_1.getItem("start"))_1.setValue("start",null);if(_1.getItem("end"))_1.setValue("end",null);_1.addItems(this.buildValueItemList(_3,_4))}
+,isc.A.updateFields=function(_1){var _2=_1.getValue("fieldName");if(_2==null)return;var _3=this.getDataSource().getField(_2);var _4=_1.getValue("operator");_1.getItem("operator").setValueMap(this.getDataSource().getFieldOperatorMap(_3,false,"criteria",true));if(_4==null||_1.getValue("operator")!=_4){if(_1.getValue("operator")==null){_1.getItem("operator").setValue(_1.getItem("operator").getFirstOptionValue())}
+_4=_1.getValue("operator")}
+_4=this.getDataSource().getSearchOperator(_4);var _5;if(_1.getItem("value")){var _6=_1.getItem("value").type,_7=_3.type||"text";_5=(_6!=_7)}
+this.removeValueFields(_1);_1.addItems(this.buildValueItemList(_3,_4));if(_5)_1.clearValue("value");else{var _8=_1.getItem("value");if(_8&&_8.getValueMap()&&_8.$193&&!_8.$193(_8.getValue()))
+{_8.clearValue()}}
+if(_1.getItem("start"))_1.setValue("start",null);if(_1.getItem("end"))_1.setValue("end",null)}
 ,isc.A.getFieldOperators=function(_1){var _2=this.getDataSource().getField(_1)
 return this.getDataSource().getFieldOperators(_2)}
 ,isc.A.getValueFieldProperties=function(_1,_2){}
@@ -1739,7 +1764,7 @@ var _2=this.getRecord(_1);if(this.data.isFolder(_2))return"group";else return th
 for(var _2 in _1){var _3=isc.ClassFactory.getClass(_2);if(_3)_3.addProperties({waiRole:_1[_2]})}})();isc._moduleEnd=isc._DataBinding_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('DataBinding module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'DataBinding'.");}
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1340,7 +1340,7 @@ unsupportedBrowserAction:"continue",
 // @param	[URL]   (string)	URL of redirect page. May include Isomorphic special directories
 //      such as [SKIN].
 // @see Page.unsupportedBrowserAction
-// @see Page.getunsupportedBrowserPromptString()
+// @see Page.getUnsupportedBrowserPromptString()
 // @see Page.defaultUnsupportedBrowserURL
 // @visibility external
 //<

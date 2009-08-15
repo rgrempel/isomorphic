@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1820,7 +1820,8 @@ show : function (a,b,c,d) {
     if (this.autoCenter && !this.parentElement) {
         
         this._centering = true;
-        this.moveTo(-1000, -1000);
+        
+        this.moveTo(0, -1000);
         this._centering = false;
     }
     
@@ -2014,7 +2015,6 @@ centerInPage : function () {
         parent = this.parentElement ? this.parentElement : isc.Page,
         left = ((parent.getWidth() - width) / 2) + parent.getScrollLeft(),
         top = ((parent.getHeight() - height) / 2) + parent.getScrollTop();
-
     // Don't try to apply decimal positions
     left = Math.round(left);
     top = Math.round(top);

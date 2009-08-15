@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -50,7 +50,13 @@ isc.Selection.addProperties({
     //  The set of data for which selection is being managed.  If not specified at init time
     //  this can be set up via the <code>selection.setData()</code> method.
     // @visibility serverSelection
-    //< 
+    //<
+    
+    //> @attr selection.enabledProperty (String : "enabled" [IRA])
+    // Property used to indicated records as being disabled (therefore unselectable).
+    //<
+    
+    enabledProperty:"enabled",
     
     // _dirty - manages whether we need to update the cache of selected records.
 	_dirty:true
@@ -306,7 +312,7 @@ setSelected : function (item, newState) {
 	if (item == null) return false;
 	
 	// if the item is not enabled, just return
-	if (item.enabled == false) return false;
+	if (item[this.enabledProperty] == false) return false;
 	
     var property = this.selectionProperty,
         isNode = isc.isAn.XMLNode(item);

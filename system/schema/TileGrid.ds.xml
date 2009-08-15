@@ -15,7 +15,7 @@
 		</field>
         <field name="showAllRecords" type="boolean"/>
         <field name="animateTileChange" type="boolean"/>
-        
+        <field name="showDetailFields" type="boolean"/>
 	</fields>
     <groups>
         <group>basics</group>

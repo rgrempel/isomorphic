@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1592,7 +1592,10 @@ getTableHTML : function (colNum, startRow, endRow) {
     } else if (this.isPrinting && this.autoFit) {
         // when printing, autoFit should mean full screen
         widthHTML = " WIDTH=100%";
-    } else if ((isc.Browser.isMoz || isc.Browser.isSafari) && !autoFit) {
+    
+    } else if ((isc.Browser.isIE8Strict || isc.Browser.isMoz || isc.Browser.isSafari) 
+                && !autoFit) 
+    {
         
         widthHTML = " WIDTH=" + tableWidth;
     }
@@ -1772,17 +1775,6 @@ getTableHTML : function (colNum, startRow, endRow) {
             // current row)
             cellSkipSourceRows = [];
 
-        var hasCheckboxField = this.selectionAppearance == "checkbox",
-            checkboxColNum = !hasCheckboxField ? 0 : this.isRTL() ? numCols-1 : 0;
-
-        // for single-cell records which aren't groups when hasCheckboxField is true
-        var colspanHTML = " COLSPAN=" + (numCols - 1)  + " STYLE='" + 
-                           (this.fixedRowHeights ? "padding-top:0px;padding-bottom:0px;" : "");
-
-        // for group single-cell records - ends in an open style tag.
-        var groupSpanHTML = " COLSPAN=" + numCols + " STYLE='" + 
-                           (this.fixedRowHeights ? "padding-top:0px;padding-bottom:0px;" : "");
-
         this._cacheColumnHTML(startCol, endCol, autoFit, hPad, writeDiv);
 
         if (this.isPrinting && (!this._printingChunk || startRow == 0)) {
@@ -1868,7 +1860,12 @@ getTableHTML : function (colNum, startRow, endRow) {
                 }
                 
             }
-
+            
+            // If we're drawing the record as a single cell, figure out which cells it's spanning
+            
+            var singleCellSpan = drawRecordAsSingleCell ?      
+                                    this._getSingleCellSpan(record,startCol,endCol) : null;
+            
             //if (skipCount > 0) {
             //    this.logWarn("rowSpan start rows for row: " + rowNum + 
             //                 ": " + cellSkipSourceRows);
@@ -1876,8 +1873,7 @@ getTableHTML : function (colNum, startRow, endRow) {
 
 			// output each cell
 			for (colNum = startCol; colNum < endCol; colNum++) {
-                if (drawRecordAsSingleCell && record._isGroup && hasCheckboxField  
-                    && colNum == checkboxColNum) colNum++;
+                
                 var field = fields[colNum],
                     cellRecord = record;
                 if (cellRecord == null) cellRecord = this.getCellRecord(rowNum, colNum);
@@ -1912,19 +1908,26 @@ getTableHTML : function (colNum, startRow, endRow) {
                     cellHTML[valignAttrSlot] = valignAttr
                     cellHTML[valignSlot] = vAlign;
                 }
-
-                if (drawRecordAsSingleCell && 
-                    (!hasCheckboxField || colNum != checkboxColNum))
-                {
+                
+                
+                if (singleCellSpan != null && (colNum == singleCellSpan[0])) {
+                    
+                    // singleCells used for logging only
                     singleCells++;
-
-                    // HTML to cause the cell to span the whole table (separators and such) or
-                    // all but one of the columns when a checkboxField is present
-                    cellHTML[widthSlot] = record._isGroup ? groupSpanHTML : colspanHTML;
+                    
+                    // HTML to cause the cell to span several cells for
+                    // drawRecordAsSingleCell case
+                    cellHTML[widthSlot] = this._getTDSpanHTML(singleCellSpan[1]-singleCellSpan[0]);
+                    
                     // If we're writing out a DIV, we need to close the "'" around the style
                     if (writeDiv) {
                         cellHTML[divStart+1] = this._$singleQuote;
                     }
+                    
+                    // We'll write out the rest of the HTML, then increment colNum to jump to the
+                    // end of the span
+
+                    
                 } else {
                     // per column HTML (width)
                     // XXX Actually a misnomer - this includes some height information too
@@ -2058,14 +2061,11 @@ getTableHTML : function (colNum, startRow, endRow) {
                 //    this._gotSample = true;
                 //}
 
-				if (drawRecordAsSingleCell) {
-                    // this cell is the whole row, go on to next row
-                    if (!hasCheckboxField) break;
-
-                    // RTL - skip an appropriate number of cols according to record._isGroup
-                    if (checkboxColNum >= colNum) colNum += numCols - record._isGroup ? 1 : 2;
+				if (drawRecordAsSingleCell && (colNum == singleCellSpan[0])) {
+                    
+                    colNum += singleCellSpan[1] - singleCellSpan[0];
                 }
-			}			
+			}
 			// end the table row
 			output.append(rowEnd);
             //>Animation
@@ -2156,6 +2156,32 @@ getCellVAlign : function (record, field, rowNum, colNum) {
 getCellAlign : function (record, field, rowNum, colNum) {
     return field.cellAlign || field.align;
 },
+
+
+// draw record as single cell does not always span the entire row - in the ListGrid, if we have
+// a checkbox field we want to show it on records even where singleCellValue is true
+// startCol / endCol passed in are the start/end cols we're currently rendering
+_getSingleCellSpan : function (record, startCol, endCol) {
+    return [startCol, endCol];
+},
+
+// This is some innerHTML written into the <TD for single cell values, to govern it's COLSPAN
+// This is extremely time critical so only create a new string once for each 'span' we have
+// requested
+_getTDSpanHTML : function (span) {
+    if (!isc.GridRenderer._tdSpanHTML) {
+        isc.GridRenderer._tdSpanHTML = {_fixedRowHeights:{},
+                                      _varRowHeights:{}};
+    }
+    var cache = this.fixedRowHeights ? isc.GridRenderer._tdSpanHTML._fixedRowHeights 
+                                      : isc.GridRenderer._tdSpanHTML._varRowHeights;
+    if (cache[span]) return cache[span];
+    else {
+        return cache[span] = " COLSPAN=" + span  + " STYLE='" + 
+                           (this.fixedRowHeights ? "padding-top:0px;padding-bottom:0px;" : "");
+    }
+},
+                           
                 
 
 // Returns the base style of the first record. Used to calculate sizing for cells based on 
@@ -2371,14 +2397,8 @@ _getCellValue : function (record, rowNum, colNum) {
     // If a record has an associated component to display, add a spacer underneath the record
     // to force the contents to draw above the component.
     if (record && record._embeddedComponents) {
-        var spacerHeight = 0;
-        for (var i = 0; i < record._embeddedComponents.length; i++) {
-            var comp = record._embeddedComponents[i];
-            if (comp.embeddedPosition == this._$expand) spacerHeight += comp.getVisibleHeight();
-        }
-        if (spacerHeight) {
-            value += "<BR>" + isc.Canvas.spacerHTML(1, spacerHeight);
-        }
+        var spacerHeight = this._getExtraEmbeddedComponentHeight(record);
+        if (spacerHeight) value += "<BR>" + isc.Canvas.spacerHTML(1, spacerHeight);
     }
 
     return value;
@@ -2516,18 +2536,29 @@ getRowHeight : function (record, rowNum) {
 
 updateHeightForEmbeddedComponents : function (record, rowNum, height) {    
     if (record && record._embeddedComponents) {
-        var components = record._embeddedComponents;
-        for (var i = 0; i < components.length; i++) {
-            var component = record._embeddedComponents[i];
-            if (!isc.isA.Canvas(component)) continue;
-            // mark the component with the row it currently appears in
-            component._currentRowNum = rowNum;
-            if (component.embeddedPosition == this._$within) continue;
-            // expand the row so that the component appears under the normal cells
-            height += component.getVisibleHeight();
-        } 
+
+        height += this._getExtraEmbeddedComponentHeight(record, rowNum);
     }
     return height;
+},
+
+_getExtraEmbeddedComponentHeight : function (record, rowNum) {
+    var components = record._embeddedComponents,
+        maxComponentHeight = 0;
+    for (var i = 0; i < components.length; i++) {
+        var component = record._embeddedComponents[i];
+        if (component == null) continue;
+
+        // mark the component with the row it currently appears in
+        if (rowNum != null) component._currentRowNum = rowNum;
+
+        if (component.embeddedPosition == this._$within) continue;
+
+        // expand the row so that the appears under the normal cells
+        var componentHeight = component.getVisibleHeight();
+        if (componentHeight > maxComponentHeight) maxComponentHeight = componentHeight;
+    } 
+    return maxComponentHeight;
 },
 
 // get the row where the cell at the given coordinates starts
@@ -2583,8 +2614,13 @@ getCellRowSpan : function (rowNum, colNum) {
 // expand/collapse), so we'd need the caller to tell us about rowNum changes.
 // 
 // Bugs:
+// - embedded components should probably never bubble mouse events
 // - removing a record doesn't automatically destroy the associated component (though it will
 //   be hidden)
+// - need better handling of components that overflow their cell or table, or need to clip
+//   them automatically.  Current, can't scroll to show an offscreen component.
+// - tab order across multiple embedded components that show form items is semi-random (based
+//   on insertion order instead of row order)
 
 
 // Method to actually attach a component to a record
@@ -2642,13 +2678,15 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
     
     component.embeddedPosition = position;
     component.embeddedRecord = record;
-    
+
     // set up the current row / colNum passed in
     // note that if we redraw to render the embedded component these will be recalculated
     // anyway, but by setting up an initial currentColNum we ensure the component is
     // embedded in a cell rather than a row!
     component._currentRowNum = rowNum;
     component._currentColNum = colNum;
+    // for frozen columns, mark the component with the id of the GridBody it's being stored in
+    component._embedBody = this.getID();
     
     // if position == "within" we'll handle percentage sizing and snapTo ourselves
     // unexposed flag to disable standard snapTo / percent sizing logic
@@ -2673,6 +2711,12 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
     component.__oldRedrawWithParent = component._redrawWithParent;
     component._redrawWithParent = false;   
 
+    // prevent bubbling of mouse events while the component is embedded.  Without this,
+    // cellClick, recordClick et al will fire while the component is embedded, which is usually
+    // wrong.
+    component._origBubbleMouseEvents = component.bubbleMouseEvents;
+    if (!component.bubbleMouseEvents) component.bubbleMouseEvents = false;
+    
     // If the component is going to expand the row we'll need a redraw
     // Also, if we don't know the rowNum / colNum for the record, this will get picked up at redraw
     // time
@@ -2697,7 +2741,6 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
 // to achieve this if required.
 updateEmbeddedComponentCoords : function (components, record, rowNum, colNum) {
     components.setProperty("_currentRowNum", rowNum);
-    
 },
 	
 // place an embedded component over the correct row.
@@ -2707,65 +2750,72 @@ placeEmbeddedComponent : function (component) {
     var rowNum = component._currentRowNum; 
 
     if (rowNum == null || rowNum < this._firstDrawnRow || rowNum > this._lastDrawnRow) {
-        if (component.isDrawn()) component.clear();
-    } else {
-        var record = component.embeddedRecord,
-            position = component.embeddedPosition;
-        if (position == this._$within) {
-            // Respect "snapTo" if specified
-            // *Note: we are suppressing standard canvas percent sizing and snap-to behavior
-            // so we can explicitly size / position based on cell coordinates
-            var snapTo = component.snapTo || "TL",
-                snapEdge = component.snapEdge || snapTo,
-                // if the component is marked as having a column we'll snap to it.
-                snapCol = component._currentColNum;
-           
-            // figure out sizes before placing!
-            var height = this.getRowSize(rowNum),
-                width = snapCol != null ? this.getColumnWidth(snapCol) : this._fieldWidths.sum(), 
-                cpw = component._percent_width, 
-                cph = component._percent_height,
-                cw, ch;
-
-            if (isc.isA.String(cpw) && cpw.endsWith("%")) {
-                cw = Math.round((parseInt(cpw) * width) / 100);   
-            }
-            if (isc.isA.String(cph) && cph.endsWith("%")) {
-                ch = Math.round((parseInt(cph) * height) / 100);
-            }
-            
-            var topOrigin = this.getRowTop(rowNum),
-                leftOrigin = snapCol!=null ? this.getColumnLeft(snapCol) : 0,
-                compHeight = ch != null ? ch : component.getHeight(),
-                compWidth = cw != null ? cw : component.getWidth();
-                
-            if (ch || cw) {
-                component.resizeTo(cw, ch);
-                 // retain percentages so we reflow correctly!
-                component._percent_width = cpw;
-                component._percent_height = cph;
-            }
-            // pass row/column dimensions to snapToEdge in lieu of a canvas
-            isc.Canvas.snapToEdge([leftOrigin, topOrigin, width, height], snapTo, component, snapEdge);
-            
-        } else {
-            
-            // float at the bottom of the row, rather than the top 
-            component.setTop(this.getRowTop(rowNum) + this.cellHeight);   
-            // Not clear what we should do with the ZIndex by default
-            // component.bringToFront();
-        }
+        // row is no longer drawn - clear component
         
-        if (!component.isDrawn()) component.draw();
-        if (!component.isVisible()) {            
-            if (this.shouldAnimateEmbeddedComponent(component)) {
-                component.animateShow();
-            } else {
-                component.show();
-            }
-        }
-        this.updateEmbeddedComponentZIndex(component);
+        if (component.isDrawn()) component.clear();
+        return;
     }
+
+    var record = component.embeddedRecord,
+        position = component.embeddedPosition,
+        colNum = component._currentColNum,
+        topOrigin = this.getRowTop(rowNum),
+        leftOrigin = colNum != null ? this.getColumnLeft(colNum) : 0,
+        width = colNum != null ? this.getColumnWidth(colNum) : this._fieldWidths.sum();
+
+    if (position == this._$within) {
+        // Respect "snapTo" if specified
+        // *Note: we are suppressing standard canvas percent sizing and snap-to behavior
+        // so we can explicitly size / position based on cell coordinates
+        var snapTo = component.snapTo || "TL",
+            snapEdge = component.snapEdge || snapTo;
+           
+        // figure out sizes before placing!
+        var height = this.getRowSize(rowNum),
+            cpw = component._percent_width, 
+            cph = component._percent_height,
+            cw, ch;
+
+        if (isc.isA.String(cpw) && cpw.endsWith("%")) {
+            cw = Math.round((parseInt(cpw) * width) / 100);   
+        }
+        if (isc.isA.String(cph) && cph.endsWith("%")) {
+            ch = Math.round((parseInt(cph) * height) / 100);
+        }
+            
+        var compHeight = ch != null ? ch : component.getHeight(),
+            compWidth = cw != null ? cw : component.getWidth();
+
+        if (ch || cw) {
+            component.resizeTo(cw, ch);
+             // retain percentages so we reflow correctly!
+            component._percent_width = cpw;
+            component._percent_height = cph;
+        }
+        // pass row/column dimensions to snapToEdge in lieu of a canvas
+        isc.Canvas.snapToEdge([leftOrigin, topOrigin, width, height], snapTo, component, snapEdge);
+            
+    } else {
+        // NOTE: if you need multiple "expand" components to expand a single row, generally
+        // you're expected to use a Stack or Layout to manage them.
+
+        // float at the bottom of the row, rather than the top 
+        topOrigin += this.cellHeight;
+        component.moveTo(leftOrigin, topOrigin);
+        if (colNum != null) component.setWidth(width);
+        // Not clear what we should do with the ZIndex by default
+        // component.bringToFront();
+    }
+        
+    if (!component.isDrawn()) component.draw();
+    if (!component.isVisible()) {            
+        if (this.shouldAnimateEmbeddedComponent(component)) {
+            component.animateShow();
+        } else {
+            component.show();
+        }
+    }
+    this.updateEmbeddedComponentZIndex(component);
     
 },
 
@@ -2783,9 +2833,14 @@ removeEmbeddedComponent : function (record, component, suppressRedraw) {
     // support specifying rowNum instead
     
     if (isc.isA.Number(record)) record = this.getCellRecord(record, 0);
-        
+
     var components = record._embeddedComponents;
-    if (components == null || !components.contains(component)) return;
+    if (components == null) return;
+
+    // support specifying component by colNum
+    if (isc.isA.Number(component)) component = components.find("_currentColNum", component);
+    
+    if (!components.contains(component)) return;
 
     if (this.isObserving(component, "resized")) {
         this.ignore(component, "resized"); // stop watching for resizes
@@ -2797,11 +2852,15 @@ removeEmbeddedComponent : function (record, component, suppressRedraw) {
     // reset redraw w/parent flag to original setting
     component._redrawWithParent = component.__oldRedrawWithParent;
     component.__oldRedrawWithParent = null;
+
+    // reset bubbleMouseEvents setting
+    component.bubbleMouseEvents = component._origBubbleMouseEvents;
     
     var expand = component.embeddedPosition == this._$expand;
     component.embeddedPosition = null;
     component._currentRowNum = null;
     component._currentColNum = null;
+    component._embedBody = null;
     
     // suppress redraw - used when an embedded component is just being shifted to another record
     if (suppressRedraw) {
@@ -4522,14 +4581,24 @@ mouseOut : function () {
     if (this._embeddedComponents) {
         var components = this._embeddedComponents;
         for (var i = 0; i < components.length; i++) {
-            if (components[i].contains(target, true)) return;
+            if (components[i].contains(target, true)) {
+                return;
+            }
         }
     }
     // Note that we'll still get a bubbled mouseout when the user rolls out of the embedded
     // component so we won't get stuck in an 'over' state. 
     
-    // Catch the case where a bubbled mouseout fires as the user rolls back onto the body
-    if (target == this) return;
+    // If the target == this, we're still over this widget.
+    // This can happen if we're starting to drag - in this case continue as with any other 
+    // mouseOut (killing the hover is technically unnecessary as in this case as
+    // EH.handleDragStart() always calls Hover.clear(), but we also want to clear up over-styling
+    // etc.)
+    // Otherwise this event was bubbled from the user rolling off an embedded component back
+    // into the body and we can ignore it.    
+    if (target == this && !isc.EH.getDragTarget()) {
+        return;
+    }
     
 	// clear any hover timer/window
 	if (this.getCanHover()) this.stopHover();
@@ -5352,7 +5421,7 @@ isc.GridRenderer._gridAPIs = {
 	// --------------------------------------------------------------------------------------------
     //>	@method	gridRenderer.getBaseStyle() ([A])
     // Return the base stylename for this cell.  Default implementation just returns this.baseStyle.
-    // See getCellStyle for a general discussion of how to style cells.
+    // See +link{listGrid.getCellStyle,getCellStyle()} for a general discussion of how to style cells.
     //
     // @see getCellStyle()
     //

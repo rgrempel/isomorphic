@@ -51,6 +51,7 @@
         <field name="showTitle" type="boolean"/>
         <field name="titleStyle"        type="cssClass" visibility="internal"/>
 
+        <field name="showOverCanvas" type="boolean"/>
     </fields>
     
 	<types>

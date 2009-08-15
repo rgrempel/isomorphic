@@ -48,6 +48,12 @@
         <methodArguments type="string"/>
         
         <xmlNamespaces type="Object"/>
+        
+        <preventHTTPCaching type="boolean"/>
+        <spoofResponses type="boolean"/>
+        <exportResults type="boolean"/>
+        <useForCacheSync type="boolean"/>
+        <canSyncCache type="boolean"/>
     </fields>
     
     <types>

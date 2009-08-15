@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -43,8 +43,9 @@ isc.Canvas.addMethods({
         // support old operationType synonyms
         operationType = isc.DS._getStandardOperationType(operationType);
 
-        // pick up component.dataPageSize for fetches
+        // pick up component.dataPageSize and component.dataFetchMode for fetches
         if (this.dataPageSize) context.dataPageSize = this.dataPageSize;
+        if (this.dataFetchMode) context.dataFetchMode = this.dataFetchMode;
 
         // pick up an operation name from the component, according to the type of operation
         // being performed.  NOTE: if context.operation is already specified, give it
@@ -244,7 +245,7 @@ isc.EditorActionMethods.addInterfaceMethods({
         this._editRecordNum = 0;
         this._editList = recordList;
         var record = isc.addProperties({},recordList[this._editRecordNum]);
-        this.setData(record);
+        this.editRecord(record);
     },
     editNextRecord : function () {
         this.editOtherRecord(true);
@@ -459,8 +460,7 @@ isc.EditorActionMethods.addInterfaceMethods({
     // +link{dataSource.addData()} or +link{dataSource.updateData()} had been called with 
     // +link{dynamicForm.getValues(),the form's values} as data.  The
     // +link{dsRequest.operationType} will be either "update" or "add", depending on the
-    // <code>requestProperties</code> passed in, and the current 
-    // +link{DynamicForm.saveOperationType}.
+    // current +link{DynamicForm.saveOperationType}.
     // <P>
     // On either a client-side or server-side validation failure, validation errors will be
     // displayed in the form.  Visible items within a DynamicForms will be redrawn to display
@@ -595,7 +595,9 @@ isc.EditorActionMethods.addInterfaceMethods({
             uploadField = fileItemForm.getItem(0).getFieldName();
         for (var fieldName in oldVals) {
             if (fieldName == uploadField) continue;
-            fileItemForm.clearValue(fieldName);
+            // set to explicit null rather than just clearValue
+            
+            fileItemForm.setValue(fieldName, null);
         }
         for (var fieldName in vals) {
             if (fieldName == uploadField) continue;

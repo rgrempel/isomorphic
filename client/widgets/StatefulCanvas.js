@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -141,7 +141,7 @@ isc.StatefulCanvas.addProperties({
 	//<
 
     //> @attr statefulCanvas.showFocusedAsOver (boolean : true : IRW) 
-    // If +link{StatefulCanvas.showFocused,showFocused} is true for this widget, should the 
+    // If +link{StatefulCanvas.showFocused,showFocused} is true for this widget, should the
     // <code>"over"</code> state be used to indicate the widget as focused. If set to false,
     // a separate <code>"focused"</code> state will be used.
     // @group state
@@ -443,7 +443,7 @@ initWidget : function () {
 	// the enabled property also affects the state of this object
 	if (!isEnabled) {
         this._enabledState = this.state;
-        this.state = isc.StatefulCanvas.STATE_DISABLED;
+        if (this.showDisabled) this.state = isc.StatefulCanvas.STATE_DISABLED;
     }
 	
     // if className has been specified and baseStyle has no default, copy className to
@@ -729,7 +729,7 @@ setHandleDisabled : function (disabled,b,c,d) {
 	this.invokeSuper(isc.StatefulCanvas, "setHandleDisabled", disabled,b,c,d);
 
     if (!this.showDisabled) return;
-
+    
 	// clear/restore the cursor and set the StatefulCanvas.STATE_DISABLED/StatefulCanvas.STATE_UP states.
     var handleIsDisabled = (this.state == isc.StatefulCanvas.STATE_DISABLED);
     if (handleIsDisabled == disabled) return;

@@ -734,6 +734,15 @@ with (theWindow) {
         })
     }
 
+// -------------------------------------------
+// ExampleViewPane - used in the feature explorer
+// -------------------------------------------
+    if (isc.ExampleViewPane) {
+        isc.ExampleViewPane.addProperties({
+            styleName:"normal"
+        });
+    }
+
 
 
 // specify where the browser should redirect if not supported

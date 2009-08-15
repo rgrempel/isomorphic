@@ -50,6 +50,7 @@
         <field name="bottomEdgeOffsets" type="EdgeSizes"/>
         <field name="leftEdgeOffsets" type="EdgeSizes"/>
         <field name="rightEdgeOffsets" type="EdgeSizes"/>
+        <field name="closeTabIconSize" type="number" advanced="true"/>
 	</fields>
     <groups>
         <group>tabBar</group>

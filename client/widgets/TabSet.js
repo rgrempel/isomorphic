@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -868,10 +868,17 @@ createPanes : function () {
 		;
 		if (pane == null) continue;
         
-        tab.pane = this.createPane(pane);
+        tab.pane = this.createPane(pane, tab);
         
     }
 },
+
+//> @attr tabSet.disablePaneWithTab (boolean : true : IRW)
+// If true when a tab is enabled or disabled it's pane will also be enabled / disabled.
+// @visibility internal
+//<
+
+disablePaneWithTab:true,
 
 //>	@method	tabSet.createPane()
 //      (Internal method)
@@ -881,9 +888,10 @@ createPanes : function () {
 //      Ensures canvas is deparented / hidden.
 //      Returns canvas.
 //  @param  pane (object | canvas) object literal / canvas to be made into a pane
+// @param tab (object | ImgTab) tab to which the pane is being applied
 // @visibility internal
 //<
-createPane : function (pane) {
+createPane : function (pane, tab) {
     if (pane == null) return pane;
 
     // handle string name, autoChild, props object
@@ -894,7 +902,12 @@ createPane : function (pane) {
     // make sure the pane is hidden before we add it to the pane container - otherwise it will
     // draw before the tab is actually selected
     pane.hide();
-
+    
+    // If the tab is disabled, disable the pane (if appropriate)
+    if (this.disablePaneWithTab && tab && tab.disabled) {
+        pane.setDisabled(tab.disabled);
+    }
+    
     // add the pane as a member to the paneContainer right away.
     //
     // Note: previously we did the addMember in updateTab() and _showTab().  Now we also do it
@@ -1115,7 +1128,7 @@ setTabDisabled : function (tab, disabled) {
         // Alternative approach would be to deselect the tab, if selected. The problem with 
         // this is we may only have one tab in the tabSet.
         var pane = tab.pane;
-        if (pane) {
+        if (pane && this.disablePaneWithTab) {
             if (isc.isA.Canvas(pane)) pane.setDisabled(disabled);
             else pane.disabled = disabled;
         }
@@ -1151,7 +1164,7 @@ addTabs : function (newTabs, position) {
     if (position == null || position > this.tabs.length) position = this.tabs.length;
     for (var i = 0; i < newTabs.length; i++) {
         // use 'createPane' to turn the pane into a hidden, deparented canvas.
-        newTabs[i].pane = this.createPane(newTabs[i].pane);
+        newTabs[i].pane = this.createPane(newTabs[i].pane, newTabs[i]);
         
         // apply tabProperties (see comment in makeTabBar)
         var undef;
@@ -1480,7 +1493,7 @@ updateTab : function (tab, pane) {
 
     // add the new pane to init block (Using createPane to instantiate as a Canvas if necessary)
     // this makes sure the pane is hidden and not a child of anything except the paneContainer    
-    pane = tabObject.pane = this.createPane(pane);
+    pane = tabObject.pane = this.createPane(pane, tabObject);
 
     // tabCanvas won't exist if we're not drawn yet
     if (tabCanvas != null) tabCanvas.pane = pane;

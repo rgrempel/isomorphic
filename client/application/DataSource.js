@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -183,13 +183,21 @@ isc.defineClass("DataSource");
 //         &lt;/fields&gt;
 //     &lt;/DataSource&gt;
 // </pre>
-// XML DataSources are loaded via a special JSP tag supported by the ISC Server:
+// XML DataSources are loaded via a special JSP tag supported by the SmartClient Server:
 // <pre>
 //     &lt;%&#64; taglib uri="/WEB-INF/iscTaglib.xml" prefix="isomorphic" %&gt;
 //     ...
 //     &lt;SCRIPT&gt;
 //     &lt;isomorphic:loadDS ID="supplyItem"/&gt;
 //     &lt;/SCRIPT&gt;
+// </pre>
+// Alternatively, XML DataSources can be loaded by targetting a special servlet provided by 
+// the SmartClient Server.  This servlet yields exactly the same Javascript as the equivalent
+// <code>&lt;isomorphic:loadDS/&gt;</code>, so the two methods are interchangeable.  The
+//  servlet-based method is ideal in environments where JSP tags cannot be used (SmartGWT is 
+// one such environment).  Example usage:
+// <pre>
+//     &lt;SCRIPT SRC=isomorphic/DataSourceLoader?dataSource=supplyItem,employees,worldDS&lt;/SCRIPT&gt;
 // </pre>
 // When loading an XML DataSource, by default, the ISC Server will look for a file named
 // <code>&lt;dataSourceId&gt;.ds.xml</code> in the <code>/shared/ds</code> subdirectory under
@@ -706,6 +714,11 @@ isc.defineClass("DataSource");
 // <li>NoCacheFilter - development tool that makes any content it intercepts non-cacheable in
 // order to ensure developers are looking at the latest version of a file when modifying
 // examples.  Not for production use.
+// <li>DataSourceLoader - a servlet that returns the definition of one or more DataSources in
+// JavaScript notation.  This servlet is provided as an alternative to using the 
+// <code>&lt;isomorphic:loadDS&gt;</code> JSP tag, and is particularly suitable in environments
+// where JSP tags can't be used for some reason (such as with SmartGWT).  See 
+// +link{group:dataSourceDeclaration,Creating DataSources} for more details.
 // </ul>
 // Note that not all of the servlets and filters listed under <i>Optional Functionality</i>
 // above are present in the web.xml that ships with the smartclientRuntime - if you need to use
@@ -2235,7 +2248,7 @@ isc.DataSource.addProperties({
     //> @attr dataSource.dataProtocol (DSDataProtocol : null : [IR])
     // Controls the format in which inputs are sent to the dataURL when fulfilling DSRequests.
     // May be overridden for individual request types using
-    // +link{OperationBinding.dataProtocol,opration bindings}}
+    // +link{OperationBinding.dataProtocol,operation bindings}}
     // @group clientDataIntegration
     // @group serverDataIntegration
     // @visibility external
@@ -2886,7 +2899,7 @@ supportsRequestQueuing : true,
 // Validation
 // --------------------------------------------------------------------------------------------
 
-//> @attr dataSourceField.required             (boolean : false : [IR])
+//> @attr dataSourceField.required             (boolean : null : [IR])
 // Indicates this field must be non-null in order for a record to pass validation.
 // <P>
 // Note that <code>required</code> should not be set for a server-generated field, such as a
@@ -4023,6 +4036,8 @@ isc.DataSource.addMethods({
                 newData[i] = this.serializeFields(data[i], dsRequest);
             }
             return newData;
+        } else if (this.isAdvancedCriteria(data)) {
+            return this.serializeAdvancedCriteria(data);
         }
         data = isc.addProperties({}, data);
         var fields = this.getFields();
@@ -4040,6 +4055,30 @@ isc.DataSource.addMethods({
         return data;
     },
 
+    
+    serializeAdvancedCriteria : function (data) {
+        data = isc.clone(data);
+        if (data.criteria) {
+            for (var i = 0; i < data.criteria.length; i++) {
+                data.criteria[i] = this.serializeAdvancedCriteria(data.criteria[i]);
+            }
+        } else {
+            if (isc.isA.Date(data.value) || isc.isA.Date(data.start) || isc.isA.Date(data.end)) {
+                var field = this.getField(data.fieldName);
+                if (field != null && 
+                    isc.SimpleType.getBaseType(field.type) == "date" &&
+                    !isc.SimpleType.inheritsFrom(field.type, "datetime")) 
+                {
+                    if (data.value) data.value.logicalDate = true;
+                    if (data.start) data.start.logicalDate = true;
+                    if (data.end) data.end.logicalDate = true;
+                }
+            }
+        }
+        return data;
+    },
+    
+    
     //> @method DataSource.getDataProtocol() [A]
     // Returns the appropriate +link{OperationBinding.dataProtocol} for a +link{DSRequest}
     // @param dsRequest (DSRequest) DataSource Request object
@@ -4226,7 +4265,7 @@ isc.DataSource.addMethods({
     processResponse : function (requestId, dsResponse) {
         var dsRequest = this._clientCustomRequests[requestId];
         if (dsRequest == null) {
-            this.logWarn("DataSource.provedResponse(): Unable to find request corresponding to ID "
+            this.logWarn("DataSource.processResponse(): Unable to find request corresponding to ID "
                         + requestId + ", taking no action.");
             return;
         }
@@ -4248,7 +4287,7 @@ isc.DataSource.addMethods({
     },
     
     _handleClientOnlyReply : function (rpcResponse, data, rpcRequest) {
-        var dsResponse = this.getClientOnlyResult(rpcRequest),
+        var dsResponse = this.getClientOnlyResponse(rpcRequest._dsRequest),
             dsRequest = rpcRequest._dsRequest;
 
         this._completeResponseProcessing(data, dsResponse, dsRequest, rpcResponse, rpcRequest);
@@ -6712,8 +6751,8 @@ isc.DataSource.addMethods({
 // @visibility external
 //<
 
-//> @attr dsRequest.startRow (number : 0 : IR)
-// Starting row of requested results, used only with fetch operations.
+//> @attr dsRequest.startRow (number : null : IR)
+// Starting row of requested results, used only with fetch operations.  If unset, 0 is assumed.
 // <p>
 // Note that startRow and endRow are zero-based, so startRow: 0, endRow: 1 is a request
 // for the first two records.
@@ -7820,13 +7859,99 @@ isc.DataSource.addMethods({
 //<
 
 
+// Velocity template variables
+// ---------------------------------------------------------------------------------------
+//> @groupDef velocitySupport
+// The SmartClient Server provides a number of standard context variables for use in the 
+// Velocity templates you write to implement +link{group:customQuerying,custom queries} and
+// +link{dsRequestModifier.value,transaction chaining}.  These are:
+// <ul>
+// <li><b>$currentDate</b>. The current date/time with millisecond precision</li>
+// <li><b>$transactionDate</b>. The date/time that this transaction started, with millisecond 
+// precision.  If you are not using +link{RPCManager.startQueue,queuing}, this value will be
+// identical to <b>$currentDate</b></li>
+// <li><b>$servletRequest</b>. The associated <code>HttpServletRequest</code></li> 
+// <li><b>$session</b>. The associated <code>HttpSession</code></li>
+// <li><b>$httpParameters</b>. This variable gives you access to the parameters Map of the 
+// associated <code>HttpServletRequest</code>; it is an alternate form of 
+// <code>$servletRequest.getParameter</code></li>
+// <li><b>$requestAttributes</b>. This variable gives you access to the attributes Map of the 
+// associated <code>HttpServletRequest</code>; it is an alternate form of 
+// <code>$servletRequest.getAttribute</code></li>
+// <li><b>$sessionAttributes</b>. This variable gives you access to the attributes Map of the 
+// associated <code>HttpSession</code>; it is an alternate form of 
+// <code>$session.getAttribute</code></li>
+// </ul>
+// All of these variables (other than the two dates) represent objects that can contain other 
+// objects (attributes or parameters).  They all implement the <code>Map</code> interface, so
+// you can use the Velocity "property" shorthand notation to access them.  The following usage
+// examples show five different ways to return the value of the session attribute named "foo":
+// <pre>
+//    $session.foo
+//    $session.get("foo")
+//    $session.getAttribute("foo")
+//    $sessionAttributes.foo
+//    $sessionAttributes.get("foo")
+// </pre>
+// In the case of <code>$servletRequest</code>, the shorthand approach accesses the attributes 
+// - you need to use either <code>$httpParameters</code> or <code>$servletRequest.getParameter</code>
+// to access parameters. These examples all return the value of the HTTP parameter named "bar":
+// <pre>
+//    $httpParameters.bar
+//    $httpParameters.get("bar")
+//    $servletRequest.getParameter("bar")
+// </pre>
+// When you use these Velocity variables in a +link{operationBinding.customSQL,customSQL} 
+// clause or SQL snippet such as a +link{operationBinding.whereClause,whereClause}, all of 
+// these template variables return values that have been correctly quoted and escaped according
+//  to the syntax of the underlying database.  We do this because "raw" values are vulnerable to 
+// <a href=http://en.wikipedia.org/wiki/SQL_injection>SQL injection attacks</a>.
+// If you need access to the raw value of a variable in a SQL template, you can use the 
+// <b>$rawValue</b> qualifier in front of any of the template variables, like this:<br><br><code>
+// &nbsp;&nbsp;$rawValue.session.foo</code>
+// <p>
+// This also works for the <b>$criteria</b> and <b>$values</b> context variables (see 
+// the +link{group:customQuerying} for details of these variables).  So:<br><br><code>
+// &nbsp;&nbsp;$rawValue.criteria.customerName</code>
+// </p>
+// Note that <code>$rawValue</code> is only available in SQL templates.  It is not needed in
+// other contexts, such as Transaction Chaining, because the value is not escaped and 
+// quoted in these contexts.
+// <p>
+// <b>Warning</b>:  Whenever you access a template variable for use in a SQL statement, bear 
+// in mind that it is <b>dangerous</b> to use <code>$rawValue</code>.  There are some cases 
+// where using the raw value is necessary, but even so, all such cases are likely to be vulnerable 
+// to injection attacks.  Generally, the presence of <code>$rawValue</code> in a SQL template 
+// should be viewed as a red flag.
+// <p>
+// Finally, some example usages of these values.  
+// These +link{operationBinding.values,values} clauses set "price" to a value extracted from the 
+// session, and "lastUpdated" to the date/time that this transaction started:<br><br><code>
+// &nbsp;&nbsp;&lt;values fieldName="price" value="$session.somePrice" /&gt;<br>
+// &nbsp;&nbsp;&lt;values fieldName="lastUpdated" value="$transactionDate" /&gt;
+// </code><p>
+// This whereClause selects some users based on various values passed in the criteria and 
+// as HTTP parameters:<br><br><code>
+// &nbsp;&nbsp;&lt;whereClause&gt;department = $httpParameters.userDept AND dob >= $criteria.dateOfBirth&lt;/whereClause&gt;
+// </codee><p>
+// This whereClause selects some users based on various values obtained from the 
+// servletRequest's attributes, using a number of equivalent techniques for accessing the 
+// attributes:<br><br><code>
+// &nbsp;&nbsp;&lt;whereClause&gt;department = $servletRequest.dept AND startDate >= $requestAttributes.dateOfBirth AND salary < $servletRequest.getAttribute("userSalary")&lt;/whereClause&gt;
+// </code><p>
+//
+// @title Velocity context variables
+// @visibility chaining
+//<
+
+
 // Custom Querying
 // ---------------------------------------------------------------------------------------
 
 //> @type DefaultQueryClause
 // The Velocity variable names of the "pieces" of SQL that SmartClient generates to form a
 // complete fetch or update query.  You can use these variables in you own custom queries 
-// and query clause overrides to build on the SmartClient functionality.  See
+// and query clause overrides to build on the SmartClient functionality.  See the
 // +link{group:customQuerying} for a full discussion.
 //
 // @value "$defaultSelectClause"  The column names to select, for a fetch operation only
@@ -7871,14 +7996,8 @@ isc.DataSource.addMethods({
 // <p>
 // <code>&lt;whereClause&gt;continent = $critieria.continent AND population > $criteria.minPop&lt;/whereClause&gt;</code>
 // <p>
-// As well as your own fields, both <b>$criteria</b> and <b>$values</b> contain the variables
-// <code>transactionDate</code> and <code>currentDate</code>.  These are both millisecond-precise
-// date/time values. <code>transactionDate</code> is set at the start of a queue of
-// of +link{DSRequest}s and remains the same for each request in the queue; <code>currentDate</code>
-// is refreshed for each request.  If you are not processing requests in a queue, the two values
-// are identical.  Example usage, for an "update" operation:
-// <p>
-// <code>&lt;valuesClause&gt;price = $values.price, lastUpdated = $values.transactionDate&lt;/valuesClause&gt;</code>
+// Please see +link{group:velocitySupport} for full details of accessing SmartClient 
+// Server context variables using Velocity. 
 // 
 // <h4>Using $fields and $qfields</h4>
 // To aid in writing custom SQL clauses that are not inextricably tied to one particular 
@@ -7910,10 +8029,16 @@ isc.DataSource.addMethods({
 // column name - then, you can use <b>$fields</b> to achieve a portable 
 // +link{OperationBinding.whereClause,whereClause} like:<p>
 // <code>$qfields.itemID = supplyItem.$fields.itemID</code>
+// 
+// <h4>Other template variables</h4>
+// In addition to the Velocity template variables described above, we also provide a number of
+// template variables containing generally-useful values.  Please see
+// +link{group:velocitySupport} for details.
 //
 // <h4>Using the default clauses</h4>
-// You also have access to the default subclauses generated by SmartClient.  You can use these
-// in full custom queries to allow a certain part of the query code to be generated:<p>
+// You also have access to the +link{type:DefaultQueryClause,default subclauses} generated by 
+// SmartClient.  You can use these in full custom queries to allow a certain part of the query
+// code to be generated:<p>
 // <code>SELECT foo, bar FROM $defaultTableClause WHERE baz > $criteria.baz</code>.  
 // <p>
 // You can also use them, with care, as a foundation for your own additions:<p>
@@ -7923,25 +8048,33 @@ isc.DataSource.addMethods({
 // <code>&lt;selectClause&gt;$defaultSelectClause, foo, bar&lt;/selectClause&gt;</code>
 //
 // <h4>Stored procedures</h4>
-// It is also possible to include templated calls to SQL stored procedures in a
+// It is possible to include templated calls to SQL stored procedures in a
 // +link{OperationBinding.customSQL,customSQL} clause, for the ultimate in flexibility.  For 
 // example, the deletion of an order might require a number of actions: deletion of the order
 // record itself, messages sent to other systems (data warehousing, maybe, or a central accounts
 // system running on a mainframe), an event log written, and so on.  You could write a stored 
-// procedure to do all this, and then invoke it with a customSQL clause:<p>
-// <code>&lt;operationBinding operationType="remove"&gt;<br>
-// &nbsp;&nbsp;&lt;customSQL&gt;call deleteOrder($criteria.orderNo)&lt;customSQL&gt;<br>
-// &lt;/operationBinding&gt;</code><p>
-//
+// procedure to do all this, and then invoke it with a customSQL clause:
+// <pre>
+//    &lt;operationBinding operationType="remove"&gt;<
+//        &lt;customSQL&gt;call deleteOrder($criteria.orderNo)&lt;customSQL&gt;
+//    &lt;/operationBinding&gt;
+// </pre>
 // <h4>Custom queries are safe</h4>
-// Custom queries are protected from SQL injection attacks, because anything coming from the
-// client is escaped before use.  So, in a typical SQL injection attack an attacker might 
-// enter his User Number as "123 OR 1 = 1", in the hope that this will generate a query
-// with a where clause that looks like this: <code>WHERE userNumber = 123 OR 1 = 1</code>.  With 
-// SmartClient custom queries, this cannot happen.  If the userNumber column is a string, 
-// the where clause would look like this: <code>WHERE userNumber = '123 OR 1 = 1'</code>. If 
-// the userNumber column is numeric, SmartClient would log a complaint that "123 OR 1 = 1" is
-// not a numeric value, and would generate a standard false clause: <code>WHERE '0' = '1'</code>.
+// Custom queries are protected from <a href=http://en.wikipedia.org/wiki/SQL_injection>
+// SQL injection attacks</a>, because anything coming from the client is quoted and escaped 
+// in accordance with the syntax of the underlying database before use (though see the warning
+// about using <code>$rawValue</code> in the article on +link{velocitySupport}.
+// So, in a typical SQL injection attack an attacker might enter his User ID as <br>
+// &nbsp;&nbsp;<code>123' OR '1' = '1</code><p>
+// in the hope that this will generate a query
+// with a where clause like this<br>
+//  &nbsp;&nbsp;<code>WHERE userID = '123' OR '1' = '1'</code><p>
+// which would of course return every row.  With SmartClient custom queries, this does not happen; 
+// the  client-provided string is escaped, and the resultant clause would look like this: <br>
+// &nbsp;&nbsp;<code>WHERE userID = '123'' OR ''1'' = ''1'</code><p>
+// This clause only returns those records where the userID column contains the literal value that 
+// the user typed: <br>
+// &nbsp;&nbsp;<code>123' OR '1' = '1</code>
 // <p>
 // Further, custom queries can be protected from buggy or ad hoc client requests because the 
 // query is specified on the server.  For example you could add a custom where clause, as shown
@@ -8053,7 +8186,7 @@ isc.DataSource.addMethods({
 // For a dataSource of +link{DataSource.serverType,serverType} "sql", this 
 // property can be specified on an operationBinding to provide the server with a bespoke
 // set of values to add or update,  for use when constructing the SQL query to perform this 
-// operation.  The property should be a one of the following, depending on the 
+// operation.  The property should be one of the following, depending on the 
 // +link{operationType,operationType}:
 // <p>
 // For "add" operations, the syntax that would be valid for an INSERT INTO query: a 
@@ -8099,7 +8232,7 @@ isc.DataSource.addMethods({
 // that makes use of a particular database engine's features or syntax will make your 
 // application less portable.  One way to avoid tying your query to a particular database's
 // name-quoting idiosyncracies (every database product seems to have a different idea about 
-// how to treat unquoted names, and which charaters to use to quote names) is to use the 
+// how to treat unquoted names, and which characters to use to quote names) is to use the 
 // template variables <b>$fields</b> and <b>$qfields</b>, whioh provide the names of your
 // dataSource fields correctly quoted in the syntax of the underlying database.
 // <p>
@@ -8197,6 +8330,25 @@ isc.DataSource.addMethods({
 //
 // @group customQuerying
 // @see OperationBinding.customValueFields
+// @see OperationBinding.excludeCriteriaFields
+// @visibility customSQL
+//<        
+
+//> @attr operationBinding.excludeCriteriaFields (String or Array: null : [IR])
+// Specifies, for this operationBinding only, a list of field names that should be excluded from
+// the default +link{whereClause,whereClause} SmartClient generates.  The idea behind this is 
+// that you can then use these criteria manually in a complex query - for example, in the 
+// WHERE clause of a subquery.
+// <p>
+// You can specify this property as either an array or a string containing a comma-separated list 
+// of field names (eg, "foo, bar, baz").  Note that if a field is included in both 
+// excludeCriteriaFields and +link{operationBinding.customCriteriaFields,customCriteriaFields}, 
+// customCriteriaFields wins.
+// <p>
+// This property is only applicable to DataSources of type "sql".
+//
+// @group customQuerying
+// @see OperationBinding.customCriteriaFields
 // @visibility customSQL
 //<        
         
@@ -8308,6 +8460,9 @@ isc.DataSource.addMethods({
 // sent from the client</li>
 // <li><b>responseData</b>. The data member of a DSResponse object associated with an earlier 
 // DSRequest in the same queue</li></ul>
+// (Note that the standard Velocity context variables provided by SmartClient Server are also 
+// available to you - see +link{group:velocitySupport}).
+// <p>
 // The most interesting of these is the last. An example of when this might be useful would be a
 // queued batch of "add" operations for an order header and its details - the detail additions need
 // to know the unique primary key that was assigned to the order.  This value will be in the 
@@ -8323,6 +8478,7 @@ isc.DataSource.addMethods({
 // "last" here meaning the most recent response matching the DataSource and operation type (if 
 // applicable).
 // 
+// @see group:velocitySupport
 // @visibility chaining
 //<
 
@@ -9017,18 +9173,24 @@ isc.DataSource.addMethods({
         
 
         // if the name of the foreignKey wasn't passed in, autodetect it by looking for the first
-        // field on this ds with the foreignKey property set on it.
+        // field on this ds with a foreignKey pointing at the appropriate dataSource.
         var fields = this.getFields();
         if (foreignKeyFieldName == null) {
             for (var fieldName in fields) {
                 var currentField = fields[fieldName];
                 if (currentField.foreignKey != null) {
-                    foreignKeyFieldName = fieldName;
-                    break;
+                    // If we were passed no parentDS and no foreignKeyFieldName, always use the
+                    // first field with a specified foreignKey
+                    if (!parentDS ||
+                        (parentDS.getID() == isc.DataSource.getForeignDSName(currentField, this)))
+                    {
+                        foreignKeyFieldName = fieldName;
+                        break;
+                    }
                 }
             }
         }
-
+        
         var targetField;
         // if there was no foreignKey property specified on any of the fields, find the first
         // exact field name match between the two datasources.
@@ -9302,7 +9464,7 @@ isc.DataSource.addMethods({
         if (!this.autoDeriveTitles) return;
         for (var fieldName in this.fields) {
             var field = this.fields[fieldName];
-            if (field.title && field.title != "") continue;
+            if (field.title != null) continue;
 
             field.title = this.getAutoTitle(fieldName);
         }
@@ -9430,11 +9592,27 @@ isc.DataSource.addMethods({
         }
     },
 
-	// return appropriate results object from local data based on the rpcRequest/ dsRequest
-    // object passed in
-	getClientOnlyResult : function (rpcRequest) {
-        var request = rpcRequest._dsRequest;
-
+    //> @method dataSource.getClientOnlyResponse()
+	// Return a "spoofed" response for a +link{clientOnly} DataSource.
+    // <P>
+    // The default implementation will +link{dataSource.testData} to provide an appropriate
+    // response, by using +link{applyFilter,client-side filtering} for a "fetch" request, and
+    // by modifying the <code>testData</code> for other requests.
+    // <P>
+    // Override this method to provide simulations of other server-side behavior, such as
+    // modifying other records, or to implement <b>synchronous</b> client-side data providers
+    // (such as Google Gears).  For <b>asynchronous</b> third-party data provides, such as
+    // GWT-RPC, HTML5 sockets, or bridges to plug-in based protocols (Java, Flash,
+    // Silverlight..), use +link{DSDataProtocol,dataProtocol:"clientCustom"} instead. 
+    // <P>
+    // Overriding this method is also a means of detecting that a normal DataSource (not
+    // clientOnly) would be contacting the server.
+    //
+    // @param request (DSRequest) DataSource request to respond to
+    // @return (DSResponse) 
+    // @visibility external
+    //<
+	getClientOnlyResponse : function (request) {
         //!OBFUSCATEOK
         // initialize the spoofed dataset
         var serverData = this.testData;
@@ -9681,9 +9859,16 @@ isc.DataSource.addMethods({
         
         // Get any customCriteriaField definition from the operationBinding for later checking
         if (requestProperties && requestProperties.operation && this.operationBindings) {
-            var op = this.operationBindings.find("operationId", requestProperties.operation.ID)
-            if (op) {
-                var customCriteriaFields = op.customCriteriaFields;
+
+            var op = requestProperties.operation;
+            if (op.ID == op.dataSource + "_" + op.type) {
+                var opBinding = this.operationBindings.find("operationId", null);
+            } else {
+                var opBinding = this.operationBindings.find("operationId", requestProperties.operation.ID);
+            }
+
+            if (opBinding) {
+                var customCriteriaFields = opBinding.customCriteriaFields;
                 if (isc.isA.String(customCriteriaFields)) {
                     customCriteriaFields = customCriteriaFields.split(",");
                     // Better trim them...
@@ -9966,14 +10151,14 @@ isc.DataSource.addMethods({
                 //  converts basic criteria to AdvancedCriteria as required, so we should never get as 
                 //  far as this)
                 if (result == undef) {
-                    oldCriteria = this.convertCriteria(oldCriteria, textMatchStyle);
+                    oldCriteria = isc.DataSource.convertCriteria(oldCriteria, textMatchStyle);
                     result = this.compareAdvancedCriteria(newCriteria, oldCriteria, 
                                                         requestProperties);
                 }
             } else {
                 // We have a mix of basic and advanced criteria types - convert the basic criteria
                 // object to an equivalent AdvancedCriteria
-                newCriteria = this.convertCriteria(newCriteria, textMatchStyle);
+                newCriteria = isc.DataSource.convertCriteria(newCriteria, textMatchStyle);
                 result = this.compareAdvancedCriteria(newCriteria, oldCriteria, 
                                                     requestProperties);
             }
@@ -10595,6 +10780,146 @@ isc.DataSource.addClassMethods({
             }
         }
         return title;
+    },
+    
+    //> @method dataSource.convertCriteria()
+    // Converts criteria expressed in SmartClient's simple criteria format to an AdvancedCriteria
+    // object.  
+    //
+    // @param criteria (Criteria) simple criteria
+    // @param [textMatchStyle] (TextMatchStyle) default style of matching text.  Defaults to
+    //                                          "substring"
+    // @return (AdvancedCriteria) equivalent AdvancedCriteria object
+    // @visibility external
+    //<
+    convertCriteria : function(criteria, textMatchStyle) {
+        var aCriteria = {
+            _constructor: "AdvancedCriteria",
+            operator: "and"
+        }
+        
+        var subCriteria = [];
+        for (var fieldName in criteria) {
+            if (textMatchStyle == "equals" || isc.isA.Number(criteria[fieldName])) { 
+                var operator = "equals";
+            } else {
+                operator = "iContains";
+            }
+            
+            if (isc.isA.Array(criteria[fieldName])) {
+                var disjunct = {
+                    _constructor: "AdvancedCriteria",
+                    operator: "or",
+                    criteria: []
+                }
+                for (var i = 0; i < criteria[fieldName].length; i++) {
+                    disjunct.criteria.add({
+                        fieldName: fieldName,
+                        operator: operator,
+                        value: criteria[fieldName][i]
+                    });
+                }
+                subCriteria.add(disjunct);
+            } else {
+                subCriteria.add({
+                    fieldName: fieldName,
+                    operator: operator,
+                    value: criteria[fieldName]
+                });
+            }
+        }
+
+        aCriteria.criteria = subCriteria;
+        return aCriteria;
+    },
+
+    
+    //> @type CriteriaCombineOperator
+    // The logical operator to use when combining criteria objects with the 
+    // +link{DataSource.combineCriteria} method.
+    // 
+    // @value "and"
+    // @value "or"
+    //
+    // @visibility external
+    //<
+
+    //> @method dataSource.combineCriteria()
+    // Combines two criteria (either simple criteria objects or AdvancedCriteria) useing the 
+    // "outerOperator".  Note that the combined criteria object will be an AdvancedCriteria
+    // unless <ul>
+    // <li>both input criteria objects are simple, and</li>
+    // <li>the "outerOperator" is "and", and</li>
+    // <li>there is no collision of key names on the two criteria</li>
+    //
+    // @param criteria1 (Criteria) first criteria object
+    // @param criteria2 (Criteria) second criteria object
+    // @param [outerOperator] (CriteriaCombinOperator) operator to use to combine the criteria. 
+    //                                          Defaults to "and"
+    // @param [textMatchStyle] (TextMatchStyle) style of matching text, if it is necessary to
+    //                                          convert a simple criteria object to an 
+    //                                          AdvancedCriteria.  Defaults to "substring"
+    // @return (Object) The combined criteria
+    // @visibility external
+    //<
+    combineCriteria : function(criteria1, criteria2, outerOperator, textMatchStyle) {
+    
+        if (!outerOperator) outerOperator = "and";
+        
+        if (outerOperator != "and" && outerOperator != "or") {
+            isc.logWarn("combineCriteria called with invalid outerOperator '" + 
+                                outerOperator + "'");
+            return null;
+        }
+    
+        var undef, advanced;
+    
+        // Note: can't use isAdvancedCriteria because it's an instance method
+        if (criteria1._constructor != "AdvancedCriteria" &&
+            criteria2._constructor != "AdvancedCriteria" &&
+            outerOperator == "and") {
+            for (var key in criteria1) {
+                if (criteria2[key] != undef) {
+                    advanced = true;
+                    break;
+                }
+            }
+        } else {
+            advanced = true;
+        }
+        
+        if (!advanced) {
+            return isc.addProperties({}, criteria1, criteria2);
+        }
+        
+        var advCrit1, advCrit2;
+        
+        if (criteria1._constructor == "AdvancedCriteria") {
+            advCrit1 = criteria1;
+        } else {
+            advCrit1 = isc.DataSource.convertCriteria(criteria1, textMatchStyle);
+        }
+        
+        if (criteria2._constructor == "AdvancedCriteria") {
+            advCrit2 = criteria2;
+        } else {
+            advCrit2 = isc.DataSource.convertCriteria(criteria2, textMatchStyle);
+        }
+        
+        var aCrit = { _constructor: "AdvancedCriteria", operator: outerOperator };
+        
+        // Optimization opportunity - if we were passed two criteria with the same
+        // operator, and that operator is the same as "outerOperator", we can flatten
+        // the structure by removing one intervening level.
+        if (advCrit1.operator == outerOperator && advCrit2.operator == outerOperator) {
+            aCrit.criteria = [];
+            aCrit.criteria.addAll(advCrit1.criteria);
+            aCrit.criteria.addAll(advCrit2.criteria);
+        } else {
+            aCrit.criteria = [advCrit1, advCrit2];
+        }
+        
+        return aCrit;
     }
 
     
@@ -10937,53 +11262,6 @@ isc.DataSource.addMethods({
 
         return op.compareCriteria(newCriterion, oldCriterion, op, this);
 
-    },
-    
-    //> @method dataSource.convertCriteria()
-    // Converts criteria expressed in SmartClient's simple criteria format to an AdvancedCriteria
-    // object.  
-    //
-    // @param criteria (Criteria) simple criteria
-    // @param [textMatchStyle] (TextMatchStyle) default style of matching text.  Defaults to
-    //                                          "substring"
-    // @return (AdvancedCriteria) equivalent AdvancedCriteria object
-    // @visibility external
-    //<
-    convertCriteria : function(criteria, textMatchStyle) {
-        var aCriteria = {
-            _constructor: "AdvancedCriteria",
-            operator: "and"
-        }
-        
-        var subCriteria = [];
-        for (var fieldName in criteria) {
-            if (textMatchStyle == "equals") var operator = "equals"
-            else operator = "iContains";
-            if (isc.isA.Array(criteria[fieldName])) {
-                var disjunct = {
-                    _constructor: "AdvancedCriteria",
-                    operator: "or",
-                    criteria: []
-                }
-                for (var i = 0; i < criteria[fieldName].length; i++) {
-                    disjunct.criteria.add({
-                        fieldName: fieldName,
-                        operator: operator,
-                        value: criteria[fieldName][i]
-                    });
-                }
-                subCriteria.add(disjunct);
-            } else {
-                subCriteria.add({
-                    fieldName: fieldName,
-                    operator: operator,
-                    value: criteria[fieldName]
-                });
-            }
-        }
-
-        aCriteria.criteria = subCriteria;
-        return aCriteria;
     }
     
 });

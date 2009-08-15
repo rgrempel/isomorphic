@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -95,6 +95,31 @@ create : function (arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
 compareDates : function (a, b) {
 	var aval = (a != null ? a.getTime() : 0),
         bval = (b != null ? b.getTime() : 0);
+	return aval > bval ? -1 : (bval > aval ? 1 : 0); 
+},
+
+//>	@classMethod	Date.compareLogicalDates()
+// Compare two dates, normalizing out the time elements so that only the date elements are 
+// considered; returns 0 if equal, -1 if the first date is greater (later), or 1 if
+// the second date is greater.
+//  @param  date1   (date)  first date to compare
+//  @param  date2   (date)  second date to compare
+//  @return (number)    0 if equal, -1 if first date &gt; second date, 1 if second date &gt; first date
+// @visibility external
+//<
+compareLogicalDates : function (a, b) {
+    if (a == b) return true;
+    if (!isc.isA.Date(a) || !isc.isA.Date(b)) return false;
+	var aYear = a.getFullYear(),
+	    aMonth = a.getMonth(),
+	    aDay = a.getDate(),
+	    bYear = b.getFullYear(),
+	    bMonth = b.getMonth(),
+	    bDay = b.getDate();
+
+    var aval = aYear * 10000 + aMonth * 100 + aDay,
+        bval = bYear * 10000 + bMonth * 100 + bDay;
+        
 	return aval > bval ? -1 : (bval > aval ? 1 : 0); 
 },
 
@@ -813,10 +838,28 @@ toShortDate : function (formatter) {
     else if (isc.isA.Function(this[formatter])) return this[formatter]();
 },
 
+//>	@method date.setDefaultDateSeparator
+// Sets a new default separator that will be used when formatting dates. By default, this
+// is a forward slash character: "/"
+// @group   dateFormatting
+// @param separator (string) separator to use in dates 
+// @visibility external
+//<
+setDefaultDateSeparator : function (separator) {
+    this._shortDateTemplate = [,,,,separator,,,,,separator,,,,null];
+    this._separator = separator;
+},
 
-// _toShortDate()
-// Internal method to give us a shortDate - either DD/MM/YYYY, MM/DD/YYYY or YYYY/MM/DD.
-// this will be passed "MDY" / "DYM" / etc. as a format parameter.
+//>	@method date.getDefaultDateSeparator
+// gets the default date separator string
+// @group   dateFormatting
+// @return(string) the default date separator 
+// @visibility external
+//<
+getDefaultDateSeperator : function (separator) {
+    if (this._separator) return this._separator;
+    else return "/";    
+},
 
 
 _shortDateTemplate:[,,,,"/",,,,,"/",,,,null],
@@ -824,6 +867,9 @@ _$MDY:"MDY",
 _$DMY:"DMY",
 _$YMD:"YMD",
 _$MDY:"MDY",
+// _toShortDate()
+// Internal method to give us a shortDate - either DD/MM/YYYY, MM/DD/YYYY or YYYY/MM/DD.
+// this will be passed "MDY" / "DYM" / etc. as a format parameter.
 _toShortDate : function (format) {
     var template = this._shortDateTemplate,
         month = this.getMonth()+1,

@@ -419,7 +419,8 @@
 }
 .textItem,
 .textItemFocused,
-.textItemError {
+.textItemError,
+.textItemHint {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; 
     background-color:#FFFFFF;
     padding:1px; border:2px inset #D4D0C8;
@@ -429,6 +430,10 @@
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:#ACA899;
     padding:1px; border:1px inset #D4D0C8;
 
+}
+
+.textItemHint {
+    color:#666666;
 }
 
 .selectItemControl,
@@ -442,7 +447,8 @@
 }
 
 .selectItemText,
-.selectItemTextError {
+.selectItemTextError,
+.selectItemTextHint {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
     margin:1px;
 }
@@ -455,6 +461,10 @@
 .selectItemTextFocused {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; 
     background-color:#0A246A; color:white; margin:1px;
+}
+
+.selectItemTextHint {
+    color:#666666;
 }
 
 .selectItemPickerIcon,

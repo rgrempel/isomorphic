@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -90,9 +90,17 @@ isc.LinkItem.addMethods({
 
     _linkClicked : function (event) {
         // don't allow the click if the cell should not be interactive.
-        var mustCancel = (this.destroyed || !this.isDrawn() || !this.isVisible() ||
-                          isc.EH.targetIsMasked(this.body));
-      if (this.target == "javascript") {
+        var mustCancel = (this.destroyed || !this.isDrawn() || !this.isVisible());
+        // If a clickMask is up and the item is masked, cancel the event.
+        // Check both the containerWidget and the form. If they differ and  either is unmasked
+        // the item is not considered masked.
+        if (!mustCancel) {
+            mustCancel = isc.EH.targetIsMasked(this.containerWidget);
+            if (mustCancel && (this.form != this.containerWidget)) {
+                mustCancel = isc.EH.targetIsMasked(this.form);
+            }
+        }
+        if (this.target == "javascript") {
             mustCancel=true;
             this.handleClick();
         }

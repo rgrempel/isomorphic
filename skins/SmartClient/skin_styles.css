@@ -506,6 +506,7 @@
 .selectItemTextError,
 .selectItemTextDisabled,
 .selectItemTextFocused,
+.selectItemTextHint,
 .pickListCell,
 .pickListCellSelected,
 .pickListCellDisabled,
@@ -557,7 +558,8 @@
 }
 
 .selectItemText,
-.selectItemTextError {
+.selectItemTextError,
+.selectItemTextHint {
     margin:2px;
 }
 
@@ -567,6 +569,10 @@
 
 .selectItemTextFocused {
     background-color:#316AC5; color:white; margin:2px;
+}
+
+.selectItemTextHint {
+    color:#666666;
 }
 
 .selectItemPickerIcon,

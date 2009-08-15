@@ -37,6 +37,8 @@
 
         <!-- mark superclass fields as not relevant -->
         <field name="dataSource" inapplicable="true"/>
+        
+        <field name="leaveScrollbarGap" type="boolean"/>
     </fields>
 
     <groups>

@@ -29,9 +29,12 @@ isc.DataSource.create({
         rootValue:{title:"Tree Root Value", type:"string", xmlAttribute:"true"},
         nativeName:{hidden:"true", title:"Native Name", type:"string"},
         fieldName:{hidden:"true", title:"Field Name", type:"string"},
-        fields:{hidden:"true", multiple:"true", propertiesOnly:"true", type:"DataSourceField",
-         uniqueProperty:"name"},
+        fields:{childTagName:"field", hidden:"true", multiple:"true", propertiesOnly:"true",
+         type:"DataSourceField", uniqueProperty:"name"},
         multiple:{type:"boolean"},
-        pickListFields:{multiple:"true", type:"Object"}
+        pickListFields:{multiple:"true", type:"Object"},
+        canFilter:{type:"boolean"},
+        ignore:{type:"boolean"},
+        canSortClientOnly:{type:"boolean"}
     }
 })

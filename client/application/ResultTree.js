@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -51,8 +51,9 @@
 // ids (because the client needs some way to identify nodes when talking to the server).
 // Generally a node id should contain whatever information is required to fetch the node and
 // it's children on the server.  One typical approach is to use the path to the node as a node
-// id.  For XML datasets in particular, the path may be a valid XPath, so that node lookup is
-// just applying an XPath to an XMLDocument.
+// id.  For XML datasets in particular, the path may be a valid XPath, so that server-side
+// lookup of child nodes is just a matter of applying the node id as an XPath to a server-side
+// XMLDocument.
 // <P>
 // +link{ResultTree}s are created for you by the +link{TreeGrid} when you set
 // +link{TreeGrid.dataSource}, but you can pass an initial dataset to a databound TreeGrid by

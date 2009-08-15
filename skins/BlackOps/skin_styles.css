@@ -582,6 +582,7 @@
 .selectItemTextError,
 .selectItemTextDisabled,
 .selectItemTextFocused,
+.selectItemTextHint,
 .pickListCell,
 .pickListCellSelected,
 .pickListCellDisabled,
@@ -620,7 +621,8 @@
 .selectItemTextError,
 .selectItemTextFocused,
 .textItemDisabled,
-.selectItemTextDisabled {
+.selectItemTextDisabled,
+.selectItemTextHint {
     padding:2px; 
     border:1px solid #595959;
     background:#404040 url(./images/controls/text_input.gif) repeat-x scroll;
@@ -634,8 +636,9 @@
     border:1px solid #595959;
 }
 
-.textItemHint {
-    color:#888888;
+.textItemHint,
+.selectItemTextHint {
+    color:#C0C0C0;
 }
 
 /* selectItem */

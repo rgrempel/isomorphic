@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -320,7 +320,10 @@ initWidget : function () {
                     "canAddSummaryFields to false.");
         this.canAddSummaryFields = false;
     }
-    
+    if (this.layoutPolicy == "flow") {
+        isc.logWarn("TileGrid does not support layoutPolicy 'flow'; there may by unexpected behavior." + 
+            "Use a TileLayout instead for flow layout.");    
+    }
     // skip tileLayout init; we want to completely replace that here
     this.invokeSuper(isc.TileLayout, "initWidget");
     if (!this.tiles) this.tiles = [];
@@ -348,7 +351,9 @@ initWidget : function () {
             cellPadding: 0,
             valueAlign: this.tileValueAlign,
             // to force detailViewer table width to be 100%
-            useInnerWidth: false,
+            // NOTE 5/25/09 change this to true because of breakage in safari in strict mode,
+            // seems to be working fine this way.
+            useInnerWidth: true,
             clipValues: true,
             // width and height should be set in makeTile
             width: 10,
@@ -366,9 +371,11 @@ initWidget : function () {
                 return base;
             }
     });
-    // call setFields to get the databoundcomponent field override behavior
-    this.setFields(this.fields, true);
-  
+
+    // set field state if necessary, call setFields otherwise
+    if (this.fieldState != null) this.setFieldState(this.fieldState);
+    else this.setFields(this.fields, true);
+
     this.membersMargin = this.tileMargin;
 
     this.setData(this.data);
@@ -398,9 +405,35 @@ setFields : function (newFields, cancelLayout) {
             newFields.add({name:this.getDataSource().getTitleField()});
         }
     }
-    this.invokeSuper(isc.TileGrid, "setFields", newFields);
-    this.detailViewer.fields = isc.clone(this.fields);
+//    this.invokeSuper(isc.TileGrid, "setFields", newFields);
+
+    if (this.completeFields == null) this.fields = [];
+
+	// bind the passed-in fields to the DataSource and store
+    this.completeFields = this.bindToDataSource(newFields);
+
+    if (this.completeFields == null) this.completeFields = [];
+    // tilegrid was crashing without this line:
+    if (!this.completeFields) return;
+	
+	this.deriveVisibleFields();
+
+    this.detailViewer.fields = this.completeFields.duplicate();
     if (!cancelLayout) this.layoutTiles();
+},
+
+deriveVisibleFields : function () {
+	// NOTE: we use setArray() so that this.fields remains the same array instance.
+    this.fields.setArray(this.getVisibleFields(this.completeFields));
+},
+
+getVisibleFields : function (fields) {
+	var returnFields = fields.duplicate();
+    for (var i=0; i<fields.length; i++) {
+        var item = fields.get(i);
+        if (!this.fieldShouldBeVisible(item) || item.visible==false) returnFields.remove(item);
+    }
+	return returnFields;
 },
 
 computeTileDimensions : function (forceCompute) {
@@ -603,6 +636,7 @@ dataChanged : function (operationType, originalRecord, rowNum, updateData) {
     // tiles.
     } else if (this.data.getLength() >= this._oldDataLength) {
         this.logDebug("filter or sort, new data same or longer", "TileGrid");
+        
         // only trigger animations if we had data before
         if (this._oldDataLength > 0) this._layoutAfterDataChange();
         else this.layoutTiles();
@@ -1122,6 +1156,34 @@ getRecordTile : function (recordIndex) {
     else return window[tId];
 },
 
+childVisibilityChanged : function (child, newVisibility) {
+    // skip the tileLayout implementation of this method
+    this.invokeSuper(isc.TileLayout, "childVisibilityChanged", child, newVisibility);
+},
+
+// @method tileGrid.hasAllVisibleTiles()
+// @param range (array) data range to check for
+// @param fetch (boolean) should we fetch the range if not present
+//<
+hasAllVisibleTiles : function (range, fetch) {
+    if (isc.isA.ResultSet(this.data)) {
+        var rangeEnd = range[1] + 1;
+        if (rangeEnd > this.data.getLength()) rangeEnd = this.data.getLength();
+        if (this.data.rangeIsLoaded(range[0], rangeEnd)) {
+            return true;    
+        } else {
+            if (fetch) {    
+                this.data.getRange(range[0], rangeEnd);
+            }
+            //isc.logWarn('data loading, returning:' + [range[0], range[1]]);  
+            return false;
+        }
+        
+    } else {
+        return true;    
+    }
+},
+
 // --------------------------Drag and Drop-----------------------------------------------------
 dragAppearance:isc.EH.TRACKER,
 dragTrackerMode: "title",
@@ -1183,17 +1245,10 @@ drop : function () {
     // Call transferDragData to pull the records out of our dataset
     
 
-    // Databound dragging - if this is a databound grid, bound to the same dataSource as the source
-    // widget, we're going to update the record.  We can't use transferDragData() because that will
-    // delete the record we want to update.
     var dataSource = this.getDataSource(),
         sourceDS = source.getDataSource(),
-        dropRecords;
-    if (dataSource && dataSource == sourceDS) {
         dropRecords = source.getDragData();
-    } else {        
-        dropRecords = source.transferDragData();
-    }
+
     // for self-drop, subtract the length of the dropped records from the dropLine index when 
     // records are dropped above the drag start index
     if (source === this && index > dragStartIndex) {
@@ -1243,12 +1298,14 @@ getTitleFieldValue : function (record) {
 
 // basic show and hide methods
 hideField : function (fieldName) {
-    this.getField(fieldName).showIf = false;
+    this.getField(fieldName).showIf = "false";
     this.getField(fieldName).hidden = true;
+    this.fieldStateChanged();
 },
 showField : function (fieldName) {
-    this.getField(fieldName).showIf = true;
+    this.getField(fieldName).showIf = "true";
     this.getField(fieldName).hidden = false;
+    this.fieldStateChanged();
 },
 
 //>	@method	tileGrid.getField()	(A)
@@ -1264,37 +1321,13 @@ getField : function (fieldName) {
         if (item[this.fieldIdProperty] == fieldName) return item;
     }
 
-    fields = this.getAllFields();
-    for (var key in fields) {
-        var item = fields[key];
-        if (item[this.fieldIdProperty] == fieldName) return item;
-    }
     return null; 
 },
 getFields : function () {
     return this.fields;
 },
 getAllFields : function () {
-    if (this.dataSource) {
-        var dsObject = this.getDataSource().getFields(),
-            fields = this.getFields(), 
-            newArray = [];
-
-        // add the ds fields
-        for (var key in dsObject) {
-            newArray.add(dsObject[key]);
-        }
-        if (fields) {
-            // add the local fields
-            for (var i = 0; i < fields.length; i++) {
-                var item = fields.get(i);
-                if (!newArray.find(this.fieldIdProperty, item[this.fieldIdProperty])) {
-                    newArray.add(item);
-                }
-            }
-        }
-        return newArray;
-    } else return this.getFields();
+    return this.fields;
 },
 
 // ---------------------------------------------------------------------------------------
@@ -1317,8 +1350,9 @@ setFieldState : function (fieldState) {
         this.completeFields = this._setFieldState(fieldState);
         this.setFields(fieldState);
         this.markForRedraw();
+        this.fieldStateChanged();
     }
-},
+}
 
 //>	@method	tileGrid.getFieldState() 
 // Returns a snapshot of the current presentation of this grid's fields as 
@@ -1335,26 +1369,6 @@ setFieldState : function (fieldState) {
 // @see tileGrid.setFieldState();
 // @visibility external
 //<
-getFieldState : function () {
-    var fieldStates = [],
-        allFields = this.getFields();
-    if (allFields) {
-        for (var i = 0; i < allFields.length; i++) {
-            var field = allFields[i],
-                fieldName = field[this.fieldIdProperty],
-                fieldState = {name:fieldName}
-            ;
-            // store the userFormula if this is a formula field
-            if (field.userFormula) fieldState.userFormula = field.userFormula;
-            // store the userSummary if one is present
-            if (field.userSummary) fieldState.userSummary = field.userSummary;
-            fieldStates.add(fieldState);
-        }
-    }
-    
-    return isc.Comm.serialize(fieldStates);
-}
-
 
 // ---------------------------------------------------------------------------------------
 
@@ -1386,6 +1400,8 @@ isc.SimpleTile.addProperties({
     showRollOver: true,
 
     redrawOnStateChange: true,
+    
+    _redrawWithParent: false,
     
     initWidget: function () {
         this.invokeSuper(isc.SimpleTile, "initWidget", arguments);
@@ -1426,6 +1442,7 @@ isc.SimpleTile.addProperties({
 isc.TileGrid.registerStringMethods({
     itemHover : "item",
     itemClick : "item",
-    recordClick : "viewer,tile,record"    
+    recordClick : "viewer,tile,record",
+	fieldStateChanged : ""
 });
 

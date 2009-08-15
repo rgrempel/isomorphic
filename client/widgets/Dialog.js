@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -545,7 +545,7 @@ isc.Dialog.Prompt = {
 	//	any properties in attributes will get applied and may be visibily changed
 	//
 	//	@param	newMessage	(string)	message to display
-	//	@param	attributes	(object)	object of name:value pairs to apply to the object
+	//	@param	properties (Dialog Properties)	object of name:value pairs to apply to the object
 	//									properties are applied before the redraw
 	//<
 	showMessage : function (newMessage, properties) {
@@ -595,7 +595,7 @@ isc.Dialog.Prompt = {
 //  
 //
 //	@param	message			(string)	message to display
-//	@param	[properties]	(object)	additional properties for the Dialog, applied before
+//	@param	[properties]	(Dialog Properties)	additional properties for the Dialog, applied before
 //                                       the Dialog is shown
 //
 // @visibility external
@@ -720,7 +720,7 @@ isc.Dialog.Warn = {
 	// any properties in attributes will get applied and may be visibily changed
 	//
 	//	@param	newMessage	(string)	message to display
-	//	@param	attributes	(object)	object of name:value pairs to apply to the object
+	//	@param	attributes	(Dialog Properties)	object of name:value pairs to apply to the object
 	//									properties are applied before the redraw
 	//<
 	showMessage : function (newMessage, properties) {
@@ -851,7 +851,7 @@ isc._applyDialogHandlers = function (properties) {
 //                                      dismisses the dialog. This has the single parameter
 //                                      'value', indicating the value returned by the Warn
 //                                      dialog from 'okClick()' etc.
-//	@param	[properties]	(object)	additional properties for the Dialog.
+//	@param	[properties]	(Dialog Properties)	additional properties for the Dialog.
 //                                      To set +link{Dialog.toolbarButtons,custom buttons} for
 //                                      the Dialog, set properties.buttons to an array of buttons
 //										eg:	{ buttons : [Dialog.OK, Dialog.CANCEL] }
@@ -879,7 +879,7 @@ isc.addGlobal("warn", function (message, callback, properties) {
 //                                      dismisses the dialog. This has the single parameter
 //                                      'value', indicating the value returned by the Warn
 //                                      dialog from 'okClick()' etc.
-//	@param	[properties]	(object)	additional properties for the Dialog.
+//	@param	[properties]	(Dialog Properties)	additional properties for the Dialog.
 //                                      To set +link{Dialog.toolbarButtons,custom buttons} for
 //                                      the Dialog, set properties.buttons to an array of buttons
 //										eg:	{ buttons : [Dialog.OK, Dialog.CANCEL] }
@@ -907,7 +907,7 @@ isc.addGlobal("say", function (message, callback, properties) {
 //                                      user clicks a button to dismiss the dialog.
 //                                      This has the single parameter 'value', indicating the 
 //                                      value returned by the Warn dialog from 'okClick()' etc.
-//	@param	[properties]	(object)	additional properties for the Dialog.
+//	@param	[properties]	(Dialog Properties)	additional properties for the Dialog.
 //                                      To set +link{Dialog.toolbarButtons,custom buttons} for
 //                                      the Dialog, set properties.buttons to an array of buttons
 //										eg:	{ buttons : [Dialog.OK, Dialog.CANCEL] }
@@ -938,7 +938,7 @@ isc.addGlobal("ask", function (message, callback, properties) {
 //                                      user clicks a button to dismiss the dialog.
 //                                      This has the single parameter 'value', indicating the 
 //                                      value returned by the Warn dialog from 'okClick()' etc.
-//	@param	[properties]	(object)	additional properties for the Dialog.
+//	@param	[properties]	(Dialog Properties)	additional properties for the Dialog.
 //                                      To set +link{Dialog.toolbarButtons,custom buttons} for
 //                                      the Dialog, set properties.buttons to an array of buttons
 //										eg:	{ buttons : [Dialog.OK, Dialog.CANCEL] }
@@ -978,7 +978,7 @@ isc.confirm = function (message, callback, properties) {
 //                                      This has the single parameter 'value', indicating the 
 //                                      user entry, or null if cancel was pressed or the window
 //                                      closed
-//	@param	[properties]	(object)	additional properties for the Dialog.
+//	@param	[properties]	(Dialog Properties)	additional properties for the Dialog.
 //                                      To set +link{Dialog.toolbarButtons,custom buttons} for
 //                                      the Dialog, set properties.buttons to an array of buttons
 //										eg:	{ buttons : [Dialog.OK, Dialog.CANCEL] }
@@ -1107,7 +1107,7 @@ isc.askForValue = function (message, callback, properties) {
 //
 //  @param  loginFunc       (Callback)  Function to call to attempt login.  Recieves parameters
 //                                      "credentials" and "dialogCallback", described above
-//	@param	[properties]	(Dialog properties)	additional properties for the Dialog
+//	@param	[properties]	(Dialog Properties)	additional properties for the Dialog
 //
 // @see classAttr:Dialog.LOGIN_TITLE
 // @see classAttr:Dialog.USERNAME_TITLE

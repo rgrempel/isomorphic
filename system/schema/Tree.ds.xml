@@ -24,6 +24,8 @@
 		<field name="defaultNodeTitle"		type="string"/>
 		<field name="defaultLoadState"		type="loadStateEnum" visibility="internal"/>
 		<field name="loadStateMessages"		type="loadStateMessageObject" visibility="internal"/>
+        <field name="defaultIsFolder" type="boolean"/>
+        <field name="reportCollisions" type="boolean"/>
 	</fields>
 	<types>
 		<type ID="TreeModelType" inheritsFrom="enum">

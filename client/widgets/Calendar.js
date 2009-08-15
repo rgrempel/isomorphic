@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -211,7 +211,7 @@ showWorkday: false,
 
 //> @attr calendar.scrollToWorkday (boolean : false : IR)
 // If set, causes the +link{workdayStart,workday hours} to be sized to fill the available space
-// in the day view and weeek view, and automatically scrolls these views to the start of the
+// in the day view and week view, and automatically scrolls these views to the start of the
 // workday when the calendar is first displayed and whenever the user switches to a new day or
 // week.
 //
@@ -276,7 +276,8 @@ leadingDateField: "leadingDate",
 trailingDateField: "trailingDate",
 
 //> @attr calendar.eventTypeField  (String : "eventType" : IR)
-// The name of the end date field in a +link{CalendarEvent}.
+// The name of the field which will determine the row in which this event will be displayed
+// for the +link{Calendar.timelineView}
 //
 // @group calendarEvent
 // @visibility calendar
@@ -555,6 +556,27 @@ eventOverlapPercent: 10,
 // @visibility calendar
 //<  
 
+//> @attr calendar.addEventButton (AutoChild : null : IR) 
+// The addEventButton is an ImgButton that appears above the week/day/month views of the
+// calendar and offers an alternative way to create a new event.
+//
+// @visibility calendar
+//<  
+
+//> @attr calendar.previousButton (AutoChild : null : IR) 
+// The previousButton is an ImgButton that appears above the week/day/month views of the
+// calendar and allows the user to move the calendar backwards in time.
+//
+// @visibility calendar
+//<  
+
+//> @attr calendar.nextButton (AutoChild : null : IR) 
+// The nextButton is an ImgButton that appears above the week/day/month views of the
+// calendar and allows the user to move the calendar forwards in time.
+//
+// @visibility calendar
+//<  
+
 //>	@attr calendar.data		(List of CalendarEvent : null : IRW)
 // A List of CalendarEvent objects, specifying the data to be used to populate the
 // calendar.  
@@ -715,17 +737,126 @@ eventOverlapPercent: 10,
 // @visibility internal
 //<
 
-// eventsByTypeView
+// TimelineView
 // ---------------------------------------------------------------------------------------
 
-//> @attr calendar.showEventsByTypeView (boolean : false : IRW)
-// if set to true, show the eventsByType view.
+//> @attr calendar.timelineView (autoChild)
+// A timeline for displaying events of various types.
 // @visibility calendar
 //<
-showEventsByTypeView: false,
 
-// ebtView only works with this being true for now
+//> @attr calendar.showTimelineView (boolean : false : IRW)
+// If set to true, show the Timeline view.
+// @visibility calendar
+//<
+
+showTimelineView: false,
+
+// only works for timeline view for now
 renderEventsOnDemand: true,
+
+// i18n
+// ---------------------------------------------------------------------------------------
+
+//> @attr calendar.dayViewTitle (string : "Day" : IR)
+// The title for the day view
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+dayViewTitle: "Day",
+
+//> @attr calendar.weekViewTitle (string : "Week" : IR)
+// The title for the week view
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+weekViewTitle: "Week",
+
+//> @attr calendar.monthViewTitle (string : "Month" : IR)
+// The title for the month view
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+monthViewTitle: "Month", 
+
+//> @attr calendar.timelineViewTitle (string : "Timeline" : IR)
+// The title for the timeline view
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+timelineViewTitle: "Timeline",
+
+//> @attr calendar.eventNameFieldTitle (string : "Event Name" : IR)
+// The title for the event name field in the quick event dialog
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+eventNameFieldTitle: "Event Name",
+
+//> @attr calendar.saveButtonTitle (string : "Save Event" : IR)
+// The title for the save button in the quick event dialog and the event editor
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+saveButtonTitle: "Save Event",
+
+//> @attr calendar.detailsButtonTitle (string : "Edit Details" : IR)
+// The title for the edit button in the quick event dialog
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+detailsButtonTitle: "Edit Details",
+
+//> @attr calendar.cancelButtonTitle (string : "Cancel" : IR)
+// The title for the cancel button in the event editor
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+cancelButtonTitle: "Cancel", 
+
+//> @attr calendar.previousButtonHoverText (string : "Previous" : IR)
+// The text to be displayed when a user hovers over the +link{calendar.previousButton, previous}
+// toolbar button
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+previousButtonHoverText: "Previous",
+
+//> @attr calendar.nextButtonHoverText (string : "Next" : IR)
+// The text to be displayed when a user hovers over the +link{calendar.nextButton, next} 
+// toolbar button
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+nextButtonHoverText: "Next",
+
+//> @attr calendar.addEventButtonHoverText (string : "Add an event" : IR)
+// The text to be displayed when a user hovers over the +link{calendar.addEventButton, add event}
+// toolbar button
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+addEventButtonHoverText: "Add an event",
+
+//> @attr calendar.datePickerHoverText (string : "Choose a date" : IR)
+// The text to be displayed when a user hovers over the +link{calendar.datePickerButton, date picker}
+// toolbar button
+// 
+// @group i18nMessages
+// @visibility calendar
+//<
+datePickerHoverText: "Choose a date",
 
 // autochild constructors and defaults
 // ----------------------------------------------------------------------------------------
@@ -735,7 +866,7 @@ weekViewConstructor: "DaySchedule",
 
 monthViewConstructor: "MonthSchedule",
 
-eventsByTypeViewConstructor: "EventsByTypeView", 
+timelineViewConstructor: "TimelineView", 
 
 mainViewDefaults : {
     _constructor:isc.TabSet,
@@ -782,7 +913,6 @@ addEventButtonDefaults : {
     _constructor: isc.ImgButton,
     title: "",
     src:"[SKINIMG]actions/add.png",    
-    prompt:"Add an event",
     showRollOver: false, 
     showDown: false,
     showFocused:false,
@@ -793,7 +923,6 @@ addEventButtonDefaults : {
 datePickerButtonDefaults : {
     _constructor: isc.ImgButton,
     title: "",
-    prompt: "Choose a date",
     src:"[SKIN]/controls/date_control.gif",
     width: 16, 
     height: 16,
@@ -811,7 +940,6 @@ controlsBarDefaults : {
 previousButtonDefaults : {
     _constructor:isc.ImgButton,
     title: "", 
-    prompt: "Previous",
     src:"[SKINIMG]actions/back.png",
     showFocused:false,
     width: 16, 
@@ -824,7 +952,6 @@ previousButtonDefaults : {
 nextButtonDefaults : {
     _constructor:isc.ImgButton,
     title: "", 
-    prompt: "Next",
     src:"[SKINIMG]actions/forward.png", 
     showFocused:false,
     width: 16, 
@@ -844,6 +971,13 @@ dateDisplayDefaults : {
 
 // initial setup of the calendar
 initWidget : function () {
+    // set hover text strings for toolbar buttons
+    // can't set dynamically in defaults block, so have to do it here.
+    this.previousButtonDefaults.prompt = this.previousButtonHoverText;
+    this.nextButtonDefaults.prompt = this.nextButtonHoverText;
+    this.datePickerButtonDefaults.prompt = this.datePickerHoverText;
+    this.addEventButtonDefaults.prompt  = this.addEventButtonHoverText;
+    
     this._setChosenWeek();
     this.createChildren();
     this._setWeekTitles();
@@ -936,8 +1070,8 @@ refreshSelectedView : function () {
         if (this.monthView) this.monthView.refreshEvents();
     } else if (this.monthViewSelected()) {
         this.monthView.refreshEvents();
-    } else if (this.eventsByTypeViewSelected()) {
-        this.eventsByTypeView.refreshEvents();    
+    } else if (this.timelineViewSelected()) {
+        this.timelineView.refreshEvents();    
     }
     
 },
@@ -949,8 +1083,8 @@ getSelectedView : function () {
        return this.weekView;
     } else if (this.monthViewSelected()) {
        return this.monthView;
-    } else if (this.eventsByTypeViewSelected()) {
-       return this.eventsByTypeView;    
+    } else if (this.timelineViewSelected()) {
+       return this.timelineView;    
     }   
 },
 
@@ -958,6 +1092,7 @@ getSelectedView : function () {
 // Get the name of the visible view. Either 'day', 'week', or 'month'.
 //
 // @return	(string)	The name of the visible view.
+// @visibility external
 //<
 getCurrentViewName : function () {
     return this.getSelectedView().viewName;    
@@ -1209,14 +1344,14 @@ removeEvent : function (event, ignoreDataChanged) {
 },
 
 //>	@method	calendar.updateEvent()
-// update an event in this calendar.
+// Update an event in this calendar.
 //
-// @param	event		(Object)	The event object to remove from the calendar
-// @param	startDate		(Date)	start date of event
-// @param  endDate         (Date)  end date of event
-// @param  name            (String) name of event
-// @param description      (String) description of event
-// @param otherFields      (Object) new values of additional fields to be updated
+// @param event		(CalendarEvent)	The event object to remove from the calendar
+// @param startDate (Date)	start date of event
+// @param endDate   (Date)  end date of event
+// @param name        (String) name of event
+// @param description (String) description of event
+// @param otherFields (Object) new values of additional fields to be updated
 //     
 // @visibility calendar
 //<
@@ -1245,8 +1380,8 @@ updateEvent : function (event, startDate, endDate, name, description, otherField
             //self.monthView.refreshDay(newEvt[self.startDateField]);
             self.monthView.refreshEvents();
         }
-        if (self._shouldRefreshTypeView(startDate, endDate)) {
-            self.eventsByTypeView.updateEventWindow(newEvt);   
+        if (self._shouldRefreshTimelineView(startDate, endDate)) {
+            self.timelineView.updateEventWindow(newEvt);   
         }
        
         // fire eventChanged if present
@@ -1347,9 +1482,9 @@ _shouldRefreshMonth : function (startDate, endDate) {
     } else return false;
 },
 
-_shouldRefreshTypeView : function (startDate, endDate) {
-    // for now just return true if we're showing eventsByType view
-    if (this.showEventsByTypeView) return true;
+_shouldRefreshTimelineView : function (startDate, endDate) {
+    // for now just return true if we're showing timeline view
+    if (this.showTimelineView) return true;
     else return false;    
 },
 
@@ -1357,7 +1492,8 @@ _getNewEventWindow : function (event) {
     var canEdit = this.canEditEvent(event);
     var canDelete = this.canDeleteEvents == null ? canEdit : this.canDeleteEvents;
     var styleName = event[this.eventWindowStyleField] || this.eventWindowStyle;
-    return isc.EventWindow.create({
+    // create eventWindow as an autoChild so it can be customized.
+    return this.createAutoChild("eventWindow", {
         calendar: this,
         className: styleName,
         baseStyle: styleName,
@@ -1366,8 +1502,9 @@ _getNewEventWindow : function (event) {
         _redrawWithParent:false,
         showCloseButton: canDelete,
         event: event,
-        descriptionText: event[this.descriptionField]
-    }); 
+        descriptionText: event[this.descriptionField]    
+    }, isc.EventWindow);
+    
 },
  
 _getEventsInRange : function (start, end) {
@@ -1618,10 +1755,10 @@ _prepareAutoArrangeOffsets : function (events, grid) {
         }
         
     }
-
+   
     for (var i = 0; i < events.getLength(); i++) {
         var curr = events.get(i);
-        if (!curr._eventEndOffset || curr._eventEndOffset == 0) {
+        if (!curr._eventEndOffset || curr._eventEndOffset == 0) { 
             curr._eventEndOffset == columnCount;
         }
     }
@@ -1655,17 +1792,21 @@ _renderEventRange : function (isWeek, start, end) {
 
     // work out the drawing offsets for the events
     var columnCount = this._prepareAutoArrangeOffsets(localEvents, grid);
-
+    // potentially invalid column count when adding a new event of short duration
+    if (columnCount == 0) columnCount = 1;
     // re-sort the events by left-offset to keep the zorder in check
     localEvents.unsort();
     localEvents.sortByProperties(["_eventOffset"], [true]);
 
     // get the width of each display-column
     var periodWidth = colSize / columnCount;
-
+    
     // loop over the overlapped windows and shift them all accordingly
     for (var i = 0; i < localEvents.getLength(); i++) {
         var curr = localEvents.get(i);
+        // potentially invalid eventEndOffset when adding a new event of short duration
+        if (curr._eventEndOffset == 0) curr._eventEndOffset = 1;
+        
         var eLeft = this.getEventLeft(curr, isWeek);
         
         // and shift the x-offset
@@ -1703,19 +1844,31 @@ _renderEventRange : function (isWeek, start, end) {
         var win = this._findEventWindow(curr, isWeek);
         
         if (win) {
+            //isc.logWarn('event:' + [eTop, eLeft, eWidth, eHeight]);
             win.renderEvent(eTop, eLeft, eWidth, eHeight);
         }
     }
 },
 
 _setChosenWeek : function () {
+    
     var startDate = 
         this.chosenWeekStart = new Date(this.year, this.month, this.chosenDate.getDate()
         - this.chosenDate.getDay() + this.firstDayOfWeek);
-    
+     
+    // make sure the current week surrounds the current date.
+    // if chosen date is less than startDate, shift week window back one week.
+    if (Date.compareDates(this.chosenDate,startDate) == 1) { 
+        this.chosenWeekStart.setDate(this.chosenWeekStart.getDate() - 7);    
+    }
     this.chosenWeekEnd = new Date(startDate.getFullYear(), startDate.getMonth(), 
        startDate.getDate() + 6, 23, 59);
-  
+   
+    // similary, if chosen date is greater than chosenWeekEnd, shift week window up one week.
+    if (Date.compareDates(this.chosenDate, this.chosenWeekEnd) == -1) {
+        this.chosenWeekStart.setDate(this.chosenWeekStart.getDate() + 7);
+        this.chosenWeekEnd.setDate(this.chosenWeekEnd.getDate() + 7);
+    }
 },
 
 //>	@method	calendar.setChosenDate()
@@ -1779,8 +1932,8 @@ adjustCriteria : function (defaultCriteria) {
 
 getNewCriteria : function () {
     var criteria = {}, view;
-    if (this.fetchMode == "type") {
-        view = this.eventsByTypeView;
+    if (this.fetchMode == "timeline") {
+        view = this.timelineView;
         var criter = {
             _constructor:"AdvancedCriteria",
             operator:"and",
@@ -1846,9 +1999,9 @@ next : function () {
         newDate = new Date(this.year, this.month, this.chosenDate.getDate() + 7);   
     } else if (this.monthViewSelected()) {
         newDate = new Date(this.year, this.month + 1, 1);
-    } else if (this.eventsByTypeViewSelected()) {
+    } else if (this.timelineViewSelected()) {
         newDate = this.chosenDate.duplicate();
-        this.eventsByTypeView.nextOrPrev(true);
+        this.timelineView.nextOrPrev(true);
     }
     this.dateChooser.setData(newDate);
     this.setChosenDate(newDate);
@@ -1875,9 +2028,9 @@ previous : function () {
         var newDate = new Date(this.year, this.month, this.chosenDate.getDate() - 7);   
     } else if (this.monthViewSelected()) {
         var newDate = new Date(this.year, this.month - 1, 1);
-    } else if (this.eventsByTypeViewSelected()) {
+    } else if (this.timelineViewSelected()) {
         newDate = this.chosenDate.duplicate();
-        this.eventsByTypeView.nextOrPrev(false);      
+        this.timelineView.nextOrPrev(false);      
     }
     this.dateChooser.setData(newDate);
     this.setChosenDate(newDate);
@@ -1918,22 +2071,22 @@ _getTabs : function () {
     if (this.showDayView != false) {
         this.dayView = this.createAutoChild("dayView", 
             { baseStyle: this.baseStyle, viewName: "day"} );
-        nTabs.add({title: "Day", pane: this.dayView });
+        nTabs.add({title: this.dayViewTitle, pane: this.dayView });
     }
     if (this.showWeekView != false) {
         this.weekView = this.createAutoChild("weekView", 
             {_isWeek: true, baseStyle: this.baseStyle, viewName: "week" } );
-        nTabs.add({title: "Week", pane: this.weekView });
+        nTabs.add({title: this.weekViewTitle, pane: this.weekView });
     }
     if (this.showMonthView != false) {
         this.monthView = this.createAutoChild("monthView", 
             {baseStyle: this.baseStyle, viewName: "month" } );
-        nTabs.add({title: "Month", pane: this.monthView });
+        nTabs.add({title: this.monthViewTitle, pane: this.monthView });
     }
-    if (this.showEventsByTypeView != false) {
-        this.eventsByTypeView = this.createAutoChild("eventsByTypeView",
-            {baseStyle: this.baseStyle, viewName: "type" } );
-        nTabs.add({title: "Type", pane: this.eventsByTypeView });
+    if (this.showTimelineView != false) {
+        this.timelineView = this.createAutoChild("timelineView",
+            {baseStyle: this.baseStyle, viewName: "timeline" } );
+        nTabs.add({title: this.timelineViewTitle, pane: this.timelineView });
     }
     return nTabs;
 },
@@ -2008,6 +2161,7 @@ createChildren : function () {
                     calendar: this.creator, autoDraw: false,
                     showCancelButton: true, autoClose: true,
                     disableWeekends: this.creator.disableWeekends,
+                    firstDayOfWeek: this.creator.firstDayOfWeek,
                     showWeekends: this.creator.showWeekends,
                     // override dateClick to change the selected day
                     dateClick : function (year, month, day) {
@@ -2122,11 +2276,12 @@ createChildren : function () {
                 },
                 createFields : function (isEvent) {
                     var nameType = isEvent ? "staticText" : "text";
+                    var cal = this.calendar;
                     // set up default fields
                     var fieldList = [
-                        {name: "name", title: "Event Name", type: nameType, width: 250 },
-                        {name: "save", title: "Save Event", type: "SubmitItem", endRow: false},
-                        {name: "details", title: "Edit Details", type: "button", startRow: false,
+                        {name: "name", title: cal.eventNameFieldTitle, type: nameType, width: 250 },
+                        {name: "save", title: cal.saveButtonTitle, type: "SubmitItem", endRow: false},
+                        {name: "details", title: cal.detailsButtonTitle, type: "button", startRow: false,
                             click : function (form, item) {
                                 form.calendar._showEventEditor(form.calendar.eventDialog.event);    
                             }
@@ -2140,7 +2295,8 @@ createChildren : function () {
                     });
                     // set datasource then fields...other way around doesn't work
                     this.setDataSource(dialogDS);
-                    this.setFields(isc.clone(this.calendar.eventDialogFields));
+                    this.setFields(this.calendar.eventDialogFields ? 
+				        this.calendar.eventDialogFields.duplicate() : null);
              
                 },
                
@@ -2187,15 +2343,18 @@ createChildren : function () {
         
         setEvent : function (event) {
             this.event = event;
+    
+            var theForm = this.items[0];
+            
             // if we have custom fields, clear errors and set those custom fields
             if (this.creator.eventDialogFields) {
-                this.items[0].clearErrors(true);
-                this.items[0].setCustomValues(event);
+                theForm.clearErrors(true);
+                theForm.setCustomValues(event);
             }
             this.setDate(event[this.creator.startDateField], 
                 event[this.creator.endDateField]);
             
-            this.items[0].getItem("name").setValue(event[this.creator.nameField]);
+            theForm.getItem("name").setValue(event[this.creator.nameField]);
         },
         
         closeClick : function () {
@@ -2260,7 +2419,8 @@ createChildren : function () {
             });
             // only datasource then fields seems to work
             this.setDataSource(editorDS);
-            this.setFields(isc.clone(this.creator.eventEditorFields));
+            this.setFields(this.creator.eventEditorFields ? 
+				this.creator.eventEditorFields.duplicate() : null);
         }, 
         getTimeValues : function (type, startTime) {
             if (!startTime) startTime = 0;
@@ -2320,7 +2480,7 @@ createChildren : function () {
                 layoutMargin: 10,
                 autoDraw:false, 
                 members: [
-                isc.IButton.create({autoDraw: false, title: "Save Event", calendar: this,
+                isc.IButton.create({autoDraw: false, title: this.saveButtonTitle, calendar: this,
                         click : function () {
                             var cal = this.calendar,
                                 evt = cal.eventEditorLayout.event,
@@ -2346,8 +2506,11 @@ createChildren : function () {
                                 form.showItem("invalidDate");
                                 return;
                             }
-                            // perform validation for custom fields
+
+                            // run validation so rules for custom fields added by the
+                            // developer are enforced
                             if (!form.validate()) return;
+
                             var sdate = cal.eventEditorLayout.currentStart,
                                 edate = cal.eventEditorLayout.currentEnd;
                             sdate.setHours(sHrs);
@@ -2376,7 +2539,7 @@ createChildren : function () {
                             }
                         }
                     }),
-                    isc.IButton.create({autoDraw: false, title: "Cancel", calendar:this,
+                    isc.IButton.create({autoDraw: false, title: this.cancelButtonTitle, calendar:this,
                         click: function () {
                             this.calendar.eventEditorLayout.hide();    
                         }
@@ -2530,8 +2693,8 @@ setDateLabel : function () {
     } else if (this.monthViewSelected()) { // month tab
         this.dateDisplay.setContents("<b>" + this.chosenDate.getShortMonthName()
             + " " + this.chosenDate.getFullYear() + "</b>");
-    } else if (this.eventsByTypeViewSelected()) {
-        var ebtView = this.eventsByTypeView, sDate = ebtView.startDate, eDate = ebtView.endDate;
+    } else if (this.timelineViewSelected()) {
+        var ebtView = this.timelineView, sDate = ebtView.startDate, eDate = ebtView.endDate;
         var contents = "<b>" + ebtView.formatDateForDisplay(sDate) + "</b> through <b>" + 
             ebtView.formatDateForDisplay(eDate) + "</b>";
         this.dateDisplay.setContents(contents);
@@ -2581,9 +2744,9 @@ monthViewSelected : function () {
     else return this._selectedViewName == "month";
 },
 
-eventsByTypeViewSelected : function () {
-    if (!this.mainView.isA("TabSet")) return this.mainView.viewName == "type";
-    else return this._selectedViewName == "type";    
+timelineViewSelected : function () {
+    if (!this.mainView.isA("TabSet")) return this.mainView.viewName == "timeline";
+    else return this._selectedViewName == "timeline";    
 },
 
 // Displays the event entry/edit dialog at the given row and column position
@@ -2591,7 +2754,11 @@ _showEventDialog : function (rowNum, colNum, numRows, eventWindow) {
     // no event window means that an empty slot was clicked, so show dialog for creating a 
     // new event
     if (!eventWindow) {
+        // clear the stored events (components check this to figure out whether to use add vs
+        // update operationType for saving)
         this.eventDialog.event = null;
+        if (this.eventEditorLayout) this.eventEditorLayout.event = null;
+
         this.eventDialog.items[0].createFields(false);
         var sDate, eDate;
         
@@ -3890,6 +4057,12 @@ isc.EventWindow.addProperties({
     
     click : function () {
         if (this._closed) return;
+        if (this._hitCloseButton) {
+            // one-time flag set when the close button is clicked but eventRemoveClick() has
+            // been implemented and cancels the removal.
+            this._hitCloseButton = null;
+            return;
+        }
         var cal = this.calendar;
         var doDefault = cal.eventClick(this.event, this._isWeek ? "week" : "day");
         if (doDefault) {
@@ -3935,14 +4108,18 @@ isc.EventWindow.addProperties({
     },
     
     closeClick : function () {
-        //var cal = this.calendar;
-        //if (cal.eventRemoveClick()) { 
-            this.Super('closeClick');
-            this.calendar.removeEvent(this.event, true);
-            this._closed = true;         
-        //}
+        var cal = this.calendar;
+        if (cal.eventRemoveClick(this.event) == false) {
+            // one-time flag to avoid general click() handler firing and triggering event
+            // editing
+            this._hitCloseButton = true; 
+            return;
+        }
+        this.Super("closeClick", arguments);
+        this.calendar.removeEvent(this.event, true);
+        this._closed = true;         
     },
-    
+ 
     parentResized : function () {
         this.Super('parentResized', arguments);
         
@@ -4076,10 +4253,10 @@ isc.EventWindow.addProperties({
              
 }); // end eventWindow
 
-// EventsByTypeWindow
-isc.ClassFactory.defineClass("EventsByTypeWindow", "EventWindow");
+// TimelineWindow
+isc.ClassFactory.defineClass("TimelineWindow", "EventWindow");
 
-isc.EventsByTypeWindow.addProperties({
+isc.TimelineWindow.addProperties({
         
         showFooter: false,
         minimized: true,
@@ -4117,7 +4294,7 @@ isc.EventsByTypeWindow.addProperties({
             var currRow = this.parentElement.getEventRow();
            
             if (currRow != this._startRow) {
-                //this.calendar.eventsByTypeView.addLeadingAndTrailingLines(this)
+                //this.calendar.timelineView.addLeadingAndTrailingLines(this)
                 this.showLines();
                 return false;
             }
@@ -4137,7 +4314,7 @@ isc.EventsByTypeWindow.addProperties({
                 event[cal.descriptionField], otherFields, true);
             // no need to showLines() here...the callback in updateEvent will call 
             // this.updateEventWindow() which will take care of that
-            //this.calendar.eventsByTypeView.addLeadingAndTrailingLines(this);
+            //this.calendar.timelineView.addLeadingAndTrailingLines(this);
             
             return true;
         },
@@ -4170,12 +4347,12 @@ isc.EventsByTypeWindow.addProperties({
         },
         
         hide : function () {
-            this.invokeSuper(isc.EventsByTypeWindow, "hide");
+            this.invokeSuper(isc.TimelineWindow, "hide");
             this.hideLines();
         },
         
         show : function () {
-            this.invokeSuper(isc.EventsByTypeWindow, "show");
+            this.invokeSuper(isc.TimelineWindow, "show");
             this.showLines();    
         },
         
@@ -4189,18 +4366,18 @@ isc.EventsByTypeWindow.addProperties({
         }
         
         
-}); // end EventsByTypeWindow
+}); // end TimelineWindow
 
-// eventsByTypeView
+// TimelineView
 //---------------------------------------------------------------------------------------------
-isc.ClassFactory.defineClass("EventsByTypeView", "ListGrid");
+isc.ClassFactory.defineClass("TimelineView", "ListGrid");
 
-isc.EventsByTypeView.changeDefaults("bodyProperties", {
+isc.TimelineView.changeDefaults("bodyProperties", {
     childrenSnapToGrid: true,
     snapToCells: true        
 });
 
-isc.EventsByTypeView.addProperties({
+isc.TimelineView.addProperties({
     canSort: false,
     canResizeFields: false,
     canReorderFields: false,
@@ -4278,7 +4455,7 @@ isc.EventsByTypeView.addProperties({
     },
     
     draw : function (a, b, c, d) {
-        this.invokeSuper(isc.EventsByTypeView, "draw", a, b, c, d);
+        this.invokeSuper(isc.TimelineView, "draw", a, b, c, d);
         this.body.snapHGap = this.eventWidth;
         this.body.snapVGap = this.eventHeight;
         // scroll to today if defined
@@ -4820,7 +4997,7 @@ isc.EventsByTypeView.addProperties({
             bodyProps = {height: 0, overflow:"hidden" };
             headerProps = {height: "*"};
         }
-        var eventWin =  isc.EventsByTypeWindow.create({
+        var eventWin =  isc.TimelineWindow.create({
             calendar: this.creator,
             _redrawWithParent: false,
             className: styleName,
@@ -4923,7 +5100,7 @@ isc.EventsByTypeView.addProperties({
         var endRow = Math.floor((sTop + viewPortHeight) / eHeight);
         return [startRow, endRow];
     }
-}); // end eventsByTypeView addProperties()
+}); // end timelineView addProperties()
 
 isc.Calendar.registerStringMethods({
         getDayBodyHTML : "date,events,calendar,rowNum,colNum",

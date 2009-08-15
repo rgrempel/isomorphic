@@ -59,6 +59,10 @@
         <field name="nextButtonProperties" type="ImgButton" propertiesOnly="true"/>
         <field name="dateDisplayProperties" type="Label" propertiesOnly="true"/>
         
+        <field name="showEventsByTypeView" type="boolean"/>
+        
+        <field name="eventOverlapPercent" type="number"/>
+       
 	</fields>
     <groups>
         <group>date</group>

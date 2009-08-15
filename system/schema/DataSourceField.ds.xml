@@ -70,10 +70,15 @@
         <!-- HACK: DataSourceField is used as the type of the DataSource.types field,
              which currently can contain either a simple or DataSource type definition, 
              so by adding DataSourceField.fields, we allow DataSource.types.fields -->
-	    <fields type="DataSourceField" multiple="true" propertiesOnly="true" uniqueProperty="name" hidden="true"/>
+	    <fields type="DataSourceField" multiple="true" propertiesOnly="true" 
+                childTagName="field" uniqueProperty="name" hidden="true"/>
 
         <multiple type="boolean"/>
 
-	<pickListFields type="Object" multiple="true"/>
+        <pickListFields type="Object" multiple="true"/>
+        
+        <canFilter type="boolean"/>
+        <ignore type="boolean"/>
+        <canSortClientOnly type="boolean"/>
 	</fields>
 </Object>

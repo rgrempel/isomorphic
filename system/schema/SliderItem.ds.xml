@@ -11,5 +11,6 @@
 		<field name="canvas" inapplicable="true"/>
 		<field name="canvasConstructor" inapplicable="true"/>
 		<field name="canvasProperties" inapplicable="true"/>
+        <field name="roundPrecision" type="number"/>
     </fields>
 </DataSource>

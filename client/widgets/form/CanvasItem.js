@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -277,7 +277,7 @@ isc.CanvasItem.addMethods({
     checkCanvasOverflow : function () {
         return this.sizeCanvas(true);
     },
-
+    
     sizeCanvas : function (firstResizePass) {
         var canvas = this.canvas;
 
@@ -299,6 +299,12 @@ isc.CanvasItem.addMethods({
         // TableResizePolicy; if we give it a pixel size it will feed that back.  If we give it
         // a variable size (percent or "*"), that size will be incorporated into sizing the row
         // as a whole and we'll get the row height back.
+        
+        // Note: if we're writing the title inline the space available for the canvas will be
+        // reduced by the title height
+        if (this.showTitle && this.getTitleOrientation() == isc.Canvas.TOP) {
+            policyHeight -= this.form.getTitleHeight(this);
+        }
         resizeHeight = policyHeight;
 
         // TableResizePolicy doesn't consider the specified width of items when determining
@@ -311,6 +317,7 @@ isc.CanvasItem.addMethods({
         // height of an height-overflowed Canvas to less than the overflowed size, because 
         // there's no reason to expect it to shrink (unless it's dirty, in which case we assume
         // it might change size)
+        
         if (!canvas.isDirty() &&
             (resizeWidth == null || resizeWidth <= canvas.getVisibleWidth()) &&
             canvas.getHeight() < canvas.getVisibleHeight() && 
@@ -321,6 +328,7 @@ isc.CanvasItem.addMethods({
                           "canvasItemSizing");
             resizeHeight = null;
         }
+        
 
         if (!isc.isA.Number(resizeWidth)) resizeWidth = null;
         if (!isc.isA.Number(resizeHeight)) resizeHeight = null;

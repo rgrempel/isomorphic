@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -29,7 +29,7 @@ isc.Canvas.addClassMethods({
 
 _$percent : "%",
 _$listPolicy : "listPolicy",
-applyStretchResizePolicy : function (sizes, totalSize, modifyInPlace, propertyTarget) {
+applyStretchResizePolicy : function (sizes, totalSize, minSize, modifyInPlace, propertyTarget) {
     //!OBFUSCATEOK
 	if (!sizes) return;
 	
@@ -38,7 +38,8 @@ applyStretchResizePolicy : function (sizes, totalSize, modifyInPlace, propertyTa
 		staticSize = 0,		// amount that's taken up by static images
 		size = 0,			// temp variable to hold the size
         resultSizes = (modifyInPlace ? sizes : []),  // the calculated sizes
-        logEnabled = this.logIsDebugEnabled(this._$listPolicy);
+        logEnabled = this.logIsDebugEnabled(this._$listPolicy),
+        minSize = (minSize || 1);
 
     //>DEBUG  preserve the original sizes array for logging purposes
     if (logEnabled && modifyInPlace) sizes = sizes.duplicate();
@@ -114,10 +115,10 @@ applyStretchResizePolicy : function (sizes, totalSize, modifyInPlace, propertyTa
 	if (starCount) {
         if (percentTotal >= 100) {
             // percents sum over 100, so star-sized items receive 0% of remaining space, hence
-            // will be sized to the 1px minimum.  Add the 1px minimums to staticSize to prevent
-            // overflow when percents sum to exactly 100 and there is also a "*", since this
-            // might not be expected.
-            staticSize += starCount;
+            // will be sized to the minimum size minimum.  Add the minimum size to staticSize
+            // to prevent overflow when percents sum to exactly 100 and there is also a "*",
+            // since this might not be expected.
+            staticSize += (starCount * minSize);
         } else {
             // star sized items share the remaining percent size
             starPercent = (100 - percentTotal) / starCount;
@@ -148,7 +149,7 @@ applyStretchResizePolicy : function (sizes, totalSize, modifyInPlace, propertyTa
                     // understand it)
                     continue;
                 }
-                stretchSize = Math.max(Math.floor(stretchSize), 1);
+                stretchSize = Math.max(Math.floor(stretchSize), minSize);
                 remainingSpace -= stretchSize;
                 // NOTE: remember the last variable-sized item for later (to add leftover pixels)
 				lastStretch = i;

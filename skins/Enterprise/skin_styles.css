@@ -578,7 +578,8 @@
 .selectItemText,
 .selectItemTextError,
 .selectItemTextFocused,
-.selectItemTextDisabled {
+.selectItemTextDisabled,
+.selectItemTextHint {
     padding:2px; 
     border:1px solid #9CB0CE; 
     background:#FFFFFF url(./images/controls/text_input.gif) repeat-x scroll;
@@ -592,8 +593,9 @@
     border:1px solid #A6ABB4;
 }
 
-.textItemHint {
-    color:#666666;
+.textItemHint,
+.selectItemTextHint {
+    color:#204268;
 }
 
 

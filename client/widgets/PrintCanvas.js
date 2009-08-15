@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -228,7 +228,7 @@ isc.PrintWindow.addProperties({
     headerControls: ["headerIcon", "headerLabel", "printButton", "closeButton"],
     printButtonDefaults : {
         _constructor: "IButton",
-        title: "Print",
+        //title: "Print",
         height: 20,
         click: "this.creator.printClicked()"
     },
@@ -239,6 +239,17 @@ isc.PrintWindow.addProperties({
     // @visibility printing
     //<
     title: "Print Preview",
+    
+    //> @attr printWindow.printButtonTitle (string : "Print" : IRW)
+    // Title for the print button
+    // @visibility printing
+    //<
+    printButtonTitle: "Print",
+    
+    initWidget : function () {
+        this.printButtonDefaults.title = this.printButtonTitle;    
+        this.Super("initWidget", arguments);    
+    },
     
     showPrintPreview : function (components, printProperties, callback, separator) {
         if (!isc.isAn.Array(components)) components = [components];

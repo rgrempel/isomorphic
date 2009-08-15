@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -40,6 +40,15 @@ isc.DetailViewer.addProperties({
     // @group basics
     // @visibility external
     //<
+
+    //> @attr detailViewer.dataFetchMode (FetchMode : "basic" : IRW)
+    // DetailViewers do not yet support paging, and will fetch and render all available
+    // records.
+    //
+    // @group databinding
+    // @visibility external
+    //<
+    dataFetchMode:"basic",
 
     //> @object DetailViewerRecord
     //
@@ -478,9 +487,9 @@ initWidget : function () {
 	// call the superclass function
 	this.Super("initWidget",arguments);
 
-	// include any field data from a specified dataSource.
-	this.fields = this.bindToDataSource(this.fields);
-
+    // set field state if necessary, call setFields() otherwise
+    if (this.fieldState != null) this.setFieldState(this.fieldState);
+    else this.setFields(this.fields);
 },
 
 //>	@method	detailViewer.setData()  ([])
@@ -534,10 +543,16 @@ getInnerHTML : function () {
 	// get the data to display
 	var valueList = this.getData();
 
-    // If the data is a result set, poke the ResultSet to fetch data and return the loading
-    // message.  FIXME: DV needs to do paging to show large datasets meaningfully
+    // If the data is a ResultSet, poke the ResultSet to fetch data and return the loading
+    // message.  Note that if fetchData() is called, this isn't the codepath that causes the
+    // initial fetch - see DataBoundComponent.requestVisibleRows.
     if (isc.ResultSet != null && isc.isA.ResultSet(valueList) && !valueList.lengthIsKnown()) {
-        valueList.getRange(0, 10000);
+        // request only the first row.  If this ResultSet is using fetchMode:"paged" (not the
+        // default for DetailViewer) and has already issued a request for data, asking for
+        // anything beyond the current rs.resultSize will initiate additional fetches, possibly
+        // for rows that don't exist, but the ResultSet doesn't know that while
+        // !lengthIsKnown().
+        valueList.get(0);
         return this.loadingMessageHTML();
     }
 
@@ -594,7 +609,7 @@ getBlockHTML : function (valueList) {
 	// iterate through each of the keys in detailFields and output the info for each field
 	for (var fieldNum = 0, fieldLength = fields.length; fieldNum < fieldLength; fieldNum++) {
 		var field = fields[fieldNum];
-		if (!field || field.hidden) continue;
+		if (!field || field.hidden || field.visible == false) continue;
 
 		// if the field has a showIf property
 		if (field.showIf) {
@@ -1061,37 +1076,44 @@ loadingMessageHTML : function () {
 },
 
 setFieldState : function (fieldState) {
-    if (isc.isA.String(fieldState)) fieldState = this.evalViewState(fieldState, "fieldState");
-    var newFields = this._setFieldState(fieldState);
-    this.setFields(newFields);
+    if (fieldState == null && this.fieldState != null) {
+        if (isc.isA.String(this.fieldState)) {
+            fieldState = this.evalViewState(this.fieldState, "fieldState")
+        }
+    } else fieldState = this.evalViewState(fieldState, "fieldState");
+
+    this.completeFields = this._setFieldState(fieldState, true);
+    this.setFields(this.completeFields);
     this.markForRedraw();
+    this.fieldStateChanged();
 },
 
-getFieldState : function (includeTitle) {
-    var fieldStates = [];
-    var allFields = this.getAllFields();
-    if (allFields) {
-        for (var i = 0; i < allFields.length; i++) {
-            var field = allFields[i],
-                fieldName = field[this.fieldIdProperty],
-                fieldState = {name:fieldName}
-            ;
-            if (!this.fieldShouldBeVisible(field)) fieldState.visible = false;
-            // store the userFormula if this is a formula field
-            if (field.userFormula) fieldState.userFormula = field.userFormula;
-            // store the userSummary if one is present
-            if (field.userSummary) fieldState.userSummary = field.userSummary;
+// minimal implementation of setFields()
+setFields : function (newFields) {
+    if (this.completeFields == null || this.fields == null) this.fields = [];
 
-            // auto-persist title for formula / summary fields, since it's user entered
-            if (includeTitle || field.userSummary || field.userFormula) {
-                fieldState.title = field.title;
-            }
+	// bind the passed-in fields to the DataSource and store
+    this.completeFields = this.bindToDataSource(newFields);
 
-            fieldStates.add(fieldState);
-        }
+    if (this.completeFields == null) this.completeFields = [];
+
+	this.deriveVisibleFields();
+},
+
+// determine which fields should be shown, and add them to the visible fields array.
+// (Used as an internal helper - developers should call 'refreshFields' instead)
+deriveVisibleFields : function () {
+	// NOTE: we use setArray() so that this.fields remains the same array instance.
+    this.fields.setArray(this.getVisibleFields(this.completeFields));
+},
+
+getVisibleFields : function (fields) {
+	var returnFields = fields.duplicate();
+    for (var i=0; i<fields.length; i++) {
+        var item = fields.get(i);
+        if (!this.fieldShouldBeVisible(item) || item.visible==false) returnFields.remove(item);
     }
-
-    return isc.Comm.serialize(fieldStates);
+	return returnFields;
 },
 
 // Formula/summary -related overrides from DBC
@@ -1104,22 +1126,30 @@ getTitleFieldValue : function (record) {
 
 // DBC level override to call local getCellValue implementation - Formula/Summary builders
 getSpecificFieldValue : function (record, fieldName) {
-    var value = this.getCellValue(record, this.getField(fieldName));
+	var value = this.getCellValue(record, this.getField(fieldName));
 	return value;
 },
 
 // basic show and hide methods
 hideField : function (fieldName) {
-    this.getField(fieldName).showIf = "false";
-    this.getField(fieldName).hidden = true;
+    this.toggleField(fieldName, false);
 },
 showField : function (fieldName) {
-    this.getField(fieldName).showIf = "true";
-    this.getField(fieldName).hidden = false;
+    this.toggleField(fieldName, true);
+},
+toggleField : function (fieldName, showNow) {
+    var field = this.getField(fieldName);
+
+    field.showIf = showNow ? "true" : "false";
+    field.hidden = !showNow;
+    field.visible = showNow;
+    this.setFields(this.getAllFields());
+    this.markForRedraw();
+    this.fieldStateChanged();
 },
 
 getAllFields : function () {
-    return this.fields;
+    return this.completeFields || this.fields;
 },
 
 //>	@method	detailViewer.getField()	(A)
@@ -1128,15 +1158,18 @@ getAllFields : function () {
 //		@return	(DetailViewerField) requested field or null
 //<
 getField : function (fieldName) {
-    var fields = this.getAllFields();
+    var allFields = this.getAllFields(),
+	    fields = this.fields,
+		field;
 
-    if (isc.isA.Number(fieldName)) return fields[fieldName];
+    if (isc.isA.Number(fieldName)) {
+		field = allFields[fieldName] || fields[fieldName];
+	} else {
+		field = allFields.find(this.fieldIdProperty, fieldName) ||
+		fields.find(this.fieldIdProperty, fieldName)
+	}
 
-    for (var i = 0; i < fields.length; i++) {
-        var item = fields[i];
-        if (item[this.fieldIdProperty] == fieldName) return item;
-    }
-    return null;
+    return field;
 }
 
 
@@ -1149,7 +1182,8 @@ isc.DetailViewer.registerStringMethods({
     getCellValue:"record,field",
     getCellStyle:"value,field,record,viewer",
     getCellCSSText:"value,field,record,viewer",
-    formatCellValue:"value,record,field,viewer"
+    formatCellValue:"value,record,field,viewer",
+    fieldStateChanged:""
 });
 
 

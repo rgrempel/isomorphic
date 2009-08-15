@@ -170,6 +170,15 @@
             <!-- StaticTextItem and BlurbItem -->
             <field name="wrap" type="boolean" hidden="true" />
             <field name="clipValue" type="boolean" hidden="true"/>
+         
+            <field name="showFocusedIcons" type="boolean"/>
+            
+            <!-- skinning properties that shouldn't be set in the Visual Builder property sheet-->
+            <field name="errorIconHeight" type="number" advanced="true"/>
+            <field name="errorIconWidth" type="number" advanced="true"/>
+            
+            <field name="errorMessageWidth" type="number"/>
+            
 	</fields>
 
     <types>

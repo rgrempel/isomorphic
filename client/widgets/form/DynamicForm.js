@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0RC (2009-04-21)
+ * Version 7.0rc2 (2009-05-30)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -154,6 +154,22 @@ isc.DynamicForm.addClassProperties({
     // multipart encoding for file upload
 	MULTIPART_ENCODING:	"multipart/form-data",
 	//<
+    
+    //> @classAttr DynamicForm.nestedEditorType (String : "DynamicForm" : IRW)
+    // Editor class to use for any +link{class:NestedEditorItem}s on any DynamicForm. Can be
+    // overridden for individual nestedEditorItems by setting nestedEditorItem.editorConstructor.
+    // @visibility external
+    //<
+    nestedEditorType: "DynamicForm",
+    
+    //> @classAttr DynamicForm.nestedListEditorType (String : "ListEditor" : IRW)
+    // Editor class to use for any +link{class:NestedListEditorItem}s on any DynamicForm. Can be
+    // overridden for individual nestedListEditorItems by setting 
+    // nestedListEditorItem.editorConstructor.
+    // @visibility external
+    //<
+    nestedListEditorType: "ListEditor",
+    
     
     // Attributes written into containers for form items / form item elements
     _containsItem : "_containsItem",
@@ -1133,6 +1149,20 @@ isc.DynamicForm.addProperties({
     //<
     operator: "and"
 
+    
+    //> @attr dynamicForm.showComplexFieldsRecursively (Boolean : null : IR)
+    // If set, this <code>DynamicForm</code> will set both 
+    // +link{DataBoundComponent.showComplexFields,showComplexFields} and 
+    // <code>showComplexFieldsRecursively</code> on any nested component used for showing/editing
+    // a complex field.  Thus any of this form's items that handle complex fields will themselves
+    // also show complex fields.  This allows for handling of field structures of any complexity.
+    // <p>
+    // If set, this value automatically sets +link{DataBoundComponent.showComplexFields,showComplexFields}
+    // as well.
+    //
+    // @visibility external
+    //<
+
 
 });
 
@@ -1159,6 +1189,9 @@ initWidget : function () {
 
 	// call the superclass function
 	this.Super("initWidget",arguments);
+    
+    // Set this-level showComplexFields if showComplexFieldsRecursively has been set
+    if (this.showComplexFieldsRecursively) this.showComplexFields = true;
 
 	// allow for fields instead of items specification
 	if (this.fields && this.items == null) this.items = this.fields;
@@ -1944,6 +1977,16 @@ scrollTo : function (left, top) {
     if (oldLeft != this.getScrollLeft() || oldTop != this.getScrollTop()) this.itemsMoved();
 },
 
+//>Animation
+// We override scrollTo() which normally causes _canAnimateClip to return false but there's no
+// reason for us not to support animateShow() / animateHide() in DynamicForms, so override
+// _canAnimateClip to explicitly return true (unless 'canAnimateClip' is set)
+_canAnimateClip : function () {
+    if (this.canAnimateClip != null) return this.canAnimateClip;
+    return true;
+},
+//<Animation
+
 // EditMode setters
 // ---------------------------------------------------------------------------------------
 
@@ -2151,7 +2194,7 @@ setAutoComplete : function (newSetting) {
 // Note: when working with a form that is saving to a DataSource, you would typically call
 // either +link{editRecord()} for an existing record, or +link{editNewRecord()} for a new
 // record.  In addition to setting the current values of the form, these APIs establish the
-// +link{operationType} used to save ("update" vs "add").
+// +link{DSRequest.operationType} used to save ("update" vs "add").
 // <P>
 // Values should be provided as an Object containing the new values as properties, where each
 // propertyName is the name of a +link{items,form item} in the form, and each property value is
@@ -4744,7 +4787,7 @@ validate : function (validateHiddenFields, ignoreDSFields) {
         hasChanges = false
 	;
     
-    // We need to validate:
+    // We need to validate: 
     // - form items with validators
     // - values that map to DS fields with validators.
     // (we don't need to worry about values with no associated field as there is no way to
@@ -6157,7 +6200,7 @@ _$staticText:"staticText", _$boolean:"boolean",
 _$binary:"binary", _$blob:"blob", _$multifile:"multifile", _$multiupload:"multiupload",
 _$upload:"upload", _$file:"file",
 _$base64Binary: "base64Binary", _$enum:"enum", _$CycleItem:"CycleItem", _$selectOther:"selectOther",
-_$relation:"relation",
+_$relation:"relation", _$nestedEditor:"NestedEditorItem", _$nestedListEditor:"NestedListEditorItem",
 
 getEditorType : function (field, widget) {
     // choosing which form item type to use:
@@ -6173,6 +6216,9 @@ getEditorType : function (field, widget) {
     //   .. _constructor will have the value "FormItem", which we ignore because FormItem
     //   is an abstract base class, so we want to apply automatic item-choosing.
     if (field._constructor == isc.FormItem.Class) field._constructor = null;    
+
+    // Grab the DataSource (if any) for later use
+    var ds = widget.getDataSource();
     
     var defaultType = this.defaultFieldType,
         // NOTE: "formItemType" is a legacy synonym of "editorType"    
@@ -6213,6 +6259,10 @@ getEditorType : function (field, widget) {
         // than a select.
         if (field.showValueIconOnly) type = this._$CycleItem
         else type = this._$select;
+    } else if (ds && ds.fieldIsComplexType(field.name)) {
+        // Note this is showComplexFields is false, fields of complexType declared in the
+        // DataSource never make it to the form.
+        type = field.multiple ? this._$nestedListEditor : this._$nestedEditor;
     } else {
         // if field.type=="text" or field.type==null or field.type is not directly recognized by
         // getItemClass():
