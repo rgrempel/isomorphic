@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -52,12 +52,26 @@ isc.Selection.addProperties({
     // @visibility serverSelection
     //<
     
-    //> @attr selection.enabledProperty (String : "enabled" [IRA])
+    //> @attr selection.enabledProperty (String : "enabled" : [IRA])
     // Property used to indicated records as being disabled (therefore unselectable).
     //<
     
     enabledProperty:"enabled",
     
+    //> @attr selection.canSelectProperty (string : "canSelect" : [IRA])
+    // If set to false on a item, selection of that item is not allowed.
+    //<
+    
+    canSelectProperty:"canSelect",
+
+    //> @attr selection.cascadeSelection (boolean : false : [IRA])
+    // Should children be selected when parent is selected? And should parent be
+    // selected when any child is selected?
+    // <p>
+    // Note: Unloaded children are not affected and no load-on-demand is triggered.
+    //<
+    cascadeSelection:false,
+
     // _dirty - manages whether we need to update the cache of selected records.
 	_dirty:true
 
@@ -101,6 +115,8 @@ init : function () {
 
 	// get unique ID and selection properties
 	if (!this.selectionProperty) this.selectionProperty = "_selection_"+isc.Selection._selectionID++;
+
+        this.partialSelectionProperty = "_partial" + this.selectionProperty;
 
 	// set the data object so we get notification for add and delete, etc.
 	//	NOTE: if the data object wasn't set, use a new arrays
@@ -197,6 +213,21 @@ isSelected : function (item){
 	return item[this.selectionProperty];
 },
 
+//> @method selection.isPartiallySelected()
+// Returns true if a particular item is partially selected
+// @group  selection
+//
+// @param  item	(object)  object to check	
+// @return (boolean)      true == object is partially selected
+//                        false == object is not partially selected
+// @visibility external
+//<
+isPartiallySelected : function (item){
+    if (item == null) return false;
+    if (isc.isAn.XMLNode(item)) return "true" == item.getAttribute(this.partialSelectionProperty);
+    return item[this.partialSelectionProperty];
+},
+
 
 //>	@method	selection.anySelected()
 // Whether at least one item is selected
@@ -269,7 +300,7 @@ cacheSelection : function () {
 	// create a new array to hold the cached selection
 	this._cache = [];
     
-    var data = this.data,
+    var data = this.getItemList(),
         isRS = isc.isA.ResultSet != null && isc.isA.ResultSet(data),
         length = data.getLength();
  
@@ -304,22 +335,71 @@ cacheSelection : function () {
 //		@param	item		(object)	object to select
 //		@param	newState	(boolean)	turn selection on or off	
 // 	
-//		@return				(boolean)	true == selection actually changed, false == no change
+//		@return			(boolean)	true == selection actually changed, false == no change
 // @visibility external
 //<
-setSelected : function (item, newState) {
+// We need the cascadingDirection to avoid changing direction while recursing through tree.
+_$up:"up",
+_$down:"down",
+setSelected : function (item, newState, cascadingDirection) {
 	// if the item is null, just return
 	if (item == null) return false;
 	
 	// if the item is not enabled, just return
 	if (item[this.enabledProperty] == false) return false;
+    // if the item cannot be selected, just return
+    if (item[this.canSelectProperty] == false) return false;
 	
     var property = this.selectionProperty,
-        isNode = isc.isAn.XMLNode(item);
+        partialProperty = this.partialSelectionProperty,
+        isNode = isc.isAn.XMLNode(item),
+        oldPartialValue = (isNode ? item.getAttribute(partialProperty) : item[partialProperty])
+    ;
 
 	// default to selecting the item
 	if (newState == null) newState = true;
+
+    // Set partial property as needed.
+    if (this.cascadeSelection && !this.useRemoteSelection) {
 	
+        // If this is a parent node and we are selecting/deselecting up the tree,
+        // need to determine if the selection is full or partial.
+        if (cascadingDirection == this._$up) {
+            var partialValue = false,
+                length = item.children.length;
+            
+            for (var i = 0; i < length; i++) {
+                var child = item.children.get(i),
+                    isChildNode = isc.isAn.XMLNode(child),
+                    partialChild = (isChildNode ? child.getAttribute(partialProperty)
+                                                : child[partialProperty])
+                ;
+                if (partialChild ||
+                    (newState && !this.isSelected(child)) ||
+                    (!newState && this.isSelected(child)))
+                {
+                    partialValue = true;
+                    break;
+                }
+            }
+            if (isNode) {
+                item.setAttribute(partialProperty, partialValue + "");
+            } else {
+                item[partialProperty] = partialValue;
+            }
+
+            // If deselecting but there is a partial selection, the node must still be selected.
+            if (newState != partialValue) newState = true;
+        } else if (item.children && item.children.length > 0) {
+            // Make sure a left over partial selection is cleared
+            if (isNode) {
+                item.removeAttribute(partialProperty);
+            } else {
+                delete item[partialProperty];
+            }
+        }
+    }
+
     // get the oldState of the item, for detecting changes
     var oldState = isNode ? item.getAttribute(property) : item[property];
     if (oldState == null) oldState = false;
@@ -334,12 +414,13 @@ setSelected : function (item, newState) {
     	item[property] = newState;
     }
 	
-	// remember that this was the last item to be selected
-	this.lastSelectionItem = item;
-	this.lastSelectionState = newState;
+    // remember that this was the last item to be selected
+    this.lastSelectionItem = item;
+    this.lastSelectionState = newState;
 
-	// if no change to state of item, simply return false
-	if (newState == oldState) return false;
+    // if no change to state of item, simply return false
+    var newPartialValue = (isNode ? item.getAttribute(partialProperty) : item[partialProperty]);
+    if (newState == oldState && newPartialValue == oldPartialValue) return false;
 	
     
 
@@ -348,6 +429,31 @@ setSelected : function (item, newState) {
 	
     
     if (this.target && this.target.selectionChange) this.target.selectionChange(item, newState);
+
+    // Select/deselect parent and child records
+    if (this.cascadeSelection &&
+        !this.useRemoteSelection)
+    {
+        var lastItem = item,
+            lastState = newState;
+
+        // Select/deselect child records
+        if (cascadingDirection != this._$up && !isNode &&
+            item.children && item.children.length > 0)
+        {
+            this.selectList (item.children, newState, this._$down);
+        }
+        // Select/deselect parent records
+        if (cascadingDirection != this._$down &&
+            isc.isA.Tree(this.data) && this.data.getParent(item))
+        {
+            this.setSelected (this.data.getParent(item), newState, this._$up);
+        }
+
+        this.lastSelectionItem = lastItem;
+        this.lastSelectionState = lastState;
+    }
+
 	// return true to indicate that there was a change in the selection state
 	return true;
 },
@@ -434,7 +540,7 @@ deselectList : function (list) {
 // @visibility external
 //<
 selectAll : function () {
-	return this.selectRange(0, this.data.getLength());
+	return this.selectRange(0, this.getItemList().getLength());
 },
 
 //>	@method	selection.deselectAll()
@@ -496,16 +602,19 @@ deselectItem : function (position) {
 selectRange : function (start, end, newState) {
     if (newState == null) newState = true;
 
+    // Use visible records for range selection
+    var data = this.data;
+
     
 
-    if (isc.isA.ResultSet != null && isc.isA.ResultSet(this.data) && 
-        !this.data.rangeIsLoaded(start, end)) 
+    if (isc.isA.ResultSet != null && isc.isA.ResultSet(data) && 
+        !data.rangeIsLoaded(start, end)) 
     {
         isc.warn(this.selectionRangeNotLoadedMessage);
         return false; // no change
     }
 
-	return this.selectList(this.data.getRange(start, end), newState);
+    return this.selectList(data.getRange(start, end), newState);
 },
 
 //> @attr selection.selectionRangeNotLoadedMessage (String : Can't select that many records at once.&lt;br&gt;&lt;br&gt;Please try working in smaller batches. : IRWA)
@@ -565,6 +674,7 @@ selectOnMouseDown : function (target, recordNum) {
 	this.logDebug("selectOnMouseDown: recordNum: " + recordNum);
 	//<DEBUG
 	
+    // Pull record based on the visible records
 	var record = this.data.get(recordNum),
 		recordSelected = this.isSelected(record),
 		selection = this.getSelection();
@@ -609,9 +719,10 @@ selectOnMouseDown : function (target, recordNum) {
 
 		// otherwise since something was selected
 		} else {
-			// select a range of records
-			var firstRecord = this.data.indexOf(selection[0]),
-				lastRecord   = this.data.indexOf(selection.last())
+			// select a range of records (visible)
+			var data = this.data,
+				firstRecord = data.indexOf(selection[0]),
+				lastRecord   = data.indexOf(selection.last())
 			;
 			// if the clicked record is the last record or beyond
 			if (recordNum >= lastRecord) {
@@ -826,6 +937,11 @@ selectOnMouseUp : function (target, recordNum) {
         return true;
 	} else
 		return false;
+},
+
+getItemList : function () {
+    if (this.data && isc.isA.Tree(this.data)) return this.data.getNodeList();
+    return (this.data ? this.data : []);
 }
 
 });	// END isc.Selection.addMethods()

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -154,6 +154,27 @@ isc.TextAreaItem.addProperties({
     // @visibility external
     //<
     
+    //>@method TextAreaItem.getSelectionRange()
+    // @include FormItem.getSelectionRange()
+    // @visibility external
+    //<
+    
+    //>@method TextAreaItem.setSelectionRange()
+    // @include FormItem.setSelectionRange()
+    // @visibility external
+    //<
+    
+    //>@method TextAreaItem.selectValue()
+    // @include FormItem.selectValue()
+    // @visibility external
+    //<
+    
+    //>@method TextAreaItem.deselectValue()
+    // @include FormItem.deselectValue()
+    // @visibility external
+    //<
+    
+    
     //>@attr TextAreaItem.readOnly  (boolean : null : IRWA)
     // Setter for the standard HTML readonly property of the textArea element.
     // If set to true, text will be non editable (though it can still be selected and copied etc)
@@ -165,6 +186,15 @@ isc.TextAreaItem.addProperties({
     // May cause poor performance determining selection range (for example on redraw) in 
     // items with a lot of content
     supportsSelectionRange:true
+
+    //>@attr TextAreaItem.showHintInField (boolean : null : IRWA)
+    // If showing hint for this form item, should it be shown within the field?
+    // <P>CSS style for the hint is +link{textAreaItem.textBoxStyle} with the suffix
+    // "Hint" appended to it. 
+    // @group appearance
+    // @see FormItem.hint
+    // @visibility external
+    //<
 });
 
 isc.TextAreaItem.addMethods({
@@ -202,14 +232,14 @@ isc.TextAreaItem.addMethods({
 	//		@param	value	(string)	Value of the element [Unused because it is more reliably set by setValue].
 	//		@return	(HTML)	HTML output for this element
 	//<
-	getElementHTML : function (value) {
+	getElementHTML : function (value, dataValue) {
 		// remember which element number we wrote this out as
 		var form = this.form,
 			formID = form.getID(),
 			itemID = this.getItemID(),
             
 		    output = isc.StringBuffer.create(),
-            valueIconHTML = this._getValueIconHTML(this._value);
+            valueIconHTML = this._getValueIconHTML(dataValue);
         if (valueIconHTML != null) output.append(valueIconHTML);
         if (!this.showValueIconOnly) {
             output.append(
@@ -243,11 +273,11 @@ isc.TextAreaItem.addMethods({
                                        : null),
                                        
                 // If the readonly property is set, set it on the handle too
-                (this.readOnly || this.containerWidget.isPrinting ? " READONLY=TRUE" : null),
+                (this.readOnly || this.isInactiveHTML() ? " READONLY=TRUE" : null),
                                         
                 // Ensure we pass events through the ISC event handling system.
                 " handleNativeEvents=false>",
-                (this.containerWidget.isPrinting ? value : null),
+                (this.isInactiveHTML() ? value : null),
                 "</TEXTAREA>"
 			);
         }
@@ -256,6 +286,16 @@ isc.TextAreaItem.addMethods({
 		return output.release();
 	},
     
+    // When focus is received, the hint should be hidden if TextAreaItem.showHintInField is true.
+    _nativeElementFocus : function (element, itemID) {
+        var returnVal = this.Super("_nativeElementFocus", arguments);
+
+        // Hide in-field hint if being shown
+        this._hideInFieldHint();
+
+        return returnVal;
+    },
+
     // Override _nativeElementBlur to fire 'change' explicitly in response to blur rather than
     // relying on the native 'ONCHANGE' handler method
     // (as with textItem)
@@ -272,6 +312,15 @@ isc.TextAreaItem.addMethods({
             if (this._value != elementValue) this.form.elementChanged(this);
         }
         
+        // If showing hint within data field, see if it should be shown now.
+        if (this.showHintInField) {
+            var undef;
+            var value = this.getElementValue();
+            if (value === undef || value == null || isc.is.emptyString(value)) {
+                this._showInFieldHint();
+            }
+        }
+
         return returnVal;
     },
 
@@ -347,6 +396,10 @@ isc.TextAreaItem.addMethods({
 	//		@return	(string)	Internal value corresponding to that display value.
 	//<
 	mapDisplayToValue : function (displayValue) {
+        if (!this.applyStaticTypeFormat && this.parseEditorValue != null) {
+            return this.parseEditorValue(displayValue, this.form, this);
+        }
+
 		var value = this._unmapKey(displayValue);
         // if the value to be saved is an empty string, map it to 'null' if necessary
         if (isc.is.emptyString(value)) value = this._emptyStringValue;
@@ -354,10 +407,17 @@ isc.TextAreaItem.addMethods({
         
 	},
     
+    // Don't apply arbitrary formatters specified via SimpleType definitions to this item's
+    // display value - we have no way to parse it back to a real data value
+    applyStaticTypeFormat:false,
+    
     // override 'setValue' to update the data value to store when the element value is set to 
     // the empty string.
     // See Text item setValue override for full description
     setValue : function (value) {
+
+        // Make sure in-field hint is hidden
+        this._hideInFieldHint();
 
         
         var undef;
@@ -367,9 +427,18 @@ isc.TextAreaItem.addMethods({
         // Also clear out the '_hasEditedValue' flag, used to handle line break conversions
         // (See comments by the 'lineBreakValue' property)
         delete this._hasEditedValue;
-        return this.Super("setValue", arguments);
             
+        // Let parent take care of saving the value
+        value = this.Super("setValue", arguments);
 
+        // See if the in-field hint needs to be shown
+        if (!this.hasFocus && this.showHint && this.showHintInField && this.getHint()) {
+            if (value === undef || value == null || isc.is.emptyString(value)) {
+                this._showInFieldHint();
+            }
+        }
+
+        return value;
     },
 
     // Override 'updateValue()' to set a flag on this item marking it as having been edited.

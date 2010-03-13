@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -124,7 +124,7 @@ isc.StatefulCanvas.addProperties({
 	//<	
 
     //>	@attr	statefulCanvas.showFocus        (boolean : false : IRW)
-	// Should we visibly change state when the canvas recieves focus?  Note that by default the
+	// Should we visibly change state when the canvas receives focus?  Note that by default the
     // <code>over</code> state is used to indicate focus.
 	// @group	state
     // @deprecated as of SmartClient version 6.1 in favor of +link{statefulCanvas.showFocused}
@@ -132,7 +132,7 @@ isc.StatefulCanvas.addProperties({
 	//<	
 
     //>	@attr	statefulCanvas.showFocused        (boolean : false : IRW)
-	// Should we visibly change state when the canvas recieves focus?  If
+	// Should we visibly change state when the canvas receives focus?  If
     // +link{statefulCanvas.showFocusedAsOver} is <code>true</code>, the <b><code>"over"</code></b>
     // will be used to indicate focus. Otherwise a separate <b><code>"focused"</code></b> state
     // will be used.
@@ -252,7 +252,7 @@ isc.StatefulCanvas.addProperties({
 
     //> @attr StatefulCanvas.autoFit  (boolean : null : IRW)
     // If true, ignore the specified size of this widget and always size just large
-    // enough to accomodate the title.  If <code>setWidth()</code> is explicitly called on an
+    // enough to accommodate the title.  If <code>setWidth()</code> is explicitly called on an
     // autoFit:true button, autoFit will be reset to <code>false</code>.
     // <P>
     // Note that for StretchImgButton instances, autoFit will occur horizontally only, as 
@@ -332,7 +332,7 @@ isc.StatefulCanvas.addProperties({
     //<
     // Behavior is as follows - if iconOrientation and iconAlign are both left or both right we
     // write the icon out at the extreme right or left of the button, and allow the title to 
-    // aligned independantly of it. (otherwise the icon and the text will be adjacent, and 
+    // aligned independently of it. (otherwise the icon and the text will be adjacent, and 
     // aligned together based on the button's "align" property.
     
 
@@ -381,10 +381,10 @@ isc.StatefulCanvas.addProperties({
     
     //> @attr StatefulCanvas.showFocusedIcon (boolean : false : [IR])
     // If using an icon for this button, whether to switch the icon image when the button
-    // recieves focus.
+    // receives focus.
     // <P>
     // If +link{statefulCanvas.showFocusedAsOver} is true, the <code>"Over"</code> icon will be
-    // displayed when the canvas has focus, otherwise a seperate <code>"Focused"</code> icon
+    // displayed when the canvas has focus, otherwise a separate <code>"Focused"</code> icon
     // will be displayed
     // @group buttonIcon
     // @visibility external
@@ -503,7 +503,7 @@ stateChanged : function () {
         this.setClassName(this.getStateName());
     }
 
-	// set our label to the same state (note it potentially has independant styling)
+	// set our label to the same state (note it potentially has independent styling)
     var label = this.label;
 	if (label != null) {
         label.setState(this.getState());
@@ -817,7 +817,6 @@ _$SelectedFocused:"SelectedFocused",
 setCustomState : function (customState) { 
     if (customState == this.customState) return;
     this.customState = customState;
-    if (this.label) this.label.customState = customState;
     this.stateChanged();
 },
 getCustomState : function () { return this.customState },
@@ -881,6 +880,12 @@ makeLabel : function () {
         if (button && button.getFocusedState) return button.getFocusedState();
     }
     
+    
+    // By default we'll apply our skinImgDir to the label - allows [SKIN] to be used
+    // in icon src.
+    label.skinImgDir = this.labelSkinImgDir || this.skinImgDir;
+    
+    
     // see ScreenReader.js   
     label.waiRole = this.waiRole;
     
@@ -924,6 +929,17 @@ makeLabel : function () {
     
 	this.addPeer(this.label, null, null, true);
     
+},
+
+
+setLabelSkinImgDir : function (dir) {
+    this.labelSkinImgDir = dir;
+    if (this.label != null) this.label.setSkinImgDir(dir);
+},
+
+setSkinImgDir : function (dir) {
+    this.Super("setSkinImgDir", arguments);
+    if (this.labelSkinImgDir == null && this.label != null) this.label.setSkinImgDir(dir);
 },
 
 // Label Sizing Handling
@@ -1283,11 +1299,13 @@ _positionLabel : function () {
 setAlign : function (align) {
     this.align = align;
     if (this.isDrawn()) this.markForRedraw();
+    if (this.label) this.label.setAlign(align);
 },
 
 setVAlign : function (valign) {
     this.valign = valign;
     if (this.isDrawn()) this.markForRedraw();
+    if (this.label) this.label.setVAlign(valign);
 },
 
 
@@ -1349,6 +1367,8 @@ getTitle : function () {
 setTitle : function (newTitle) {
 	// remember the contents
 	this.title = newTitle;
+	// re-evaluation this.getTitle in case it's dynamic.
+	var newTitle = this.getTitleHTML();
     if (this.label) {
 	    this.label.setContents(newTitle);
     	this.label.setState(this.getState());
@@ -1357,6 +1377,9 @@ setTitle : function (newTitle) {
     } else if (this.title != null && this.shouldShowLabel()) {
         this.makeLabel()
     }
+    // redraw even if we have a title label.
+    
+    this.markForRedraw();
 },
 
 // other Label management
@@ -1565,6 +1588,8 @@ handleActivate : function (event, eventInfo) {
 //		@group	event
 //<
 handleClick : function (event, eventInfo) {
+    if (isc._traceMarkers) arguments.__this = this;
+
     // This is required to handle icon clicks on buttons, etc
     if (event.target == this && this.useEventParts) {
         if (this.firePartEvent(event, isc.EH.CLICK) == false) return false;
@@ -1579,6 +1604,7 @@ handleClick : function (event, eventInfo) {
 //		@group	event
 //<
 handleKeyPress : function (event, eventInfo) {
+    if (isc._traceMarkers) arguments.__this = this;
 
     if (this.keyPress && (this.keyPress(event, eventInfo) == false)) return false;
     

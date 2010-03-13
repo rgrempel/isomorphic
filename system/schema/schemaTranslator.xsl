@@ -24,13 +24,20 @@
 
    
    
-   <xsl:template match="//xs:schema">
+   <xsl:template name="schemaSet" match="//xs:schema">
       <SchemaSet schemaNamespace="{@targetNamespace}" qualifyAll="{@elementFormDefault = 'qualified'}">
           <xsl:if test="//wsdl:definitions">
               <xsl:attribute name="serviceNamespace">
                   <xsl:value-of select="//wsdl:definitions/@targetNamespace"/>
               </xsl:attribute>
           </xsl:if>
+
+          
+          <schemaImports>
+          <xsl:for-each select=".//xs:import[parent::xs:schema][@namespace]">
+              <schemaImport namespace="{@targetNamespace | @namespace}" location="{@schemaLocation}"/>
+          </xsl:for-each>
+          </schemaImports>
 
           <schema>
               
@@ -57,141 +64,141 @@
    
    
 
-   <xsl:template name="webService" match="//wsdl:service[.//soap:address]">
+   <xsl:template name="webService" match="/wsdl:definitions">
+
         
-        <WebService dataURL="{.//soap:address/@location}" serviceNamespace="{/wsdl:definitions/@targetNamespace}">
-
-
+        <xsl:apply-templates/>
+    
+        
             
-            <xsl:variable name="bindingName">
-               <xsl:call-template name="getLocalName">
-                   <xsl:with-param name="fullName" select="wsdl:port/@binding"/>
-               </xsl:call-template>
-            </xsl:variable>
-
-            
-
-            
-            <xsl:variable name="binding" select="//wsdl:binding[@name = $bindingName]"/>
+        
+        <WebService dataURL="{.//wsdl:service//soap:address/@location}" name="{.//wsdl:service[//soap:address]/@name}" serviceNamespace="{@targetNamespace}">
 
             <xsl:attribute name="soapStyle">
-               <xsl:value-of select="$binding/soap:binding/@style"/>
+                <xsl:value-of select="//wsdl:binding/soap:binding/@style"/>
             </xsl:attribute>
 
             
-            <xsl:for-each select="//xs:schema[@targetNamespace] |                                   //xs:schema[xs:import/@namespace]">
-                <schemaImport namespace="{@targetNamespace | xs:import/@namespace}"/>
+            <wsdlImports>
+            <xsl:for-each select="//wsdl:import[@namespace]">
+                <wsdlImport namespace="{@namespace}" location="{@location}"/>
             </xsl:for-each>
+            </wsdlImports>
 
             
+            <schemaImports>
+            <xsl:for-each select="//xs:schema[@targetNamespace] |                                   //xs:import[parent::xs:schema][@namespace]">
+                <schemaImport namespace="{@targetNamespace | @namespace}" location="{@schemaLocation}"/>
+            </xsl:for-each>
+            </schemaImports>
+
             
-            <xsl:for-each select="//wsdl:binding[@name = $bindingName]">
-    
-                
+            <bindings>
+            <xsl:for-each select=".//wsdl:binding[soap:binding]">
+
                 <xsl:variable name="portTypeName">
                    <xsl:call-template name="getLocalName">
                       <xsl:with-param name="fullName" select="@type"/>
                    </xsl:call-template>
                 </xsl:variable>
-                
-                <operations>
-                    <xsl:for-each select="wsdl:operation">
-                        <xsl:variable name="operationName" select="@name"/>
-                        <operation name="{@name}" soapAction="{soap:operation/@soapAction}">
 
-                            <xsl:if test="wsdl:input/soap:body/@namespace">
-                                <xsl:attribute name="inputNamespace">
-                                    <xsl:value-of select="wsdl:input/soap:body/@namespace"/>
-                                </xsl:attribute>
-                            </xsl:if>
+                <binding name="{@name}" portTypeName="{$portTypeName}">
+                    <xsl:for-each select="./wsdl:operation">
+                        <operation name="{@name}" soapAction="{./soap:operation/@soapAction}">
 
-                            <xsl:if test="wsdl:output/soap:body/@namespace">
-                                <xsl:attribute name="outputNamespace">
-                                    <xsl:value-of select="wsdl:output/soap:body/@namespace"/>
-                                </xsl:attribute>
-                            </xsl:if>
+                           <xsl:if test="wsdl:input/soap:body/@namespace">
+                              <xsl:attribute name="inputNamespace">
+                                  <xsl:value-of select="wsdl:input/soap:body/@namespace"/>
+                              </xsl:attribute>
+                           </xsl:if>
 
-                            
-                            <xsl:attribute name="inputEncoding">
+                           <xsl:if test="wsdl:output/soap:body/@namespace">
+                               <xsl:attribute name="outputNamespace">
+                                   <xsl:value-of select="wsdl:output/soap:body/@namespace"/>
+                               </xsl:attribute>
+                           </xsl:if>
+
+                           
+                           <xsl:attribute name="inputEncoding">
                                 <xsl:value-of select="wsdl:input/soap:body/@use"/>
-                            </xsl:attribute>
-                            <xsl:attribute name="outputEncoding">
-                                <xsl:value-of select="wsdl:output/soap:body/@use"/>
-                            </xsl:attribute>
+                           </xsl:attribute>
+                           <xsl:attribute name="outputEncoding">
+                               <xsl:value-of select="wsdl:output/soap:body/@use"/>
+                           </xsl:attribute>
 
-                            
-                            <xsl:if test="soap:operation/@style">
-                                <xsl:attribute name="soapStyle">
-                                    <xsl:value-of select="soap:operation/@style"/>
-                                </xsl:attribute>
-                            </xsl:if>
-    
-                            
-                            <xsl:variable name="portOperation" select="//wsdl:portType[@name=$portTypeName]/                                                      wsdl:operation[@name=$operationName]"/>
-                            <xsl:attribute name="inputMessage">
-                               <xsl:call-template name="getLocalName">
-                                  <xsl:with-param name="fullName" select="$portOperation/wsdl:input/@message"/>
-                               </xsl:call-template>
-                            </xsl:attribute>
-                            <xsl:attribute name="outputMessage">
-                               <xsl:call-template name="getLocalName">
-                                  <xsl:with-param name="fullName" select="$portOperation/wsdl:output/@message"/>
-                               </xsl:call-template>
-                            </xsl:attribute>
-                
-                            
-                            <xsl:attribute name="inputParts">
+                           
+                           <xsl:if test="soap:operation/@style">
+                               <xsl:attribute name="soapStyle">
+                                   <xsl:value-of select="soap:operation/@style"/>
+                               </xsl:attribute>
+                           </xsl:if>
+
+                           
+                           <xsl:attribute name="inputParts">
                                <xsl:value-of select="wsdl:input//soap:body/@parts"/>
-                            </xsl:attribute>
-                            <xsl:attribute name="outputParts">
+                           </xsl:attribute>
+                           <xsl:attribute name="outputParts">
                                <xsl:value-of select="wsdl:output//soap:body/@parts"/>
-                            </xsl:attribute>
+                           </xsl:attribute>
 
-                            
-                            <xsl:for-each select="wsdl:input/soap:header">
-                               <inputHeaders encoding="{@use}" part="{@part}">
-                                  <xsl:attribute name="message">
-                                     <xsl:call-template name="getLocalName">
-                                         <xsl:with-param name="fullName" select="@message"/>
-                                     </xsl:call-template>
-                                  </xsl:attribute>
-                               </inputHeaders>
-                            </xsl:for-each>
-                            <xsl:for-each select="wsdl:output/soap:header">
-                               <outputHeaders encoding="{@use}" part="{@part}">
-                                  <xsl:attribute name="message">
-                                     <xsl:call-template name="getLocalName">
-                                         <xsl:with-param name="fullName" select="@message"/>
-                                     </xsl:call-template>
-                                  </xsl:attribute>
-                               </outputHeaders>
-                            </xsl:for-each>
-
+                           
+                           <xsl:for-each select="wsdl:input/soap:header">
+                              <inputHeaders encoding="{@use}" part="{@part}">
+                                 <xsl:attribute name="message">
+                                    <xsl:call-template name="getLocalName">
+                                        <xsl:with-param name="fullName" select="@message"/>
+                                    </xsl:call-template>
+                                 </xsl:attribute>
+                              </inputHeaders>
+                           </xsl:for-each>
+                           <xsl:for-each select="wsdl:output/soap:header">
+                              <outputHeaders encoding="{@use}" part="{@part}">
+                                 <xsl:attribute name="message">
+                                    <xsl:call-template name="getLocalName">
+                                        <xsl:with-param name="fullName" select="@message"/>
+                                    </xsl:call-template>
+                                 </xsl:attribute>
+                              </outputHeaders>
+                           </xsl:for-each>
                         </operation>
                     </xsl:for-each>
-                </operations>
+                </binding>
             </xsl:for-each>
+            </bindings>
+
+            <portTypes>
+            <xsl:for-each select=".//wsdl:portType">
+                 
+                <portType portTypeName="{@name}">
+                <xsl:for-each select="./wsdl:operation">
+                    <operation name="{@name}">
+                    <xsl:attribute name="inputMessage">
+                       <xsl:call-template name="getLocalName">
+                          <xsl:with-param name="fullName" select="wsdl:input/@message"/>
+                       </xsl:call-template>
+                    </xsl:attribute>
+                    <xsl:attribute name="outputMessage">
+                       <xsl:call-template name="getLocalName">
+                          <xsl:with-param name="fullName" select="wsdl:output/@message"/>
+                       </xsl:call-template>
+                    </xsl:attribute>
+                    </operation>
+                </xsl:for-each>
+                </portType>
+            </xsl:for-each>
+            </portTypes>
 
             <messages>
    
                <xsl:for-each select="//wsdl:message">
-                   
-
                    <xsl:variable name="messageName" select="@name"/>
 
-                   
-                   <xsl:variable name="portTypeName" select="                         //wsdl:portType[(descendant::wsdl:output|descendant::wsdl:input)                                             [contains(@message,$messageName)]]/@name"/>
-
-                   
-            
-                   
-                   <xsl:if test="//wsdl:binding[contains(@type,$portTypeName) and                                                 descendant::soap:binding]">
-                       <xsl:call-template name="makeDataSource">
-                           <xsl:with-param name="dsName" select="concat('message:',@name)"/>
-                       </xsl:call-template>
-                   </xsl:if>
+                   <xsl:call-template name="makeDataSource">
+                       <xsl:with-param name="dsName" select="concat('message:',@name)"/>
+                   </xsl:call-template>
                </xsl:for-each>
             </messages>
+
         </WebService>
    </xsl:template>
 
@@ -224,8 +231,9 @@
            </xsl:call-template>
        </xsl:variable>
  
-       
-       <xsl:if test="//xs:complexType[@name = $typeName]">
+       <xsl:choose>
+         
+         <xsl:when test="//xs:complexType[@name = $typeName]">
            
            <xsl:call-template name="makeDataSource">
               <xsl:with-param name="dsName" select="@name"/>
@@ -233,7 +241,18 @@
               <xsl:with-param name="isGlobal" select="true()"/>
               <xsl:with-param name="xmlSource" select="'XSElement'"/>
            </xsl:call-template>
-       </xsl:if>
+         </xsl:when>
+
+         
+         <xsl:when test="//xs:simpleType[@name = $typeName]">
+             <SimpleType name="{@name}" xmlSource="XSElement" inheritsFrom="{$typeName}"/>
+         </xsl:when>
+
+         
+         <xsl:otherwise> 
+           <SimpleType name="{@name}" xmlSource="XSElement" inheritsFrom="{$typeName}" xsImportedType="true"/>
+         </xsl:otherwise>
+       </xsl:choose>
    </xsl:template>
 
    
@@ -354,6 +373,12 @@
 
       <xsl:variable name="nillable" select="@nillable='true'"/>
 
+      
+      <xsl:variable name="useMaxOccurs" select="@maxOccurs &gt; 1 or @maxOccurs = 'unbounded'"/>
+
+      
+      <xsl:variable name="useMinOccurs" select="@minOccurs != 1"/>
+
       <xsl:choose>
 
          
@@ -370,6 +395,18 @@
 
                 <xsl:if test="$nillable">
                     <xsl:attribute name="nillable">true</xsl:attribute>
+                </xsl:if>
+
+                <xsl:if test="$useMaxOccurs">
+                   <xsl:attribute name="xmlMaxOccurs">
+                       <xsl:value-of select="@maxOccurs"/>
+                   </xsl:attribute>
+                </xsl:if>
+
+                <xsl:if test="$useMinOccurs">
+                   <xsl:attribute name="xmlMinOccurs">
+                       <xsl:value-of select="@minOccurs"/>
+                   </xsl:attribute>
                 </xsl:if>
 
                 <xsl:attribute name="type">
@@ -415,6 +452,17 @@
                         <xsl:attribute name="nillable">true</xsl:attribute>
                     </xsl:if>
 
+                    <xsl:if test="$useMaxOccurs">
+                       <xsl:attribute name="xmlMaxOccurs">
+                           <xsl:value-of select="@maxOccurs"/>
+                       </xsl:attribute>
+                    </xsl:if>
+                    <xsl:if test="$useMinOccurs">
+                       <xsl:attribute name="xmlMinOccurs">
+                           <xsl:value-of select="@minOccurs"/>
+                       </xsl:attribute>
+                    </xsl:if>
+
                     <xsl:if test="@isc:title">
                         <xsl:attribute name="title">
                             <xsl:value-of select="@isc:title"/>
@@ -450,6 +498,17 @@
 
                     <xsl:if test="$nillable">
                         <xsl:attribute name="nillable">true</xsl:attribute>
+                    </xsl:if>
+
+                    <xsl:if test="$useMaxOccurs">
+                       <xsl:attribute name="xmlMaxOccurs">
+                           <xsl:value-of select="@maxOccurs"/>
+                       </xsl:attribute>
+                    </xsl:if>
+                    <xsl:if test="$useMinOccurs">
+                       <xsl:attribute name="xmlMinOccurs">
+                           <xsl:value-of select="@minOccurs"/>
+                       </xsl:attribute>
                     </xsl:if>
 
                     
@@ -507,6 +566,17 @@
                             <xsl:if test="$nillable">
                                 <xsl:attribute name="nillable">true</xsl:attribute>
                             </xsl:if>
+                            <xsl:if test="$useMaxOccurs">
+                               <xsl:attribute name="xmlMaxOccurs">
+                                   <xsl:value-of select="@maxOccurs"/>
+                               </xsl:attribute>
+                            </xsl:if>
+                            <xsl:if test="$useMinOccurs">
+                               <xsl:attribute name="xmlMinOccurs">
+                                   <xsl:value-of select="@minOccurs"/>
+                               </xsl:attribute>
+                            </xsl:if>
+
                             <xsl:if test="$partName">
                                 <xsl:attribute name="partName">
                                     <xsl:value-of select="$partName"/>
@@ -538,6 +608,17 @@
                             <xsl:if test="$nillable">
                                 <xsl:attribute name="nillable">true</xsl:attribute>
                             </xsl:if>
+                            <xsl:if test="$useMaxOccurs">
+                               <xsl:attribute name="xmlMaxOccurs">
+                                   <xsl:value-of select="@maxOccurs"/>
+                               </xsl:attribute>
+                            </xsl:if>
+                            <xsl:if test="$useMinOccurs">
+                               <xsl:attribute name="xmlMinOccurs">
+                                   <xsl:value-of select="@minOccurs"/>
+                               </xsl:attribute>
+                            </xsl:if>
+
                             <xsl:if test="$partName">
                                 <xsl:attribute name="partName">
                                     <xsl:value-of select="$partName"/>
@@ -569,6 +650,16 @@
                             </xsl:if>
                             <xsl:if test="$nillable">
                                 <xsl:attribute name="nillable">true</xsl:attribute>
+                            </xsl:if>
+                            <xsl:if test="$useMaxOccurs">
+                               <xsl:attribute name="xmlMaxOccurs">
+                                   <xsl:value-of select="@maxOccurs"/>
+                               </xsl:attribute>
+                            </xsl:if>
+                            <xsl:if test="$useMinOccurs">
+                               <xsl:attribute name="xmlMinOccurs">
+                                   <xsl:value-of select="@minOccurs"/>
+                               </xsl:attribute>
                             </xsl:if>
 
                             <xsl:if test="@isc:title">
@@ -627,14 +718,26 @@
                             <xsl:if test="$nillable">
                                 <xsl:attribute name="nillable">true</xsl:attribute>
                             </xsl:if>
+                            <xsl:if test="$useMaxOccurs">
+                               <xsl:attribute name="xmlMaxOccurs">
+                                   <xsl:value-of select="@maxOccurs"/>
+                               </xsl:attribute>
+                            </xsl:if>
+                            <xsl:if test="$useMinOccurs">
+                               <xsl:attribute name="xmlMinOccurs">
+                                   <xsl:value-of select="@minOccurs"/>
+                               </xsl:attribute>
+                            </xsl:if>
 
                             <xsl:if test="@isc:title">
                                 <xsl:attribute name="title">
                                     <xsl:value-of select="@isc:title"/>
                                 </xsl:attribute>
                             </xsl:if>
+
+                            
                             <xsl:call-template name="getISCTypeAttribute">
-                               <xsl:with-param name="type" select="xs:restriction/@base"/>
+                               <xsl:with-param name="type" select="xs:restriction/@base | xs:list/@itemType"/>
                             </xsl:call-template>
                             <xsl:call-template name="simpleTypeContents"/>
                         </field>
@@ -656,6 +759,17 @@
                         <xsl:if test="$nillable">
                             <xsl:attribute name="nillable">true</xsl:attribute>
                         </xsl:if>
+                        <xsl:if test="$useMaxOccurs">
+                           <xsl:attribute name="xmlMaxOccurs">
+                              <xsl:value-of select="@maxOccurs"/>
+                           </xsl:attribute>
+                        </xsl:if>
+                        <xsl:if test="$useMinOccurs">
+                           <xsl:attribute name="xmlMinOccurs">
+                               <xsl:value-of select="@minOccurs"/>
+                           </xsl:attribute>
+                        </xsl:if>
+
                         <xsl:if test="$partName">
                             <xsl:attribute name="partName">
                                 <xsl:value-of select="$partName"/>
@@ -690,6 +804,16 @@
                  <xsl:if test="$nillable">
                      <xsl:attribute name="nillable">true</xsl:attribute>
                  </xsl:if>
+                 <xsl:if test="$useMaxOccurs">
+                   <xsl:attribute name="xmlMaxOccurs">
+                       <xsl:value-of select="@maxOccurs"/>
+                   </xsl:attribute>
+                 </xsl:if>
+                 <xsl:if test="$useMinOccurs">
+                    <xsl:attribute name="xmlMinOccurs">
+                        <xsl:value-of select="@minOccurs"/>
+                    </xsl:attribute>
+                 </xsl:if>
 
                  <xsl:for-each select="xs:simpleType | xs:simpleContent">
                      <xsl:call-template name="simpleTypeContents"/>
@@ -705,6 +829,16 @@
                  </xsl:if>
                  <xsl:if test="$nillable">
                      <xsl:attribute name="nillable">true</xsl:attribute>
+                 </xsl:if>
+                 <xsl:if test="$useMaxOccurs">
+                   <xsl:attribute name="xmlMaxOccurs">
+                       <xsl:value-of select="@maxOccurs"/>
+                   </xsl:attribute>
+                 </xsl:if>
+                 <xsl:if test="$useMinOccurs">
+                    <xsl:attribute name="xmlMinOccurs">
+                        <xsl:value-of select="@minOccurs"/>
+                    </xsl:attribute>
                  </xsl:if>
              </field>
          </xsl:otherwise>
@@ -784,12 +918,14 @@
 
    <xsl:template name="makeSimpleType">
       <xsl:param name="name"/>
-      <SimpleType name="{$name}">
-          <xsl:attribute name="inheritsFrom">
+      <SimpleType name="{$name}" xmlSource="SimpleType">
+          <xsl:if test="xs:restriction/@base | xs:list/@itemType">
+             <xsl:attribute name="inheritsFrom">
                <xsl:call-template name="getISCType">
-                   <xsl:with-param name="type" select="xs:restriction/@base"/>
+                   <xsl:with-param name="type" select="xs:restriction/@base | xs:list/@itemType"/>
                </xsl:call-template>
-          </xsl:attribute>
+             </xsl:attribute>
+          </xsl:if>
           <xsl:call-template name="simpleTypeContents"/> 
       </SimpleType>
    </xsl:template>
@@ -803,9 +939,9 @@
        </xsl:if>
 
        
-       <xsl:if test=".//xs:enumeration">
+       <xsl:if test="./xs:restriction/xs:enumeration">
            <valueMap>
-               <xsl:for-each select=".//xs:enumeration">
+               <xsl:for-each select="./xs:restriction/xs:enumeration">
                    <value>
                        <xsl:if test="@ID">
                            <xsl:attribute name="ID"><xsl:value-of select="@ID"/></xsl:attribute>
@@ -816,11 +952,38 @@
            </valueMap>
        </xsl:if>
 
+       <xsl:if test="./xs:list">
+          <xsl:attribute name="xmlListType">true</xsl:attribute>
+       </xsl:if>
+
+       <xsl:if test="./xs:union/@memberTypes">
+          <xsl:attribute name="memberTypes">
+             <xsl:value-of select="./xs:union/@memberTypes"/>
+          </xsl:attribute>
+       </xsl:if>
 
        
-       <xsl:if test="count(xs:restriction/*) &gt; 0 and                       count(xs:restriction/*) !=                             count(xs:restriction/xs:enumeration |                                   xs:restriction/xs:attribute |                                   xs:restriction/xs:attributeGroup)"> 
+       <xsl:for-each select="./xs:list/xs:simpleType | ./xs:union/xs:simpleType">
+           <SimpleType>
+               <xsl:if test="xs:restriction/@base | xs:list/@itemType">
+                   <xsl:attribute name="inheritsFrom">
+                      <xsl:call-template name="getISCType">
+                         <xsl:with-param name="type" select="xs:restriction/@base | xs:list/@itemType"/>
+                      </xsl:call-template>
+                   </xsl:attribute>
+               </xsl:if>
+               <xsl:call-template name="simpleTypeContents"/> 
+           </SimpleType> 
+       </xsl:for-each>
+
+       
+       <xsl:if test="count(xs:restriction/*) &gt; 0 and                       count(xs:restriction/*) !=                             count(xs:restriction/xs:attribute |                                   xs:restriction/xs:attributeGroup)"> 
 
        <validators>
+            <xsl:if test="./xs:restriction/xs:enumeration">
+               <validator type="isOneOf"/>
+            </xsl:if>
+
             
             <xsl:variable name="localBase">
                 <xsl:call-template name="getISCType">
@@ -832,7 +995,7 @@
             <xsl:variable name="rangeValidator">
                <xsl:choose>
                   <xsl:when test="$localBase = 'decimal' or                                    $localBase = 'float' or                                   $localBase = 'double'">floatRange</xsl:when>
-                  <xsl:when test="$localBase = 'date' or                                    $localBase = 'dateTime' or                                    $localBase = 'gYear' or                                    $localBase = 'gYearMonth'">dateRange</xsl:when>
+                  <xsl:when test="$localBase = 'date' or                                    $localBase = 'datetime' or                                   $localBase = 'dateTime' or                                    $localBase = 'gYear' or                                    $localBase = 'gYearMonth'">dateRange</xsl:when>
                   <xsl:otherwise>integerRange</xsl:otherwise>
                </xsl:choose>
             </xsl:variable>
@@ -840,6 +1003,7 @@
             
             <xsl:for-each select=".//*[not(local-name()=enumeration)]">
                 <xsl:choose>
+                    
                     <xsl:when test="local-name()='pattern'">
                         <validator type="regexp" expression="{@value}"/>
                     </xsl:when>
@@ -847,8 +1011,14 @@
                     <xsl:when test="local-name()='minInclusive'">
                         <validator type="{$rangeValidator}" min="{@value}"/>
                     </xsl:when>
+                    <xsl:when test="local-name()='minExclusive'">
+                        <validator type="{$rangeValidator}" min="{@value}" exclusive="true"/>
+                    </xsl:when>
                     <xsl:when test="local-name()='maxInclusive'">
                         <validator type="{$rangeValidator}" max="{@value}"/>
+                    </xsl:when>
+                    <xsl:when test="local-name()='maxExclusive'">
+                        <validator type="{$rangeValidator}" max="{@value}" exclusive="true"/>
                     </xsl:when>
 
                     <xsl:when test="local-name()='minLength'">

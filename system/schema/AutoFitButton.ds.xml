@@ -1,1 +1,7 @@
-<DataSource ID="AutoFitButton" inheritsFrom="Button" Constructor="AutoFitButton"/>
+<DataSource ID="AutoFitButton" inheritsFrom="Button" Constructor="AutoFitButton">
+    
+    <methods>
+        <method name="click" basic="true"/>
+    </methods>
+
+</DataSource>

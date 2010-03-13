@@ -8,4 +8,7 @@
         <field name="hiliteAccessKey"   type="boolean" />
         <field name="action" type="Action" editorType="ActionMenuItem"/>        
 	</fields>
+    <methods>
+        <method action="event" title="Click" name="click" basic="true" />
+    </methods>
 </DataSource>

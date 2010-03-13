@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -240,7 +240,7 @@ setViewURL : function (url, params, rpcProperties) {
         evalResult: evalResult,
         suppressAutoDraw: true,
         willHandleError: true,
-        callback: this.getID()+"._loadViewReply(rpcRequest, rpcResponse, data)"
+        callback: "if(window."+this.getID()+")"+this.getID()+"._loadViewReply(rpcRequest, rpcResponse, data)"
     });
 
     // add this component to evalVars

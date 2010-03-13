@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -19,7 +19,7 @@
 
 //>	@class	ImgButton
 // A Img that behaves like a button, going through up/down/over state transitions in response to
-// user events.  Supports an optional title, and will auto-size to accomodate the title text if
+// user events.  Supports an optional title, and will auto-size to accommodate the title text if
 // <code>overflow</code> is set to "visible".
 // <P>
 // An examples of use is Window minimize/close buttons.
@@ -59,7 +59,6 @@ isc.defineClass("ImgButton", "Img").addProperties({
     // @visibility external
     //<
 
-    
     // Icon
     //------
     //> @attr imgButton.icon
@@ -87,7 +86,7 @@ isc.defineClass("ImgButton", "Img").addProperties({
     // @visibility external
     //<
     //> @attr imgButton.iconSpacing
-    // @include statefulCanvas.icon
+    // @include statefulCanvas.iconSpacing
     // @visibility external
     //<
     //> @attr imgButton.showDisabledIcon

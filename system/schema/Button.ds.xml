@@ -13,6 +13,8 @@
         <group>buttonIcon</group>
         <group>state</group>
     </groups>
-    
+    <methods>
+        <method action="event" title="Click" name="click" basic="true" />
+    </methods>
     
 </DataSource>

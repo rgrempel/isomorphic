@@ -1,0 +1,6 @@
+<DataSource	ID="PortalLayout"	inheritsFrom="Layout" Constructor="PortalLayout" >
+	<fields>
+        <field name="numColumns"              type="integer" />
+        <field name="showColumnMenus" type="boolean" />
+    </fields>
+</DataSource>

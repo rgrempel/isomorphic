@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -266,7 +266,7 @@ updateEdgeSizes : function () {
     // otherwise that rail could not possibly be shown.  Corner on side does not
     // necessarily indicate a margin, eg, in endcap case (tl t tr only), no right or left
     // margin.
-    // Margins can be set independantly of edges to allow the Canvas to overlap the edges.
+    // Margins can be set independently of edges to allow the Canvas to overlap the edges.
     // NOTE: these margin settings are automatically picked up by the Canvas that owns us, and
     // added to its own margin settings to produce the native margin settings.
     var edges = this.shownEdges,
@@ -302,7 +302,7 @@ getInnerHTML : function () {
     //
     // Most published methods of doing this rely on embedding content inside a containing
     // element with the borders arrayed around the edges, where the containing element
-    // vertically stretches to accomodate content.  We can't feasibly use that approach
+    // vertically stretches to accommodate content.  We can't feasibly use that approach
     // because abs pos content doesn't stretch the containing element, so we'd have to
     // force all Canvas children to be relatively positioned, so layout code would have to
     // take into account that each Canvas starts out offset by all previous Canvii - a
@@ -335,7 +335,11 @@ getInnerHTML : function () {
         cellEnd;
 
     // setup cell HTML
-    if (!(isc.Browser.isStrict && isc.Browser.isIE && isc.Browser.version >= 8)) {
+    if (!((isc.Browser.isStrict && isc.Browser.isIE && isc.Browser.version >= 8) 
+          || (isc.Browser.isMoz && isc.Browser.isUnix)
+          )
+        ) 
+    {
         
     //if (isc.Browser.isSafari || 
     //    (isc.Canvas._fixPNG() && extension.toLowerCase() == ".png") || isc.Browser.isMoz) {

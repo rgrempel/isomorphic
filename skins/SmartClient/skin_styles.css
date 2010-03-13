@@ -83,6 +83,12 @@
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black;
     background-color:#FFFFD0; border:1px solid #808080; padding:5px;
 }
+
+/* group label */
+.groupLabel {
+    font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
+    padding-left:5px; padding-right:5px;
+}
 /*============================================================
     2) Button
 		button.baseStyle
@@ -830,38 +836,100 @@
 .cellSelectedOverDark,
 .cellDisabled,
 .cellDisabledDark,
+.gridSummaryCell,
+.gridSummaryCellDisabled,
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark,
+.specialCol,
+.specialColOver,
+.specialColSelected,
+.specialColSelectedOver,
+.specialColDisabled,
 .groupNode {
 	font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; text-overflow:ellipsis;
 	color:black;
 	border-bottom:1px solid #ffffff; border-top:1px solid #ffffff;
 	background-color:#ffffff;
 }
-.cellDark {
+
+.specialCol {
 	border-bottom:1px solid #f0f0e8; border-top:1px solid #f0f0e8;
 	background-color:#f0f0f0;
 }
+
+.cellDark,
+.gridSummaryCell {
+	border-bottom:1px solid #f0f0e8; border-top:1px solid #f0f0e8;
+	background-color:#f0f0f0;
+}
+.recordSummaryCell,
+.recordSummaryCellDark {
+    border-bottom:1px solid #c9c9e8; border-top:1px solid #c9c9e8;
+	background-color:#c9c9c9;
+}
 .cellOver,
-.cellOverDark {
+.cellOverDark,
+.specialColOver,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark {
 	border-bottom:1px solid #c0c0c0; border-top:1px solid #c0c0c0;
 	background-color:#ffffc0;
 }
 .cellSelected,
-.cellSelectedDark {
+.cellSelectedDark,
+.specialColSelected,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark {
 	border-bottom:1px solid #b8d0ff; border-top:1px solid #b8d0ff;
 	background-color:#b8d0ff;
 }
 .cellSelectedOver,
-.cellSelectedOverDark {
+.cellSelectedOverDark,
+.specialColSelectedOver,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark {
 	border-bottom:1px solid #a0a0a0; border-top:1px solid #a0a0a0;
 	background-color:#e0ebff;
 }
 .cellDisabled,
-.cellDisabledDark {
+.cellDisabledDark,
+.specialDisabled,
+.gridSummaryCellDisabled,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
 	color:#808080;
 }
-.cellDisabledDark {
+.cellDisabledDark,
+.gridSummaryCellDisabled,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
 	border-bottom:1px solid #f0f0e8; border-top:1px solid #f0f0e8;
 	background-color:#f0f0e8;
+}
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
+    font-style:italic;
+}
+.gridSummaryCell,
+.gridSummaryCellDisabled {
+    font-weight:bold;
+    border-top: 1px solid #548EE0;
 }
 
 /* for grouping */
@@ -876,6 +944,10 @@
     padding: 3px; 
 }
 
+/* Multi-sort - sort-index appearing next to sort-arrows in field headers */
+.sortNumeral {
+    font-size:7px
+}
 
 /*============================================================
 	12) ToolStrip
@@ -1581,6 +1653,7 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 .calMonthOtherDayBlankOverDark {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
     color:#444444;
+    border-bottom:1px solid #a0a0a0; border-right:1px solid #a0a0a0;
     background-color: #E6E6E6;
 }
 

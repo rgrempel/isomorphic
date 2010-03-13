@@ -28,7 +28,14 @@ if (window.parent && window.parent.isc) {
 <SCRIPT>
 function pageLoaded() {
     window.controllerCanvas = params.id;
-    parent[controllerCanvas].iframeLoad();
+    // Sanity check: Unclear why we should get into this state but if we can't
+    // find the print canvas for this iframe, log a warning and avoid the JS error
+    if (controllerCanvas == null || parent[controllerCanvas] == null) {
+        parent.isc.logWarn("Print canvas with ID:" + controllerCanvas + 
+            " failed to render correctly.", "printing");
+    } else {
+        parent[controllerCanvas].iframeLoad();
+    }
 }
 
 function printed() {

@@ -8,4 +8,7 @@
         <field name="wrap"  type="boolean"/>
         <field name="clipValue" type="boolean"/>
     </fields>
+	
+    <substituteClasses>TextItem, TextAreaItem, StaticTextItem</substituteClasses>
+	
 </DataSource>

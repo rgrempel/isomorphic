@@ -1,6 +1,7 @@
 <DataSource	ID="Canvas"	Constructor="Canvas">
 	<fields>
-		<field name="ID"				type="identifier" title="Identifier"/>	
+		<field name="ID" xmlAttribute="true" type="identifier" title="Identifier" basic="true"/>	
+		<field name="ref" type="identifier" xmlAttribute="true" title="Identifier"/>	
 
         <!-- sizing -->
 		<field name="width"				type="measure" title="Width"/>	
@@ -83,7 +84,7 @@
 		<field name="extraSpace"      type="positiveInteger" />
 
         <!-- overflow / scrolling -->
-		<field name="overflow"			type="overflowEnum" title="Overflow"/>	
+		<field name="overflow" xmlAttribute="true" type="overflowEnum" title="Overflow"/>	
 		<field name="showCustomScrollbars"	type="boolean" title="Use Custom Scollbars" visibility="internal"/>	
 		<field name="scrollbarSize"		type="positiveInteger" title="Scrollbar Size"/>
 		<field name="scrollLeft"		type="integer" title="Scroll Left Shift (Pixels)" visibility="internal"/>	
@@ -151,10 +152,19 @@
 		<field name="edgeCursorMap"		type="edgeCursorMap"/>
 		
         <!-- databinding (not exposed on Canvas, but defined here to make any Canvas subclass databindable) -->
-		<field name="dataSource"		type="DataSource" hidden="true"/>
+		<field name="dataSource" xmlAttribute="true" idAllowed="true" type="DataSource" hidden="true"/>
+		<field name="serviceName" type="string" />
+		<field name="serviceNamespace" type="string" />
 		<field name="useAllDataSourceFields"	type="boolean" hidden="true"/>	
+		<field name="showComplexFields"	type="boolean" hidden="true"/>	
+
 		<field name="autoFetchData"	type="boolean" visibility="internal"/>	
-		<field name="autoFetchAsFilter"	type="boolean" visibility="internal"/>	
+		<field name="autoFetchTextMatchStyle"	type="string" visibility="internal"/>
+        <!-- dataPath and valuesManager is supported and docd on all Canvii, even if it just 
+             acts as a container for data-aware sub-components -->
+        <field name="dataPath"  type="string" />
+        <field name="valuesManager" type="ValuesManager" />
+        <field name="dataArity" type="string" hidden="true" />
 
         <!-- shadows -->
         <field name="showShadow"        type="boolean"/>
@@ -174,7 +184,7 @@
 		<field name="autoShowParent"	type="boolean" title="Auto Show Parent"/>
 
         <!-- don't show autoDraw in tools -->
-		<field name="autoDraw"			type="boolean" title="Auto-Draw" hidden="true"/>
+		<field name="autoDraw" xmlAttribute="true" type="boolean" title="Auto-Draw" hidden="true"/>
 
         <field name="observes"		type="Object" multiple="true" visibility="internal"/>	
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -469,16 +469,15 @@ isc.DateChooser.addMethods({
                       " CELLSPACING=0 CELLPADDING=2 BORDER=", this.cellBorder,">");
 
 		// write the day-of-week headers (starting with firstDayOfWeek)
-		output.append("<TR><TR HEIGHT=15>");
+		output.append("<TR HEIGHT=15>");
         var dayNames = this.getDayNames();
         var weekEnds = Date.getWeekendDays();
         for (var i = 0; i < dayNames.length; i++) {
             // if we're not showing weekends, don't create weekend cells
-            var weekend = weekEnds.contains(i)
+            var weekend = weekEnds.contains((i + this.firstDayOfWeek) %7)
             if (weekend && !this.showWeekends) continue;
             var headerStyle = (weekend && this.weekendHeaderStyle) ? this.weekendHeaderStyle 
                                                                     : this.headerStyle;
-            
             output.append(
                 this.getCellHTML("<B>"+dayNames[(i + this.firstDayOfWeek) %7]+"</B>", 
                                      headerStyle)
@@ -502,10 +501,12 @@ isc.DateChooser.addMethods({
 
 			output.append("<TR>");
 			for (var i = 0; i < 7; i++) {
+                var dayOfWeek = displayDate.getDay(),
+                    isWeekend = weekEnds.contains(dayOfWeek);
+                    
                 // if !showWeekends, make sure not to create them
-                if (! (!this.showWeekends && weekEnds.contains(i))) {
-                    var baseStyle = (i > 0 && i < 6) ? this.baseWeekdayStyle :
-                                                       this.baseWeekendStyle;
+                if (! (!this.showWeekends && isWeekend)) {
+                    var baseStyle = !isWeekend ? this.baseWeekdayStyle : this.baseWeekendStyle;
                     if (isAlternateRow) baseStyle += this.alternateStyleSuffix;
                     output.append(this.getDayCellButtonHTML((earlyFinish?null:displayDate), 
                                                             baseStyle));
@@ -516,7 +517,11 @@ isc.DateChooser.addMethods({
                 if (this.year == 9999 && this.month == 11 && displayDate.getDate() == 31) {
                     earlyFinish = true;
                 } else {
+                    // for daylight savings time, its possible to have repeating days on the calendar,
+                    // so we need to make sure the date is actually advanced to the next day.
+                    var oldDate = displayDate.getDate();
                     displayDate.setDate(displayDate.getDate()+1);
+                    if (oldDate == displayDate.getDate()) displayDate.setDate(displayDate.getDate()+1);
                 }
 			}
 			output.append("<\/TR>");
@@ -719,7 +724,12 @@ isc.DateChooser.addMethods({
 
 	dateClick : function (year, month, day) {
         var date = this.chosenDate = new Date(year, month, day);
-
+        // set this.month / this.year - this ensures we actually show the selected 
+        // date if the user hits the today button while viewing another month
+        
+        this.month = month;
+        this.year = year;
+        
         this.dataChanged();
 
     	if (window.dateClickCallback) {

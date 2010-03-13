@@ -1,0 +1,6 @@
+<DataSource	ID="Portlet"	inheritsFrom="Window" Constructor="Portlet" >
+	<fields>
+        <field name="closeConfirmationMessage" type="string" />
+        <field name="showCloseConfirmationMessage" type="boolean" />
+    </fields>
+</DataSource>

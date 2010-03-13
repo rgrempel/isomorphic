@@ -47,7 +47,7 @@
 		<field name="align"  type="alignEnum"/>
 		<field name="valign" type="valignEnum"/>
 
-        <field name="title"  type="HTML"/>        
+        <field name="title"  type="HTML" basic="true" />
         <field name="showTitle" type="boolean"/>
         <field name="titleStyle"        type="cssClass" visibility="internal"/>
 
@@ -81,5 +81,9 @@
 		</type>
 		
 	</types>    
+    
+    <methods>
+        <method name="click" basic="true"/>
+    </methods>
 </DataSource>
 

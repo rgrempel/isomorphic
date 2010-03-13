@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -24,7 +24,7 @@
 //  @visibility external
 //<
 
-isc.ClassFactory.defineClass("DetailViewer", "Canvas");
+isc.ClassFactory.defineClass("DetailViewer", "Canvas", "DataBoundComponent");
 
 // add default properties
 isc.DetailViewer.addProperties({
@@ -49,6 +49,9 @@ isc.DetailViewer.addProperties({
     // @visibility external
     //<
     dataFetchMode:"basic",
+    
+    // dataArity:"either" - DetailViewers support viewing single, or multiple records
+    dataArity:"either",
 
     //> @object DetailViewerRecord
     //
@@ -182,7 +185,7 @@ isc.DetailViewer.addProperties({
     // <ul>
     // <li>"header" - If you specify type "header", the field spans both the field name and
     // field value columns and contains text defined in the +link{DetailViewerField.value}
-    // attribute with the style specifed by +link{DetailViewer.headerStyle}.  You can use this
+    // attribute with the style specified by +link{DetailViewer.headerStyle}.  You can use this
     // field type as a titled separator.
     // <li>"separator" - If you specify type "separator", the field spans both the field name
     // and the field value columns with no text, and is styled using the style specified via
@@ -257,6 +260,22 @@ isc.DetailViewer.addProperties({
     //
     //		@return	(CSSStyleName)	CSS style for this cell
     // @group	appearance
+    // @visibility external
+    //<
+
+    //> @attr detailViewerField.showFileInline    (boolean : null : [IR])
+    // For a field of type:"imageFile", indicates whether to stream the image and display it
+    // inline or to display the View and Download icons.
+    // 
+    // @visibility external
+    //<
+
+    //> @attr detailViewerField.canExport (Boolean : null : IR)
+    //	Dictates whether the data in this field be exported.  Explicitly set this
+    //  to false to prevent exporting.  Has no effect if the underlying 
+    //  +link{dataSourceField.canExport, dataSourceField} is explicitly set to 
+    //  canExport: false.
+    //
     // @visibility external
     //<
 
@@ -388,19 +407,22 @@ isc.DetailViewer.addProperties({
     //> @attr detailViewer.printCellStyle (CSSStyleName : null : IRW)
     // Optional CSS style for a cell in printable HTML for this component. If unset
     // +link{detailViewer.cellStyle} will be used for printing as well as normal presentation.
-    // @visibility printing
-
+    // @group printing
+    // @visibility external
     //<
+
     //> @attr detailViewer.printLabelStyle (CSSStyleName : null : IRW)
     // Optional CSS style for a label cell in printable HTML for this component. If unset
     // +link{detailViewer.labelStyle} will be used for printing as well as normal presentation.
-    // @visibility printing
+    // @group printing
+    // @visibility external
     //<
 
     //> @attr detailViewer.printHeaderStyle (CSSStyleName : null : IRW)
     // Optional CSS style for a header in printable HTML for this component. If unset
     // +link{detailViewer.headerStyle} will be used for printing as well as normal presentation.
-    // @visibility printing
+    // @group printing
+    // @visibility external
     //<
 
     //>	@attr	detailViewer.separatorStyle		(CSSStyleName : "detail" : IRW)
@@ -424,6 +446,13 @@ isc.DetailViewer.addProperties({
     // @visibility external
     //<
     
+    
+    //> @attr detailViewer.datetimeFormatter (DateDisplayFormat : null : IR)
+    // Display format to use for fields specified as type 'datetime'. Default is to use
+    // the system-wide default datetime format configured via 
+    // +link{Date.setShortDatetimeDisplayFormat()}
+    // @visibility external
+    //<
 
 	// Empty Message
 	// --------------------------------------------------------------------------------------------
@@ -556,11 +585,10 @@ getInnerHTML : function () {
         return this.loadingMessageHTML();
     }
 
-	if ((valueList == null || (isc.isAn.Array(valueList) && valueList.getLength() == 0))
-         && this.showEmptyMessage) {
+	if (valueList == null || (isc.isAn.Array(valueList) && valueList.getLength() == 0)) {
 		return this.emptyMessageHTML();
 	}
-
+    
 	//>DEBUG
 	if (this.fields == null || this.fields.length == 0) {
 		return "Note: you must define detailViewer.fields to specify what to display!";
@@ -779,40 +807,20 @@ output_value : function (fieldNum, field, valueList) {
         if (field.type == "image") {
             // if any of field.imageWidth/Height/Size are set as strings, assume they are property
             // names on the record
-            var width, height, imageWidthProperty, imageHeightProperty, imageSizeProperty;
-            if (isc.isA.String(field.imageWidth)) {
-                imageWidthProperty = field.imageWidth;
-            } else {
-                width = field.imageWidth;
-            }
-            if (isc.isA.String(field.imageHeight)) {
-                imageHeightProperty = field.imageHeight;
-            } else {
-                height = field.imageHeight;
-            }
-            if (isc.isA.String(field.imageSize)) {
-                imageSizeProperty = field.imageSize;
-            } else {
-                width = width || field.imageSize;
-                height = height || field.imageSize;
-            }
-
-            if (record != null) {
-                width = width || record[imageWidthProperty] || record[imageSizeProperty];
-                height = height || record[imageHeightProperty] || record[imageSizeProperty];
-            }
+            var dimensions = isc.Canvas.getFieldImageDimensions(field, record);
+            
             var src = this.getCellValue(record, field), prefix =
                 field.imageURLPrefix || field.baseURL || field.imgDir;
-            formattedValue = this.imgHTML(src, width, height, null, field.extraStuff,
-                prefix, field.activeAreaHTML);
+            formattedValue = this.imgHTML(src, dimensions.width, dimensions.height, null, 
+                field.extraStuff, prefix, field.activeAreaHTML);
         } else {
             // NOTE: calls formatCellValue()
             formattedValue = this.getCellValue(record, field);
         }
 
         // output the value as a cell.
-        var rawValue = record[field.name];
-
+        var rawValue = this.getRawValue(record,field);
+        
         var cellStyle;
         if (field.getCellStyle)
             cellStyle = field.getCellStyle(rawValue, field, record, this);
@@ -824,7 +832,7 @@ output_value : function (fieldNum, field, valueList) {
 
         if (this.getCellCSSText) {
             var cssText = this.getCellCSSText(rawValue, field, record, this);
-            if (cssText != null) styleStr += ";" + cssText;
+            if (cssText != null) styleStr += isc.semi + cssText;
         }
 
         styleStr += "'";
@@ -835,6 +843,12 @@ output_value : function (fieldNum, field, valueList) {
             "<\/TD>";
 	}
 	return output;
+},
+
+getRawValue : function (record, field) {
+    if (!record || !field) return null;    
+    if (field.dataPath) return isc.Canvas._getFieldValue(field.dataPath, record);
+    return record[field.name];
 },
 
 //>	@method	detailViewer.getCellCSSText()
@@ -854,16 +868,7 @@ output_value : function (fieldNum, field, valueList) {
 // @visibility external
 //<
 getCellCSSText : function (value, field, record, viewer) {
-    var cssText;
-    // support applying a hilite specified on the record
-    if (this.hilites && record[this.hiliteProperty] != null) {
-        cssText = this.addObjectHilites(record, cssText, field);
-    // support hilites that select via criteria
-    } else if (this.hilites && record[this.hiliteMarker] != null) {
-        cssText = this.addHiliteCSSText(record, this.getFieldNum(field));
-    }
-
-    return cssText;
+    return this.getRecordHiliteCSSText(record, "", field);
 },
 
 //>	@method	detailViewer.getCellStyle()
@@ -915,7 +920,7 @@ getSelectedRecord : function() {
 getCellValue : function (record, field) {
 
     // get the value of this key for that field
-    var value = record[field[this.fieldIdProperty]];
+    var value = this.getRawValue(record,field);
     if (isc.isA.String(field.formatCellValue)) {
         field.formatCellValue = isc.Func.expressionToFunction("value,record,field,viewer",
                                                               field.formatCellValue);
@@ -954,8 +959,24 @@ getCellValue : function (record, field) {
 
     // handle formula and summary fields
     if (field) {
-        if (field.userFormula) value = this.getFormulaFieldValue(field, record);
-        if (field.userSummary) value = this.getSummaryFieldValue(field, record);
+        if (field.userFormula) return this.getFormulaFieldValue(field, record);
+        if (field.userSummary) return this.getSummaryFieldValue(field, record);
+        if (field.type=="imageFile") {
+            if (field.showFileInline != false) {
+                if (!record[field[this.fieldIdProperty] + "_imgURL"]) {
+                    var dimensions = isc.Canvas.getFieldImageDimensions(field, record), 
+                        image = this.getDataSource().streamFile(record);
+                    value = record[field[this.fieldIdProperty] + "_imgURL"] = 
+                        this.imgHTML(image, dimensions.width, dimensions.height);
+                } else 
+                    value = record[field[this.fieldIdProperty] + "_imgURL"];
+            } else {
+                value = this.getViewDownloadHTML(field, record);
+            }
+        } else if (field.showFileInline == true) { // non-imageFile field
+            this.logWarn("getCellValue(): Unsupported field-type for showFileInline: "+field.type);
+        }
+
     }
 
     // apply hilites to capture htmlBefore/after
@@ -965,21 +986,57 @@ getCellValue : function (record, field) {
     return value;
 },
 
+getViewDownloadHTML : function (field, record) {
+
+    if (record == null) return null;
+
+    var name = record[field.name + "_filename"];
+
+    
+    if (name == null || isc.isA.emptyString(name)) "";
+    var viewIconHTML = isc.Canvas.imgHTML("[SKIN]actions/view.png", 16, 16, null,
+	        "style='cursor:"+isc.Canvas.HAND+
+            "' onclick='"+this.getID()+".viewFile("+record+","+field+")'");
+    var downloadIconHTML = isc.Canvas.imgHTML("[SKIN]actions/download.png", 16, 16, null,
+            "style='cursor:"+isc.Canvas.HAND+
+            "' onclick='alert('running');"+this.getID()+".downloadFile("+record+","+field+")'");
+
+    return "<nobr>" + viewIconHTML + "&nbsp;" + downloadIconHTML + "&nbsp;" + name + "</nobr>";
+},
+
+viewFile : function (record, field) {
+    isc.DS.get(this.dataSource).viewFile(record, field.name);
+},
+
+downloadFile : function (record, field) {
+    isc.DS.get(this.dataSource).downloadFile(record, field.name);
+},
+
 _$date:"date",
 _formatDataType : function (record, field, value) {
     var type = field.type,
         baseType = (type != null ? isc.SimpleType.getBaseType(type) : null),
+        isDateTime = type && type.toLowerCase() == "datetime",
         formatter;
-
     // If the field has an explicitly specified formatter, use it
     
-    if (baseType == this._$date)
-        formatter = (field.dateFormatter || field.formatter || this.dateFormatter);
-
+    if (baseType == this._$date) {
+        if (isDateTime) {
+            formatter = field.formatter || this.datetimeFormatter;
+        } else {
+            formatter = (field.dateFormatter || field.formatter || this.dateFormatter);
+        }
+    }
+    
     if (formatter != null) {
-        if (isc.isA.Date(value)) value = value.toNormalDate(formatter);
+        if (isc.isA.Date(value)) {
+            if (isDateTime) {
+                value = value.toShortDateTime(formatter, true);
+            } else {
+                value = value.toNormalDate(formatter);
+            }
+        }
     } else {
-
         if (field._normalDisplayFormatter != null) {
             value = field._simpleType.normalDisplayFormatter(value, field, this, record);
         }
@@ -1052,11 +1109,15 @@ getLoadingMessage : function () {
 
 
 //>	@method	detailViewer.emptyMessageHTML()	(A)
-//			return the message to show if the list is empty
+// Return the message to show if the list is empty. Default implementation returns a centered
+// +link{detailViewer.emptyMessage} or "&amp;nbsp;" if showEmptyMessage is false.
 //
 //		@return	(string)	HTML output
 //<
 emptyMessageHTML : function () {
+    
+    if (!this.showEmptyMessage) return "&nbsp;";
+
 	return "<TABLE WIDTH=100%>"
 			+ "<TR><TD CLASS='" + this.emptyMessageStyle + "' ALIGN=CENTER><BR><BR>"
 			+ this.getEmptyMessage()
@@ -1141,7 +1202,6 @@ toggleField : function (fieldName, showNow) {
     var field = this.getField(fieldName);
 
     field.showIf = showNow ? "true" : "false";
-    field.hidden = !showNow;
     field.visible = showNow;
     this.setFields(this.getAllFields());
     this.markForRedraw();
@@ -1170,6 +1230,84 @@ getField : function (fieldName) {
 	}
 
     return field;
+},
+//> @method detailViewer.getPivotedExportData()
+// Export visual description of DetailViewer data into a form suitable for external
+// processing.
+// @param settings (Object) contains configuration settings for the export, including:<br/>
+//        includeHiddenFields (Boolean) - controls if hidden fields should be exported<br/>
+//        allowedProperties (Array) optional array of CSS property names (camelCaps format)
+//             constraining the allowed properties to be returned
+// @return value (String) exported data
+//<
+// * Data is exported as an array of objects, with one object per visual row of the
+//   DetailViewer grid - meaning one row per field.
+// * The title of each visible field is mapped to the property "title" for each object.
+// * Each record's value for the corresponding field is mapped to the properties
+//   "value1", "value2", ..., up to the number of records specified in this.recordsPerBlock.
+//   Records extending beyond this.recordsPerBlock are not exported.
+// * Additionally, if CSS hilighting styles are present on a record's field, the CSS text is
+//   converted into an object mapping CSS properties in camelCaps format to CSS values, and the
+//   object is stored in <property name>$style.
+// * Null record values are converted to empty strings.
+//
+// Example object:
+//  [
+//  { title: "Foo Fighter", value1: "1", "value1$style": { backgroundColor: "#f00000" } },
+//  { title: "bar", value1: "baz" },
+//  { title: "xyzzy", value1: "" },
+//  { title: "Summary Field", value1: "1 --- baz", "value1$style": { font-weight: "bold" } }
+//  ]
+getPivotedExportData : function (settings) {
+    var exportOutput = [],
+        fields = this.getAllFields(),
+        data = this.data,
+        includeHiddenFields,
+        allowedProperties;
+
+    if (isc.isA.Object(settings)) {
+        includeHiddenFields = settings.includeHiddenFields;
+        allowedProperties = settings.allowedProperties;
+    }
+    if (isc.isA.ResultSet(data)) data = data.getAllLoadedRows();
+    if (!isc.isA.Array(data)) data = [data];
+    
+    for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+        var field = fields[fieldIndex],
+            exportObject = {},
+            recordsPerBlock = this.recordsPerBlock;
+            
+        exportObject.title = field.title || field.name;
+        if (isc.isA.String(exportObject.title)) exportObject.title = this.htmlUnescapeExportFieldTitle(exportObject.title);
+
+        // Implement default value of 1 and "*" -> unbounded
+        if (recordsPerBlock == null) recordsPerBlock = 1;
+        if (recordsPerBlock == "*") recordsPerBlock = 100000;
+            
+        if ((!this.fields.contains(field)) && !includeHiddenFields) continue;
+        
+        for (var rowIndex = 0;
+             rowIndex < recordsPerBlock && rowIndex < data.getLength();
+             rowIndex++)
+        {
+            var record = data[rowIndex],
+                value = this.getCellValue(record, field),
+                cssText = this.getRecordHiliteCSSText(record, null, field),
+                cssProps = this.convertCSSToProperties(cssText, allowedProperties);
+
+            
+            if (value == null || value == "&nbsp;") value = "";
+
+
+            // undo the effects of formatters that apply HTML to a field.
+            value = this.htmlUnescapeExportFieldValue(value);
+            
+            exportObject["value" + (rowIndex+1)] = value;
+            if (cssProps) exportObject["value" + (rowIndex+1) + "$style"] = cssProps;
+        }
+        exportOutput.push(exportObject);
+    }
+    return exportOutput;
 }
 
 

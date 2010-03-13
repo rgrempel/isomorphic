@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -141,7 +141,7 @@ applyTableResizePolicy : function (items, totalWidth, totalHeight,
                     for (; currentCol < numCols; currentCol++) {
                         if (rowSlots[currentCol] != null) continue;
 
-                        // check that there are enough open slots in a row to accomodate the
+                        // check that there are enough open slots in a row to accommodate the
                         // colSpan of this item.  This covers the case of cells reserved by
                         // rowSpanning items in previous rows.
                         for (var j = currentCol; j < numCols; j++) {
@@ -150,7 +150,7 @@ applyTableResizePolicy : function (items, totalWidth, totalHeight,
                             if (rowSlots[j] != null) break;
 
                             if ((j - currentCol) + 1 >= requiredCols) {
-                                // there's enough room to accomodate this item starting at
+                                // there's enough room to accommodate this item starting at
                                 // column i on this row.
                                 // Note that we don't have to check for cells reserved in rows
                                 // beneath us.  Only items from rows above us could possibly

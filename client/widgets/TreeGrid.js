@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -24,7 +24,7 @@
 // For information on DataBinding Trees, see +link{group:treeDataBinding}.
 // <p>
 // A TreeGrid works just like a +link{ListGrid}, except one column (specified by
-// +link{TreeGridField.treeField} shows a heirarchical +link{Tree}.  A TreeGrid is not limited
+// +link{TreeGridField.treeField} shows a hierarchical +link{Tree}.  A TreeGrid is not limited
 // to displaying just the +link{Tree} column - you can define additional columns (via
 // +link{TreeGrid.fields}) which will render just like the columns of a +link{ListGrid}, and
 // support all of the functionality of ListGrid columns, such as
@@ -173,6 +173,23 @@ isc.defineClass("TreeGridBody", isc.GridBody).addProperties({
             // TreeGrid.click() will actually open the folder
             
             return isc.EH.STOP_BUBBLING;
+        } else if (this.grid.clickInCheckboxArea(node) && this.canSelectRecord(node)) {
+
+            // Toggle node selection state
+            var selectionType = this.grid.selectionType;
+            if (selectionType == isc.Selection.SINGLE) {
+                this.deselectAllRecords();
+                this.selectRecord(node);
+            } else if (selectionType == isc.Selection.SIMPLE) {
+                if (this.selection.isSelected(node)) this.deselectRecord(node);
+                else this.selectRecord(node);
+            }
+
+            // Note: if you click in the checkbox area to select a node, no nodeClick or
+            // folderClick events will be fired, since we've already taken action in
+            // response to your click by selecting/deselected the node.
+            // Return EH.STOP_BUBBLING to stop propogation.
+            return isc.EH.STOP_BUBBLING;
         } else {
             return this.Super("mouseDown", arguments);
         }
@@ -185,16 +202,18 @@ isc.defineClass("TreeGridBody", isc.GridBody).addProperties({
     //		@return	(boolean)	false == cancel further event processing
     //<
     mouseUp : function () {
-    	// get the item that was clicked on -- bail if not found
-    	var rowNum = this.getEventRow(),
-    		node = this.grid.data.get(rowNum);
-    	if (node != null && this.grid.clickInOpenArea(node)) {
+        // get the item that was clicked on -- bail if not found
+        var rowNum = this.getEventRow(),
+            node = this.grid.data.get(rowNum);
+        if (node != null &&
+            (this.grid.clickInOpenArea(node) || this.grid.clickInCheckboxArea(node)))
+        {
             // don't select the row; on click() we'll open the folder
-    		return isc.EH.STOP_BUBBLING;
-    	} else {
+            return isc.EH.STOP_BUBBLING;
+        } else {
             // proceed to super (select the row)
-    		return this.Super("mouseUp", arguments);
-    	}
+            return this.Super("mouseUp", arguments);
+        }
     }
      
 });
@@ -205,9 +224,10 @@ isc.TreeGrid.addClassProperties({
 	TREE_FIELD : {name:"nodeTitle", width:"*", treeField:true,
 
     			getCellValue : function (list,record,recordNum,coNum) {
+                    if (!list.getNodeTitle) return;
                     return list.getNodeTitle(record,recordNum, this)
                 },
-                    
+                canFilter: false,    
                 // return the title for the Header Button over the tree column.
                 
                 getFieldTitle : function (viewer, fieldNum) {
@@ -239,7 +259,6 @@ isc.TreeGrid.addProperties({
 	//<
 
     //> @attr treeGrid.initialData (List of TreeNode : null : IRA)
-    //
     // You can specify the initial set of data for a databound TreeGrid using this property.
     // The value of this attribute should be a list of <code>parentId</code> linked
     // +link{TreeNode}s in a format equivalent to that documented on +link{Tree.data}.
@@ -250,11 +269,13 @@ isc.TreeGrid.addProperties({
     // @example initialData
     //<
     
-    //> @attr   treeGrid.loadDataOnDemand   (boolean : null : IRW)
+    //> @attr treeGrid.loadDataOnDemand   (boolean : null : IRW)
     // For databound treeGrid instances, should the entire tree of data be loaded on initial 
     // fetch, or should folders load their children as they are opened.
     // <P>
-    // If unset the default +link{resultTree.loadDataOnDemand} setting will be used.
+    // If unset, calling +link{fetchData()} will default it to true, otherwise, if a ResultTree
+    // is passed to +link{setData()}, the +link{resultTree.loadDataOnDemand} setting is
+    // respected.
     // <P>
     // Note that when using <code>loadDataOnDemand</code>, every node returned by the server is
     // assumed be a folder which may load further children.  See
@@ -266,24 +287,38 @@ isc.TreeGrid.addProperties({
     //<
     
 
-    //> @attr treeGrid.autoFetchAsFilter (boolean : false : IR)
-    // With +link{loadDataOnDemand:true}, TreeGrids fetch data by selecting the child nodes of
-    // each parent, which should be exact match, so default to autoFetchAsFilter:false.
-    // See +link{listGrid.autoFetchAsFilter} for details.
+    //> @attr treeGrid.autoFetchTextMatchStyle (TextMatchStyle : "exact" : IR)
+    // With +link{loadDataOnDemand}:true, TreeGrids fetch data by selecting the child nodes of
+    // each parent, which should be exact match, so we default to
+    // <code>autoFetchTextMatchStyle:"exact"</code>.
+    // See +link{listGrid.autoFetchTextMatchStyle} for details.
     //
     // @group dataBinding
     // @visibility external
     //<
-    autoFetchAsFilter:false,
+    autoFetchTextMatchStyle:"exact",
     
+    //> @attr treeGrid.cascadeSelection (boolean : false : [IR])
+    // Should children be selected when parent is selected? And should parent be
+    // selected when any child is selected?
+    // @visibility external
+    //<
+    cascadeSelection:false,
+
+    //> @attr treeGrid.showPartialSelection (boolean : false : [IRW])
+    // Should partially selected parents be shown with special icon?
+    // @visibility external
+    //<
+    showPartialSelection:false,
+
     //> @attr treeGrid.treeRootValue (any : null : IRA)
     // For databound trees, use this attribute to supply a +link{DataSourceField.rootValue} for this
     // component's generated data object.
     // <P> 
     // This property allows you to have a particular component navigate a tree starting from any
     // given node as the root.
-    // @visibility external
     // @group databinding
+    // @visibility external
     //<
     
     
@@ -326,9 +361,25 @@ isc.TreeGrid.addProperties({
     //> @attr treeGridField.treeField (boolean : see below : IRW)
     //
     // The field containing <code>treeField: true</code> will display the +link{Tree}.  If no
-    // field specifies this property, the first field in +link{TreeGrid.fields} is assigned to
+    // field specifies this property, if a field named after the +link{Tree.titleProperty} of
+    // the Tree is present in +link{TreeGrid.fields}, that field will show the tree.  Note that
+    // when using a DataSource, you typically define the title field via
+    // +link{DataSource.titleField} and the generated +link{ResultTree} automatically uses this
+    // field.
+    //
+    // If none of the above rules apply, the first field in +link{TreeGrid.fields} is assigned to
     // display the +link{Tree}.
+    //
     // @group treeField
+    // @visibility external
+    //<
+
+    //> @attr treeGridField.canExport (Boolean : null : IR)
+    //	Dictates whether the data in this field be exported.  Explicitly set this
+    //  to false to prevent exporting.  Has no effect if the underlying 
+    //  +link{dataSourceField.canExport, dataSourceField} is explicitly set to 
+    //  canExport: false.
+    //
     // @visibility external
     //<
 
@@ -340,7 +391,7 @@ isc.TreeGrid.addProperties({
 	treeFieldTitle:"Name",		
     
     //> @attr treeGrid.autoAssignTreeField (boolean : true : IR)
-    // If no field was specified as the "tree-field" (showing indentations for tree hierachy
+    // If no field was specified as the "tree-field" (showing indentations for tree hierarchy
     // and tree icons), should we assign one of the other fields to be the tree-field?
     // Useful when we want to display a tree or partial tree as a flattened list.
     // @group treeField
@@ -421,6 +472,12 @@ isc.TreeGrid.addProperties({
     // <P>
     // The default action for a drop on a leaf node is to place the node in that leaf's parent
     // folder.  This can be customized by overriding +link{folderDrop()}.
+    // <P>
+    // Note that enabling <code>canDropOnLeaves</code> is usually only appropriate where you
+    // intend to add a custom +link{folderDrop()} implementation that <b>does not</b> add a
+    // child node under the leaf.  If you want to add a child nodes to a leaf, instead of
+    // enabling canDropOnLeaves, use empty folders instead - see +link{Tree.isFolder} for how
+    // to control whether a node is considered a folder.
     //
     // @visibility external
     //<
@@ -601,7 +658,7 @@ isc.TreeGrid.addProperties({
     // custom image for an individual node, set the +link{customIconProperty} directly on
     // the node.
     // @group treeIcons
-    //      @visibility external
+    // @visibility external
     // @example nodeTitles
     //<
     nodeIcon:"[SKIN]/file.gif",    
@@ -633,52 +690,16 @@ isc.TreeGrid.addProperties({
     showDropIcons:true,
     
     //> @attr   treeGrid.customIconProperty   (String : "icon" : [IRW])
-    // This property allows the developer to customize the icon displayed next to a node.
-    // Set <code>node[grid.customIconProperty]</code> to the URL of the desired icon to display and
-    // it will be shown instead of the standard +link{nodeIcon} for this node.<br>
-    // Note that if +link{TreeGrid.showCustomIconOpen} and/or +link{TreeGrid.showCustomIconDrop} 
-    // is true for this grid, customized icons for folder nodes will be appended with the 
-    // +link{treeGrid.dropIconSuffix} or +link{treeGrid.openIconSuffix} suffixes on state change 
-    // as with the standard +link{TreeGrid.folderIcon} for this treeGrid.  Also note that for
-    // custom folder icons, the +link{treeGrid.closedIconSuffix} will never be appened.
+    // This property allows the developer to rename the 
+    // +link{TreeNode.icon, default node.icon} property.
     // @group treeIcons
     // @visibility external
     //<
     customIconProperty:"icon",
-    
-    //> @attr   treeGrid.showCustomIconOpen   (boolean : false : [IRWA])
-    // Should folder nodes showing custom icons (set via the +link{customIconProperty}),
-    // show open state images when the folder is opened.
-    // If true, the +link{openIconSuffix} will be appended to the image URL
-    // (so <code>"customFolder.gif"</code> might be replaced with 
-    // <code>"customFolder_open.gif"</code>).<br>
-    // <b>Note</b> that the +link{closedIconSuffix} is never appended to custom folder icons.<br>
-    // Can be overridden at the node level via the +link{customIconOpenProperty} property.
-    // @group treeIcons
-    // @visibility external
-    //<
-    showCustomIconOpen:false,
-    
-    //> @attr   treeGrid.showCustomIconDrop   (boolean : false : [IRWA])
-    // Should folder nodes showing custom icons (set via the +link{treeGrid.customIconProperty}),
-    // show drop state images when the user is drop-hovering over the folder.
-    // If true, the +link{treeGrid.dropIconSuffix} will be appended to the image URL
-    // (so <code>"customFolder.gif"</code> might be replaced with 
-    // <code>"customFolder_drop.gif"</code>).<br>
-    // Can be overridden at the node level via the +link{treeGrid.customIconDropProperty} property.
-    // @group treeIcons
-    // @visibility external
-    //<
-    showCustomIconDrop:false,
 
     //> @attr   treeGrid.customIconOpenProperty (string : "showOpenIcon" : [IRWA])
-    // For folder nodes showing custom icons (set via the +link{customIconProperty}),
-    // this property allows the developer to specify on a per-node basis whether a
-    // open state icon should be displayed when the folder is open.
-    // Set <code>node[treeGrid.customIconOpenProperty]</code> to true to show the open state
-    // icons, or false to suppress this.<br>
-    // If not specified, this behavior is determined by <code>grid.showCustomIconOpen</code>
-    // for this node.
+    // This property allows the developer to rename the 
+    // +link{TreeNode.showOpenIcon, default node.showOpenIcon} property.
     // @see treeGrid.customIconProperty
     // @see treeGrid.showCustomIconOpen
     // @visibility external
@@ -687,20 +708,42 @@ isc.TreeGrid.addProperties({
     customIconOpenProperty:"showOpenIcon",
     
     //> @attr   treeGrid.customIconDropProperty (string : "showDropIcon" : [IRWA])
-    // For folder nodes showing custom icons (set via the +link{treeGrid.customIconProperty}),
-    // this property allows the developer to specify on a per-node basis whether a
-    // drop state icon (with +link{treeGrid.dropIconSuffix}) should be displayed when the 
-    // user drop-hovers over this folder.<br>
-    // Set <code>node[treeGrid.customIconDropProperty]</code> to true to show the drop state
-    // icons, or false to suppress this.<br>
-    // If not specified this this behavior is determined by <code>treeGrid.showCustomIconDrop</code>
-    // for this node.
+    // This property allows the developer to rename the 
+    // +link{TreeNode.showDropIcon, default node.showDropIcon} property.
     // @see treeGrid.customIconProperty
     // @see treeGrid.showCustomIconDrop
     // @visibility external
     // @group treeIcons
     //<
     customIconDropProperty:"showDropIcon",
+
+    //> @attr   treeGrid.showCustomIconOpen   (boolean : false : [IRWA])
+    // Should folder nodes showing custom icons (set via the +link{customIconProperty}),
+    // show open state images when the folder is opened.
+    // If true, the +link{openIconSuffix} will be appended to the image URL
+    // (so <code>"customFolder.gif"</code> might be replaced with 
+    // <code>"customFolder_open.gif"</code>).<br>
+    // <b>Note</b> that the +link{closedIconSuffix} is never appended to custom folder icons.<br>
+    // Can be overridden at the node level via the default property +link{treeNode.showOpenIcon}
+    // and that property can be renamed via +link{treeGrid.customIconOpenProperty}.
+    // @group treeIcons
+    // @visibility external
+    //<
+    showCustomIconOpen:false,
+    
+    //> @attr   treeGrid.showCustomIconDrop   (boolean : false : [IRWA])
+    // Should folder nodes showing custom icons (set via the +link{treeGrid.customIconProperty},
+    // default +link{treeNode.icon}),
+    // show drop state images when the user is drop-hovering over the folder.
+    // If true, the +link{treeGrid.dropIconSuffix} will be appended to the image URL
+    // (so <code>"customFolder.gif"</code> might be replaced with 
+    // <code>"customFolder_drop.gif"</code>).<br>
+    // Can be overridden at the node level via the default property +link{treeNode.showDropIcon}
+    // and that property can be renamed via +link{treeGrid.customIconDropProperty}.
+    // @group treeIcons
+    // @visibility external
+    //<
+    showCustomIconDrop:false,
 
     // ---------------------------------
     // DEPRECATED ICON PROPERTIES:
@@ -747,7 +790,7 @@ isc.TreeGrid.addProperties({
 	manyItemsImage:"[SKIN]folder_file.gif",
     
     //>	@attr	treeGrid.showConnectors (boolean : false : [IRW])
-    // Should this treeGrid show connector lines illustrating the tree's hierachy?
+    // Should this treeGrid show connector lines illustrating the tree's hierarchy?
     // <P>
     // For the set of images used to show connectors, see +link{connectorImage}.
     // <P>
@@ -766,7 +809,7 @@ isc.TreeGrid.addProperties({
     //>	@attr	treeGrid.showFullConnectors (boolean : true : [IRW])
     // If +link{treeGrid.showConnectors} is true, this property determines whether we should show
     // showing vertical continuation lines for each level of indenting within the tree. Setting to
-    // false will show only the hierachy lines are only shown for the most indented path ("sparse"
+    // false will show only the hierarchy lines are only shown for the most indented path ("sparse"
     // connectors).
     // @group treeIcons
     // @visibility external
@@ -873,16 +916,20 @@ isc.TreeGrid.addProperties({
     //<
 	connectorImage:"[SKIN]connector.gif",
     
-    // Disble groupBy for TreeGrids altogether - we're already showing data-derived hierachy!
+    // Disble groupBy for TreeGrids altogether - we're already showing data-derived hierarchy!
     canGroupBy: false,
     
     
     ignoreEmptyCriteria: false,
-    
+ 
+    // users tend to navigate trees by opening and closing nodes more often than by scrolling,
+    // so optimize for that use case.
+    drawAllMaxCells:0,
+    drawAheadRatio:1.0,
     
     // heavily used strings for templating
     _openIconIDPrefix: "open_icon_",
-    _extraIconIDPreix:"extra_icon_",
+    _extraIconIDPrefix:"extra_icon_",
     _iconIDPrefix: "icon_",
     _titleField: "nodeTitle"
 
@@ -959,6 +1006,7 @@ _initTreeField : function () {
 
         // use the first field if none were marked as the tree field
         if (treeFieldNum == null) treeFieldNum = 0;
+        if (this.isCheckboxField(this.fields[treeFieldNum])) treeFieldNum +=1;
 
         // store the chosen fieldNum
         this._treeFieldNum = treeFieldNum;
@@ -1047,20 +1095,9 @@ getOpenState : function () {
         
     this._addNodeToOpenState(tree, root, openState);
     return isc.Comm.serialize(openState);
-},        
-_addNodeToOpenState : function (tree, node, openState) {
-    if (!tree.isOpen(node) || !tree.isLoaded(node)) return false;
-    var children = tree.getFolders(node),
-        hasOpenChildren = false;
-    if (children != null) {
-        for (var i = 0; i < children.length; i++) {
-            hasOpenChildren = this._addNodeToOpenState(tree, children[i], openState) 
-                              || hasOpenChildren;
-        }
-    }
-    openState[openState.length] = tree.getPath(node);
-    return true;
-},
+},  
+// _addNodeToOpenState implemented in ListGrid
+// Used for groupTree open/closed state maintenance logic
     
 //>	@method	treeGrid.setOpenState() 
 // Reset this set of open folders within this grid's data to match the 
@@ -1107,6 +1144,15 @@ getSelectedPaths : function () {
     }
     return isc.Comm.serialize(selectedPaths);
 },
+
+
+// ----------------------------------------------------------------------------
+// panelHeader related methods
+
+showActionInPanel : function (action) {
+    return this.Super("showActionInPanel", arguments);
+},
+
 
 //>	@method	treeGrid.setSelectedPaths() 
 // Reset this grid's selection to match the +link{type:listGridSelectedState} object passed in.<br>
@@ -1315,8 +1361,9 @@ _cellContextClick : function (record, recordNum, fieldNum) {
 handleEditCellEvent : function (recordNum, fieldNum) {
 
     var record = this.getRecord(recordNum);
-	// if they're clicking in the open area of the list, don't allow editing to proceed
-	if (this.clickInOpenArea(record)) return false;
+    // if they're clicking in the open or checkbox area of the list,
+    // don't allow editing to proceed
+    if (this.clickInOpenArea(record) || this.clickInCheckboxArea(record)) return false;
 	
 	// return the results of a call to the superclass method
 	return this.Super("handleEditCellEvent",arguments);
@@ -1350,7 +1397,8 @@ getEditFormItemFieldWidths : function (record) {
     if (!this.showRoot) level--;
     var indentSize = level * this.indentSize;
     indentSize += this.iconSize + this.getOpenerIconSize(record);
-    if (this.getExtraIcon(record)) indentSize += this.iconSize;
+    if (this._getCheckboxIcon(record)) indentSize += this._getCheckboxFieldImageWidth();
+    else if (this.getExtraIcon(record)) indentSize += this.iconSize;
     
     var widths = this.Super("getEditFormItemFieldWidths", arguments),
         treeFieldNum = this.getTreeFieldNum();
@@ -1394,9 +1442,9 @@ rowClick : function (record, recordNum, fieldNum) {
 
     var node = record;
 
-	// if the're clicking in the open area of the list, 
+	// if the're clicking in the open or checkbox area of the list, 
 	//  it's already been processed properly on mouseDown so just bail
-	if (this.clickInOpenArea(node)) return false;
+	if (this.clickInOpenArea(node) || this.clickInCheckboxArea(node)) return false;
 	
 	this._lastRecordClicked = recordNum;
 	if (recordNum < 0 || fieldNum < 0) return false; // not in body
@@ -1429,10 +1477,16 @@ rowClick : function (record, recordNum, fieldNum) {
 // @visibility external
 //<
 recordDoubleClick : function (viewer, record, recordNum, field, fieldNum, value, rawValue) {
-	// if the're clicking in the open area of the list, 
+	// if the're clicking in the open or checkbox area of the list, 
 	//  it's already been processed properly on mouseDown so just bail
-	if (this.clickInOpenArea(record)) return false;
-    
+	if (this.clickInOpenArea(record) || this.clickInCheckboxArea(record)) return false;
+	// If this is an editable grid, don't toggle the folder, but do return true to allow
+	// editing to proceed.
+	if (this.isEditable() && this.editEvent == isc.EH.DOUBLE_CLICK &&
+	    this.canEditCell(recordNum,fieldNum)) 
+	{
+	    return true;
+	}
 	if (this.data.isFolder(record)) {
 		return this.toggleFolder(record);
 	} else
@@ -1480,7 +1534,7 @@ openLeaf : function (node) {},
 // Return an icon to display as a drag tracker when the user drags some node(s).<br>
 // Default implementation:<br>
 // If multiple nodes are selected and +link{TreeGrid.manyItemsImage} is defined, this
-// image wlll be returned<br>
+// image will be returned.<br>
 // Otherwise returns the result of +link{TreeGrid.getIcon()} for the first node being 
 // dragged.
 // <p>
@@ -1936,28 +1990,36 @@ updateDropFolder : function (newFolder) {
 // treeGrid, without requiring any user interaction.<br>
 // See the +link{group:dragging} documentation for an overview of grid drag/drop data
 // transfer.
-// @param sourceGrid (ListGrid) source grid from which the records will be tranferred
+// @param sourceGrid (ListGrid) source grid from which the records will be transferred
 // @param [folder] (TreeNode) parent node into which records should be dropped - if null
 //    records will be transferred as children of the root node.
 // @param [index] (integer) target index (drop position) within the parent folder 
+// @param [callback] (Callback) optional callback to be fired when the transfer process has 
+//                       completed.  The callback will be passed a single parameter "records",
+//                       the list of nodes actually transferred to this component (it is called 
+//                       "records" because this logic is shared with +link{class:ListGrid}).
 // @group dragging
 // @example dragTree
 // @visibility external
 //<
-transferSelectedData : function (source, folder, index) {
+transferSelectedData : function (source, folder, index, callback) {
     
-    if (!this.isValidTransferSource(source)) return;
+    if (!this.isValidTransferSource(source)) { 
+        if (callback) this.fireCallback(callback);
+        return; 
+    }
     
     // don't check willAcceptDrop() this is essentially a parallel mechanism, so the developer 
     // shouldn't have to set that property directly.
     if (index == null) index = 0;
     if (folder == null) folder = this.data.getRoot();
     
-    // Call getDragData() to pull the records out of the source's dataSet
-    // Note we don't need to call 'transferDragData' here that'll be handled by folderDrop()
+    // Call cloneDragData() to pull the records out of the source's dataSet
+    // Note we don't need to call 'transferDragData' here - that is all handled after 
+    // transferNodes now, potentially by a server callback
     
-    var nodes = source.getDragData();
-    this.transferNodes(nodes, folder, index, source);
+    var nodes = source.cloneDragData();
+    this.transferNodes(nodes, folder, index, source, callback);
 },
 
 //>	@method	treeGrid.drop()	(A)
@@ -1976,7 +2038,7 @@ drop : function () {
     // might be incorrectly overidden.
 
 	// get what was dropped and where it was dropped
-	var moveList = isc.EH.dragTarget.getDragData(),
+	var moveList = isc.EH.dragTarget.cloneDragData(),
 		recordNum = this.getEventRecordNum(),
         position = this.getReorderPosition(recordNum),
         // dropping in the body in open space means add to root
@@ -2038,6 +2100,12 @@ drop : function () {
                         this.data.getChildren(newParent).indexOf(dropItem);
         }
     }
+    
+    // if onFolderDrop exists - allow it to cancel the drop
+    
+    if (this.onFolderDrop != null &&  
+        (this.onFolderDrop(moveList,newParent,index,isc.EH.dragTarget) == false)) return false;
+    
     this.folderDrop(moveList, newParent, index, isc.EH.dragTarget);
 
 	// open the folder the nodes were dropped into
@@ -2092,19 +2160,31 @@ drop : function () {
 //                        occurring.  Only passed if +link{canReorderRecords} is true.
 // @param sourceWidget (Canvas) The component that is the source of the nodes (where the nodes
 //                              were dragged from).
+// @param [callback] (Callback) optional callback to be fired when the transfer process has 
+//                       completed.  The callback will be passed a single parameter "records",
+//                       the list of nodes actually transferred to this component (it is called
+//                       "records" because this is logic shared with +link{class:ListGrid})
 //
 // @visibility external
 // @example treeDropEvents
 //<
-folderDrop : function (nodes, folder, index, sourceWidget) {
+folderDrop : function (nodes, folder, index, sourceWidget, callback) {
 
-    this.transferNodes(nodes, folder, index, sourceWidget);
+    this.transferNodes(nodes, folder, index, sourceWidget, callback);
 
 },
 
 
 // Helper for folderDrop and transferSelectedData
-transferNodes : function (nodes, folder, index, sourceWidget) {
+transferNodes : function (nodes, folder, index, sourceWidget, callback) {
+
+    // storeTransferState returns false if a prior transfer is still running, in which case
+    // we just bail out (transferNodes() will be called again when the first transfer 
+    // completes, so we aren't abandoning this transfer, just postponing it) 
+    if (!this._storeTransferState("transferNodes", nodes, folder, index, 
+                                  sourceWidget, callback)) {
+        return;
+    }
 
     // If parent folder is null, we're dropping into the TreeGrid body, which implies root
     folder = folder || this.data.root;
@@ -2124,6 +2204,7 @@ transferNodes : function (nodes, folder, index, sourceWidget) {
         if (dataSource != null && this.data != null && 
             isc.ResultTree && isc.isA.ResultTree(this.data)) 
         {
+            this._dropRecords[0].noRemove = true;
             var wasAlreadyQueuing = isc.rpc.startQueue();
             for (var i = 0; i < nodes.length; i++) {
                 
@@ -2133,11 +2214,8 @@ transferNodes : function (nodes, folder, index, sourceWidget) {
                 this._updateDataViaDataSource(node, dataSource, { 
                     oldValues : oldValues,  
                     parentNode : this.data.getParent(nodes[i])
-                });                          
+                }, sourceWidget);                          
             }
-            // send the queue unless we didn't initiate queuing
-            if (!wasAlreadyQueuing) isc.rpc.sendQueue();
-            return;
             
         } else {
             // move the nodes within the tree
@@ -2173,49 +2251,64 @@ transferNodes : function (nodes, folder, index, sourceWidget) {
                 this.logInfo("Recategorizing dropped nodes in dataSource:" + sourceDS.getID());
                 //<DEBUG
             }
+            
+            // Remember that we performed updates rather than adds, so we don't remove records
+            // later on in transferDragData()
+            this._dropRecords[0].noRemove = true;
     
             var wasAlreadyQueuing = isc.rpc.startQueue();
             for (var i = 0; i < nodes.length; i++) {
-                var node = isc.addProperties({}, nodes[i]);
+                var node = {};
+                var pks = sourceDS.getPrimaryKeyFieldNames();
+                for (var j = 0; j < pks.length; j++) {
+                    node[pks[j]] = nodes[i][pks[j]];
+                }
                 if (canRecat) {
                     node[relationship.parentIdField] = folder[relationship.idField];
                 }
                 isc.addProperties(node, 
                     this.getDropValues(node, sourceDS, folder, index, sourceWidget));
 
-                this._updateDataViaDataSource(node, sourceDS);
+                this._updateDataViaDataSource(node, sourceDS, null, sourceWidget);
             }
-            // send the queue unless we didn't initiate queuing
-            if (!wasAlreadyQueuing) isc.rpc.sendQueue();
-            return;
-        }
+        } else {
 
-        // calling transferDragData gives the source widget a chance to clear out if 
-        // we're doing a move, for example.
-        nodes = sourceWidget.transferDragData();
-
-        var wasAlreadyQueuing = isc.rpc.startQueue();
-        for (var i = 0; i < nodes.length; i++) {
-            var data = nodes[i],
-                resultTree = this.data;
-            if (resultTree) {
-                data[resultTree.parentIdField] = folder[resultTree.idField];
+            var wasAlreadyQueuing = isc.rpc.startQueue();
+            for (var i = 0; i < nodes.length; i++) {
+                var data = nodes[i],
+                    resultTree = this.data;
+                if (resultTree) {
+                    data[resultTree.parentIdField] = folder[resultTree.idField];
+                }
+                isc.addProperties(node, 
+                    this.getDropValues(data, sourceDS, folder, index, sourceWidget));
+                this._addIfNotDuplicate(data, sourceDS, sourceWidget, null, index, folder);
             }
-            isc.addProperties(node, 
-                this.getDropValues(data, sourceDS, folder, index, sourceWidget));
-                this._addIfNotDuplicate(data, sourceDS, null, null, index, folder);
         }
-        // send the queue unless we didn't initiate queuing
-        if (!wasAlreadyQueuing) isc.rpc.sendQueue();
     } else {
         // add the dropped nodes to the tree at the specified point - they could be rows from a
         // ListGrid, or anything - it's up to the developer to have it make sense
         //this.logWarn("adding dragData at parent: " + newParent + ", position: " + position);
-        nodes = sourceWidget.transferDragData();
         for (var i = 0; i < nodes.length; i++) {
-            this._addIfNotDuplicate(nodes[i], sourceDS, null, null, index, folder);
+            this._addIfNotDuplicate(nodes[i], sourceDS, sourceWidget, null, index, folder);
         }
     }
+    
+    // If this._transferDuplicateQuery is undefined or 0,we didn't need to fire any server 
+    // queries, so we can call transferDragData to complete the transfer and send the queue 
+    // of updates to the server 
+    if (!this._transferDuplicateQuery) {
+        isc.Log.logDebug("Invoking transferDragData from inside transferNodes - no server " +
+                         "queries needed?", "dragDrop");
+        sourceWidget.transferDragData(this._transferExceptionList, this);
+        if (dataSource) {
+            // send the queue unless we didn't initiate queuing
+            if (!this._wasAlreadyQueuing) isc.rpc.sendQueue();
+        }
+    }
+    
+    this._transferringRecords = false;
+    
 },
 
 // Tree-specific HTML generation
@@ -2241,7 +2334,7 @@ transferNodes : function (nodes, folder, index, sourceWidget) {
 //      @visibility internal
 //<
 // iconPadding - padding between the folder open/close icon and text.
-// Make this customizeable, but not exposed - very unlikely to be modified
+// Make this customizable, but not exposed - very unlikely to be modified
 iconPadding:3,
 _$treeCellTemplate:[
     "<table cellpadding=0 cellspacing=0 class='",       // [0]
@@ -2358,13 +2451,16 @@ _getTreeCellTitleArray : function (value, record, recordNum, fieldNum, showOpene
         }
     } else template[5] = null;
     
-    var extraIcon = this.getExtraIcon(record),
-        extraIconID = (recordNum != null ? this._extraIconIDPrefix+recordNum : null), 
+    var checkboxIcon = this._getCheckboxIcon(record),
+        extraIcon = checkboxIcon || this.getExtraIcon(record),
+        extraIconID = (recordNum != null ? this._extraIconIDPrefix+recordNum : null),
+        extraIconSize = (checkboxIcon != null ?  this._getCheckboxFieldImageWidth() : this.iconSize),
         icon = this.getIcon(record),
-        iconID = (recordNum != null ? this._iconIDPrefix+recordNum : null);
+        iconID = (recordNum != null ? this._iconIDPrefix+recordNum : null)
+    ;
         
     // extra icon if there is one
-    template[6] = (extraIcon ? this.getIconHTML(extraIcon, extraIconID) : null);
+    template[6] = (extraIcon ? this.getIconHTML(extraIcon, extraIconID, extraIconSize) : null);
     // folder or file icon
     template[7] = this.getIconHTML(icon, iconID, record.iconSize);
     
@@ -2374,6 +2470,29 @@ _getTreeCellTitleArray : function (value, record, recordNum, fieldNum, showOpene
     template[15] = this.wrapCells ? null : "<NOBR>"
     template[16] = value;
     return template;
+},
+
+
+
+//> @method TreeGrid.getCellAlign()
+// Return the horizontal alignment for cell contents. Default implementation will always
+// left-align the special +link{treeGridField.treeField} [or right-align if the page is in
+// RTL mode] - otherwise will return +link{listGridField.cellAlign} if specified, otherwise
+// +link{listGridField.align}.
+//
+//
+// @param   record (ListGridRecord) this cell's record
+// @param	rowNum	(number)	row number for the cell
+// @param	colNum	(number)	column number of the cell
+// @return	(Alignment)     Horizontal alignment of cell contents: 'right', 'center', or 'left'	
+// @visibility external
+//< 
+getCellAlign : function (record, rowNum, colNum) {
+    var field = this.getField(colNum);
+    if (field && field.treeField) {
+        return this.isRTL() ? "right" : "left";
+    }
+    return this.Super("getCellAlign", arguments);
 },
 
 
@@ -2389,6 +2508,7 @@ getCellValue : function (record, rowNum, colNum, a, b, c, d) {
 },
 
 // overridden to create/clear draw cache
+// (Fired for both frozen and normal body)
 bodyDrawing : function (body,a,b,c,d) {
     this._drawCache = {};
     return this.invokeSuper(isc.TreeGrid, "bodyDrawing", a,b,c,d);
@@ -2417,6 +2537,8 @@ getNodeTitle : function (record, recordNum, field) {
 
     
     if (field.name && field.name != this._titleField) {
+        
+        if (recordNum == -1) return record[field.name];
         return this.getEditedRecord(recordNum)[field.name];
     }
 
@@ -2486,6 +2608,36 @@ clickInOpenArea : function (node) {
 	}
 },
 
+//> @method treeGrid.clickInCheckboxArea() (A)
+// For a given click, was it in the checkbox area?
+// @param  node (TreeNode) tree node clicked on
+//
+// @return (boolean)       true == click was in checkbox area, false == normal click
+//<
+clickInCheckboxArea : function (node) {
+	if (this.selectionAppearance != this._$checkbox) return false;
+	
+	// get some dimensions
+	var treeFieldNum = this.getTreeFieldNum(),
+        body = this.getFieldBody(treeFieldNum),
+        localFieldNum = this.getLocalFieldNum(treeFieldNum),
+		fieldLeft = body.getColumnLeft(localFieldNum),
+		fieldWidth = body.getColumnWidth(localFieldNum),
+		openAreaWidth = this.getOpenAreaWidth(node),
+		checkboxAreaWidth = this._getCheckboxFieldImageWidth(),
+		x = body.getOffsetX()
+	;
+
+	// textDirection: switch based on drawing in left-to-right (default) or right-to-left order
+	if (this.isRTL()) {
+		var fieldRight = fieldLeft + fieldWidth;
+		return (x >= (fieldRight - openAreaWidth - checkboxAreaWidth) &&
+		    x <= (fieldRight - openAreaWidth));
+	} else {
+		return (x >= (fieldLeft + openAreaWidth) &&
+		    x < (fieldLeft + openAreaWidth + checkboxAreaWidth));
+	}
+},
 
 //>	@method	treeGrid.getIndentHTML()	(A)
 //			return the HTML to indent a record
@@ -2654,10 +2806,10 @@ _shouldShowNextLine : function (record) {
 // @param   isOpen   (boolean)  Is the node an open folder?
 // @param   startLine (boolean)   True if the previous row in the TreeGrid is not a sibling
 //                                  or the parent of the node in question.  (Node effectively
-//                                  starts a new hierachy continuation line).
+//                                  starts a new hierarchy continuation line).
 // @param   endLine   (boolean)   True if the next row in the TreeGrid is not a sibling
 //                                  of the node in question.  (Node effectively ends a
-//                                  hierachy continuation line).
+//                                  hierarchy continuation line).
 // @return	(string)		URL for the icon to show the node's state
 //
 // @visibility internal
@@ -2757,9 +2909,32 @@ getOpenerImageURL : function (hasChildren, isOpen, startLine, endLine) {
     }
 },
 
-//>	@method	treeGrid.getExtraIcon()	(A)
+_$checkbox:"checkbox",
+_getCheckboxIcon : function (record) {
+    var icon = null;
+    if (this.selectionAppearance == this._$checkbox) {
+        if (!this.body.canSelectRecord(record)) {
+            // record cannot be selected but we want the space allocated for the checkbox anyway.
+            icon = "[SKINIMG]/blank.gif";
+        } else {
+            // checked if selected, otherwise unchecked
+            var isSel = this.selection.isSelected(record) ? true : false;
+            var isPartSel = (isSel && this.showPartialSelection &&
+                             this.selection.isPartiallySelected(record)) ? true : false;
+            icon = isPartSel ? (this.checkboxFieldPartialImage || this.booleanPartialImage)
+                             : isSel ? (this.checkboxFieldTrueImage || this.booleanTrueImage)
+                                     : (this.checkboxFieldFalseImage || this.booleanFalseImage);
+        }
+    }
+    return icon;
+},
+
+//> @method treeGrid.getExtraIcon() (A)
 // Get an additional icon to show between the open icon and folder/node icon for a particular 
 // node.
+// <P>
+// NOTE: If +link{listGrid.selectionAppearance} is <code>"checkbox"</code>, this method will
+// NOT be called. Extra icons cannot be shown for that appearance.
 //
 // @param	node (TreeNode)	tree node in question
 // @return	(URL)		URL for the extra icon (null if none required)
@@ -2775,7 +2950,7 @@ getExtraIcon : function (record) {
 // Get the appropriate icon for a node.
 // <P>
 // By default icons are derived from +link{folderIcon} and +link{nodeIcon}.
-// Custom icons for individual nodes can be overriden by setting the +link{customIconProperty}
+// Custom icons for individual nodes can be overridden by setting the +link{customIconProperty}
 // on a node.
 // <p>
 // If you want to suppress icons altogether, provide an override of this method that simply
@@ -2785,7 +2960,7 @@ getExtraIcon : function (record) {
 // value returned from this method.
 //
 // @param	node (TreeNode)	tree node in question
-// @return	(URL)		URL for icon to show for this node
+// @return	(URL)		URL for the icon to show for this node
 // @visibility external
 //<
 getIcon : function (node, defaultState) {
@@ -2941,9 +3116,23 @@ getPrintHTML : function (printProperties, callback) {
         }
     }
     return this.Super("getPrintHTML", arguments);
+},
+
+// Multiple copies of this string are prepended to the tree field, in order to indent it,
+// when exporting tree data via +link{DataBoundComponent.getClientExportData}.
+//exportIndentString:null,
+
+getExportFieldValue : function (record, fieldName, fieldIndex) {
+    var val = this.Super("getExportFieldValue", arguments);
+    
+    // Prepend tree depth indent string, ensuring that children of root are not indented
+    if (fieldIndex == this.getTreeFieldNum() && this.exportIndentString) {
+        var level = this.data.getLevel(record);
+        while (--level) val = this.exportIndentString + val;
+    }
+
+    return val;
 }
-
-
 });
 
 
@@ -3030,7 +3219,7 @@ isc.TreeGrid.registerStringMethods({
     //
     // This method is called when a context click occurs on a folder record.
     //
-    // @param viewer (TreeGrid) The TreeGrid on which the contexclick occurred.
+    // @param viewer (TreeGrid) The TreeGrid on which the contextclick occurred.
     // @param folder (TreeNode) The folder (record) on which the contextclick occurred.
     // @param recordNum (number) Index of the row where the contextclick occurred.
     //
@@ -3046,7 +3235,7 @@ isc.TreeGrid.registerStringMethods({
     //
     // This method is called when a context click occurs on a leaf record.
     //
-    // @param viewer (TreeGrid) The TreeGrid on which the contexclick occurred.
+    // @param viewer (TreeGrid) The TreeGrid on which the contextclick occurred.
     // @param leaf (TreeNode) The leaf (record) on which the contextclick occurred.
     // @param recordNum (number) Index of the row where the contextclick occurred.
     //
@@ -3066,7 +3255,7 @@ isc.TreeGrid.registerStringMethods({
     // is contextclicked - unless <code>nodeContextClick()</code> returns false, in which case
     // no further contextClick callbacks will be called.
     //
-    // @param viewer (TreeGrid) The TreeGrid on which the contexclick occurred.
+    // @param viewer (TreeGrid) The TreeGrid on which the contextclick occurred.
     // @param node (TreeNode) The node (record) on which the contextclick occurred.
     // @param recordNum (number) Index of the row where the contextclick occurred.
     //
@@ -3080,14 +3269,29 @@ isc.TreeGrid.registerStringMethods({
 	nodeContextClick : "viewer,node,recordNum",
     
     //> @method treeGrid.dataArrived
-    // Notification method fired whenever this TreeGrid recieves new data nodes from the 
+    // Notification method fired whenever this TreeGrid receives new data nodes from the 
     // dataSource. Only applies to databound TreeGrids where +link{treeGrid.data} is a 
     // +link{ResultTree} - either explicitly created and applied via +link{treeGrid.setData()} or
     // automatically generated via a +link{treeGrid.fetchData(),fetchData()} call.
     // @param parentNode (TreeNode) The parentNode for which children were just loaded
     // @visibility external
     //<
-    dataArrived:"parentNode"
+    dataArrived:"parentNode",
+    
+    //> @method treeGrid.onFolderDrop
+    // Notification method fired when treeNode(s) are dropped into a folder of this TreeGrid.
+    // This method fires before the standard +link{method:treeGrid.folderDrop} processing occurs
+    // and returning false will suppress that default behavior.
+    // @param nodes (List of TreeNode) List of nodes being dropped
+    // @param folder (TreeNode) The folder being dropped on
+    // @param index (integer) Within the folder being dropped on, the index at which the drop is
+    //                        occurring.
+    // @param sourceWidget (Canvas) The component that is the source of the nodes (where the nodes
+    //                              were dragged from).
+    // @return (boolean) return false to cancel standard folder drop processing
+    // @visibility sgwt
+    //<
+    onFolderDrop:"nodes,folder,index,sourceWidget"
 });
 
 

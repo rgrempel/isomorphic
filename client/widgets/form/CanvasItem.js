@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -107,18 +107,41 @@ isc.CanvasItem.addMethods({
         return false;
     },
     
+    // override _canFocus -- if our canvas is focusable, we're focusable
+    _canFocus : function () {
+        var canvas = this.canvas;
+        if (canvas && canvas._canFocus) return canvas._canFocus();
+        return this.canFocus || false;
+    },
+    
     // _createCanvas    Method to ensure that the canvas for this item has been instantiated
     // with appropriate properties, and added to the containerWidget as a child.
     _createCanvas : function () {
-
+        
         //>DEBUG
-        if (!isc.isAn.Object(this.canvas) && !this.canvasProperties) {
+        if (!isc.isAn.Object(this.canvas) && !this.canvasProperties && !window[this.canvas]) {
+
+            //>EditMode
+            // Visual Builder habitually creates CanvasItems which will be furnished with a canvas
+            // only after insertion into the editContext (because the canvas itself also needs to 
+            // be put into edit mode and added to the editContext).  We don't want the default 
+            // canvas because it means we get a warning in the log about creating it, then another  
+            // warning immediately that we've deleted it...
+            if (isc.designTime) return;
+            //<EditMode
+
             this.logWarn("CanvasItem: " + 
                         (this.getFieldName() ? this.getFieldName() : this.getID()) + 
                         " defined with no canvas property - creating a default " +
                         "canvas for this item.");
         }
         //<DEBUG
+        
+        // If the supplied canvas property is a string containing the ID of a valid Canvas 
+        // object, use that Canvas object 
+        if (!isc.isAn.Object(this.canvas) && isc.isA.Canvas(window[this.canvas])) {
+            this.canvas = window[this.canvas]
+        }
 
         var canvasProps = {
             // don't redraw when the form redraws - if the developer wishes to redraw this canvas
@@ -189,6 +212,11 @@ isc.CanvasItem.addMethods({
             this.canvas.setDisabled(this.isDisabled());
             this.containerWidget.addChild(this.canvas);
         }
+    },
+    
+    setCanvas : function (canvas) {
+        if (canvas) this.canvas = canvas;
+        this._createCanvas();
     },
     
     
@@ -390,7 +418,8 @@ isc.CanvasItem.addMethods({
         
         // Exception: If we're printing, write the printHTML for our canvasItem directly into
         // the item
-        if (canvas && this.containerWidget.isPrinting) {
+        
+        if (canvas && this._isPrinting()) {
             
             return canvas.getPrintHTML(this.containerWidget.currentPrintProperties);
         }

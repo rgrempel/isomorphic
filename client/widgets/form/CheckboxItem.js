@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -15,7 +15,7 @@
 
 //>	@class	CheckboxItem
 //
-// Checkbox form item, implemented with customizeable checkbox images
+// Checkbox form item, implemented with customizable checkbox images
 // @visibility external
 // @example checkboxItem
 //<
@@ -32,12 +32,16 @@ isc.CheckboxItem.addClassProperties({
 });
 
 isc.CheckboxItem.addProperties({
-    //>	@attr	CheckboxItem.titleStyle    (FormItemBaseStyle : null : IRW)
-	//  Base CSS class for this item's title text
-    // @deprecated As of Isomorphic SmartClient build 5.5, use textBoxStyle instead
-	// @group   appearance
+    
+    //> @attr CheckboxItem.titleStyle (FormItemBaseStyle : null : IRW)
+    //  Base CSS class for this item's title cell.
+    // <P>
+    // <B>Note:</B> This styling applies to the standard form item title cell for this item - it
+    // does not apply to item's +link{CheckboxItem.showLabel,label}.
+    // To modify the styling for that text, use +link{CheckboxItem.textBoxStyle} instead.
+    // @group   appearance
     // @visibility external
-	//<
+    //<
 
     //>	@attr	CheckboxItem.textBoxStyle    (FormItemBaseStyle : "labelAnchor" : IRW)
 	//  Base CSS class for this item's title text
@@ -128,7 +132,7 @@ isc.CheckboxItem.addProperties({
     // URL for the image to display when this checkbox is selected, or checked.
     // This is the base image name - if <code>showValueIconOver</code> et al are set, the
     // state (<code>"Over"</code>, <code>"Down"</code> and <code>"Disabled"</code>) will be
-    // added to this name as the user intereacts with the checkbox, as well as the 
+    // added to this name as the user interacts with the checkbox, as well as the 
     // <code>".gif"</code> extension
     // @group appearance
     // @visibility external
@@ -141,6 +145,13 @@ isc.CheckboxItem.addProperties({
     // @visibility external
     //<
     uncheckedImage:"[SKINIMG]/DynamicForm/unchecked.gif",
+    
+    //> @attr   CheckboxItem.partialSelectedImage   (SCImgURL : "[SKIN]/DynamicForm/partialcheck.gif" : IRW)
+    // URL for the image to display when this checkbox is partially selected
+    // @group appearance
+    // @visibility external
+    //<
+    partialSelectedImage:"[SKINIMG]/DynamicForm/partialcheck.gif",
     
     //>@attr checkboxItem.showUnsetImage (boolean : null : IRA)
     // Determines what image to display when the value for this checkbox is unset.
@@ -176,7 +187,7 @@ isc.CheckboxItem.addProperties({
     // @visibility external
     //<
     valueIconHeight:13
-    
+
     //> @attr CheckboxItem.valueMap (object | Array : null : IRW)
     // Object defining how the checkbox "checked" state will be mapped to the field value.<br>
     // Checkboxes only support 2 states. By default a checked checkbox will have
@@ -186,7 +197,7 @@ isc.CheckboxItem.addProperties({
     // A valueMap can modify this in 2 ways:<br>
     // - If the desired checked/unchecked values can be resolved to <code>true</code> 
     //   and <code>false</code> directly in JavaScript, the valueMap may be specified as
-    //   a 2-element array containing these values. Examples of this woud include<br>
+    //   a 2-element array containing these values. Examples of this would include<br>
     //   <code>&nbsp;&nbsp;[0,1]</code>: 
     //   In this case an unchecked checkbox would have value <code>0</code> and a checked box
     //   would have value <code>1</code><br>
@@ -194,7 +205,7 @@ isc.CheckboxItem.addProperties({
     //   In this case an unchecked checkbox would have value <code>null</code> and a checked 
     //    box would have value <code>"Some String"</code><br>
     // - More arbitrary data values can be resolved to checked / unchecked values via an
-    //   object mapping the abitrary data values to display values of <code>true</code> and
+    //   object mapping the arbitrary data values to display values of <code>true</code> and
     //   <code>false</code>. For example:<br>
     //   <code>&nbsp;&nbsp;{"A":false, "B":true}</code><br>
     //    In this case an unchecked checkbox would have value "A", and a checked box 
@@ -354,9 +365,6 @@ isc.CheckboxItem.addMethods({
     },
     
     init : function (a,b,c,d) {
-        // for backcompat, convert explicitly specified titleStyle to textBoxStyle
-        
-        if (this.titleStyle != null && !this.showTitle) this.textBoxStyle = this.titleStyle;
         
         this.invokeSuper(isc.CheckboxItem, "init", a,b,c,d);
         // for checkboxes we use 'showLabel' to determine whether we show text next to the

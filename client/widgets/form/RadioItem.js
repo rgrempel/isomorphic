@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -16,8 +16,12 @@
 
 
 //>	@class	RadioItem
-// Internal form item representing on member of a radio group.
-// @visibility internal
+// Form item representing a member of a radio group, subclassed from +link{NativeCheckboxItem}.
+// RadioItems items are created and managed automatically by +link{RadioGroupItem} instances
+// and should not be instantiated directly.
+//
+//  @treeLocation   Client Reference/Forms/Form Items/RadioGroupItem
+// @visibility external
 //<
 isc.ClassFactory.defineClass("RadioItem", "NativeCheckboxItem");
 isc.RadioItem.addProperties({

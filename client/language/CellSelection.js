@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -18,7 +18,7 @@
 //>	@class	CellSelection
 //
 //	Maintains a representation of selection over a 2-dimensional grid of objects.<br>
-//  Automtatically created to manage cell-selection on +link{class:CubeGrid} widgets.
+//  Automatically created to manage cell-selection on +link{class:CubeGrid} widgets.
 //
 // @visibility Analytics
 // @treeLocation Client Reference/System/Selection

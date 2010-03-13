@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -149,57 +149,39 @@ isc._debugMethods = {
     // @visibility external
     //<
     getStackTrace : function (args, ignoreLevels, maxLevels) {
-        // Stack traces not supported on Safari as of 1.2 
-        // - we have no way to get to the calling function or calling function's arguments object
-        //   as arguments.caller is undefined, as is arguments.callee.caller
         
-        // Stack traces are not supported on Mozilla as of Moz 1.6 (Windows)
-        // - arguments.caller is undefined, but arguments.callee.caller will give us a pointer
-        //   to the calling function, and arguments.callee.caller.arguments will give us a pointer
-        //   to the calling function's arguments object (equiv of arguments.caller in IE)
-        //   However we can't do stack traces if we have recursive calls, like this:
-        //      function f1() {f2()};
-        //      function f2(continue) { if (!continue) return f2(true);  f3()};
-        //      function f3() {Log.logWarn(Log.getStackTrace());};
-        //   The problem is that we can't get to f1 
-        //   - f3.arguments.callee.caller is f2 (arguments object is [true])
-        //   - f3.arguments.callee.caller.caller is f2 
-        //     (arguments object is STILL [true] expected to be []) - so it's the same function, 
-        //     in the same state as arguments.callee.caller
-        //   - f3.arguments.callee.caller.arguments.callee.caller is f2.  
-        //     (arguments object is STILL [true]) - so this is another pointer to the same function
-        //     with the same arguments object.
-        //   - f3.argument.callee.caller.caller.caller  is the same option - so you can keep
-        //     looking at the 'caller' property, and will get a pointer to the same function.
-        //  XXX: 
-        //  We could catch this case, and return partial stack traces looking like this:
-        //   f3 ()
-        //   f2 (a => true)
-        //   -- Recursive function call - unable to continue up stack
-        //  .. however the stack would quite frequently be cut very short due to Super(), 
-        //  apply(), fireCallback() and other recurring functions that are not themselves
-        //  recursive.  Not currently implemented.
         
+      
+        
+        
+        // If Firebug is present we can show a stack trace in it directly - see fireBugTrace()
         if (this.hasFireBug()) {
             isc.Log._fBugTrace = isc.Log._fBugTrace || 0;
             var traceId = "FBugTrace" + isc.Log._fBugTrace++;
             return this.fireBugTrace(traceId);
         } 
-        if (isc.Browser.isMoz || isc.Browser.isSafari) 
-            return " [Stack trace not supported in this browser]";
 
+        // If we can't get at the properties necessary to do a stack walk just log a warning and 
+        // quit
+        if (!arguments || !arguments.callee || !arguments.callee.caller) {
+            return " [Stack trace not supported in this browser]";
+        }
+        
         // if we are not passed a specific arguments function, default to the arguments object of
         // the function that asked for the stack trace
-        if (args == null) args = arguments.caller;
+        
+        if (args == null) args = arguments.caller || arguments.callee.caller.arguments;
         var output = []; 
         
         // skip some of the stack (useful to eg, a logging subsystem) 
         for (var i = 0; i < ignoreLevels; i++) {
             if (args.caller != null) args = args.caller;
         }
- 
-               
-        var isIE7 = isc.Browser.isIE && isc.Browser.version > 6;
+
+        // in earlier versions of IE we can use arguments.caller to walk up the stack
+        // This actually allows us to get past recursive function calls in a way that
+        // arguments.callee.caller does not - use it if available
+        var useArgsCaller = isc.Browser.isIE && isc.Browser.version <= 6;
 
         var func = args.callee;
 
@@ -208,22 +190,24 @@ isc._debugMethods = {
         var top = true;
         if (maxLevels == null) maxLevels = Number.MAX_VALUE;
         var numLevels = 0;
+        
         while (func != null && args != null && numLevels < maxLevels) {
-            if (isIE7) {
+            if (!useArgsCaller) {
                 if (seenFuncs.contains(func)) {
                     output.add("    ** recursed on " + isc.Func.getName(func, true));
                     break;
                 }
                 seenFuncs.add(func);
             }
-            output.add("    " + this.getCallTrace(args, null, (top || args.caller == null)));
+            output.add("    " + this.getCallTrace(args, null, 
+                                                    (top || args.callee.caller == null)));
             if (numLevels == 0) {
                 var frameLocalsOutput = this._getFrameLocals(args.__frame);
                 if (frameLocalsOutput) output.add(frameLocalsOutput);            
             }
             
             func = args.callee;
-            if (isIE7) {
+            if (!useArgsCaller) {
                 func = func.caller;
                 if (func) args = func.arguments;
             } else args = args.caller; 
@@ -415,6 +399,9 @@ isc._debugMethods = {
         var type = obj.type || (isc.isAn.XMLNode(obj) ? obj.getAttribute("type") : null);
         if (type != null && !isc.isAn.emptyString(type)) return "{type:" + type + "}";
 
+        var label = obj.label || (isc.isAn.XMLNode(obj) ? obj.getAttribute("label") : null);
+        if (label != null && !isc.isAn.emptyString(label)) return "{label:" + label + "}";
+        
         // length: handy for recognizing XMLNodeLists and similar objects in IE, which aren't
         // Arrays and can't be enumerated 
         if (obj.length != null) return "{length:" + obj.length + "}";
@@ -523,6 +510,8 @@ isc._debugMethods = {
         for (var i = 0; i < propertyNames.length; i++) {
             var propertyName = propertyNames[i],
                 value;
+    
+
             try {
                 // sometimes you can get permission denied on the property access rather than
                 // on the attempt to toString() the value
@@ -533,7 +522,17 @@ isc._debugMethods = {
             if (!showFunctions && isc.isA.Function(value)) continue;
             // don't show internal properties when private identifier obfuscation is on
             if (propertyName.startsWith("$")) continue;
-            output += propertyName + ": " + this.echoLeaf(value);
+
+            var echoValue;
+            if (propertyName == isc.gwtRef) {
+                // don't try to echo references to GWT Java objects.  In hosted / dev mode, our
+                // attempt to look for various identifying properties can cause the GWT engine
+                // to wedge
+                echoValue = "{GWT Java Obj}";
+            } else {
+                echoValue = this.echoLeaf(value); 
+            }
+            output += propertyName + ": " + echoValue;
             if (i + 1 < propertyNames.length) output += (multiLine ? ",\r" : ", ");
         }
         output += "}";
@@ -570,8 +569,10 @@ isc._debugMethods = {
     },
     
     echoFull : function (obj) {
-        // use serialize to "pretty print" as JSON
-        return isc.Comm.serialize(obj, true);
+        return isc.JSON.encode(obj, {
+            prettyPrint:true,
+            showDebugOutput:true
+        })
     },
 
     // variant of echo that will be compact: one line, don't recurse into arrays

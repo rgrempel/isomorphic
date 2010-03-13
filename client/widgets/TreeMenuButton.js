@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -69,9 +69,10 @@ isc.SelectionTreeMenu.addMethods({
 
 isc.ClassFactory.defineClass("TreeMenuButton", "MenuButton");
 
+// ITreeMenuButton: TreeMenu button derived from the IMenuButton -- StretchImgButton based.
+isc.ClassFactory.defineClass("ITreeMenuButton", "IMenuButton");
 
-// add contants
-isc.TreeMenuButton.addProperties({
+isc._treeMenuButtonProps = {
     
     //>	@attr	treeMenuButton.title		(string : null : IRW)
 	//      Title for this button. If not specified, the selected value from the tree will
@@ -114,7 +115,7 @@ isc.TreeMenuButton.addProperties({
     overflow:isc.Canvas.VISIBLE,
 
     // Override the menuConstructor so our menu is created as a SelectionTreeMenu
-    menuConstructor : isc.SelectionTreeMenu
+    menuConstructor : isc.SelectionTreeMenu,
     
     //>	@attr	treeMenuButton.loadDataOnDemand  (boolean : null : IRW)
 	//  If this is showing a databound treeMenu, should the data be loaded on demand or upfront.
@@ -126,34 +127,32 @@ isc.TreeMenuButton.addProperties({
     //menuDefaults : {}
     
     
-                                    
-});                                    
-
-isc.TreeMenuButton.addMethods({
+    // METHODS:
     
     // The title of the button should reflect the selected value (if there is one)
     getTitle : function () {
         // Allow the developer to specify an explicit (static) title.
         if (this.title) return this.title;
-        
-        
+      
         var selection = this.getSelectedItem();
         if (selection) {
-            var tree = this.getTree();
+            
             if (!this.showPath) {
-                return tree.getTitle(selection);
+                if (!isc.isA.Menu(this.menu)) this._createMenu(this.menu);
+                return this.menu.getItemTitle(selection);
             } else {
+                // calling getTree automatically creates this.menu
+                var tree = this.getTree();
                 var parents = tree.getParents(selection),
                     titleArray = [];
                     
                 for (var i = parents.length-1; i >=0; i--) {
                     if (!tree.showRoot && i == parents.length -1) continue;
-                    titleArray.add(tree.getTitle(parents[i]));
+                    titleArray.add(this.menu.getItemTitle(parents[i]));
                 }
-                titleArray.add(tree.getTitle(selection));
+                titleArray.add(this.menu.getItemTitle(selection));
                 return titleArray.join(this.pathSeparatorString);
-            }        
-            return tree.getTitle(selection);
+            }
         } else {
             return this.unselectedTitle;
         }
@@ -224,8 +223,9 @@ isc.TreeMenuButton.addMethods({
     setSelectedItem : function (item) {
         // We don't need a full selection object - simply hang onto the last clicked node.
         this._selectedItem = item;
-        
-        this.markForRedraw();   // to update the title...
+        // setTitle will dynamically recalc the title and update
+        // (Note that redraw() will not, if we're showing a label. Noted in StatefulCanvas).
+        this.setTitle();
 
     },
     
@@ -248,11 +248,20 @@ isc.TreeMenuButton.addMethods({
         return false;
     }
     
-});
+};
+
+isc.TreeMenuButton.addProperties(isc._treeMenuButtonProps);
+isc.ITreeMenuButton.addProperties(isc._treeMenuButtonProps);
     
     
 isc.TreeMenuButton.registerStringMethods({
     // itemSelected - handler fired when the user changes the selection.
     itemSelected : "item, oldItem"
-})
+});
+
+isc.ITreeMenuButton.registerStringMethods({
+    // itemSelected - handler fired when the user changes the selection.
+    itemSelected : "item, oldItem"
+});
+
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -318,6 +318,9 @@ isc.Func.addClassMethods({
         //  }
         if (isc.isAn.Object(expression)) {
             if (isc.isA.StringMethod(expression)) expression = expression.getValue();
+            
+            else if (expression.Action && !expression.target) expression = expression.Action;
+
 
             var varsArray = variables;
             if (isc.isA.String(varsArray)) varsArray= variables.split(",");

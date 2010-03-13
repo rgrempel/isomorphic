@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -30,8 +30,6 @@ if (isc.ListGrid) {
 // @example dateItem
 //<
 isc.defineClass("DateItem", "ContainerItem");
-
-isc.defineClass("DateTimeItem", "DateItem");
 
 isc.DateItem.addClassProperties({
 	//>	@classAttr	DateItem.mapCache		(object : {} : IRW)
@@ -104,9 +102,17 @@ isc.DateItem.addClassProperties({
                         width:60},
 	
 	//>	@type	DateItemSelectorFormat
+    // Order of pickers and which pickers are present when using a DateItem with
+    // +link{useTextField} false.
 	DAY_MONTH_YEAR:"DMY",		//	@value	isc.DateItem.DAY_MONTH_YEAR		Output fields in day, month, year order.
 	MONTH_DAY_YEAR:"MDY",		//	@value	isc.DateItem.MONTH_DAY_YEAR		Output fields in month, day, year order.
 	YEAR_MONTH_DAY:"YMD",		//	@value	isc.DateItem.YEAR_MONTH_DAY		Output fields in year, month, day order.
+
+	DAY_MONTH:"DM",		//	@value	isc.DateItem.DAY_MONTH		Output only day, month fields.
+    MONTH_DAY:"MD",		//	@value	isc.DateItem.MONTH_DAY		Output only month, day fields.
+	YEAR_MONTH:"YM",	//	@value	isc.DateItem.YEAR_MONTH		Output only year, month fields.
+    MONTH_YEAR:"MY",	//	@value	isc.DateItem.YEAR_MONTH		Output only month, year fields.
+    // @visibility external
 	//<
 
     DEFAULT_START_DATE:new Date(1995, 0, 1),
@@ -127,6 +133,11 @@ isc.DateItem.addProperties({
     
     cellPadding:0,
     
+    //> @attr dateItem.pickerConstructor (string : "DateChooser" : [IR])
+    // SmartClient class for the +link{FormItem.picker} autoChild displayed to allow the user
+    // to directly select dates.
+    // @visibility external
+    //<
     pickerConstructor: "DateChooser",
 
     //> @attr dateItem.pickerProperties (DateChooser : see below : [IR])
@@ -142,14 +153,13 @@ isc.DateItem.addProperties({
         autoHide: true
     },
 
-    //>	@attr	dateItem.useTextField   (boolean    : false : IRW)
+    //>	@attr	dateItem.useTextField   (boolean    : null : IRW)
     //      Should we show the date in a text field, or as 3 select boxes?
     // @group basics
     // @visibility external
     // @example dateItem
     //<                                            
-    useTextField:false,
-    
+ 
     //> @attr   dateItem.textAlign  (Alignment : isc.Canvas.RIGHT : IRW)
     // If +link{dateItem.useTextField} is <code>true</code> this property governs the alignment
     // of text within the text field.
@@ -158,12 +168,32 @@ isc.DateItem.addProperties({
     //<
     textAlign:isc.Canvas.RIGHT,
     
+    //> @attr   dateItem.useMask   (boolean : null : IA)
+    // If +link{dateItem.useTextField} is not <code>false</code> this property determines if
+    // an input mask should be used. The format of the mask is determined by the 
+    // +link{dateItem.inputFormat} or +link{dateItem.displayFormat} (in that order).
+    // <p>NOTE: If neither +link{dateItem.inputFormat} nor +link{dateItem.displayFormat}
+    // is set (default), the mask for input format MDY is used.
+    // @group basics
+    // @see dateItem.maskDateSeparator
+    // @visibility external
+    //<
+
+    //> @attr   dateItem.maskDateSeparator   (string : "/" : IA)
+    // If +link{dateItem.useTextField} and +link{dateItem.useMask} are both <code>true</code>
+    // this value is the separator between date components.
+    // @group basics
+    // @visibility external
+    //<
+    maskDateSeparator: "/",
+
     //> @attr dateItem.enforceDate  (boolean : false : IRWA)
     // Can this field be set to a non-date value [other than null]?
     // <P>
     // When set to true, +link{formItem.setValue()} will return false without setting the item value
     // and log a warning if passed something other than a valid date value.
-    // If a user enters a text value which cannot be parsed into a valid date, the item will
+    // If the dateItem is showing a +link{dateItem.useTextField,free-form text entry field},
+    // and a user enters a text value which cannot be parsed into a valid date, the item will
     // automatically redraw and display the +link{dateItem.invalidDateStringMessage} (though at this
     // point calling +link{formItem.getValue()} will return the string entered by the user).
     // <P>
@@ -248,14 +278,33 @@ isc.DateItem.addProperties({
         
     //>	@attr	dateItem.startDate		(Date : 1/1/1995 : IRW)
 	// Minimum date the selectors will allow the user to pick.
-	//		@group	appearance
+    // <P>
+    // <b>NOTE:</b> by design, setting <code>startDate</code> and <code>endDate</code> will not
+    // always prevent the user from picking invalid values.  In particular:
+    // <ul>
+    // <li> the set of available days will only be restricted if the start and end dates fall
+    // within the same month
+    // <li> the set of available months will only be restricted if the start and end dates fall
+    // within the same year
+    // </ul>
+    // <P>
+    // This is <b>by design</b> as it allows the user to set the day, month and year in
+    // whatever order is convenient, rather than forcing them to pick in a specific order.
+    // <P>
+    // For actual enforcement of a date being in correct range before data is submitted, a
+    // +link{Validator} of type "dateRange" should always be declared.
+    //
+	// @group appearance
     // @visibility external
 	//<
     startDate:isc.DateItem.DEFAULT_START_DATE,    
 
     //>	@attr	dateItem.endDate		(Date : 12/31/2015 : IRW)
 	// Maximum date the selectors will allow the user to pick.
-	//		@group	appearance
+    // <P>
+    // See +link{dateItem.startDate} for details on how this restriction works.
+    //
+	// @group appearance
     // @visibility external
 	//<
     endDate:isc.DateItem.DEFAULT_END_DATE,
@@ -268,23 +317,29 @@ isc.DateItem.addProperties({
 	//		@group	appearance
     // @visibility external
 	//<
-    centuryThreshold:isc.DateItem.DEFAULT_CENTURY_THRESHOLD,
+    centuryThreshold:isc.DateItem.DEFAULT_CENTURY_THRESHOLD
     
-    //>	@attr	dateItem.displayFormat  (DateDisplayFormat : "toShortDate" : IRW)
+    //> @attr dateItem.dateFormatter (DateDisplayFormat : null : IA)
+    // If <code>dateFormatter</code> is set at init time, it will be used instead of
+    // +link{DateItem.displayFormat} to govern how dates are displayed in this item.
+    // @visibility external
+    //<
+    
+    //>	@attr	dateItem.displayFormat  (DateDisplayFormat : null : IRW)
     // If +link{dateItem.useTextField} is <code>true</code> this property can be used to 
     // customize the format in which dates are displayed.<br>
     // Should be set to a standard +link{type:DateDisplayFormat} or
     // a function which will return a formatted date string.
-    // Default setting is <code>"toShortDate"</code> which ensures that if the standard
-    // shortDate format is modified via +link{Date.setShortDisplayFormat()} this format
-    // will be picked up.
+    // <P>
+    // If unset, the standard shortDate format as set up via +link{Date.setShortDisplayFormat()}
+    // will be used.
     // <P>
     // <B>NOTE: you may need to update the +link{DateItem.inputFormat, inputFormat} to ensure the
     // DateItem is able to parse user-entered date strings back into Dates</B>
     // @see dateItem.inputFormat
     // @visibility external
     //<
-    displayFormat:"toShortDate"
+    //displayFormat:"toShortDate"
     
     //> @attr  dateItem.inputFormat  (DateInputFormat : null : IRW)
     // If +link{dateItem.useTextField} is <code>true</code> this property can be used to specify
@@ -300,19 +355,40 @@ isc.DateItem.addProperties({
     // @visibility external
     //<
     //inputFormat:null,
-    
+
     //>	@attr	dateItem.selectorFormat		(DateItemSelectorFormat : null : IRW)
     // If showing date selectors rather than the date text field (so when 
     // <code>this.useTextField</code> is false), this property allows customization of the 
-    // order of the day, month and year selector fields. If unset these fields will match the
+    // order of the day, month and year selector fields.  If unset these fields will match the
     // specified inputFormat for this item.
+    // <P>
+    // Note: selectors may be ommitted entirely by setting selectorFormat to (for example) 
+    // <code>"MD"</code>. In this case the value for the omitted selector will match the
+    // +link{defaultValue} specified for the item.  For example, if the selector format is "MD"
+    // (month and day only), the year comes from the Date specified as the defaultValue.
+    //
     // @visibility external
     //<
+    
 	//selectorFormat:null
 
 });
 
 isc.DateItem.addMethods({
+    
+    init : function () {
+        // Set the default value of useTextField if not explicitly defined
+        if (this.useTextField == null) this.useTextField = this.useMask || false;
+
+        // perform a one-time conversion from dateFormatter to display format
+        if (this.dateFormatter != null) {
+            this.logInfo("Configuration block for this item has an explicitly specified " +
+                "'dateFormatter' value:" + this.dateFormatter + ". This will be used instead of " +
+                "the specified 'displayFormat' attribute for this item.");
+            this.displayFormat = this.dateFormatter;
+        }
+        return this.Super("init", arguments);
+    },
 
     // if selectorFormt is unset, back off to standard inputFormat.
     getSelectorFormat : function () {
@@ -330,28 +406,73 @@ isc.DateItem.addMethods({
         }
     },
 
-	//>	@method	dateItem.setItems()	(A)
-	//
-	// 	Override the setItems() routine to set the order of the fields according to this.dateFormat
-	//<
-	setItems : function (itemList) {
+    _inputFormatMask:{
+        "MDY": "[01][0-9]/[0-3]#/####",
+        "DMY": "[0-3]#/[01][0-9]/####",
+        "YMD": "####/[01][0-9]/[0-3]#"
+    },
+    _timeMask: "[0-2][0-9]:[0-6][0-9]",
+
+    _maskDisplayFormats:{
+        "MDY": "toUSShortDate",
+        "DMY": "toEuropeanShortDate",
+        "YMD": "toJapanShortDate"
+    },
+
+    //>	@method	dateItem.setItems()	(A)
+    //
+    // 	Override the setItems() routine to set the order of the fields according to this.dateFormat
+    //<
+    _$defaultDateSeparator:"/",
+    _$defaultDateSeparatorRegex:/\//g,   // Find all separators
+    setItems : function (itemList) {
     
-		var DI = isc.DateItem,
-			format = this.getSelectorFormat()
-		;
+        var DI = isc.DateItem,
+            format = this.getSelectorFormat()
+        ;
         
         if (itemList != null && itemList.length != 0) {
             this.logWarn("setItems() called for dateItem with itemList:" + itemList + 
                             " - ignoring, and making use of default date fields");
         }
 
-		// create a new itemList
-		itemList = this.items = [];      
+        // create a new itemList
+        itemList = this.items = [];      
 
         if (this.useTextField) {
             
+            var maskProperties = {};
+            if (this.useMask) {
+                var inputFormat = this.getInputFormat();
+                // Default to US date format
+                if (!inputFormat) inputFormat = "MDY";
+                
+                var mask = this._inputFormatMask[inputFormat];
+                // Update mask with non-default date separator
+                var separator = this.maskDateSeparator || this._$defaultDateSeparator;
+                if (separator != this._$defaultDateSeparator) {
+                    mask = mask.replace(this._$defaultDateSeparatorRegex, separator);
+                }
+                // Support DateTimeItem with additional mask
+                if (isc.isA.DateTimeItem(this)) {
+                    mask += " " + this._timeMask;
+                }
+                maskProperties.mask = mask;
+                maskProperties.maskSaveLiterals = true;
+                maskProperties.maskOverwriteMode = true;
+
+                // Make sure leading zeroes are retained
+                
+                Number._lzero = "0";
+                // Display format must match input so we force it here
+                if (this.inputFormat)
+                    this.displayFormat = this._maskDisplayFormats[inputFormat];
+            }
+            
             var textField = isc.addProperties({textAlign:this.textAlign}, 
-                                              DI.TEXT_FIELD, this.textFieldProperties);
+                                              DI.TEXT_FIELD,
+                                              this.textFieldProperties,
+                                              maskProperties);
             // If we have a specified height, expand the text box to fill the available space
             
             if (this.height && (!this.textFieldProperties || !this.textFieldProperties.height)) 
@@ -362,15 +483,14 @@ isc.DateItem.addMethods({
             itemList.add(textField);
     
             //>EditMode for dynamically changing useTextField
+            
             var undef;
             this.daySelector = this.yearSelector = this.monthSelector = undef;
             //<EditMode
         
         } else {
-            // If we're not showing the text field, force our width to 200px
             
-            this.width = 200;
-		
+            
     		// iterate through the characters of the format
     		for (var i = 0; i < format.length; i++) {
     			var field = format.charAt(i);
@@ -407,6 +527,37 @@ isc.DateItem.addMethods({
 		// call the superclass routine to properly set the items
 		this.Super("setItems", [itemList]);
 	},
+
+    // override getInnerWidth().
+    // If we're showing selectors, explicitly fit to them (ignore any specified size)
+    
+    getInnerWidth : function () {
+        
+        if (this.useTextField) {
+            return this.Super("getInnerWidth", arguments);
+        }
+        
+        var size = 0, 
+            selectorCount = 0;
+        if (this.daySelector) {
+            selectorCount +=1;
+            size += this.daySelector.width;
+        }
+        if (this.monthSelector) {
+            selectorCount += 1;
+            size += this.monthSelector.width;
+        }
+        if (this.yearSelector) {
+            selectorCount += 1;
+            size += this.yearSelector.width;
+        }
+        if (this.showPickerIcon) size += this.getPickerIconWidth();
+        
+        if (selectorCount > 0) size += (selectorCount-1) * this.selectorPadding;
+        
+        return size;
+    },
+    selectorPadding:2,
 
     // Override isEditable() to indicate that the user can edit this items value directly
     isEditable : function () {
@@ -466,14 +617,16 @@ isc.DateItem.addMethods({
             var dropDate;
             if (!this.useTextField) {
                 dropDate = true;
-            } else if (this.enforceDate) {
+            // explicitly support 'clearValue()' on a date field with a textItem even if
+            // enforceDate is set
+            } else if (this.enforceDate && value != null) {
                 var textField = this.dateTextField;
                 dropDate = !this._invalidDate || !textField || (textField.getValue() != value);
             }
                 
             if (dropDate) {
                 //>DEBUG
-                this.logWarn("dateItem.setValue(): invalid date passed: '" + value + 
+                this.logInfo("dateItem.setValue(): invalid date passed: '" + value + 
                             "'.  Ignoring this value. Non date values are only supported " +
                             " for dateItems where useTextField is true and enforceDate is false.");
                 //<DEBUG
@@ -497,7 +650,7 @@ isc.DateItem.addMethods({
         this._suppressUpdates = true;
         if (this.useTextField) {
             // re-format the date-string entered by the user if necessary
-            var textValue = invalidDate ? date : date.toShortDate(this.displayFormat);
+            var textValue = invalidDate ? date : this.formatDate(date);
             if (this.dateTextField) this.dateTextField.setValue(textValue);
 
         }
@@ -574,13 +727,12 @@ isc.DateItem.addMethods({
                     
                     // we're going to store the text value even though it's not a valid date
                     date = value;
-
                 } else {
                        
                     // If the date was valid, the format may have slightly changed
                     // (01/01/01 -> 1/1/2001, for example) - if necessary update the text
                     // field here.
-                    var dateString = date.toShortDate(this.displayFormat);
+                    var dateString = this.formatDate(date);
                     if (value != dateString) {
                         // we've set _suppressUpdates, so we won't end up in an infinite loop 
                         // from this call
@@ -597,7 +749,7 @@ isc.DateItem.addMethods({
                     this.clearErrors();
                     this.redraw();
                 } else if (invalidDate) {
-                    this.logInfo("Invalid date string entered in date text field :"+ date);
+                    this.logWarn("Invalid date string entered in date text field :"+ date);
                     if (!this._invalidDate) {
                         this._invalidDate = true;
                         this.setError(this.invalidDateStringMessage);
@@ -621,7 +773,21 @@ isc.DateItem.addMethods({
             date = date.duplicate();
 
             var day, month, year;
-
+            
+            // Store the specified day first, and apply it after setting month/year
+            //
+            // Note: Before setting month / year, we set the date to 1 so that setting the month
+            // will not lead to an invalid date like Feb 30.
+            // This avoids the case where 
+            //  - the selectors are set to Feb 30, and the previous date was Jan 30.
+            //  - the date object has 'setMonth()' called, setting the month is set to "Feb", 
+            //    causing the date to be automatically updated to March 2
+            //  - the day is set to 30 (from the date selector), leaving us with a date of
+            //    March 30.
+            //  At this point the logic to roll the days back to the end of the month would fail
+            day = (this.daySelector ? this.daySelector.getValue() : date.getDate());
+            date.setDate(1);
+            
             if (this.yearSelector) {
                 year = this.yearSelector.getValue()
                 date.setYear(year);
@@ -629,24 +795,14 @@ isc.DateItem.addMethods({
             if (this.monthSelector) {
                 month = this.monthSelector.getValue();
                 
-                // If we have a daySelector, we set the date to 1 so that setting the month will
-                // not lead to an invalid date like Feb 30.
-                // This avoids the case where 
-                //  - the selectors are set to Feb 30, and the previous date was Jan 30.
-                //  - the date object has 'setMonth()' called, setting the month is set to "Feb", 
-                //    causing the date to be automatically updated to March 2
-                //  - the day is set to 30 (from the date selector), leaving us with a date of
-                //    March 30.
-                //  At this point the logic to roll the days back to the end of the month would fail
-                if (this.daySelector) date.setDate(1);
                 
                 date.setMonth(month);
             }
-
-            if (this.daySelector) {
-                day = this.daySelector.getValue();
-                date.setDate(day);
-            }            
+            
+            // Now set date to the appropriate "day" value
+            // this is the value of the daySelector, or if we're not showing a day selector
+            // the previously selected day value
+            date.setDate(day);
             
             // If set to an invalid date, such as Feb 30, or Feb 29th on a non-leap year, the month 
             // will have been rolled forward (making it easy to catch such errors)
@@ -661,7 +817,6 @@ isc.DateItem.addMethods({
                 date.setDate(day);
             }
         }
-
         delete this._suppressUpdates;
         
         // now fire the default handlers:
@@ -696,29 +851,49 @@ isc.DateItem.addMethods({
     // For the Date Item we give our sub items (selects / text item) the correct value when they
     // are initially set up.
     getItemValue : function (item, values) {
-        return item.getValue();
         
-    },
-
-    //> @method dateItem.setWidth()    (A)
-    //      @group  sizing
-    //          set the width for this element
-    //          Overridden to set the size of the date text field, if present
-    //
-    //        @param    (number)    new width for the form element
-    //<
-    setWidth : function (width) {
-        // we don't support any size other than 200 if we're showing the selectors
-        if (!this.useTextField) {
-            this.width = 200;      
-            return;
+        if (isc.isAn.emptyObject(values)) values = null;
+        
+        var dateVal = isc.isA.Date(values),
+            currDateVal = isc.isA.Date(this._value);
+        
+        if (values == this._value || 
+            (dateVal && currDateVal && (Date.compareDates(values, this._value) == 0)))
+        {
+            return item.getValue();
         }
         
-        // Note that the superclass implementation will mark us for redraw if necessary, and
-        // the date text field will pick up its new size from the getInnerWidth() override.
-        return this.Super("setWidth", arguments);
+        // If we're rendering out inactiveItemHTML we may be showing a value that doesn't 
+        // match the value stored by the form item. An example of this is showing
+        // inactive editor HTML in grids where alwaysShowEditors is true.
+        if (item == this.dateTextField) return dateVal ? this.formatDate(values) : values;
+        else if (item == this.daySelector) return dateVal ? values.getDate() : null;
+        else if (item == this.monthSelector) return dateVal ? values.getMonth() : null;
+        else if (item == this.yearSelector) return dateVal ? values.getFullYear() : null;
+        
     },
-
+    
+    // Override getDisplayValue() to return the short-date formatted value.
+    
+    getDisplayValue : function () {
+        var dataValue = this.getValue();
+        if (!isc.isA.Date(dataValue)) return this.Super("getDisplayValue", arguments);
+        if (this.useTextField || !this.items) {
+            return this.formatDate(dataValue);
+        } else {
+            // If we're undrawn the sub items won't yet be populated! Do this now.
+            if (!this.isDrawn()) {
+                
+                if (this.yearSelector)		this.yearSelector.setValue(dataValue.getFullYear());
+                if (this.monthSelector) 	this.monthSelector.setValue(dataValue.getMonth());
+                if (this.daySelector) 		this.daySelector.setValue(dataValue.getDate());
+            }
+            // This will give us a the contents of each selector separated by a space,
+            // for example "Jun 25 2009" for MDY dates
+            return this.items.map("getDisplayValue").join(" ");
+        }
+    },
+    
 	//>	@method	dateItem.getDefaultValue()	(A)
 	//  Override getDefaultValue to guarantee that it returns a date if 
     //  <code>item.enforceDate</code> is true. If no default date is supplied, defaults to the
@@ -747,7 +922,9 @@ isc.DateItem.addMethods({
                 // if we still don't have a valid date, default to a new Date().
                 // NOTE: can't just set the defaultValue to "new Date()" as this object would then
                 // be shared amongst all date instances
-                value = this._getEmptyDate();
+                // Exception: We DO support null value for dateItems where useTextField is true
+                // even if enforceDate is set.
+                if (!this.useTextField) value = this._getEmptyDate();
                 
                 if (replaceDefaultValue) this.defaultValue = value;
             }
@@ -823,8 +1000,57 @@ isc.DateItem.addMethods({
         }
         // If it couldn't find the appropriate sub-item, this method is a no-op        
     },
+    
+    // override get/setSelectionRange - if we're showing a text field, call through to the
+    // methods on that sub-item
+    
+    //> @method dateItem.setSelectionRange()
+    // If +link{dateItem.useTextField} is true, falls through to standard
+    // +link{formItem.setSelectionRange()} implementation on this items freeform text entry field.
+    // Otherwise has no effect.
+    // @param start (integer) character index for start of new selection
+    // @param end (integer) character index for end of new selection
+    // @visibility external
+    //<
+    setSelectionRange : function (start,end) {
+        if (this.dateTextField) return this.dateTextField.setSelectionRange(start,end);
+    },
 
-	//>	@method	dateItem.getDayOptions()	(A)
+	//> @method dateItem.getSelectionRange()
+    // If +link{dateItem.useTextField} is true, falls through to standard
+    // +link{formItem.getSelectionRange()} implementation on this items freeform text entry field.
+    // Otherwise has no effect.
+    // @return (array) 2 element array indicating start/end character index of current selection
+    //  within our text entry field. Returns null if this item is undrawn or doesn't have focus.
+    // @visibility external
+    //<
+    getSelectionRange : function () {
+        if (this.dateTextField) return this.dateTextField.getSelectionRange();
+    },
+    
+    //> @method dateItem.selectValue()
+    // If +link{dateItem.useTextField} is true, falls through to standard
+    // +link{formItem.selectValue()} implementation on this items freeform text entry field.
+    // Otherwise has no effect.
+    // @visibility external
+    //<
+    selectValue : function () {
+        if (this.dateTextField) return this.dateTextField.selectValue();
+    },
+    
+    //> @method dateItem.deselectValue()
+    // If +link{dateItem.useTextField} is true, falls through to standard
+    // +link{formItem.deselectValue()} implementation on this items freeform text entry field.
+    // Otherwise has no effect.
+    // @param [start] (boolean) If this parameter is passed, new cursor insertion position will be
+    //   moved to the start, rather than the end of this item's value.
+    // @visibility external
+    //<
+    deselectValue : function (start) {
+        if (this.dateTextField) return this.dateTextField.deselectValue()
+    },
+    
+    //>	@method	dateItem.getDayOptions()	(A)
 	//		Return the list of options for the day selector.
 	//
 	//		@return	(array)	Array of day numbers from 1-31;
@@ -835,20 +1061,18 @@ isc.DateItem.addMethods({
             endDate = this.getEndDate();
 
         // If the date range spans more than one month, return [1 - 31]
-        //  - Even if they are less than a month apart
-        //  (startDate = March 30th and endDate = April 6th (Same Year), for example)
-        //  we don't want to return [1,2,3,4,5,6,30,31], as this will look wierd in the selector, 
-        //  and allow you to select dates outside the range anyway (the March 1st, etc.)
-        //  - Only time we want to have this return a range smaller than 1-31 is if we have a range
-        //  within a single month (Feb 2 - 20th, 1945), for example.
+        // Only time we want to have this return a range smaller than 1-31 is if we have a range
+        // within a single month (Feb 2 - 20th, 1945), for example.  Otherwise we force the
+        // user to pick fields in a specific order.
         var startDay = 1, 
             endDay = 31;
         
         // If it's within a single month in a year, return appropriate subset of days    
         if (startDate.getYear() == endDate.getYear() &&
-            startDate.getMonth() == endDate.getMonth()) {
-                startDay = startDate.getDate()
-                endDay = endDate.getDate()
+            startDate.getMonth() == endDate.getMonth()) 
+        {
+            startDay = startDate.getDate()
+            endDay = endDate.getDate()
         }
             
 		// if the list of options is already in the mapCache, just pull it from there
@@ -873,19 +1097,16 @@ isc.DateItem.addMethods({
             endDate = this.getEndDate();
             
         // If the date range spans more than one year, return ["Jan" - "December"]
-        //  - Even if they are less than a year apart
-        //  (startDate in December 1995, and endDate in February 1996, for example)
-        //  we don't want to return ["Jan", "Feb", "Dec"], as this will look wierd in the selector, 
-        //  and allow you to select dates outside the range anyway ("Feb, 1995", for example)
-        //  - Only time we want to have this return an incomplete range is if we have a range
-        //  within a single year (Feb - April, 1945), for example.
+        // Only time we want to have this return an incomplete range is if we have a range
+        // within a single year (Feb - April, 1945), for example.  Otherwise we force the user
+        // to pick fields in a specific order.
         var startMonth = 0, 
             endMonth = 11;
 
         // If it's within a single month in a year, return appropriate subset of days    
         if (startDate.getYear() == endDate.getYear()) {
-                startMonth = startDate.getMonth()
-                endMonth = endDate.getMonth()
+            startMonth = startDate.getMonth()
+            endMonth = endDate.getMonth()
         }
     
 		// if the list of options is already in the mapCache, just pull it from there
@@ -927,6 +1148,15 @@ isc.DateItem.addMethods({
 		return options;	
 	},
 
+    //> @attr dateItem.useCustomTimezone (boolean : false : IRA)
+    // Should this dateItem display dates in the native browser local time or use the
+    // custom timezone set up in +link{Time.setDefaultDisplayFormat()}.
+    // <P>
+    // Default behavior is to show dates in the native browser time. Overridden for
+    // DateTimeItems where we will be editing fields of type datetime rather than date.
+    //<
+    
+    useCustomTimezone:false,
 	
 	//>	@method	dateItem.parseDate()
 	// Parse a date passed in as a string.
@@ -938,9 +1168,18 @@ isc.DateItem.addMethods({
 	//		@return	(date)		date value
 	//<
 	parseDate : function (dateString, inputFormat) {
-        if (inputFormat == null) inputFormat = this.getInputFormat();        
-		return Date.parseInput(dateString, inputFormat, this.centuryThreshold, true);
+        if (inputFormat == null) inputFormat = this.getInputFormat();
+        return Date.parseInput(dateString, inputFormat, 
+                                this.centuryThreshold, true, this.useCustomTimezone);
 	},
+    
+    // formatDate() - given a live date object, returns the formatted date string to display
+    // Only applies if useTextField is true.
+    formatDate : function (date) {
+        return isc.isA.Date(date) ? 
+                    date.toShortDate(this.displayFormat, this.useCustomTimezone) : date;
+    },
+
     
     //>@method dateItem.getInputFormat() (A)
     // If +link{dateItem.useTextField} is <code>true</code> this method returns a
@@ -996,11 +1235,14 @@ isc.DateItem.addMethods({
             
             picker.callingFormItem = this;
             picker.callingForm = this.form;
+            
+            picker.locatorParent = this.form;
         }
         
         return this.Super("showPicker", arguments);
         
     },
+    
     
     // custom code to center the picker over the picker icon
     getPickerRect : function () {
@@ -1011,10 +1253,10 @@ isc.DateItem.addMethods({
             chooserWidth = isc.DateItem.chooserWidth + 3,
             chooserHeight = isc.DateItem.chooserHeight + 3;
 
-        left += (this.getVisibleWidth() - (this.getPickerIconWidth() /2)) - 
-                (chooserWidth/2);
+        left += Math.round((this.getVisibleWidth() - (this.getPickerIconWidth() /2)) - 
+                (chooserWidth/2));
         
-        top += (this.getPickerIconHeight() / 2) - (chooserHeight/2);
+        top += Math.round((this.getPickerIconHeight() / 2) - (chooserHeight/2));
 
         // NOTE: don't return chooserWidth/Height as part of the rect, which would cause the
         // picker to actually be resized to those dimensions, and they may match the natural
@@ -1039,11 +1281,30 @@ isc.DateItem.addMethods({
         this._suppressUpdates = true;
 
         if (this.useTextField) {
-            this.dateTextField.setValue(date.toShortDate(this.displayFormat));
+            this.dateTextField.setValue(this.formatDate(date));
         } else {
+            var date = this._value || this.getDefaultValue(),
+                hiddenSelector;
             if (this.yearSelector) this.yearSelector.setValue(year);
+            else {
+                date.setFullYear(year);
+                hiddenSelector = true;
+            }
             if (this.monthSelector) this.monthSelector.setValue(month);
+            else {
+                date.setMonth(month-1);
+                hiddenSelector = true;
+            }
             if (this.daySelector) this.daySelector.setValue(day);
+            else {
+                date.setDate(day);
+                hiddenSelector = true;
+            }
+            // if this._value was unset before this method fired, set it now
+            // This will be duplicated as part of update value and the selector values overlayed
+            if (hiddenSelector) {
+                this._value = date;
+            }
         }
         this._suppressUpdates = false;
         
@@ -1059,7 +1320,8 @@ isc.DateItem.addMethods({
     //>EditMode dynamically changing useTextField
     , 
     propertyChanged : function (propertyName) {
-        if (propertyName == "useTextField") this.setItems();
+        if (propertyName == "useTextField" ||
+            propertyName == "useMask") this.setItems();
     }
     //<EditMode
 });

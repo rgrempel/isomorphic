@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -211,7 +211,7 @@ isc.ResultTree.addProperties({
     updateCacheFromRequest:true
     
     //> @attr   resultTree.disableCacheSync (boolean : false : IRA)
-    // By default when the data of this ResultSet's dataSource is modified, the ResultSet will
+    // By default when the data of this ResultTree's dataSource is modified, the ResultTree will
     // be updated to display these changes.
     // Set this flag to true to disable this behavior.
     // @group cacheSync
@@ -227,10 +227,8 @@ isc.ResultTree.addMethods({
 //		@param	[all arguments]	(object)	objects with properties to override from default
 //<
 init : function (a,b,c,d,e,f) {
-    if (this.initialData) {
-        if ("parent" == this.modelType) this.data = this.initialData;
-        else if ("children" == this.modelType) this.root = this.initialData;
-    }
+	// create a pointer to us in the global context
+	isc.ClassFactory.addGlobalID(this);
 
 	if (!this.criteria) this.criteria = {};
 
@@ -246,10 +244,6 @@ init : function (a,b,c,d,e,f) {
         this.operation.dataSource = this.dataSource;
     }
     
-    // observe dataChanged on our dataSource
-    var dataSource = isc.DataSource.getDataSource(this.dataSource);
-    this.observe(dataSource, "dataChanged", "observer.dataSourceDataChanged(dsRequest,dsResponse);");
-        
     // If any of rootValue, idField, parentIdField are not explicitly specified on this
     // ResultTree, autodetect them from the DataSource relationship.
     if (!this.isMultiDSTree()) {
@@ -281,6 +275,19 @@ init : function (a,b,c,d,e,f) {
         
         this.root[this.idField] = this.rootValue;
     }
+
+    // establish default values for isFolderProperty et al that were not derived from the tree
+    // relationship
+    this.setupProperties();
+
+    if (this.initialData) {
+        if ("parent" == this.modelType) this.data = this.initialData;
+        else if ("children" == this.modelType) this.root = this.initialData;
+    }
+
+    // observe dataChanged on our dataSource
+    var dataSource = isc.DataSource.getDataSource(this.dataSource);
+    this.observe(dataSource, "dataChanged", "observer.dataSourceDataChanged(dsRequest,dsResponse);");
 
     // whether to invalidate our cache when an update occurs on one of our datasources.
     // Default is update the current cache in place.
@@ -406,7 +413,8 @@ isMultiDSTree : function () {
 
 // get the DataSource for the nodes that appear at root
 getRootDataSource : function () {
-    return isc.DS.get(this.operation.dataSource || this.dataSource);
+    if (this.operation && this.operation.dataSource) return isc.DS.get(this.operation.dataSource);
+    else return  isc.DS.get(this.dataSource);
 },
 
 // get the criteria to apply (aside from parentId) when selecting children from childDS
@@ -422,6 +430,14 @@ getOperationId : function (childDS, parentDS, parentNode) {
     // DataSource the tree may encounter
     return this.operation ? this.operation.ID : null;
 },
+
+//>	@method resultTree.loadChildren()
+// @include tree.loadChildren()
+//<
+
+//>	@method resultTree.unloadChildren()
+// @include tree.unloadChildren()
+//<
 
 // Note this is an internal method to fetch the children and fold them into the children array
 // for the node in question. It doesn't check for the children already being loaded - so if
@@ -525,7 +541,7 @@ loadChildren : function (parentNode, callback) {
 },
 
 loadChildrenReply : function (dsResponse, data, request) {
-//    this.logWarn("loadChildren reply: " + Comm.serialize(dsResponse.data));
+//    this.logWarn("loadChildren reply: " + this.echoFull(dsResponse.data));
 
     var context = dsResponse.clientContext;
     var parentNode = context.parentNode;
@@ -663,6 +679,8 @@ updateCache : function (operationType, updateData) {
 
     operationType = isc.DS._getStandardOperationType(operationType);
 
+	if (!isc.isAn.Array(updateData)) updateData = [updateData];
+
 	//>DEBUG
     if (this.logIsInfoEnabled()) {
         this.logInfo("Updating cache: operationType '" + operationType + "', " + 
@@ -691,6 +709,9 @@ addCacheData : function (updateData) {
 
     // Don't add rows that don't pass filtering
     var validRows = this.getDataSource().applyFilter(updateData, this.criteria, this.context);
+
+    this.logInfo("Adding rows to cache: " + validRows.length + " of " + updateData.length + 
+                 " rows match filter criteria");
 
     var pk = this.getDataSource().getPrimaryKeyFieldNames()[0];
     for (var i = 0; i < validRows.length; i++) {

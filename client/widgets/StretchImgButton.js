@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -19,7 +19,7 @@
 
 //>	@class	StretchImgButton
 // A StretchImg that behaves like a button, going through up/down/over state transitions in response
-// to user events.  Supports an optional title, and will auto-size to accomodate the title text if
+// to user events.  Supports an optional title, and will auto-size to accommodate the title text if
 // <code>overflow</code> is set to "visible".
 // <P>
 // Examples of use include fancy buttons, poplist headers, and tabs.
@@ -91,7 +91,7 @@ isc.defineClass("StretchImgButton", "StretchImg").addProperties({
     // @visibility external
     //<
     //> @attr stretchImgButton.iconSpacing
-    // @include statefulCanvas.icon
+    // @include statefulCanvas.iconSpacing
     // @visibility external
     //<
     //> @attr stretchImgButton.showDisabledIcon
@@ -163,8 +163,24 @@ isc.defineClass("StretchImgButton", "StretchImg").addProperties({
     // Sets the +link{titleStyle}, which is applied to the title text.
     // @param style (CSSStyleName) new title style
     // @visibility external
-    //<		
-
+    //<
+    
+    //> @attr stretchImgButton.labelSkinImgDir (URL : null : IRWA)
+    // Specifies a skinImgDir to apply to the label containing the title of this 
+    // StretchImgButton. May be null in which case <code>this.skinImgDir</code>
+    // will be applied to the label as well.
+    // <P>
+    // Note that icons displayed in the title may make use of the skin img dir set here
+    // @visibility external
+    //<
+  
+    //> @method stretchImgButton.setLabelSkinImgDir()
+    // setter for +link{stretchImgButton.labelSkinImgDir}.
+    // @param URL (URL) new skin img dir to apply to the label holding title text for
+    //   this widget.
+    // @visibility external
+    //<
+    
     // selection
     //----------
     //> @attr stretchImgButton.selected
@@ -334,7 +350,7 @@ isc.defineClass("StretchImgButton", "StretchImg").addProperties({
 
     //>	@attr	StretchImgButton.src		(SCImgURL : "button.gif" : IRW)
 	// Base URL for the image.  By default, StretchImgButtons consist of three image parts: A
-    // start image (displayed at the top or left), a scaleable central image and an end image
+    // start image (displayed at the top or left), a scalable central image and an end image
     // displayed at the bottom or right.
     // <P>
     // The images displayed in the stretchImgButton are derived from this property in the 
@@ -386,6 +402,7 @@ isc.defineClass("StretchImgButton", "StretchImg").addProperties({
     cursor:isc.Button._instancePrototype.cursor,
     
 	canFocus:true
+    
 });
 
 

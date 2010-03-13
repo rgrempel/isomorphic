@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -29,7 +29,7 @@ isc.TileLayout.addProperties({
 // @visibility external
 //<
 
-//> @attr tileLayout.layoutPolicy (TileLayoutPolicy : "" : IR)
+//> @attr tileLayout.layoutPolicy (TileLayoutPolicy : "fit" : IR)
 // Policy for laying out tiles.  See +link{type:TileLayoutPolicy} for options.
 //
 // @group layoutPolicy
@@ -50,13 +50,19 @@ tileSize: 50,
 
 //> @attr tileLayout.tileWidth (int : null : IR)
 // Width of each tile in pixels.  See +link{tileSize}.
-//
+// If +link{layoutPolicy} is "fit", +link{expandMargins} is false, +link{tilesPerLine} is set,
+// +link{orientation} is "horizontal",
+// and tileWidth is not set, tileWidth will be computed automatically based on +link{tilesPerLine}.
+// 
 // @group sizing
 // @visibility external
 //<
 
 //> @attr tileLayout.tileHeight (int : null : IR)
 // Height of each tile in pixels.  See +link{tileSize}.
+// If +link{layoutPolicy} is "fit", +link{expandMargins} is false, +link{tilesPerLine} is set, 
+// +link{orientation} is "vertical",
+// and tileHeight is not set, tileHeight will be computed automatically based on +link{tilesPerLine}.
 //
 // @group sizing
 // @visibility external
@@ -121,24 +127,30 @@ orientation : "horizontal",
 //> @attr tileLayout.tilesPerLine (int : null : IR)
 // Number of tiles to show in each line.  Auto-derived from +link{tileSize} for some layout
 // modes.  See +link{type:TileLayoutPolicy}.
+// This can also affect +link{tileWidth} or +link{tileHeight}. See those properties for details.
 //
 // @group layoutPolicy
 // @visibility external
 //<
 
-//> @attr tileLayout.overflow   (Overflow : "visible" : IR)
+//> @attr tileLayout.overflow   (Overflow : "auto" : IR)
 // Normal +link{type:Overflow} settings can be used on TileLayouts, for example, an
 // overflow:auto TileLayout will scroll if members exceed its specified size, whereas an
-// overflow:visible TileLayout will grow to accomodate members.
+// overflow:visible TileLayout will grow to accommodate members.
 //
 // @group sizing
 // @visibility external
 //<
 overflow: "auto",
 
+// canFocus must be true or else a tileLayout with no scrollbars will be unable to 
+// respond to keyboard events
+canFocus: true,
+
 //> @attr tileLayout.expandMargins (boolean : true : IR)
 // With +link{layoutPolicy}:"fit", should margins be expanded so that tiles fill the
 // available space in the TileLayout on the breadth axis?
+// This can also affect +link{tileWidth} or +link{tileHeight}. See those properties for details.
 //
 // @group layoutMargin
 // @visibility external
@@ -195,6 +207,7 @@ dragLineDefaults: {
 },
 
 initWidget : function () {
+    this._enforceLegalLayoutPolicy();
     this.invokeSuper(isc.TileLayout, "initWidget");
     if (!this.tiles) this.tiles = [];
     // this makes d & d code work with tileLayout and tileGrid equally well
@@ -205,13 +218,32 @@ initWidget : function () {
 
 draw : function (a, b, c, d) {
     this.invokeSuper(isc.TileLayout, "draw", a, b, c, d);
+    // set tile width or height if it unset based on tilesPerLine
+    this._setTileSize();
+    this.logDebug('calling layoutTiles from draw', "TileLayout");
     this.layoutTiles();
     
 },
 
 resized : function () {
     this.Super("resized", arguments);
+    this.logDebug('calling layoutTiles from resized', "TileLayout");
     this.layoutTiles();
+},
+
+childResized : function (child, deltaX, deltaY, reason) {
+    this.invokeSuper(isc.TileLayout, "childResized", child, deltaX, deltaY, reason);
+    // need to use a time here otherwise the child doesn't get resized
+    this.logDebug('calling layoutTiles from childResized', "TileLayout");
+    isc.Timer.setTimeout(this.ID + ".layoutTiles()", 100);
+    
+},
+
+// make sure that a legal layoutPolicy is set or code breakage will ensue
+_enforceLegalLayoutPolicy : function () {
+    if (this.layoutPolicy != "fit" && this.layoutPolicy != "flow") {
+        this.layoutPolicy = "fit";    
+    }
 },
 
 
@@ -369,7 +401,7 @@ layoutTiles : function (mode) {
         }
     // fit layout  
     } else {
-        this.logDebug("starting fit layout", "TileLayout");
+        this.logDebug("starting fit layout:" + this._animating, "TileLayout");
         var tPerLine = this.getTilesPerLine();
         var tHeight = this.getTileHeight();
         var tWidth = this.getTileWidth();
@@ -378,6 +410,7 @@ layoutTiles : function (mode) {
        
         var totalTiles, tileNum, numLines, spacerCanvas, startLine, endLine;
         if (this.shouldUseIncrRendering()) {
+            this.logDebug("fit layout, using incremental rendering", "TileLayout");
             var tileRange = this.getVisibleTiles();
             // store visible tile range for subclasses that may want to use it (TileGrid, etc.)
             // these values will be returned by getDrawnStartIndex() getDrawnEndIndex(), which subclasses
@@ -392,6 +425,7 @@ layoutTiles : function (mode) {
             // Relevent for databound subclasses (TileGrid etc)
             if (!this.hasAllVisibleTiles(tileRange, true)) return;
         } else {
+            this.logDebug("fit layout, rendering all tiles", "TileLayout");
             totalTiles = numTiles;
             tileNum = 0;
             startLine = 0;
@@ -418,7 +452,7 @@ layoutTiles : function (mode) {
         
         // get the extra pixels before begining actual tile layout
         extraPixels = this.getExtraMarginPixels(tPerLine, tHeight, tWidth, tHMargin, tVMargin);
-        //isc.logWarn('layoutTiles:' + [tileRange[0], tileRange[1]]);
+       
         for (var i = startLine; i < endLine; i++) {
             // keep track of extra pixels to divide among tiles 
             var exPixels = extraPixels;
@@ -442,6 +476,7 @@ layoutTiles : function (mode) {
                 // the current left coordinate to get the proper placement
                 if (isHoriz && j + 1 <= extraPixels) nLeft += j + 1;
                 var tileToUse = userVisibleTiles ? userVisibleTiles[tileNum] : tileNum
+                
                 var newTile = this.processTile(tileToUse, nTop, nLeft, 
                         this.getTileHeight(), this.getTileWidth());                 
               
@@ -474,14 +509,14 @@ getUserVisibleTiles : function () {
 // tileNum can be the index of a given tile (TileGrid), or the tile itself (TileLayout)
 processTile : function (tileNum, top, left, height , width) {
     var tile;
-    
+    //isc.logWarn("processing tile:" + [top, left, height, width]);
     if (this._animating) {
         
         if (isc.isA.Canvas(tileNum)) tile = tileNum;
         else tile = this.getRecordTile(tileNum);
         if (!tile) return;
         // verify that tile was visible before
-        if (this._oldVisibleTiles.findIndex("ID", tile.ID) == -1) return;
+        if (this._oldVisibleTiles != null && this._oldVisibleTiles.findIndex("ID", tile.ID) == -1) return;
         //isc.logWarn("tile:" + tile);
         if (!tile) return;
         
@@ -503,11 +538,11 @@ processTile : function (tileNum, top, left, height , width) {
              this._visibleTiles.add(tile);
         }
     } else {
-        //isc.logWarn('processing tile: ' + tileNum);
+       
         if (isc.isA.Canvas(tileNum)) tile = tileNum;
         else tile = this.getTile(tileNum);
-       
-       
+        //isc.logWarn('processing tile: ' + this.echoFull(tile));
+        if (!tile) return;
         // redraw dirty tiles
         if (tile.isDirty()) tile.redraw();
         // set height and width here
@@ -607,6 +642,30 @@ getTilesPerLine : function () {
     }
 },
 
+_setTileSize : function () {
+    var isHoriz = this.orientation == "horizontal";
+    // only set tile width/height if layoutPolicy = fit, expandMargins = false,
+    // tilesPerLine is set, and tileWidth/height is not set
+    if (this.layoutPolicy != "fit" || this.expandMargins || !this.tilesPerLine
+        || (isHoriz && this.tileWidth) || (!isHoriz && this.tileHeight)) return;
+    var tMargin = isHoriz ? (this.tileHMargin || this.tileMargin) : 
+                            (this.tileVMargin || this.tileMargin);
+    var thisSize = isHoriz ? this.getInnerWidth() : this.getInnerHeight();
+    // getInnerWidth does not take margin into account 
+    // for some reason, this._leftMargin etc. aren't set yet here so use layoutMargin directly
+    var marginOffset = this.layoutMargin * 2;
+    var totLineWidth = thisSize - marginOffset;
+    if (!this.tilesPerLine) {
+        this.tileSize = 50;    
+    } else {
+        var tSize = Math.floor(totLineWidth / this.tilesPerLine);
+        tSize -= tMargin;
+        isc.logWarn('setTileSize:' + [tSize, thisSize, this.layoutMargin]);
+        if (this.orientation == "horizontal") this.tileWidth = tSize;
+        else this.tileHeight = tSize;
+    }
+},
+
 getVisibleLines : function () {
     var horizontal = (this.orientation == "horizontal");
     var scrollPos = horizontal ? this.getScrollTop() : this.getScrollLeft();
@@ -643,6 +702,7 @@ scrolled : function () {
 layoutAfterScroll : function () {
     this.logDebug('layoutAfterScroll', "TileLayout");
     if (this.shouldLayoutTiles()) {
+        this.logDebug('calling layoutTiles from layoutAfterScroll', "TileLayout");
         this.layoutTiles();
     } 
 },
@@ -658,21 +718,47 @@ shouldLayoutTiles : function () {
 },
 
 getTileWidth : function () {
-    if (this.tileWidth) return this.tileWidth;
+    if (this.tileWidth) {
+        if (isc.isA.String(this.tileWidth)) {
+            this.tileWidth = parseInt(this.tileWidth);
+            if (!isc.isA.Number(this.tileWidth)) this.tileWidth = this.tileSize;
+        }
+        return this.tileWidth;
+    }
     else return this.tileSize;    
 },
 
 getTileHeight : function () {
-    if (this.tileHeight) return this.tileHeight;
+    if (this.tileHeight) {
+        if (isc.isA.String(this.tileHeight)) {
+            this.tileHeight = parseInt(this.tileHeight);
+            if (!isc.isA.Number(this.tileHeight)) this.tileHeight = this.tileSize;
+        }
+        return this.tileHeight;
+    }
     else return this.tileSize;
 },
 
 // helper function to consolidate code used in various places
 getInnerBreadth : function () {
-   
+    /*
+    
+    
     var breadth = this.orientation == "horizontal" ? this.getVisibleWidth() - this.getHBorderPad()
         : this.getVisibleHeight() - this.getVBorderPad();
     if (this.willScroll()) breadth -= this.getScrollbarSize();
+    // account for the tileLayout having edges
+    if (this.showEdges && this._edgedCanvas) {
+        var edgesSize, ec = this._edgedCanvas;
+        if (this.orientation == "horizontal") edgesSize = ec._leftEdge + ec._rightEdge;
+        else edgesSize = ec._topEdge + ec._bottomEdge;
+        breadth -= edgesSize;
+    }
+    */
+    // getInnerWidth/Height takes care of all borders and edges
+    var breadth = this.orientation == "horizontal" ? this.getInnerWidth() 
+        : this.getInnerHeight();
+    //if (this.willScroll()) breadth -= this.getScrollbarSize();
     return breadth;
 },
 
@@ -686,10 +772,14 @@ getTileHMargin : function () {
     }
     if (this.layoutPolicy == "fit" && this.expandMargins && this.orientation == "horizontal") {
         var tpl = this.getTilesPerLine();
+        
         // expanded margin = (viewable width - all tiles in a line width - layoutMargins) / number of margins in a line
         // remainder is calculated later, in getExtraMarginPixels
         var lMargins = this._leftMargin + this._rightMargin;
-        var exMargin = Math.floor((this.getInnerBreadth() - (tpl * this.getTileWidth()) - lMargins) / (tpl - 1));
+        var marginsInALine = tpl - 1;
+        // can't have zero margins in a line
+        if (marginsInALine == 0) marginsInALine = 1;
+        var exMargin = Math.floor((this.getInnerBreadth() - (tpl * this.getTileWidth()) - lMargins) / marginsInALine);
         // don't return less than hMargin
         if (exMargin < hMargin) return hMargin;
         else return exMargin;
@@ -715,7 +805,10 @@ getTileVMargin : function () {
         // expanded margin = (viewable height - tilesPerLine height) / marginsPerLine
         // remainder is calculated later, in getExtraMarginPixels
         var lMargins = this._topMargin + this._bottomMargin;
-        var exMargin = Math.floor((this.getInnerBreadth() - (tpl * this.getTileHeight()) - lMargins) / (tpl - 1));
+        var marginsInALine = tpl - 1;
+        // can't have zero margins in a line
+        if (marginsInALine == 0) marginsInALine = 1;
+        var exMargin = Math.floor((this.getInnerBreadth() - (tpl * this.getTileHeight()) - lMargins) / marginsInALine);
         // don't return less than hMargin
         if (exMargin < vMargin) return vMargin;
         else return exMargin;
@@ -753,8 +846,8 @@ getExtraMarginPixels : function (tpl, tHeight, tWidth, tHMargin, tVMargin) {
 // @visibility external
 //<
 getTile : function (index) {
-    if (!this.tiles) return null;
-    else return this.tiles[index];    
+    
+    return isc.Class.getArrayItem(index, this.tiles);
 },
 
 //> @method tileLayout.addTile()
@@ -815,6 +908,17 @@ childVisibilityChanged : function (child, newVisibility) {
         else child._userHidden = null;
         this.reLayout();
     } 
+},
+
+relayoutProperties:["tilesPerLine", "orientation", "tileWidth", "tileHeight", "expandMargins"],
+propertyChanged : function (propertyName, value) {
+    this.invokeSuper(isc.TileLayout, "propertyChanged", propertyName, value);
+    // tileMargin et al
+    if (isc.endsWith(propertyName, "Margin") || 
+        this.relayoutProperties.contains(propertyName)) 
+    {
+        this.layoutTiles();
+    }
 },
 
 // --------------------------Drag and Drop-----------------------------------------------------
@@ -975,6 +1079,7 @@ reLayout : function () {
         isc.Timer.setTimeout(this.ID + "._animateChange()", 200);
         //this.delayCall("_animateChange()", null, 200);
     } else {
+        this.logDebug('calling layoutTiles from reLayout', "TileLayout");
         this.layoutTiles();    
     }
 },
@@ -995,15 +1100,17 @@ _animateChange : function () {
     this._tilesToAnimate = [];
     this.layoutTiles();    
     // 2. hide tiles pointing to data that will no longer be visible
-    for (var i = 0; i < visTiles.length; i++) {
-        // if the currently visible tiles contain the old visible tiles, hide those tiles.
-        // if we just hide them all without the check, there is a visible flash for tiles
-        // that stay in the same place.
-        if (!this._visibleTiles.contains(visTiles[i]))  {
-            visTiles[i].hide();
+    // check that visTiles exists, based on an alleged issue with tileGrid in a sectionStack
+    if (visTiles != null) {
+        for (var i = 0; i < visTiles.length; i++) {
+            // if the currently visible tiles contain the old visible tiles, hide those tiles.
+            // if we just hide them all without the check, there is a visible flash for tiles
+            // that stay in the same place.
+            if (!this._visibleTiles.contains(visTiles[i]))  {
+                visTiles[i].hide();
+            }
         }
     }
-    
     // 3. animate the tiles that need to be moved
     var numTiles = this._tilesToAnimate.length;
     if (numTiles == 0) {
@@ -1037,6 +1144,7 @@ _finishAnimating : function () {
     this._tilesToAnimate = null;
     delete this._tilesToAnimate;
     // layout tiles 
+    this.logDebug('calling layoutTiles from _finishAnimating', "TileLayout");
     this.layoutTiles();    
 },
 
@@ -1078,7 +1186,7 @@ setTileHeight : function (height) {
 },
 
 //>	@method	tileLayout.setTileMargin()	
-// sets the width of tiles
+// sets the vertical and horizontal margin of tiles
 // @param	(Integer) margin	
 //
 // @group tileLayout
@@ -1090,7 +1198,7 @@ setTileMargin : function (margin) {
 },
 
 //>	@method	tileLayout.setTileHMargin()	
-// sets the width of tiles
+// sets the horizontal margin of tiles
 // @param	(Integer) width	
 //
 // @group tileLayout
@@ -1102,7 +1210,7 @@ setTileHMargin : function (margin) {
 },
 
 //>	@method	tileLayout.setTileVMargin()	
-// sets the width of tiles
+// sets the vertical margin of tiles
 // @param	(Integer) width	
 //
 // @group tileLayout
@@ -1114,3 +1222,16 @@ setTileVMargin : function (margin) {
 }
 });
 
+//>	@class	FlowLayout
+// Similar to a +link{TileLayout}, but by default lays out tiles in 'flow' mode instead of
+// 'fit' mode. 
+// 
+// @see tileLayout.layoutPolicy
+// @treeLocation Client Reference/Grids
+// @visibility external
+//<
+isc.ClassFactory.defineClass("FlowLayout", "TileLayout");
+
+isc.FlowLayout.addProperties({
+        layoutPolicy: "flow"            
+});        

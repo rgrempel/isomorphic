@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -12,7 +12,7 @@
 var isc = window.isc ? window.isc : {};if(window.isc&&!window.isc.module_Core){isc.module_Core=1;isc._moduleStart=isc._Core_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'Core load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime')
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM
-else isc._preLog=[isc._pTM]}var isc=window.isc?window.isc:{};isc.$d=new Date().getTime();isc.version="7.0rc2/LGPL Deployment";isc.versionNumber="7.0rc2";isc.buildDate="2009-05-30";isc.expirationDate="${expiration}";isc.licenseType="LGPL";isc.licenseCompany="";isc.licenseSerialNumber="e39b4dbdc44f0db3dcc629c987437688";isc.licensingPage="http://smartclient.com/licensing";isc.$41r={SCServer:{present:"false",name:"SmartClient Server",serverOnly:true,isPro:true},Drawing:{present:"false",name:"Drawing Module"},PluginBridges:{present:"false",name:"PluginBridges Module"},RichTextEditor:{present:"false",name:"RichTextEditor Module"},Calendar:{present:"${includeCalendar}",name:"Calendar Module"},Analytics:{present:"false",name:"Analytics Module"},NetworkPerformance:{present:"false",name:"Network Performance Module"},FileLoader:{present:"false",name:"Network Performance Module"},RealtimeMessaging:{present:"false",name:"RealtimeMessaging Module"},serverCriteria:{present:"${includeServerCriteria}",name:"Server Advanced Filtering",serverOnly:true,isFeature:true},customSQL:{present:"${includeCustomSQL}",name:"SQL Templating",serverOnly:true,isFeature:true},chaining:{present:"${includeChaining}",name:"Transaction Chaining",serverOnly:true,isFeature:true},batchDSGenerator:{present:"${includeBatchDSGenerator}",name:"Batch DS-Generator",serverOnly:true,isFeature:true},batchUploader:{present:"${includeBatchUploader}",name:"Batch Uploader",serverOnly:true,isFeature:true}};isc.canonicalizeModules=function(_1){if(!_1)return null;if(isc.isA.String(_1)){if(_1.indexOf(",")!=-1){_1=_1.split(",");var _2=/^\s+/,_3=/\s+$/;for(var i=0;i<_1.length;i++){_1[i]=_1[i].replace(_2,"").replace(_3,"")}}else _1=[_1]}
+else isc._preLog=[isc._pTM]}isc.definingFramework=true;var isc=window.isc?window.isc:{};isc.$d=new Date().getTime();isc.version="SC_SNAPSHOT-2010-03-13/LGPL Deployment";isc.versionNumber="SC_SNAPSHOT-2010-03-13";isc.buildDate="2010-03-13";isc.expirationDate="";isc.licenseType="LGPL";isc.licenseCompany="Isomorphic Software";isc.licenseSerialNumber="ISC_LGPL_NIGHTLY";isc.licensingPage="http://smartclient.com/product/";isc.$41r={SCServer:{present:"false",name:"SmartClient Server",serverOnly:true,isPro:true},Drawing:{present:"false",name:"Drawing Module"},PluginBridges:{present:"true",name:"PluginBridges Module"},RichTextEditor:{present:"true",name:"RichTextEditor Module"},Calendar:{present:"true",name:"Calendar Module"},Analytics:{present:"false",name:"Analytics Module"},NetworkPerformance:{present:"false",name:"Network Performance Module"},FileLoader:{present:"false",name:"Network Performance Module"},RealtimeMessaging:{present:"false",name:"RealtimeMessaging Module"},serverCriteria:{present:"false",name:"Server Advanced Filtering",serverOnly:true,isFeature:true},customSQL:{present:"false",name:"SQL Templating",serverOnly:true,isFeature:true},chaining:{present:"false",name:"Transaction Chaining",serverOnly:true,isFeature:true},batchDSGenerator:{present:"false",name:"Batch DS-Generator",serverOnly:true,isFeature:true},batchUploader:{present:"false",name:"Batch Uploader",serverOnly:true,isFeature:true}};isc.canonicalizeModules=function(_1){if(!_1)return null;if(isc.isA.String(_1)){if(_1.indexOf(",")!=-1){_1=_1.split(",");var _2=/^\s+/,_3=/\s+$/;for(var i=0;i<_1.length;i++){_1[i]=_1[i].replace(_2,"").replace(_3,"")}}else _1=[_1]}
 return _1};isc.hasOptionalModules=function(_1){if(!_1)return true;_1=isc.canonicalizeModules(_1);for(var i=0;i<_1.length;i++)if(!isc.hasOptionalModule(_1[i]))return false;return true};isc.getMissingModules=function(_1){var _2=[];_1=isc.canonicalizeModules(_1);for(var i=0;i<_1.length;i++){var _4=_1[i];if(!isc.hasOptionalModule(_4))_2.add(isc.$41r[_4])}
 return _2};isc.hasOptionalModule=function(_1){var v=isc.$41r[_1];if(!v){if(isc.Log)isc.Log.logWarn("isc.hasOptionalModule - unknown module: "+_1);return false}
 return v.present=="true"||v.present.charAt(0)=="$"};isc.getOptionalModule=function(_1){return isc.$41r[_1]};isc.$a=window.isc_useSimpleNames;if(isc.$a==null)isc.$a=true;if(window.OpenAjax){isc.$b=isc.versionNumber.replace(/[a-zA-Z_]+/,".0");OpenAjax.registerLibrary("SmartClient","http://smartclient.com/SmartClient",isc.$b,{namespacedMode:!isc.$a,iscVersion:isc.version,buildDate:isc.buildDate,licenseType:isc.licenseType,licenseCompany:isc.licenseCompany,licenseSerialNumber:isc.licenseSerialNumber});OpenAjax.registerGlobals("SmartClient",["isc"])}
@@ -22,10 +22,11 @@ isc.addGlobal("Browser",{isSupported:false});isc.Browser.isOpera=(navigator.appN
 isc.Browser.isFirefox=(isc.Browser.isMoz&&navigator.userAgent.indexOf("Firefox/")!=-1);if(isc.Browser.isFirefox){isc.Browser.firefoxVersion=navigator.userAgent.substring(navigator.userAgent.indexOf("Firefox/")+8)}
 if(isc.Browser.isMoz){isc.Browser.$g=navigator.userAgent.indexOf("Gecko/")+6;isc.Browser.geckoVersion=parseInt(navigator.userAgent.substring(isc.Browser.$g,isc.Browser.$g+8));if(isc.Browser.isFirefox){if(isc.Browser.firefoxVersion.match(/^1\.0/))isc.Browser.geckoVersion=20050915;else if(isc.Browser.firefoxVersion.match(/^2\.0/))isc.Browser.geckoVersion=20071108}}
 isc.Browser.isStrict=document.compatMode=="CSS1Compat";if(isc.Browser.isStrict&&isc.Browser.isMoz){isc.Browser.$51p=document.doctype.publicId;isc.Browser.$51q=document.doctype.systemId;isc.Browser.isTransitional=isc.Browser.$51p.indexOf("Transitional")!=-1||isc.Browser.$51p.indexOf("Frameset")!=-1}
-isc.Browser.isIE8Strict=isc.Browser.isIE&&isc.Browser.isStrict&&document.documentMode>7;isc.Browser.isBorderBox=isc.Browser.isIE&&!isc.Browser.isStrict;isc.Browser.isAIR=(navigator.userAgent.indexOf("AdobeAIR")!=-1);isc.Browser.AIRVersion=(isc.Browser.isAIR?navigator.userAgent.substring(navigator.userAgent.indexOf("AdobeAir/")+9):null);isc.Browser.isSafari=isc.Browser.isAIR||navigator.userAgent.indexOf("Safari")!=-1||navigator.userAgent.indexOf("AppleWebKit")!=-1;isc.Browser.isChrome=isc.Browser.isSafari&&(navigator.userAgent.indexOf("Chrome/")!=-1);if(isc.Browser.isSafari){if(isc.Browser.isAIR){isc.Browser.safariVersion=530}else{if(navigator.userAgent.indexOf("Safari/")!=-1){isc.Browser.rawSafariVersion=navigator.userAgent.substring(navigator.userAgent.indexOf("Safari/")+7)}else if(navigator.userAgent.indexOf("AppleWebKit/")!=-1){isc.Browser.rawSafariVersion=navigator.userAgent.substring(navigator.userAgent.indexOf("AppleWebKit/")+12)}else{isc.Browser.rawSafariVersion="530"}
+isc.Browser.isIE8=isc.Browser.isIE&&isc.Browser.version>=8&&document.documentMode>7
+isc.Browser.isIE8Strict=isc.Browser.isIE&&isc.Browser.isStrict&&isc.Browser.isIE8;isc.Browser.isBorderBox=isc.Browser.isIE&&!isc.Browser.isStrict;isc.Browser.isAIR=(navigator.userAgent.indexOf("AdobeAIR")!=-1);isc.Browser.AIRVersion=(isc.Browser.isAIR?navigator.userAgent.substring(navigator.userAgent.indexOf("AdobeAir/")+9):null);isc.Browser.isSafari=isc.Browser.isAIR||navigator.userAgent.indexOf("Safari")!=-1||navigator.userAgent.indexOf("AppleWebKit")!=-1;isc.Browser.isChrome=isc.Browser.isSafari&&(navigator.userAgent.indexOf("Chrome/")!=-1);if(isc.Browser.isSafari){if(isc.Browser.isAIR){isc.Browser.safariVersion=530}else{if(navigator.userAgent.indexOf("Safari/")!=-1){isc.Browser.rawSafariVersion=navigator.userAgent.substring(navigator.userAgent.indexOf("Safari/")+7)}else if(navigator.userAgent.indexOf("AppleWebKit/")!=-1){isc.Browser.rawSafariVersion=navigator.userAgent.substring(navigator.userAgent.indexOf("AppleWebKit/")+12)}else{isc.Browser.rawSafariVersion="530"}
 isc.Browser.safariVersion=(function(){var _1=isc.Browser.rawSafariVersion,_2=_1.indexOf(".");if(_2==-1)return parseInt(_1);var _3=_1.substring(0,_2+1),_4;while(_2!=-1){_2+=1;_4=_1.indexOf(".",_2);_3+=_1.substring(_2,(_4==-1?_1.length:_4));_2=_4}
 return parseFloat(_3)})()}}
-isc.Browser.isWin=navigator.platform.toLowerCase().indexOf("win")>-1;isc.Browser.isWin2k=navigator.userAgent.match(/NT 5.01?/)!=null;isc.Browser.isMac=navigator.platform.toLowerCase().indexOf("mac")>-1;isc.Browser.isUnix=(!isc.Browser.isMac&&!isc.Browser.isWin);isc.Browser.lineFeed=(isc.Browser.isWin?"\r\n":"\r");isc.Browser.$h=false;isc.Browser.isDOM=(isc.Browser.isMoz||isc.Browser.isOpera||isc.Browser.isSafari||(isc.Browser.isIE&&isc.Browser.version>=5));isc.Browser.isSupported=((isc.Browser.isIE&&isc.Browser.minorVersion>=5.5&&isc.Browser.isWin)||isc.Browser.isMoz||isc.Browser.isOpera||isc.Browser.isSafari||isc.Browser.isAIR);isc.noOp=function(){};isc.emptyObject={};isc.$ac=[];isc.emptyString=isc.$ad="";isc.dot=".";isc.semi=";";isc.colon=":";isc.slash="/";isc.star="*";isc.auto="auto";isc.px="px";isc.nbsp="&nbsp;";isc.xnbsp="&amp;nbsp;";isc.$ae="false";isc.$af="FALSE";isc.$ag="_";isc.$ah="_$_";isc.$ai="_$SuperProto_";isc.logWarn=function(_1,_2){isc.Log.logWarn(_1,_2)}
+isc.Browser.isWin=navigator.platform.toLowerCase().indexOf("win")>-1;isc.Browser.isWin2k=navigator.userAgent.match(/NT 5.01?/)!=null;isc.Browser.isMac=navigator.platform.toLowerCase().indexOf("mac")>-1;isc.Browser.isUnix=(!isc.Browser.isMac&&!isc.Browser.isWin);isc.Browser.lineFeed=(isc.Browser.isWin?"\r\n":"\r");isc.Browser.$h=false;isc.Browser.isDOM=(isc.Browser.isMoz||isc.Browser.isOpera||isc.Browser.isSafari||(isc.Browser.isIE&&isc.Browser.version>=5));isc.Browser.isSupported=((isc.Browser.isIE&&isc.Browser.minorVersion>=5.5&&isc.Browser.isWin)||isc.Browser.isMoz||isc.Browser.isOpera||isc.Browser.isSafari||isc.Browser.isAIR);isc.Browser.allowsXSXHR=((isc.Browser.isFirefox&&isc.Browser.firefoxVersion>="3.5")||(isc.Browser.isChrome)||(isc.Browser.isSafari&&isc.Browser.safariVersion>=531));isc.noOp=function(){};isc.emptyObject={};isc.$ac=[];isc.emptyString=isc.$ad="";isc.dot=".";isc.semi=";";isc.colon=":";isc.slash="/";isc.star="*";isc.auto="auto";isc.px="px";isc.nbsp="&nbsp;";isc.xnbsp="&amp;nbsp;";isc.$ae="false";isc.$af="FALSE";isc.$ag="_";isc.$75g="$";isc.$ah="_$observed_";isc.$ai="_$SuperProto_";isc.gwtRef="__ref";isc.logWarn=function(_1,_2){isc.Log.logWarn(_1,_2)}
 isc.echo=function(_1){return isc.Log.echo(_1)}
 isc.echoAll=function(_1){return isc.Log.echoAll(_1)}
 isc.echoLeaf=function(_1){return isc.Log.echoLeaf(_1)}
@@ -46,10 +47,10 @@ isc.$a1=[];isc.addGlobal("addProperties",function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10
 var _31=isc.addPropertyList(_1,_29);_29.length=0;return _31});isc.$a2={};isc.$a3={};isc.$a4=function(_1){var _2=_1.Class,_3;if(isc.isA.ClassObject(_1)){_3=isc.$a3[_2]=isc.$a3[_2]||[]}else if(isc.isAn.InstancePrototype(_1)){_3=isc.$a2[_2]=isc.$a2[_2]||[]}
 return _3}
 isc.addPropertyList=function(_1,_2){if(_1==null){if(isc.Log)isc.Log.logWarn("Attempt to add properties to a null object. "+"Creating a new object for the list of properties.");_1={}}
-var _3,_4=(isc.isA!=null),_5=(isc.isAn&&isc.isAn.Instance(_1)?_1.getClass()._stringMethodRegistry:_1._stringMethodRegistry);if(_5==null)_5=isc.emptyObject;var _6=_1.$a5?isc.$a4(_1):null;for(var i=0,l=_2.length;i<l;i++){var _9=_2[i];if(_9==null)continue;for(var _10 in _9){var _11=_9[_10];var _12;if(_5[_10]!==_12||(_4&&isc.isA.Function(_11)))
-{if(_3==null)_3={};_3[_10]=_11}else{if(_6!=null)_6[_6.length]=_10;if(isc.Log!=null&&_4&&(!isc.isA.Function(_11)&&isc.isA.Function(_1[_10])))
-{isc.Log.logWarn("method "+_10+" on "+_1+" overriden with non-function: '"+_11+"'")}
-_1[_10]=_11}}}
+var _3,_4=(isc.isA!=null),_5=(isc.isAn&&isc.isAn.Instance(_1)?_1.getClass()._stringMethodRegistry:_1._stringMethodRegistry);if(_5==null)_5=isc.emptyObject;var _6=_1.$a5?isc.$a4(_1):null;var _7;for(var i=0,l=_2.length;i<l;i++){var _10=_2[i];if(_10==null)continue;for(var _11 in _10){var _12=_10[_11];var _13=_4&&isc.isA.Function(_12);if(_5[_11]!==_7||_13)
+{if(_3==null)_3={};_3[_11]=_12}else{if(_6!=null)_6[_6.length]=_11;var _14=_1[_11];if(!_13&&_14!=null&&isc.isA.Function(_1[_11]))
+{if(isc.Log!=null){isc.Log.logWarn("method "+_11+" on "+_1+" overridden with non-function: '"+_12+"'")}}
+_1[_11]=_12}}}
 if(_3!=null)isc.addMethods(_1,_3);return _1}
 isc.$a6="string";isc.$a7="function";isc.$a8="constructor";isc.$bl="object";isc.addGlobal("addMethods",function(_1,_2){if(!_1||!_2)return _1;var _3=_1.$a5?isc.$a4(_1):null;if(!isc.$a9)isc.$a9={};for(var _4 in _2){if(_3!=null)_3[_3.length]=_4;var _5=_2[_4];if(isc.isAn.Instance!=null&&_5!=null&&(typeof _5==isc.$a6||typeof _5==isc.$bl))
 {var _6=(isc.isAn.Instance(_1)?_1.getClass()._stringMethodRegistry:_1._stringMethodRegistry);var _7;if(_6&&!(_6[_4]===_7)&&_4!=isc.$a8)
@@ -68,7 +69,11 @@ var _3=isc.getKeys(_1);_3=(_2==null?_3.sort():_3.sort(_2));var _4={};for(var i=0
 return _4});isc.addGlobal("sortObjectByProperties",function(_1,_2){if(!isc.isA.Object(_1))return _1;if(isc.isAn.Array(_1)){if(_2!=null)return _1.sort(_2);return _1.sort()}
 var _3=isc.getValues(_1);_3=(_2==null?_3.sort():_3.sort(_2));var _4={};for(var i=0;i<_3.length;i++){var _6=_3[i];for(var _7 in _1){if(_1[_7]===_6){_4[_7]=_1[_7];continue}}}
 return _4});isc.addGlobal("addDefaults",function(_1,_2){if(_1==null)return;var _3;for(var _4 in _2){if(_1[_4]===_3)_1[_4]=_2[_4]}
-return _1});isc.addGlobal("propertyDefined",function(_1,_2){if(_1==null)return false;var _3;if(_1[_2]!==_3)return true;var _4=isc.getKeys(_1);return(_4.contains(_2))});isc.applyMask=function(_1,_2){var _3={};if(_1==null)return _3;if(_2==null){return isc.addProperties(_3,_1)}
+return _1});isc.addGlobal("propertyDefined",function(_1,_2){if(_1==null)return false;var _3;if(_1[_2]!==_3)return true;var _4=isc.getKeys(_1);return(_4.contains(_2))});isc.addGlobal("objectsAreEqual",function(_1,_2){if(_1===_2)return true;else if(isc.isAn.Object(_1)&&isc.isAn.Object(_2)){if(isc.isA.Date(_1)){return isc.isA.Date(_2)&&(Date.compareDates(_1,_2)==0)}else if(isc.isAn.Array(_1)){if(isc.isAn.Array(_2)&&_1.length==_2.length){for(var i=0;i<_1.length;i++){if(!isc.objectsAreEqual(_1[i],_2[i]))return false}
+return true}
+return false}else{if(isc.isAn.Array(_2))return false;var _4=0;for(var _5 in _1){if(!isc.objectsAreEqual(_1[_5],_2[_5]))return false;_4++}
+if(isc.getKeys(_2).length!=_4)return false;return true}}else{return false}});isc.addGlobal("combineObjects",function(_1,_2){if(_1==null||!isc.isAn.Object(_1))return _2;if(_2==null||!isc.isAn.Object(_2))return _1;for(var _3 in _2){var _4=_1[_3],_5=_2[_3];if(isc.isAn.Object(_4)&&!isc.isAn.Array(_4)&&!isc.isA.Date(_4)&&isc.isAn.Object(_5)&&!isc.isAn.Array(_5)&&!isc.isA.Date(_5))
+{isc.combineObjects(_4,_5)}else{_1[_3]=_5}}});isc.applyMask=function(_1,_2){var _3={};if(_1==null)return _3;if(_2==null){return isc.addProperties(_3,_1)}
 var _4=false;if(!isc.isAn.Array(_1)){_4=true;_1=[_1]}
 if(!isc.isAn.Array(_2))_2=isc.getKeys(_2);var _3=[],_5,_6,_7,_8;for(var i=0;i<_1.length;i++){_5=_1[i];_6=_3[i]={};for(var j=0;j<_2.length;j++){_7=_2[j];if(_5[_7]===_8)continue;_6[_7]=_5[_7]}}
 return(_4?_3[0]:_3)}
@@ -84,14 +89,15 @@ for(var i=_5;i>=_3;i--){_1[i]=null}}
 isc.booleanValue=function(_1,_2){if(_1==null)return _2;if(isc.isA.String(_1))return _1!=isc.$ae&&_1!=isc.$af;return _1?true:false}
 isc.iscToLocaleString=function(_1){if(_1!=null){return _1.iscToLocaleString?_1.iscToLocaleString():(_1.toLocaleString?_1.toLocaleString():(_1.toString?_1.toString():isc.emptyString+_1))}
 return isc.emptyString+_1}
-isc.addGlobal("isA",{});isc.addGlobal("isAn",isc.isA);isc.addGlobal("is",isc.isA);isc.isA.Class="isA";isc.isA.isc=isc.isA;Function.$k=1;Array.$k=2;Date.$k=3;String.$k=4;Number.$k=5;Boolean.$k=6;RegExp.$k=7;Object.$k=8;Function.prototype.$k=1;isc.A=isc.isA;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$bl="object";isc.A.$a7="function";isc.A.$bm="text/xml";isc.A.$58k={SelectItem:true};isc.B.push(isc.A.emptyString=function(_1){return isc.isA.String(_1)&&_1==isc.emptyString}
+isc.addGlobal("isA",{});isc.addGlobal("isAn",isc.isA);isc.addGlobal("is",isc.isA);isc.isA.Class="isA";isc.isA.isc=isc.isA;Function.$k=1;Array.$k=2;Date.$k=3;String.$k=4;Number.$k=5;Boolean.$k=6;RegExp.$k=7;Object.$k=8;Function.prototype.$k=1;isc.A=isc.isA;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$bl="object";isc.A.$73x="String";isc.A.$a7="function";isc.A.$bm="text/xml";isc.A.$58k={SelectItem:true,Time:true};isc.B.push(isc.A.emptyString=function(_1){return isc.isA.String(_1)&&_1==isc.emptyString}
 ,isc.A.nonemptyString=function(_1){return isc.isA.String(_1)&&_1!=isc.emptyString}
 ,isc.A.Object=function(_1){if(_1==null)return false;if(isc.Browser.isIE&&typeof _1==this.$a7)return false;if(_1.constructor&&_1.constructor.$k!=null){var _2=_1.constructor.$k;if(_2==1){}else{return(_2==8||_2==7||_2==3||_2==2)}}
-if(typeof _1==this.$bl){if(isc.Browser.isIE&&isc.isA.Function(_1))return false;else return true}else{if(isc.Browser.isMoz&&isc.isA.RegularExpression(_1))return true;else return false}}
+if(_1.Class!=null&&_1.Class==this.$73x)return false;if(typeof _1==this.$bl){if(isc.Browser.isIE&&isc.isA.Function(_1))return false;else return true}else{if(isc.Browser.isMoz&&isc.isA.RegularExpression(_1))return true;else return false}}
 ,isc.A.emptyObject=function(_1){if(!isc.isAn.Object(_1))return false;for(var i in _1){return false}
 return true}
+,isc.A.emptyArray=function(_1){return isc.isAn.Array(_1)&&_1.length==0}
 ,isc.A.String=function(_1){if(_1==null)return false;if(typeof _1==this.$a7)return false;if(_1.constructor&&_1.constructor.$k!=null){return _1.constructor.$k==4}
-return typeof _1=="string"}
+if(_1.Class!=null&&_1.Class==this.$73x)return true;return typeof _1=="string"}
 ,isc.A.Array=function(_1){if(_1==null)return false;if(typeof _1==this.$a7)return false;if(_1.constructor&&_1.constructor.$k!=null){return _1.constructor.$k==2}
 if(isc.Browser.isSafari)return""+_1.splice=="(Internal function)";return""+_1.constructor==""+Array}
 ,isc.A.Function=function(_1){if(_1==null)return false;if(isc.Browser.isIE&&typeof _1==this.$a7)return true;var _2=_1.constructor;if(_2&&_2.$k!=null){if(_2.$k!=1)return false;if(_2===Function)return true}
@@ -121,11 +127,12 @@ return this.$bn.test(_1)}
 ,isc.A.ResultTree=function(_1){return false}
 ,isc.A.SelectItem=function(_1){if(!_1||!isc.isA.FormItem(_1))return false;var _2=_1.getClass();return(_2==isc.SelectItem||_2==isc.NativeSelectItem)}
 ,isc.A.SelectOtherItem=function(_1){if(!_1||!isc.isA.FormItem(_1))return false;var _2=_1.getClass();return((_2==isc.SelectItem||_2==isc.NativeSelectItem)&&_1.isSelectOther)}
-);isc.B._maxIndex=isc.C+22;isc.addGlobal("ClassFactory",{});isc.ClassFactory.Class="ClassFactory";isc.A=isc.isA;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.Instance=function(_1){return(_1!=null&&_1.$bo!=null)}
+,isc.A.Time=function(_1){return isc.isA.Date(_1)}
+);isc.B._maxIndex=isc.C+24;isc.addGlobal("ClassFactory",{});isc.ClassFactory.Class="ClassFactory";isc.A=isc.isA;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.Instance=function(_1){return(_1!=null&&_1.$bo!=null)}
 ,isc.A.ClassObject=function(_1){return(_1!=null&&_1.$bp==true)}
 ,isc.A.Interface=function(_1){return(_1!=null&&_1.$a5==true)}
 ,isc.A.InstancePrototype=function(_1){return(isc.isAn.Instance(_1)&&_1.$bo==_1)}
-);isc.B._maxIndex=isc.C+4;isc.A=isc.ClassFactory;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$f="isc.";isc.A.$bq="Window";isc.A.$br="Selection";isc.A.$bs={};isc.A.$bt="object";isc.A.$bu=["if(object==null||object.isA==null||object.isA==isc.isA)return false;return object.isA(isc.",null,")"];isc.A.$60l={toolbar:true,parent:true,window:true};isc.A._$isc_OID_="isc_OID_";isc.A._$isc_="isc_";isc.A.$bv="_";isc.A.$bw=[];isc.A.reuseGlobalIDs=true;isc.A.globalIDClassPoolSize=1000;isc.A.$63v={};isc.A.$bx=0;isc.A._$isc_="isc_";isc.A.$by=[null,"_",null];isc.A.reuseDOMIDs=false;isc.A.DOMIDPoolSize=10000;isc.A.$63w=[];isc.A.$bz=["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];isc.A.$b0=[];isc.A.$b1="a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p";isc.B.push(isc.A.defineClass=function(_1,_2,_3,_4){return this.$b2(_1,_2,_3,null,_4)}
+);isc.B._maxIndex=isc.C+4;isc.A=isc.ClassFactory;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$f="isc.";isc.A.$bq="Window";isc.A.$br="Selection";isc.A.$bs={};isc.A.$bt="object";isc.A.$bu=["if(object==null||object.isA==null||object.isA==isc.isA)return false;return object.isA(isc.",null,")"];isc.A.$60l={toolbar:true,parent:true,window:true};isc.A._$isc_OID_="isc_OID_";isc.A._$isc_="isc_";isc.A.$bv="_";isc.A.$bw=[];isc.A.$75m={};isc.A.reuseGlobalIDs=true;isc.A.globalIDClassPoolSize=1000;isc.A.$63v={};isc.A.$bx=0;isc.A._$isc_="isc_";isc.A.$by=[null,"_",null];isc.A.reuseDOMIDs=false;isc.A.DOMIDPoolSize=10000;isc.A.$63w=[];isc.A.$bz=["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];isc.A.$b0=[];isc.A.$b1="a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p";isc.B.push(isc.A.defineClass=function(_1,_2,_3,_4){return this.$b2(_1,_2,_3,null,_4)}
 ,isc.A.defineInterface=function(_1,_2){return this.$b2(_1,_2,null,true)}
 ,isc.A.defineRootClass=function(_1){return this.$b3(_1,null)}
 ,isc.A.$b2=function(_1,_2,_3,_4,_5){_2=(_2||isc.ClassFactory.defaultSuperClass);if(!_2){isc.Log.logWarn("isc.ClassFactory.defineClass("+_1+") called with null"+" superClass and no ClassFactory.defaultRootClass is defined.");return null}
@@ -135,7 +142,9 @@ else if(_9&&!_6){_7=window[_1]}
 if(_7!=null&&_1!="IButton")
 {var _10="New Class ID: '"+_1+"' collides with ID of existing "+(isc.isA&&isc.isA.Function(isc.isA.Class)&&isc.isA.Class(_7)?"Class object '":"object with value '")+_7+"'.  Existing object will be replaced.";if(!_8)_10+="\nThis conflict would be avoided by disabling "+"ISC Simple Names mode.  See documentation for "+"further information."
 if(window.isc.Log)isc.Log.logWarn(_10)}
-_2=this.getClass(_2);var _11=(_2?new _2.$b4.$b5():{});var _12=this.$b6(_2);_11.$b5=this.$b7(_11);_12.Class=_1;_12.$bp=true;_12.$a5=_11.$a5=!!_4;_12.$b8=_2;_12.$b4=_11;_11.Class=_1;_11.$b9=_12;_11.$bo=_11;isc[_1]=_12;if(_9)window[_1]=_12;this.classList[this.classList.length]=_1
+_2=this.getClass(_2);var _11=(_2?new _2.$b4.$b5():{});var _12=this.$b6(_2);_11.$b5=this.$b7(_11);_12.Class=_1;_12.$bp=true;if(isc.definingFramework==true)_12.isFrameworkClass=true;else _12.isFrameworkClass=false;if(!_12.isFrameworkClass){var _13=_2;while(_13&&!_13.isFrameworkClass){_13=_13.getSuperClass()}
+if(_13)_12.$75y=_13.Class}
+if(!_12.$75y)_12.$75y=_12.Class;_12.$a5=_11.$a5=!!_4;_12.$b8=_2;_12.$b4=_11;_11.Class=_1;_11.$b9=_12;_11.$bo=_11;_11.isFrameworkClass=_12.isFrameworkClass;_11.$75y=_12.$75y;isc[_1]=_12;if(_9)window[_1]=_12;this.classList[this.classList.length]=_1
 if(!(isc.isA.$58k[_1]&&isc.isA[_1])){isc.isA[_1]=this.makeIsAFunc(_1)}
 if(_3!=null){if(!isc.isAn.Array(_3))_3=[_3];for(var i=0;i<_3.length;i++){this.mixInInterface(_1,_3[i])}}
 return _12}
@@ -161,9 +170,9 @@ if(!_5){if(_6){try{_4[_1.ID]=_1}catch(e){_5=true}
 if(_4[_1.ID]!=_1){_5=true}}else{_4[_1.ID]=_1}}
 if(_5){var _8=this.getNextGlobalID(_1);isc.logWarn("ClassFactory.addGlobalID: ID specified as:"+_1.ID+". This is a reserved word in Javascript or a native property of the"+" browser window object and can not be used as an ID."+" Setting ID to "+_8+" instead.");_1.ID=_8;_1.$541=true;_4[_1.ID]=_1}
 if(isc.globalsSnapshot)isc.globalsSnapshot.add(_1.ID)}
-,isc.A.getNextGlobalID=function(_1){if(_1!=null&&isc.isA.String(_1.Class)){var _2=this.$63v[_1.Class]
-if(_2&&_2.length>0){var _3=_2[_2.length-1];_2.length=_2.length-1;return _3}
-var _4=this.$bw;_4[0]=this._$isc_;_4[1]=_1.Class;_4[2]=this.$bv;isc.$bk(_4,this.$cb++,3,5);var _5=_4.join(isc.emptyString);return _5}
+,isc.A.getNextGlobalID=function(_1){var _2=_1!=null&&isc.isA.String(_1.Class)?_1.Class:null;if(_2){var _3=this.$63v[_2]
+if(_3&&_3.length>0){var _4=_3[_3.length-1];_3.length=_3.length-1;return _4}
+var _5;if(this.$75m[_2]==null)this.$75m[_2]=0;_5=this.$75m[_2]++;var _6=this.$bw;_6[0]=this._$isc_;_6[1]=_2;_6[2]=this.$bv;isc.$bk(_6,_5,3,5);var _7=_6.join(isc.emptyString);return _7}
 return this._$isc_OID_+this.$cb++}
 ,isc.A.dereferenceGlobalID=function(_1){if(window[_1.ID]==_1){window[_1.ID]=null;if(_1.Class!=null&&_1.$541){this.releaseGlobalID(_1.Class,_1.ID)}}}
 ,isc.A.releaseGlobalID=function(_1,_2){if(!this.reuseGlobalIDs)return;var _3=this.$63v[_1];if(!_3)this.$63v[_1]=[_2];else if(_3.length<=this.globalIDClassPoolSize)_3[_3.length]=_2}
@@ -215,6 +224,7 @@ else _4=eval(_1)}}else{if(_3)_4=window.eval(_1)
 else _4=eval(_1)}
 if(isc.$611!=null)isc.$611--;if(isc.$611==0)delete isc.$611;return _4}
 ,isc.A.addClassProperties=function(){isc.addPropertyList(this,arguments);return this}
+,isc.A.markAsFrameworkClass=function(){this.isFrameworkClass=true;this.$b4.isFrameworkClass=true;this.$75y=this.Class;this.$b4.$75y=this.Class}
 ,isc.A.addProperties=function(){if(this.$a5){this.logWarn("Use addInterfaceProperties() to add methods to interface "+this)}
 isc.addPropertyList(this.$b4,arguments);return this}
 ,isc.A.addPropertyList=function(_1){isc.addPropertyList(this.$b4,_1);return this}
@@ -256,7 +266,7 @@ return _8}
 ,isc.A.getArgString=function(_1){var _2=this._stringMethodRegistry[_1];var _3;if(_2!==_3)return _2||isc.emptyString;var _4=this.getInstanceProperty(_1);if(_4==null)return"";return isc.Func.getArgString(_4)}
 ,isc.A.fireCallback=function(_1,_2,_3,_4,_5){arguments.$cw=this;if(_1==null)return;var _6;if(_2==null)_2=_6;var _7=_1;if(isc.isA.String(_1)){if(_4!=null&&isc.isA.Function(_4[_1]))_7=_4[_1];else _7=this.$c5(_1,_2)}else if(isc.isAn.Object(_1)&&!isc.isA.Function(_1)){if(_1.caller!=null)_4=_1.caller;else if(_1.target!=null)_4=_1.target;if(_1.args)_3=_1.args;if(_1.argNames)_2=_1.argNames;if(_1.method)_7=_1.method;else if(_1.methodName&&_4!=null)_7=_4[_1.methodName];else if(_1.action)
 _7=this.$c5(_1.action,_2)}
-if(!isc.isA.Function(_7)){this.logWarn("fireCallback() unable to convert callback: "+this.echo(_1)+" to a function.");return}
+if(!isc.isA.Function(_7)){this.logWarn("fireCallback() unable to convert callback: "+this.echo(_1)+" to a function.  target: "+_4+", argNames: "+_2+", args: "+_3);return}
 if(_4==null)_4=window;else if(_4.destroyed){if(this.logIsInfoEnabled("callbacks")){this.logInfo("aborting attempt to fire callback on destroyed target:"+_4+". Callback:"+isc.Log.echo(_1)+",\n stack:"+this.getStackTrace())}
 return}
 _7.$c6=true;if(_3==null)_3=[];if(isc.enableCrossWindowCallbacks&&isc.Browser.isIE){var _8=_4.constructor?_4.constructor.$ch:_4;if(_8&&_8!=window&&_8.isc){var _9=_8.Array.newInstance();for(var i=0;i<_3.length;i++)_9[i]=_3[i];_3=_9}}
@@ -266,13 +276,14 @@ return _11}
 ,isc.A.$c5=function(_1,_2){if(_2==null){var _3;_2=_3}
 var _4=isc.$aq(_2,_1);_4.$c7=true;return _4}
 ,isc.A.fireOnPause=function(_1,_2,_3,_4,_5){if(!_1)return;if(!_3)_3=this.fireOnPauseDelay;if(_5==null)_5=this.getClassName();if(!this.$cn[_1]){this.$cn[_1]={}}
-this.$cn[_1][_5]={fireTime:_3,callback:_2,target:_4};var _6=isc.timeStamp(),_7=this.$c8?_6-this.$c8:null;this.$c8=_6;if(_7&&_3>=(this.$c9-_7))return;if(this.$da)isc.Timer.clearTimeout(this.$da);this.$da=this.delayCall(this.$cl,null,_3);this.$c9=_3}
+this.$cn[_1][_5]={fireTime:_3,callback:_2,target:_4};var _6=isc.timeStamp(),_7=this.$c8?_6-this.$c8:null;this.$c8=_6;if(_7&&this.$c9!=null&&_3>=(this.$c9-_7))return;if(this.$da)isc.Timer.clearTimeout(this.$da);this.$da=this.delayCall(this.$cl,null,_3);this.$c9=_3}
 ,isc.A.$cm=function(){var _1;var _2=isc.timeStamp()-this.$c8,_1;for(var _3 in this.$cn){var _4=this.$cn[_3];for(var _5 in _4){var _6=_4[_5];if(_6.fireTime<=_2){this.fireCallback(_6.callback,null,null,_6.target);delete this.$cn[_3][_5]}else{_6.fireTime-=_2;if(_1==null)_1=_6.fireTime;else _1=Math.min(_1,_6.fireTime)}}
 if(isc.isAn.emptyObject(this.$cn[_3]))delete this.$cn[_3]}
-if(_1!=null){this.$c9=_1;this.$c8=isc.timeStamp();this.delayCall(this.$cl,null,_1)}else{this.$c8=null}}
+if(_1!=null){this.$c9=_1;this.$c8=isc.timeStamp();this.delayCall(this.$cl,null,_1)}else{this.$c9=null;this.$c8=null}}
 ,isc.A.evalWithVars=function(_1,_2,_3){if(!_3)_3=window;if(this.useFastEvalWithVars){return this.evaluate.call(_3,_1,_2)}
-var _4=["evalString"];var _5=[_1];if(_2){for(var _6 in _2){_4.push(_6);_5.push(_2[_6])}}
-var _7=isc.$aq(_4.join(","),"return eval(evalString)");return _7.apply(_3,_5)}
+var _4="_1";while(_2&&isc.propertyDefined(_2,_4)){_4+="1"}
+var _5=[_4];var _6=[_1];if(_2){for(var _7 in _2){_5.push(_7);_6.push(_2[_7])}}
+var _8=isc.$aq(_5.join(","),"return eval("+_4+")");return _8.apply(_3,_6)}
 ,isc.A.evalWithCapture=function(_1,_2,_3){var _4=isc.globalsSnapshot=[];this.evalWithVars(_1,_2,_3);isc.globalsSnapshot=null;return _4}
 ,isc.A.destroyGlobals=function(_1){if(!isc.isAn.Array(_1))_1=[_1];for(var i=0;i<_1.length;i++){var _3=_1[i];if(window[_3]&&isc.isA.Function(window[_3].destroy))window[_3].destroy();else window[_3]=null}}
 ,isc.A.globalEvalWithCapture=function(_1,_2,_3,_4){if(_4==null)_4=true;this.$db=_3;this.$dc=_2;if(isc.Browser.isSafari){_1="isc.Class.$dd();\n"+_1+"\nisc.Class.$de();";window.setTimeout(_1,0);return}
@@ -293,7 +304,7 @@ if(!_3)return null}}
 this.ns.$dm=_3;return _3}
 ,isc.A.getActiveElement=function(){try{return this.getDocument().activeElement}catch(e){this.logWarn("error accessing activeElement: "+e.message)}
 return null}
-);isc.B._maxIndex=isc.C+48;isc.A=isc.Class;isc.A.newInstance=isc.Class.create;isc.Class.ns=isc;isc.A=isc.ClassFactory;isc.A.ns=isc;isc.A.getWindow=isc.Class.getWindow;isc.A.getDocument=isc.Class.getDocument;isc.A=isc.Class.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.getWindow=(isc.Browser.isSafari?function(){return window}:function(){return this.ns.$ch});isc.A.getDocument=(isc.Browser.isSafari?function(){return window.document}:function(){return this.ns.$ci});isc.A.$dn="_autoMaker";isc.A.$58e="creator";isc.A.$do="show";isc.A.$dp="Constructor";isc.A.$dq="Defaults";isc.A.$dr="Properties";isc.A.map=isc.Class.map;isc.A.Super=isc.Class.Super;isc.A.invokeSuper=isc.Class.invokeSuper;isc.B.push(isc.A.init=function(){}
+);isc.B._maxIndex=isc.C+49;isc.A=isc.Class;isc.A.newInstance=isc.Class.create;isc.Class.ns=isc;isc.A=isc.ClassFactory;isc.A.ns=isc;isc.A.getWindow=isc.Class.getWindow;isc.A.getDocument=isc.Class.getDocument;isc.A=isc.Class.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.getWindow=(isc.Browser.isSafari?function(){return window}:function(){return this.ns.$ch});isc.A.getDocument=(isc.Browser.isSafari?function(){return window.document}:function(){return this.ns.$ci});isc.A.$dn="_autoMaker";isc.A.$58e="creator";isc.A.$do="show";isc.A.$dp="Constructor";isc.A.$dq="Defaults";isc.A.$dr="Properties";isc.A.map=isc.Class.map;isc.A.Super=isc.Class.Super;isc.A.invokeSuper=isc.Class.invokeSuper;isc.B.push(isc.A.init=function(){}
 ,isc.A.destroy=function(){}
 ,isc.A.completeCreation=function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13){if(this.addPropertiesOnCreate!=false){if(isc.captureInitData){var _14={className:this.Class,defaults:isc.addProperties({},_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13)}
 if(!isc.capturedComponents)isc.capturedComponents=[];isc.capturedComponents.add(_14);if(_14.defaults.ID){isc.ClassFactory.addGlobalID(_14,_14.defaults.ID)}
@@ -303,7 +314,7 @@ this.init(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13);return this}
 ,isc.A.getUniqueProperties=function(_1){if(_1==null)_1={};var _2=this.getPrototype();for(var _3 in this){if(_3.startsWith("_"))continue;if(_3=="ns")continue;if(_3=="ID"&&this.ID.startsWith("isc_OID_"))continue;var _4=this[_3];if(isc.isA.Function(_4))continue;if(_4!=_2[_3]){_1[_3]=this[_3]}}
 return _1}
 ,isc.A.clone=function(){return this.getClass().create(this.getUniqueProperties())}
-,isc.A.serialize=function(_1){return isc.Comm.serialize(this,_1,null)}
+,isc.A.serialize=function(_1){return isc.Comm.serialize(this,_1)}
 ,isc.A.xmlSerialize=function(_1){return isc.Comm.xmlSerialize(this.getClassName(),this,_1)}
 ,isc.A.getSerializeableFields=function(_1,_2){var _3=isc.DS?isc.DS.getNearestSchema(this):null;var _4=this.getUniqueProperties();if(_3==null){this.logDebug("No schema available for class"+this.getClassName());return _4}else{this.logDebug("Constraining serializeable fields for class: "+this.getClassName()+" with schema : "+_3.ID)}
 var _5=isc.applyMask(_4,_3.getFields());_1=_1||[];_2=_2||[];_1.map(function(_7){delete _5[_7]});for(var i=0;i<_2.length;i++){_5[_2[i]]=this[_2[i]]}
@@ -359,7 +370,7 @@ return false}
 ,isc.A.getActiveElement=function(){return isc.Class.getActiveElement()}
 ,isc.A.addAutoChildren=function(_1,_2,_3){if(_1==null)return;if(!isc.isAn.Array(_1))_1=[_1];for(var i=0;i<_1.length;i++){var _5=_1[i];if(isc.isA.Canvas(_5)){_2=_2||this;this.$dy(_5,_2,_3);continue}
 this.addAutoChild(_5,null,null,_2,_3)}}
-,isc.A.addAutoChild=function(_1,_2,_3,_4,_5){var _6=this[_1];if(isc.isAn.Instance(_6))return _6;if(!this.$542)this.$542={};this.$542[_1]=true;if(isc.isAn.Object(_1)&&_1.autoChildName){_2=_1;_3=_2._constructor||_3;_1=_2.autoChildName}
+,isc.A.addAutoChild=function(_1,_2,_3,_4,_5){var _6=this[_1];if(isc.isAn.Instance(_6))return _6;if(isc.isAn.Object(_1)&&_1.autoChildName){_2=_1;_3=_2._constructor||_3;_1=_2.autoChildName}
 if(isc.isA.String(_6)&&window[_6]){this[_1]=window[_6];return this[_1]}
 if(_1!=null&&!this.shouldCreateChild(_1))return;var _7,_8=_1+this.$dn;if(_1!=null&&this[_8])_7=this[_8](_2);else{_7=this.createAutoChild(_1,_2,_3,true)}
 if(!_7)return;this[_1]=_7;this.$dz(_1,_7,_4,_5);return _7}
@@ -377,7 +388,9 @@ if(!isc.isA.Canvas(_2)||!isc.isA.Canvas(_3))return;this.$dy(_2,_3,_4)}
 ,isc.A.createAutoChild=function(_1,_2,_3,_4){var _5=this.getDynamicDefaults(_1);if(_5!=null&&_2!=null){_5=isc.addProperties({},_5,_2)}else{_5=_2||_5}
 var _6=this.$d1(_1),_7=this[_6],_8=this.$543(_1),_9=this[_8],_10=this.getAutoChildClass(_1,_5,_3,_6,_8),_11=isc.ClassFactory.getClass(_10);if(_11==null){this.logWarn("Unable to create autoChild '"+_1+"' of type '"+_10+"' - no such class in runtime.");return null}
 var _12=_11.createRaw();var _13=this.autoPassthroughs,_14,_15;if(_13){for(var _16 in _13){var _17=_13[_16];if(_1==_17&&this[_16]!==_15){_12[_16]=this[_16]}}}
-this.applyBaseDefaults(_12,_1,_2);isc.addProperties(_12,this.autoChildDefaults,_7,_14,_5);if(_4)this[_1]=_12;if(_12.autoConfigure)_12.autoConfigure(this,_1);if(this.configureAutoChild)this.configureAutoChild(_12,_1);isc.addProperties(_12,this[_8]);_12.init();return _12}
+this.applyBaseDefaults(_12,_1,_2);isc.addProperties(_12,this.autoChildDefaults,_7,_14,_5);if(_4)this[_1]=_12;if(_12.autoConfigure)_12.autoConfigure(this,_1);if(this.configureAutoChild)this.configureAutoChild(_12,_1);isc.addProperties(_12,this[_8]);_12.init();if(!this.$542)this.$542={};var _18=_12.getID?_12.getID():null;if(_18!=null){if(!isc.isAn.Array(this.$542[_1])){if(this.$542[_1]!=null){isc.logWarn(this+".createAutoChild(): Creating auto child named:"+_1+" appears to be replacing autoChild with same name...")}
+this.$542[_1]=[_18]}else{this.$542[_1].add(_18)}}
+return _12}
 ,isc.A.$d3=function(_1,_2,_3){this.applyBaseDefaults(_2,_1,_3);var _4=this.$d1(_1),_5=this.$543(_1);_2.completeCreation(this.autoChildDefaults,this[_4],_3,this[_5])}
 ,isc.A.$d0=function(_1){var _2=this.autoChildParentMap;if(_2)return _2[_1]}
 ,isc.A.getAutoChildParent=function(_1){var _2=this.$d0(_1);if(_2)return this[_2];return this}
@@ -386,7 +399,7 @@ return this.addAutoChild(_1,_2)}}
 );isc.B._maxIndex=isc.C+52;isc.Class.toString=function(){return"[Class "+this.Class+"]"}
 isc.Class.getPrototype().toString=function(){return"["+this.Class+" ID:"+this.ID+"]"}
 isc.A=isc.Class;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.ns=isc;isc.A._stringMethodRegistry={};isc.B.push(isc.A.NO_OP=function(){}
-);isc.B._maxIndex=isc.C+1;isc.A=isc.ClassFactory;isc.A.observe=isc.Class.getPrototype().observe;isc.A.ignore=isc.Class.getPrototype().ignore;isc.A.$dk=isc.Class.getPrototype().$dk;isc.eval=function(_1){return isc.Class.evaluate(_1)}
+);isc.B._maxIndex=isc.C+1;isc.A=isc.ClassFactory;isc.A.observe=isc.Class.getPrototype().observe;isc.A.ignore=isc.Class.getPrototype().ignore;isc.A.$dk=isc.Class.getPrototype().$dk;isc.A=isc.Class;isc.A.$dk=isc.Class.getPrototype().$dk;isc.eval=function(_1){return isc.Class.evaluate(_1)}
 Function.prototype.Class="Function";isc.ClassFactory.defineClass("Func");isc.A=isc.Func;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$d5=new RegExp("function\\s+([\\w$]+)\\s*\\(");isc.B.push(isc.A.getName=function(_1,_2){if(_1==Function.prototype.apply)return"Function.apply";if(_1==Function.prototype.call)return"Function.call";if(_1.$dx==null){if(_1.$bd==null&&isc._allFuncs){var _3=isc._allFuncs.indexOf(_1);if(_3!=-1){for(var _4=isc._funcClasses[_3];_4==null;_3--){_4=isc._funcClasses[_3]}
 _1.$bd=_4}}
 var _5=_1.$bc;if(_5==null&&_1.$bd!=null){var _6;var _7=isc.ClassFactory.getClass(_1.$bd);if(_7==null){_7=isc[_1.$bd]||window[_1.$bd]}else{_6=_7.getPrototype()}
@@ -405,7 +418,7 @@ delete targetObject[tempFunctionName];return returnValue}
 );isc.B._maxIndex=isc.C+1;Function.prototype.$d6=0}
 isc.A=isc.Func;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$d7=[["//","\n"],["//","\\n"],["/*","*/"]];isc.A.$d8=["\"","\'"];isc.A.$d9=["switch","while","if","return","for","var"];isc.A.$ea=["(",")","[","]","{","}",":","?","!","+","-","/","*","=",">","<","|","&",",","\\"];isc.B.push(isc.A.expressionToFunction=function(_1,_2,_3){var _4=this.$eb(_1,_2,_3);return _4}
 ,isc.A.$eb=function(_1,_2,_3){if(_2==null){isc.Log.logInfo("makeFunctionExpression() called with empty expression");_2=""}
-if(isc.isAn.Object(_2)){if(isc.isA.StringMethod(_2))_2=_2.getValue();var _4=_1;if(isc.isA.String(_4))_4=_1.split(",");else if(isc.isAn.Array(_4)){_1=_4.join()}
+if(isc.isAn.Object(_2)){if(isc.isA.StringMethod(_2))_2=_2.getValue();else if(_2.Action&&!_2.target)_2=_2.Action;var _4=_1;if(isc.isA.String(_4))_4=_1.split(",");else if(isc.isAn.Array(_4)){_1=_4.join()}
 if(!isc.isAn.Array(_4))_4=[];var _5=["if (!window.",,"){var message='Component ID \"",,"\", target of action \"",,"\" does not exist';isc.Log.logWarn(message);if(isc.designTime)isc.say(message)}",,".",,"(",,")"];_5[1]=_5[3]=_5[7]=_2.target;_5[9]=_2.name;if(_2.title)_5[5]=_2.title;else _5[5]="[No title specified]"
 var _6=_2.mapping||[];if(!isc.isAn.Array(_6))_6=[];_5[11]=_6.join();var _7=_5.join(isc.emptyString);var _8;try{_8=isc.$aq(_1,_7)}catch(e){this.logWarn("invalid code: "+_7+" generated from action: "+this.echo(_2));_8=new Function()}
 _8.iscAction=_2;return _8}
@@ -492,7 +505,7 @@ this.setArray(_4)}
 this.setArray(_4)}
 ,isc.A.getProperty=function(_1){for(var _2=[],i=0,l=this.length;i<l;i++)
 _2[_2.length]=(this[i]?this[i][_1]:null);return _2}
-,isc.A.getValueMap=function(_1,_2){var _3={};for(var i=0,l=this.getLength();i<l;i++){var _6=this.get(i);if(!isc.isAn.Object(_6))continue;if(_6&&_6[_1]){_3[_6[_1]]=_6[_2]}}
+,isc.A.getValueMap=function(_1,_2){var _3={};for(var i=0,l=this.getLength();i<l;i++){var _6=this.get(i);if(!isc.isAn.Object(_6))continue;if(_6&&_6[_1]!=null){_3[_6[_1]]=_6[_2]}}
 return _3}
 ,isc.A.map=function(_1,_2,_3,_4,_5,_6){var _7=isc.isA.Function(_1),_8=[],_9=this.getLength();for(var i=0;i<_9;i++){var _11=this.get(i);if(_7){_8[i]=_1(_11,_2,_3,_4,_5,_6)}else{_8[i]=(_11&&_11[_1]!=null?_11[_1](_2,_3,_4,_5,_6):null)}}
 return _8}
@@ -564,32 +577,36 @@ if(_2==null)return _3;return _2+_3}
 );isc.B._maxIndex=isc.C+3;if(!Number.prototype.formatter)Number.prototype.formatter="toString";if(!Number.prototype.localeStringFormatter)
 Number.prototype.localeStringFormatter="toString";isc.A=Number.prototype;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.localeProperties={decimalSymbol:".",groupingSymbol:",",negativeSymbol:"-",currencySymbol:"$",negativeFormat:1,groupingFormat:1};isc.A.$eh=".";isc.B.push(isc.A.iscToLocaleString=function(){return this[this.localeStringFormatter]()}
 ,isc.A.toFormattedString=function(_1){return this[(_1?_1:this.formatter)]()}
-,isc.A.toLocalizedString=function(_1,_2,_3,_4){var _5=Math.abs(this),_6=Math.floor(_5),_7,_8,_9=[];if(_1){var _10=Math.round((_5-_6)*Math.pow(10,_1));_8=_10.stringify(_1)}else if(_1==0){_6=Math.round(_5)}else{if(_5-_6>0){_8=_5.toString().split(this.$eh)[1]}}
-_7=_6.toString();var _11=_7.length;var _12=Math.floor(_11/ 3);if(_11%3){_9[0]=_7.substr(0,_11%3)}
-for(var i=0;i<_12;i++){_9[_9.length]=_7.substr(_11%3+i*3,3)}
-var _14=_9.join(_3||this.localeProperties.groupingSymbol);if(_8)_14=_14+(_2||this.localeProperties.decimalSymbol)+_8;if(this<0)_14=(_4||this.localeProperties.negativeSymbol)+_14;return _14}
+,isc.A.toLocalizedString=function(_1,_2,_3,_4){var _5=!_1?this:Math.round(this*Math.pow(10,_1))/Math.pow(10,_1);var _6=Math.abs(_5),_7=Math.floor(_6),_8,_9,_10=[];if(_1){var _11=Math.round((_6-_7)*Math.pow(10,_1));_9=_11.stringify(_1)}else if(_1==0){_7=Math.round(_6)}else{if(_6-_7>0){_9=_6.toString().split(this.$eh)[1]}}
+_8=_7.toString();var _12=_8.length;var _13=Math.floor(_12/ 3);if(_12%3){_10[0]=_8.substr(0,_12%3)}
+for(var i=0;i<_13;i++){_10[_10.length]=_8.substr(_12%3+i*3,3)}
+var _15=_10.join(_3||this.localeProperties.groupingSymbol);if(_9)_15=_15+(_2||this.localeProperties.decimalSymbol)+_9;if(_5<0)_15=(_4||this.localeProperties.negativeSymbol)+_15;return _15}
 ,isc.A.toUSString=function(_1){return this.toLocalizedString(_1)}
 ,isc.A.toUSDollarString=function(_1){return this.localeProperties.currencySymbol+this.toLocalizedString(_1)}
 );isc.B._maxIndex=isc.C+5;isc.defineClass("Format");isc.A=isc.Format;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.toUSString=function(_1,_2){if(!isc.isA.Number(_1))return _1;return _1.toUSString(_2)}
 ,isc.A.toUSDollarString=function(_1,_2){if(!isc.isA.Number(_1))return _1;return _1.toUSDollarString(_2)}
 ,isc.A.toCurrencyString=function(_1,_2,_3,_4,_5){if(!isc.isA.Number(_1))return _1;return _1.toCurrencyString(_2,_3,_4,_5)}
 );isc.B._maxIndex=isc.C+3;isc.Math={random:function(_1,_2){if(_2==null){return Math.round(Math.random()*_1)}else{return Math.round(Math.random()*(_2-_1))+_1}}}
-isc.addGlobal("timeStamp",function(){return new Date().getTime()});isc.addGlobal("timestamp",isc.timeStamp);Date.prototype.Class="Date";Date.Class="Date";isc.A=Date;isc.A.INVALID_DATE_STRING="Invalid date format";isc.A=Date;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$64g={toUSShortDate:"MDY",toUSShortDateTime:"MDY",toEuropeanShortDate:"DMY",toEuropeanShortDateTime:"DMY",toJapanShortDate:"YMD",toJapanShortDateTime:"YMD"};isc.B.push(isc.A.newInstance=function(_1,_2,_3,_4,_5,_6,_7){return new Date(_1,_2,_3,_4,_5,_6,_7)}
+isc.addGlobal("timeStamp",function(){return new Date().getTime()});isc.addGlobal("timestamp",isc.timeStamp);Date.prototype.Class="Date";Date.Class="Date";isc.Date=Date;isc.A=Date;isc.A.INVALID_DATE_STRING="Invalid date format";isc.A=Date;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$64g={toUSShortDate:"MDY",toUSShortDateTime:"MDY",toEuropeanShortDate:"DMY",toEuropeanShortDateTime:"DMY",toJapanShortDate:"YMD",toJapanShortDateTime:"YMD"};isc.B.push(isc.A.newInstance=function(_1,_2,_3,_4,_5,_6,_7){return new Date(_1,_2,_3,_4,_5,_6,_7)}
 ,isc.A.create=function(_1,_2,_3,_4,_5,_6,_7){return new Date(_1,_2,_3,_4,_5,_6,_7)}
 ,isc.A.compareDates=function(_1,_2){var _3=(_1!=null?_1.getTime():0),_4=(_2!=null?_2.getTime():0);return _3>_4?-1:(_4>_3?1:0)}
-,isc.A.compareLogicalDates=function(_1,_2){if(_1==_2)return true;if(!isc.isA.Date(_1)||!isc.isA.Date(_2))return false;var _3=_1.getFullYear(),_4=_1.getMonth(),_5=_1.getDate(),_6=_2.getFullYear(),_7=_2.getMonth(),_8=_2.getDate();var _9=_3*10000+_4*100+_5,_10=_6*10000+_7*100+_8;return _9>_10?-1:(_10>_9?1:0)}
+,isc.A.compareLogicalDates=function(_1,_2){if(_1==_2)return 0;if(!isc.isA.Date(_1)||!isc.isA.Date(_2))return false;var _3=_1.getFullYear(),_4=_1.getMonth(),_5=_1.getDate(),_6=_2.getFullYear(),_7=_2.getMonth(),_8=_2.getDate();var _9=_3*10000+_4*100+_5,_10=_6*10000+_7*100+_8;return _9>_10?-1:(_10>_9?1:0)}
 ,isc.A.setInputFormat=function(_1){this.$ei=_1}
 ,isc.A.getInputFormat=function(){return this.$ei}
 ,isc.A.mapDisplayFormatToInputFormat=function(_1){if(_1=="toShortDate"){_1=Date.prototype.$el}else if(_1=="toNormalDate"){_1=Date.prototype.formatter}
 if(isc.isA.Function(_1)){isc.Log.logInfo("Unable to determine input format associated with display format "+"function - returning default input format","Date");return this.getInputFormat()}
 var _2=this.$64g[_1];if(_2!=null&&isc.isA.String(_2))return _2;if(_1=="toSerializeableDate")return this.parseSchemaDate;isc.Log.logInfo("Unable to determine input format associated with display format "+_1+" - returning default input format","Date");return this.getInputFormat()}
-,isc.A.parseInput=function(_1,_2,_3,_4){if(isc.isA.Date(_1))return _1;if(!isc.isA.String(_1)||isc.isAn.emptyString(_1)){return null}
-if(_2==null)_2=this.getInputFormat();if(isc.isA.Function(Date[_2]))_2=Date[_2];if(isc.isA.Function(_2))return _2(_1,_3);var _5=this.$ej(_1,_2);if(_5!=null){var _6=_5[0];if(_6&&_6.length<=2){_6=parseInt(_6,10);if(_6<_3)_6+=2000;else _6+=1900
-_5[0]=_6}
-var _7=new Date(_5[0],_5[1],_5[2],_5[3],_5[4],_5[5]);if(!_4)return _7;if(_7==null)return null;var _8=(_7.getFullYear()==_5[0]&&_7.getMonth()==_5[1]&&_7.getDate()==_5[2]&&(_5[3]==null||_7.getHours()==_5[3])&&(_5[4]==null||_7.getMinutes()==_5[4])&&(_5[5]==null||_7.getSeconds()==_5[5]));return _8?_7:null}else{return null}}
-,isc.A.parseSchemaDate=function(_1){if(isc.isA.Date(_1))return _1;if(!isc.isA.String(_1))_1=(_1.toString?_1.toString():_1+"");var _2=_1.match(/(\d{4})[\/-](\d{2})[\/-](\d{2})([T ](\d{2}):(\d{2}):(\d{2}))?(\.(\d+))?([+-]\d{2}:\d{2}|Z)?/);if(_2==null)return null;var _3;if(!_2[4]){_3=new Date(_2[1],_2[2]-1,_2[3])}else if(!_2[9]){_3=new Date(Date.UTC(_2[1],_2[2]-1,_2[3],_2[5],_2[6],_2[7]))}else{var _4=_2[9];if(_4.length!=3){_4=Math.round(parseInt(_4)*Math.pow(10,3-_4.length))}
+,isc.A.parseInput=function(_1,_2,_3,_4,_5){if(isc.isA.Date(_1))return _1;if(!isc.isA.String(_1)||isc.isAn.emptyString(_1)){return null}
+if(_2==null)_2=this.getInputFormat();if(isc.isA.Function(Date[_2]))_2=Date[_2];if(isc.isA.Function(_2)){return _2(_1,_3,_4,_5)}
+var _6=this.$ej(_1,_2);if(_6!=null){var _7=_6[0];if(_7&&_7.length<=2){_7=parseInt(_7,10);if(_7<_3)_7+=2000;else _7+=1900
+_6[0]=_7}
+var _8=_6[3],_9=_6[4],_10=_6[5];_6[3]=_8=parseInt(_8||0,10);_6[4]=_9=parseInt(_9||0,10);_6[5]=_10=parseInt(_10||0,10);var _11;if(!_5){_11=new Date(_6[0],_6[1],_6[2],_8,_9,_10);if(!_4)return _11;var _12=(_11.getFullYear()==_6[0]&&_11.getMonth()==_6[1]&&_11.getDate()==_6[2]&&(_6[3]==null||_11.getHours()==_6[3])&&(_6[4]==null||_11.getMinutes()==_6[4])&&(_6[5]==null||_11.getSeconds()==_6[5]));return(_12?_11:null)}else{_11=new Date(Date.UTC(_6[0],_6[1],_6[2],_6[3],_6[4],_6[5]));if(_4){var _12=(_11.getUTCFullYear()==_6[0]&&_11.getUTCMonth()==_6[1]&&_11.getUTCDate()==_6[2]&&(_6[3]==null||_11.getUTCHours()==_6[3])&&(_6[4]==null||_11.getUTCMinutes()==_6[4])&&(_6[5]==null||_11.getUTCSeconds()==_6[5]));if(!_12)_11=null}
+if(_11!=null){_11.$68d(-isc.Time.UTCHoursDisplayOffset,-isc.Time.UTCMinutesDisplayOffset)}
+return _11}}else{return null}}
+,isc.A.parseDateTime=function(_1,_2,_3,_4){return this.parseInput(_1,_2,_3,_4,true)}
+,isc.A.parseSchemaDate=function(_1){if(isc.isA.Date(_1))return _1;if(!isc.isA.String(_1))_1=(_1.toString?_1.toString():_1+"");var _2=_1.match(/(\d{4})[\/-](\d{2})[\/-](\d{2})([T ](\d{2}):(\d{2}):(\d{2}))?(\.(\d+))?([+-]\d{2}:\d{2}|Z)?/);if(_2==null)return null;var _3;if(!_2[4]){_3=new Date(_2[1],_2[2]-1,_2[3])}else if(!_2[9]){_3=new Date(Date.UTC(_2[1],_2[2]-1,_2[3],_2[5],_2[6],_2[7]))}else{var _4=_2[9];if(_4.length!=3){var _5=Math.pow(10,3-_4.length);_4=Math.round(parseInt(_4,10)*_5)}
 _3=new Date(Date.UTC(_2[1],_2[2]-1,_2[3],_2[5],_2[6],_2[7],_4))}
-if(_2[10]&&_2[10].toLowerCase()!="z"){var _5=_2[10].split(":"),H=_5[0],_7=H&&H.startsWith("-"),H=parseInt(H),M=parseInt(_5[1]),_9=_3.getTime();if(isc.isA.Number(H))_9-=(3600000*H);if(isc.isA.Number(M))_9-=(60000*M*(_7?-1:1));_3.setTime(_9)}
+if(_2[10]&&_2[10].toLowerCase()!="z"){var _6=_2[10].split(":"),H=_6[0],_8=H&&H.startsWith("-"),M=_6[1];H=parseInt(H,10);M=parseInt(M,10);var _10=_3.getTime();if(isc.isA.Number(H))_10-=(3600000*H);if(isc.isA.Number(M))_10-=(60000*M*(_8?-1:1));_3.setTime(_10)}
 return _3}
 ,isc.A.parseDate=function(_1,_2,_3,_4){return this.parseInput(_1,_2,_3,_4)}
 ,isc.A.parseDateTime=function(_1,_2,_3,_4){return this.parseInput(_1,_2,_3,_4)}
@@ -599,6 +616,7 @@ if(isc.isA.Number(_5-_3-_4-_6-_7-_8))
 return([_5,_3,_4,_6,_7,_8]);else return null}
 ,isc.A.setNormalDisplayFormat=function(_1){if(isc.isA.Function(Date.prototype[_1])||isc.isA.Function(_1)){Date.prototype.formatter=_1}}
 ,isc.A.setShortDisplayFormat=function(_1){if(isc.isA.Function(Date.prototype[_1])||isc.isA.Function(_1)){Date.prototype.$el=_1}}
+,isc.A.setShortDatetimeDisplayFormat=function(_1){if(isc.isA.Function(Date.prototype[_1])||isc.isA.Function(_1)){Date.prototype.$68e=_1}}
 ,isc.A.setFormatter=function(_1){Date.setNormalDisplayFormat(_1)}
 ,isc.A.setLocaleStringFormatter=function(_1){if(isc.isA.Function(Date.prototype[_1])||isc.isA.Function(_1))
 Date.prototype.localeStringFormatter=_1}
@@ -612,7 +630,7 @@ var _6=[];for(var i=0;i<7;i++){_6[i]=_2[i].substring(0,_1)}
 return _6}
 ,isc.A.getWeekendDays=function(){var _1=Date.weekendDays;if(_1==null)_1=Date.$54i;if(_1==null){_1=Date.$54i=[0,6]}
 return _1}
-);isc.B._maxIndex=isc.C+20;isc.A=Date.prototype;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$em=[,,,,"/",,,,,"/",,,,null];isc.A.$en="MDY";isc.A.$eo="DMY";isc.A.$ep="YMD";isc.A.$en="MDY";isc.B.push(isc.A.duplicate=function(){var _1=new Date();_1.setTime(this.getTime());return _1}
+);isc.B._maxIndex=isc.C+22;isc.A=Date.prototype;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$em=[,,,,"/",,,,,"/",,,,null];isc.A.$en="MDY";isc.A.$eo="DMY";isc.A.$ep="YMD";isc.A.$en="MDY";isc.A.$68f=[null,null];isc.B.push(isc.A.duplicate=function(){var _1=new Date();_1.setTime(this.getTime());_1.logicalDate=this.logicalDate;_1.logicalTime=this.logicalTime;return _1}
 ,isc.A.clearTimeFields=function(){this.setHours(0);this.setMinutes(0);this.setSeconds(0);this.setMilliseconds(0);return this}
 ,isc.A.deriveShortDayName=function(_1){var _2=this.toString();if(_1==null||_1<=0||_1>3)_1=3;return _2.substring(0,_1)}
 ,isc.A.getShortDayName=function(){return Date.getShortDayNames()[this.getDay()]}
@@ -622,23 +640,30 @@ return _2.substring(_3,(_3+_1))}
 ,isc.A.getShortYear=function(){var _1=this.getFullYear();return(_1%100).stringify(2)}
 ,isc.A.getWeek=function(){var _1=new Date(this.getFullYear(),0,1);return Math.ceil((((this-_1)/86400000)+_1.getDay())/7)}
 ,isc.A.toDateStamp=function(){return this.getUTCFullYear()+(this.getUTCMonth()+1).stringify()+this.getUTCDate().stringify()+"T"+this.getUTCHours().stringify()+this.getUTCMinutes().stringify()+this.getUTCSeconds().stringify()+"Z"}
-,isc.A.toNormalDate=function(_1){if(!_1)_1=this.formatter;if(isc.isA.Function(_1)){return _1.apply(this)}else if(this[_1]){return this[_1]()}}
-,isc.A.toShortDate=function(_1){if(!_1)_1=this.$el;if(isc.isA.Function(_1))return _1.apply(this);else if(isc.isA.Function(this[_1]))return this[_1]()}
+,isc.A.toNormalDate=function(_1,_2){if(!_1)_1=this.formatter;if(isc.isA.Function(_1)){return _1.apply(this,[_2])}else if(this[_1]){return this[_1](_2)}}
+,isc.A.toShortDate=function(_1,_2){if(!_1)_1=this.$el;if(isc.isA.Function(_1))return _1.apply(this,[_2]);else if(isc.isA.Function(this[_1]))return this[_1](_2);isc.logWarn("Date.toShortDate() specified formatter not understood:"+_1);return this.toUSShortDate()}
+,isc.A.toShortDateTime=function(_1,_2){if(!_1)_1=this.$68e;return this.toShortDate(_1,_2)}
 ,isc.A.setDefaultDateSeparator=function(_1){this.$em=[,,,,_1,,,,,_1,,,,null];this.$665=_1}
 ,isc.A.getDefaultDateSeperator=function(_1){if(this.$665)return this.$665;else return"/"}
-,isc.A.$es=function(_1){var _2=this.$em,_3=this.getMonth()+1,_4=this.getDate(),_5=this.getFullYear(),_6,_7,_8;if(_1==this.$en){_6=0;_7=5;_8=10}else if(_1==this.$eo){_7=0;_6=5;_8=10}else if(_1==this.$ep){_8=0;_6=5;_7=10}else{_7=_1.indexOf("D")*5;_8=_1.indexOf("Y")*5;_6=_1.indexOf("M")*5}
-_2[_7]=_4<10?Number.$et:null
-isc.$bk(_2,_4,_7+1,3);_2[_6]=_3<10?Number.$et:null
-isc.$bk(_2,_3,_6+1,3);isc.$bk(_2,this.getFullYear(),_8,4);return _2.join(isc.emptyString)}
-,isc.A.toUSShortDate=function(){return this.$es(this.$en)}
-,isc.A.toUSShortDateTime=function(){return(this.toUSShortDate()+" "+this.getHours().stringify()+":"+this.getMinutes().stringify())}
-,isc.A.toEuropeanShortDate=function(){return this.$es(this.$eo)}
-,isc.A.toEuropeanShortDateTime=function(){return(this.toEuropeanShortDate()+" "+this.getHours().stringify()+":"+this.getMinutes().stringify())}
-,isc.A.toJapanShortDate=function(){return this.$es(this.$ep)}
-,isc.A.toJapanShortDateTime=function(){return(this.toJapanShortDate()+" "+this.getHours().stringify()+":"+this.getMinutes().stringify())}
+,isc.A.$68d=function(_1,_2,_3){if(_3==null)_3=this.getTime();if(isc.isA.Number(_1))_3+=(3600000*_1);if(isc.isA.Number(_2))_3+=(60000*_2);this.setTime(_3)}
+,isc.A.$68g=function(_1,_2){var _3=Date.$68h;if(_3==null)_3=Date.$68h=new Date();_3.$68d(_1,_2,this.getTime());return _3}
+,isc.A.$es=function(_1,_2){var _3=this.$em,_4,_5,_6;if(!_2){_4=this.getMonth()+1;_5=this.getDate();_6=this.getFullYear()}else{var _7=this.$68g(isc.Time.UTCHoursDisplayOffset,isc.Time.UTCMinutesDisplayOffset);_4=_7.getUTCMonth()+1;_5=_7.getUTCDate();_6=_7.getUTCFullYear()}
+var _8,_9,_10;if(_1==this.$en){_8=0;_9=5;_10=10}else if(_1==this.$eo){_9=0;_8=5;_10=10}else if(_1==this.$ep){_10=0;_8=5;_9=10}else{_9=_1.indexOf("D")*5;_10=_1.indexOf("Y")*5;_8=_1.indexOf("M")*5}
+_3[_9]=_5<10?Number.$et:null
+isc.$bk(_3,_5,_9+1,3);_3[_8]=_4<10?Number.$et:null
+isc.$bk(_3,_4,_8+1,3);isc.$bk(_3,this.getFullYear(),_10,4);return _3.join(isc.emptyString)}
+,isc.A.toUSShortDate=function(_1){return this.$es(this.$en,_1)}
+,isc.A.$68i=function(_1){if(!_1){var _2=this.$68f;_2[0]=this.getHours().stringify();_2[1]=this.getMinutes().stringify();return _2.join(":")}else{return isc.Time.toShortTime(this,"toShortPadded24HourTime")}}
+,isc.A.toUSShortDateTime=function(_1){return this.toUSShortDate(_1)+" "+this.$68i(_1)}
+,isc.A.toEuropeanShortDate=function(_1){return this.$es(this.$eo,_1)}
+,isc.A.toEuropeanShortDateTime=function(_1){return this.toEuropeanShortDate(_1)+" "+this.$68i(_1)}
+,isc.A.toJapanShortDate=function(_1){return this.$es(this.$ep,_1)}
+,isc.A.toJapanShortDateTime=function(_1){return this.toJapanShortDate(_1)+" "+this.$68i(_1)}
 ,isc.A.$eu=function(){if(isc.Comm.$ev){return isc.SB.concat('"'+this.toDBDate(),'"')}else{return isc.SB.concat("new Date(",this.getTime(),")")}}
-,isc.A.$ew=function(_1,_2,_3,_4){return isc.Comm.$ex(_1,this.toSchemaDate(),_2||(this.logicalDate?"date":"datetime"),_3,_4)}
-,isc.A.toSchemaDate=function(_1){if(_1||this.logicalDate){return isc.SB.concat(this.getFullYear().stringify(4),"-",(this.getMonth()+1).stringify(2),"-",this.getDate().stringify(2))};return isc.SB.concat(this.getUTCFullYear().stringify(4),"-",(this.getUTCMonth()+1).stringify(2),"-",this.getUTCDate().stringify(2),"T",this.getUTCHours().stringify(2),":",this.getUTCMinutes().stringify(2),":",this.getUTCSeconds().stringify(2))}
+,isc.A.$ew=function(_1,_2,_3,_4){return isc.Comm.$ex(_1,this.toSchemaDate(),_2||(this.logicalDate?"date":(this.logicalTime&&!isc.DataSource.serializeTimeAsDatetime?"time":"datetime")),_3,_4)}
+,isc.A.toSchemaDate=function(_1){if((_1=="date")||this.logicalDate){return isc.SB.concat(this.getFullYear().stringify(4),"-",(this.getMonth()+1).stringify(2),"-",this.getDate().stringify(2))};if((!isc.DataSource||!isc.DataSource.serializeTimeAsDatetime)&&(_1=="time"||this.logicalTime))
+{return isc.SB.concat(this.getUTCHours().stringify(2),":",this.getUTCMinutes().stringify(2),":",this.getUTCSeconds().stringify(2))}
+return isc.SB.concat(this.getUTCFullYear().stringify(4),"-",(this.getUTCMonth()+1).stringify(2),"-",this.getUTCDate().stringify(2),"T",this.getUTCHours().stringify(2),":",this.getUTCMinutes().stringify(2),":",this.getUTCSeconds().stringify(2))}
 ,isc.A.toSerializeableDate=function(_1){var _2=isc.SB.create();_2.append(this.getFullYear().stringify(4),"-",(this.getMonth()+1).stringify(2),"-",this.getDate().stringify(2));if(!_1)_2.append((isc.Comm.xmlSchemaMode?"T":" "),this.getHours().stringify(2),":",this.getMinutes().stringify(2),":",this.getSeconds().stringify(2));return _2.toString()}
 ,isc.A.toDBDate=function(){return isc.StringBuffer.concat("$$DATE$$:",this.toSerializeableDate())}
 ,isc.A.toDBDateTime=function(){return this.toDBDate()}
@@ -652,8 +677,8 @@ return true;else return false}
 ,isc.A.isThisWeek=function(_1){var _2=new Date(this.getFullYear(),this.getMonth(),this.getDate()-this.getDay(),0);var _3=new Date(this.getFullYear(),this.getMonth(),this.getDate()+(7-this.getDay()),23);var _4=_1.getTime();if(_4>=_2.getTime()&&_4<=_3.getTime()){return true}else{return false}}
 ,isc.A.isNextWeek=function(_1){var _2=new Date(this.getFullYear(),this.getMonth(),(this.getDate()-this.getDay())+7,0);var _3=new Date(this.getFullYear(),this.getMonth(),(this.getDate()-this.getDay())+14,23);var _4=_1.getTime();if(_4>=_2.getTime()&&_4<=_3.getTime()){return true}else{return false}}
 ,isc.A.isNextMonth=function(_1){var _2=new Date(this.getFullYear(),this.getMonth());_2.setMonth(_2.getMonth()+1);if(_2.getFullYear()==_1.getFullYear()&&_2.getMonth()==_1.getMonth()){return true}else{return false}}
-);isc.B._maxIndex=isc.C+34;Date.prototype.toBrowserString=Date.prototype.toString;Date.prototype.toBrowserLocaleString=Date.prototype.toLocaleString;if(!Date.prototype.formatter)Date.prototype.formatter="toLocaleString"
-if(!Date.prototype.$el)Date.setShortDisplayFormat("toUSShortDate");Date.prototype.iscToLocaleString=function(){var _1=this.localeStringFormatter;if(isc.isA.Function(_1))return _1.apply(this);else if(this[_1])return this[_1]()}
+);isc.B._maxIndex=isc.C+38;Date.prototype.toBrowserString=Date.prototype.toString;Date.prototype.toBrowserLocaleString=Date.prototype.toLocaleString;if(!Date.prototype.formatter)Date.prototype.formatter="toLocaleString"
+if(!Date.prototype.$el)Date.setShortDisplayFormat("toUSShortDate");if(!Date.prototype.$68e)Date.setShortDatetimeDisplayFormat("toUSShortDateTime");Date.prototype.iscToLocaleString=function(){var _1=this.localeStringFormatter;if(isc.isA.Function(_1))return _1.apply(this);else if(this[_1])return this[_1]()}
 if(!Date.prototype.localeStringFormatter)
 Date.prototype.localeStringFormatter="toLocaleString";Date.setInputFormat("MDY");isc.A=Date;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.$ek=function(_1,_2,_3,_4){var _5=_4*3,_6=_1.substring(_5,_5+4);var _7=(parseInt(_6)!=_6);if(_7)_6=_6.substring(0,2);var _8=0,_9=0;if(_2>_3)_8+=3;else _9+=3;if(_2>_4)_8+=(_7?3:5);if(_3>_4)_9+=(_7?3:5);var _10=_1.substring(_8,_8+2)-1;var _11=_1.substring(_9,_9+2);var _12=_7?9:11,_13=(_1.substring(_12,_12+2)||0),_14=(_1.substring(_12+3,_12+5)||0),_15=(_1.substring(_12+6,_12+8)||0);return[_6,_10,_11,_13,_14,_15]}
 );isc.B._maxIndex=isc.C+1;isc.A=Date.prototype;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.toPrettyString=function(){return this.toUSShortDateTime()}
@@ -688,7 +713,8 @@ var _7=_3.slice(_5+2,_6);var _9;if(_2!=null&&_2[_7]){_9=_2[_7]}else{try{_9=isc.C
 _8.append(_3.slice(0,_5),_9);_3=_3.substring(_6+1,_3.length)}
 _8.append(_3);_3=_8.toString();return _3}
 ,isc.A.asSource=function(_1){return String.asSource(this,_1)}
-);isc.B._maxIndex=isc.C+11;isc.A=String;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.asSource=function(_1,_2){if(!isc.isA.String(_1))_1=""+_1;var _3=_2?String.$ez:String.$e0,_4=_2?"'":'"';return _4+_1.replace(/\\/g,"\\\\").replace(_3,'\\'+_4).replace(/\t/g,"\\t").replace(/\r/g,"\\r").replace(/\n/g,"\\n")+_4}
+,isc.A.cssToCamelCaps=function(){return this.replace(/-([^a-z]*)([a-z])/g,function(_1,_2,_3,_4,_5){return _2+_3.toUpperCase()})}
+);isc.B._maxIndex=isc.C+12;isc.A=String;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.asSource=function(_1,_2){if(!isc.isA.String(_1))_1=""+_1;var _3=_2?String.$ez:String.$e0,_4=_2?"'":'"';return _4+_1.replace(/\\/g,"\\\\").replace(_3,'\\'+_4).replace(/\t/g,"\\t").replace(/\r/g,"\\r").replace(/\n/g,"\\n")+_4}
 );isc.B._maxIndex=isc.C+1;isc.addMethods(isc,{replaceAll:function(_1,_2,_3){return _1.split(_2).join(_3)},contains:function(_1,_2){if(_1==null)return false;return _1.indexOf(_2)>-1},startsWith:function(_1,_2){if(_1==null)return false;return(_1.lastIndexOf(_2,0)==0)},endsWith:function(_1,_2){if(_1==null)return false;var _3=_1.length-_2.length;if(_3<0)return false;return(_1.indexOf(_2,_3)==_3)},makeXMLSafe:function(_1){if(_1==null)return isc.emptyString;else if(!isc.isA.String(_1))_1=_1.toString();return _1.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(String.$e0,"&quot;").replace(String.$ez,"&apos;").replace(/\r/,"&#x000D;")},makeCDATA:function(_1){return"<![CDATA["+_1.replace(/\]\]>/,"]]<![CDATA[>")+"]]>"}});isc.ClassFactory.defineClass("StringBuffer");isc.SB=isc.StringBuffer;isc.A=isc.StringBuffer;isc.A.$e1=[];isc.A.$e2=50;isc.A=isc.StringBuffer.getPrototype();isc.A.maxStreamLength=(isc.Browser.isIE6?1000:100000);isc.A.addPropertiesOnCreate=false;isc.A=isc.StringBuffer.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.init=function(){this.$e3=[]}
 ,isc.A.append=function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,_25,_26,_27){var _28=this.$e3,_29,_30;if(_1!=null&&_1.constructor.$k==2){var _31=_1.length;if(_31<=30){var _31=_28.length;for(var i=0;i<_1.length;i++){_28[_31++]=_1[i]}}else{_28[_28.length]=_1.join(isc.emptyString)}}else{if(_27===_30&&_26===_30&&_25===_30){if(_1!=null)_28[_28.length]=_1;if(_2!=null)_28[_28.length]=_2
 if(_3!=null)_28[_28.length]=_3
@@ -744,12 +770,12 @@ _4+="(";var _6=(_5!=null?isc.Func.getArgs(_5):[]);var _7=Math.max(_1.length,_6.l
 _4+=this.echoLeaf(_10)}
 _4+=")";_2=_2||_1.$cw;if(_2)_4+=" on "+this.echoLeaf(_2);if(!_3&&!_5.$c7)return _4;var _11=this.$e6(_5);if(!_5.$c7){var _12=_11.split(/[\r\n]+/);if(_12.length>1||_12[0].length>200)return _4}
 _4+='\n        "'+_11+'"';return _4},$e6:function(_1){var _2=isc.Func.getBody(_1);return _2.trim()},getStackTrace:function(_1,_2,_3){if(this.hasFireBug()){isc.Log.$50m=isc.Log.$50m||0;var _4="FBugTrace"+isc.Log.$50m++;return this.fireBugTrace(_4)}
-if(isc.Browser.isMoz||isc.Browser.isSafari)
-return" [Stack trace not supported in this browser]";if(_1==null)_1=arguments.caller;var _5=[];for(var i=0;i<_2;i++){if(_1.caller!=null)_1=_1.caller}
-var _7=isc.Browser.isIE&&isc.Browser.version>6;var _8=_1.callee;var _9=[];var _10=true;if(_3==null)_3=Number.MAX_VALUE;var _11=0;while(_8!=null&&_1!=null&&_11<_3){if(_7){if(_9.contains(_8)){_5.add("    ** recursed on "+isc.Func.getName(_8,true));break}
+if(!arguments||!arguments.callee||!arguments.callee.caller){return" [Stack trace not supported in this browser]"}
+if(_1==null)_1=arguments.caller||arguments.callee.caller.arguments;var _5=[];for(var i=0;i<_2;i++){if(_1.caller!=null)_1=_1.caller}
+var _7=isc.Browser.isIE&&isc.Browser.version<=6;var _8=_1.callee;var _9=[];var _10=true;if(_3==null)_3=Number.MAX_VALUE;var _11=0;while(_8!=null&&_1!=null&&_11<_3){if(!_7){if(_9.contains(_8)){_5.add("    ** recursed on "+isc.Func.getName(_8,true));break}
 _9.add(_8)}
-_5.add("    "+this.getCallTrace(_1,null,(_10||_1.caller==null)));if(_11==0){var _12=this.$e7(_1.$e8);if(_12)_5.add(_12)}
-_8=_1.callee;if(_7){_8=_8.caller;if(_8)_1=_8.arguments}else _1=_1.caller;_10=false;_11++}
+_5.add("    "+this.getCallTrace(_1,null,(_10||_1.callee.caller==null)));if(_11==0){var _12=this.$e7(_1.$e8);if(_12)_5.add(_12)}
+_8=_1.callee;if(!_7){_8=_8.caller;if(_8)_1=_8.arguments}else _1=_1.caller;_10=false;_11++}
 if(_5.length==0)return"";return"\r\n"+_5.join("\r")+"\r"},hasFireBug:function(){return isc.Browser.isMoz&&window.console!=null&&window.console.trace!=null},fireBugVersion:function(){return this.hasFireBug()?window.console.firebug:null},fireBugTrace:function(_1){window.console.trace(_1);return" [Stack trace logged via Firebug: "+_1+"]"},$e7:function(_1){var _2=isc.SB.create();for(var _3 in _1){var _4=_1[_3],_5;if(_4===_5)continue;if(isc.startsWith(_3,isc.$ag))continue;_2.append("\n        "+_3+" = "+this.echoLeaf(_4))}
 return _2.toString()},$am:function(_1,_2,_3,_4){if(_1.$fa)return;_1.$fa=true;var _5=_1.toString();this.logWarn(_5)},echoLeaf:function(_1,_2){var _3="",_4;if(_1===_4)return"undef";try{if(isc.isA.Class(_1)){_3+=_1.toString()}else if(isc.isAn.Array(_1)){_3+="Array["+_1.length+"]"}else if(isc.isA.Date(_1)){_3+="Date("+_1.toShortDate()+")"}else if(isc.isA.Function(_1)){_3+=isc.Func.getName(_1,true)+"()"}else{switch(typeof _1){case"string":if(_1.length<=40||_2){_3+='"'+_1+'"';break}
 _3+='"'+_1.substring(0,40)+'..."['+_1.length+']';_3=_3.replaceAll("\n","\\n").replaceAll("\r","\\r");break;case"object":if(_1==null){_3+="null";break}
@@ -758,15 +784,16 @@ var _5=""+_1;if(_5!=""&&_5!="[object Object]"&&_5!="[object]")
 {_3+=_5;break}
 _3+="Obj"+this.getIDText(_1);break;default:_3+=""+_1}}
 return _3}catch(e){var _6="[Error in echoLeaf: "+e+"]";_3+=_6;this.logDebug(_6,"Log");return _3}},getIDText:function(_1){var _2=_1.name||(isc.isAn.XMLNode(_1)?_1.getAttribute("name"):null);if(_2!=null&&!isc.isAn.emptyString(_2))return"{name:"+_2+"}";var _3=_1.ID!=null?_1.ID:_1.id!=null?_1.id:(isc.isAn.XMLNode(_1)?_1.getAttribute("id"):null);if(_3!=null&&!isc.isAn.emptyString(_3))return"{ID:"+_3+"}";if(_1.nodeName!=null&&!isc.isAn.emptyString(_1.nodeName)){return"{nodeName:"+_1.nodeName+"}"}
-var _4=_1.title||(isc.isAn.XMLNode(_1)?_1.getAttribute("title"):null);if(_4!=null&&!isc.isAn.emptyString(_4))return"{title:"+_4+"}";var _5=_1.type||(isc.isAn.XMLNode(_1)?_1.getAttribute("type"):null);if(_5!=null&&!isc.isAn.emptyString(_5))return"{type:"+_5+"}";if(_1.length!=null)return"{length:"+_1.length+"}";return""},echo:function(_1,_2,_3,_4){if(_1==null)return this.echoLeaf(_1);if(_2==null)_2=true;if(_1.tagName)return this.echoDOM(_1);if(typeof _1!="object"||isc.isA.Date(_1))return this.echoLeaf(_1,true);if(isc.isAn.Array(_1)){var _5=(_3?"[\n":"[");for(var i=0;i<_1.length;i++){_5+=(_3?this.echo(_1[i],_2):this.echoLeaf(_1[i]));if(i+1<_1.length)_5+=(_3?",\n":", ")}
+var _4=_1.title||(isc.isAn.XMLNode(_1)?_1.getAttribute("title"):null);if(_4!=null&&!isc.isAn.emptyString(_4))return"{title:"+_4+"}";var _5=_1.type||(isc.isAn.XMLNode(_1)?_1.getAttribute("type"):null);if(_5!=null&&!isc.isAn.emptyString(_5))return"{type:"+_5+"}";var _6=_1.label||(isc.isAn.XMLNode(_1)?_1.getAttribute("label"):null);if(_6!=null&&!isc.isAn.emptyString(_6))return"{label:"+_6+"}";if(_1.length!=null)return"{length:"+_1.length+"}";return""},echo:function(_1,_2,_3,_4){if(_1==null)return this.echoLeaf(_1);if(_2==null)_2=true;if(_1.tagName)return this.echoDOM(_1);if(typeof _1!="object"||isc.isA.Date(_1))return this.echoLeaf(_1,true);if(isc.isAn.Array(_1)){var _5=(_3?"[\n":"[");for(var i=0;i<_1.length;i++){_5+=(_3?this.echo(_1[i],_2):this.echoLeaf(_1[i]));if(i+1<_1.length)_5+=(_3?",\n":", ")}
 _5+="\n]";return _5}
 var _5="{";if(_1.getUniqueProperties!=null){_5=_1.getClassName()+"{";_1=_1.getUniqueProperties();if(_4==null)_4=false}
 if(_4==null)_4=true;var _7;try{_7=isc.getKeys(_1)}catch(e){return this.echoLeaf(_1)}
 if(isc.Browser.isSafari){var _8=false,_9="[object CSSStyleDeclaration]";try{_8=(_1+""==_9)}catch(e){}
 if(_8){_5=_9+"{\n[standard props only]\n";_7=isc.getKeys(isc.Canvas.$fi());_7.add("cssText")}}
 for(var i=0;i<_7.length;i++){var _10=_7[i],_11;try{_11=_1[_10]}catch(e){_11="[error accessing property: "+e+"]"}
-if(!_4&&isc.isA.Function(_11))continue;if(_10.startsWith("$"))continue;_5+=_10+": "+this.echoLeaf(_11);if(i+1<_7.length)_5+=(_2?",\r":", ")}
-_5+="}";return _5},echoAll:function(_1,_2){return this.echo(_1,_2,true)},echoFull:function(_1){return isc.Comm.serialize(_1,true)},echoShort:function(_1){return this.echo(_1,false,false)},echoArray:function(_1){if(!isc.isAn.Array(_1))return this.echo(_1);if(_1.length==0)return"[empty array]";var _2=["["];for(var i=0;i<_1.length;i++){_2.addList([i,":",_1[i],"\n"])}
+if(!_4&&isc.isA.Function(_11))continue;if(_10.startsWith("$"))continue;var _12;if(_10==isc.gwtRef){_12="{GWT Java Obj}"}else{_12=this.echoLeaf(_11)}
+_5+=_10+": "+_12;if(i+1<_7.length)_5+=(_2?",\r":", ")}
+_5+="}";return _5},echoAll:function(_1,_2){return this.echo(_1,_2,true)},echoFull:function(_1){return isc.JSON.encode(_1,{prettyPrint:true,showDebugOutput:true})},echoShort:function(_1){return this.echo(_1,false,false)},echoArray:function(_1){if(!isc.isAn.Array(_1))return this.echo(_1);if(_1.length==0)return"[empty array]";var _2=["["];for(var i=0;i<_1.length;i++){_2.addList([i,":",_1[i],"\n"])}
 _2.add("]");return _2.join("")},$fj:{outerText:false,innerText:false,parentTextEdit:false,isTextEdit:false,parentTextEdit:false,contentEditable:false,canHaveHTML:true,isMultiLine:false,filters:false,canHaveChildren:false,behaviorUrns:false,sourceIndex:false,accelerator:false,textDecorationUnderline:false,textDecorationNone:false},echoDOM:function(_1){return this.echoDelta(_1,window.Node,_1.tagName+this.getIDText(_1))},echoEvent:function(_1){return this.echoDelta(_1,(isc.Browser.isMoz?window.KeyEvent:window.Event))},echoDelta:function(_1,_2,_3){if(_1==null)return null;if(isc.Browser.isIE&&isc.isAn.XMLNode(_1)){var _4="<"+_1.tagName+" [XMLNode] ";var _5=_1.attributes;for(var i=0;i<_5.length;i++){var _7=_5[i];if(i>0)_4+=" ";_4+=_7.name+"="+this.echoLeaf(_7.value)}
 _4+=(i>0?" [":"")+_1.childNodes.length+" child nodes]>";return _4}
 var _4=(_3||isc.emptyString)+"{",_8=isc.getKeys(_1);for(var i=0;i<_8.length;i++){var _9=_8[i];if(this.$fj[_9]!=null)continue;if(_2!=null&&_2[_9]!=null)continue;if(_9.length>3&&_9.toUpperCase()==_9)continue;try{var _10=_1[_9];if(_10==null||_10=="")continue;if(isc.isA.Function(_10))continue;_4+=_9+": "+this.echoLeaf(_1[_9])}catch(e){_4+=_9+": "+this.echoLeaf(e)}
@@ -776,7 +803,7 @@ isc.Class.addClassProperties(isc.$e5)
 isc.$fk={logMessage:function(_1,_2,_3,_4){var _5=isc.Log;if(!_5)return;if(_1==null)_1=_5.defaultPriority;if(_1<=_5.stackTracePriority&&this.getStackTrace!=null){_2+="\nStack trace:\n"+this.getStackTrace(arguments,2)}
 if(!_3)_3=this.Class;_5.log(_1,_2,_3,this.ID,this,_4)},logDebug:function(_1,_2){return this.logMessage(isc.Log.DEBUG,_1,_2)},logInfo:function(_1,_2){return this.logMessage(isc.Log.INFO,_1,_2)},logWarn:function(_1,_2){return this.logMessage(isc.Log.WARN,_1,_2)},logError:function(_1,_2){return this.logMessage(isc.Log.ERROR,_1,_2)},logFatal:function(_1,_2){return this.logMessage(isc.Log.FATAL,_1,_2)},logIsEnabledFor:function(_1,_2){return(isc.Log.isEnabledFor&&isc.Log.isEnabledFor((_2?_2:this.Class),_1,this))},logIsDebugEnabled:function(_1){return this.logIsEnabledFor(isc.Log.DEBUG,_1)},logIsInfoEnabled:function(_1){return this.logIsEnabledFor(isc.Log.INFO,_1)},logIsWarnEnabled:function(_1){return this.logIsEnabledFor(isc.Log.WARN,_1)},logIsErrorEnabled:function(_1){return this.logIsEnabledFor(isc.Log.ERROR,_1)},setLogPriority:function(_1,_2){isc.Log.setPriority(_1,_2,this)},setDefaultLogPriority:function(_1){isc.Log.setDefaultPriority(_1,this)},getDefaultLogPriority:function(){return isc.Log.getDefaultPriority(this)},clearLogPriority:function(_1){isc.Log.clearPriority(_1,this)}};isc.Class.addMethods(isc.$fk)
 isc.Class.addClassMethods(isc.$fk)
-isc.ClassFactory.defineClass("Log");isc.A=isc.Log;isc.A.FATAL=1;isc.A.ERROR=2;isc.A.WARN=3;isc.A.INFO=4;isc.A.DEBUG=5;isc.A.PRIORITY_NAMES=["NONE","FATAL","ERROR","WARN","INFO","DEBUG"];isc.A=isc.Log;isc.A.defaultPriority=isc.Log.WARN;isc.A.stackTracePriority=isc.Log.ERROR;isc.A.$fl={};isc.A.$fm={};isc.A.$fn=1000;isc.A.$fo=0;isc.A.$fp=[];isc.A.$fq=":";isc.A.$fr=".";isc.A._allCategories="_allCategories";isc.A.$fs="$fs";isc.A=isc.Log;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A._1zero="0";isc.A._2zero="00";isc.A.$ft="$T_";isc.A.$fu=["Timed ",,": ",,"ms"];isc.B.push(isc.A.applyLogPriorities=function(_1){if(!this.$fl){this.$fl={}}
+isc.ClassFactory.defineClass("Log");isc.A=isc.Log;isc.A.FATAL=1;isc.A.ERROR=2;isc.A.WARN=3;isc.A.INFO=4;isc.A.DEBUG=5;isc.A.PRIORITY_NAMES=["NONE","FATAL","ERROR","WARN","INFO","DEBUG"];isc.A=isc.Log;isc.A.defaultPriority=isc.Log.WARN;isc.A.stackTracePriority=isc.Log.ERROR;isc.A.$fl={};isc.A.$fm={};isc.A.$fn=1000;isc.A.$fo=0;isc.A.$fp=[];isc.A.$fq=":";isc.A.$fr=".";isc.A._allCategories="_allCategories";isc.A.$fs="$fs";isc.A=isc.Log;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A._1zero="0";isc.A._2zero="00";isc.A.$ft="$T_";isc.A.$73n={};isc.A.$fu=["Timed ",,": ",,"ms"];isc.A.flashHiliteCount=7;isc.A.flashHilitePeriod=500;isc.B.push(isc.A.applyLogPriorities=function(_1){if(!this.$fl){this.$fl={}}
 if(_1){isc.addProperties(this.$fl,_1)}}
 ,isc.A.getLogPriorities=function(_1,_2){var _3;if(_1!=null){var _4=this.$fv(_1);_3=this.$fm[_4];if(_2){return isc.addProperties({},_3)}}
 var _5=isc.addProperties({},this.$fl);if(_3)_5=isc.addProperties(_5,_3);return _5}
@@ -804,8 +831,8 @@ if(_1!=null){_6[4]=this.getPriorityName(_1);_6[5]=this.$fq}
 _6[6]=_3;_6[7]=this.$fq;if(_4){_6[8]=_4
 _6[9]=this.$fq}
 _6[10]=_2;var _7=_6.join(isc.$ad);_6.length=0;return _7}
-,isc.A.addLogMessage=function(_1,_2,_3,_4,_5){this.addToMasterLog(this.$fc(_1,_2,_3,_4,_5))
-if(_1!=null&&(_1==this.FATAL||_1==this.ERROR)){alert(_2)}}
+,isc.A.addLogMessage=function(_1,_2,_3,_4,_5){var _6=this.$fc(_1,_2,_3,_4,_5);this.addToMasterLog(_6);if(this.warningLogged!=null&&_1!=null&&_1<=this.WARN){this.warningLogged(_6)}
+if(_1!=null&&_1<=this.ERROR){alert(_2)}}
 ,isc.A.addToMasterLog=function(message){this.$fp[this.$fo]=message;this.$fo++;if(this.$fo>this.$fn){this.$fo=0}}
 ,isc.A.getMessages=function(){var _1=this.$fp,_2=this.$fo,_3=this.$fn;return _1.slice(_3-_2,_3).concat(_1.slice(0,_2))}
 ,isc.A.show=function(_1,_2,_3){if(!this.logViewer)this.logViewer=isc.LogViewer.create();this.logViewer.showLog(_1,_2,_3)}
@@ -836,7 +863,7 @@ this.showHiliteCanvas(isc.Element.getElementRect(_2));this.elementToHilite=null}
 ,isc.A.showHiliteCanvas=function(_1){var _2=this._hiliteCanvas;if(!_2){_2=this._hiliteCanvas=isc.Canvas.create({ID:"logHiliteCanvas",autoDraw:false,overflow:"hidden",hide:function(){this.Super("hide",arguments);this.resizeTo(1,1);this.setTop(-20)},border1:"2px dotted red",border2:"2px dotted white"})}
 _2.setPageRect(_1);isc.Page.setEvent("click",_2.getID()+".hide()");_2.setBorder(_2.border1);_2.bringToFront();_2.show();this.$f6()}
 ,isc.A.hideHiliteCanvas=function(){if(this._hiliteCanvas)this._hiliteCanvas.hide()}
-,isc.A.$f6=function(){var _1=[this._hiliteCanvas.border1,this._hiliteCanvas.border2];for(var i=0;i<7;i++){isc.Timer.setTimeout({target:this._hiliteCanvas,methodName:"setBorder",args:[_1[i%2]]},(500*i))}}
+,isc.A.$f6=function(){var _1=[this._hiliteCanvas.border1,this._hiliteCanvas.border2];for(var i=0;i<this.flashHiliteCount;i++){isc.Timer.setTimeout({target:this._hiliteCanvas,methodName:"setBorder",args:[_1[i%2]]},(this.flashHilitePeriod*i))}}
 );isc.B._maxIndex=isc.C+32;isc.ClassFactory.defineClass("LogViewer");isc.A=isc.LogViewer;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.getGlobalLogCookie=function(){var _1=isc.Cookie.get("GLog");if(!_1)return null;try{var _2=new Function("return "+_1);return _2()}catch(e){this.logWarn("bad log cookie: "+_1+this.getStackTrace())}}
 ,isc.A.getLogCookie=function(){var _1=isc.Cookie.get("Log");if(!_1)return null;try{var _2=new Function("return "+_1);return _2()}catch(e){this.logWarn("bad log cookie: "+_1+this.getStackTrace())}}
 );isc.B._maxIndex=isc.C+2;isc.A=isc.LogViewer.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$f7=25;isc.A.$f8="count";isc.B.push(isc.A.logWindowLoaded=function(){return(this._logWindowLoaded&&this._logWindow!=null&&!this._logWindow.closed)}
@@ -876,6 +903,8 @@ if(!_3)_3=this.Class;_5.log(_1,_2,_3,this.ID+" (created by: "+this.componentId+"
 isc.A=Array;isc.A.ASCENDING=true;isc.A.DESCENDING=false;isc.A=Array;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.shouldSortAscending=function(_1){if(_1==Array.ASCENDING)return true;if(_1==Array.DESCENDING)return false;if(isc.isA.String(_1)){if(_1.toLowerCase()=="ascending")return true;if(_1.toLowerCase()=="descending")return false}
 return null}
 );isc.B._maxIndex=isc.C+1;isc.A=Array.prototype;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.sortByProperty=function(_1,_2,_3,_4){return this.sortByProperties({property:_1,direction:_2,normalizer:_3,context:_4})}
+,isc.A.setSort=function(_1){var _2=[],_3=[],_4=[],_5=[];for(var i=0;i<_1.length;i++){var _7=_1[i];_2[i]=_7.property;_3[i]=Array.shouldSortAscending(_7.direction);_4[i]=_7.normalizer;_5[i]=_7.context}
+return this.sortByProperties(_2,_3,_4,_5)}
 ,isc.A.sortByProperties=function(){var _1=Array.$gh,_2=Array.$gi;if(isc.isAn.Array(arguments[0])){this.sortProps=arguments[0];this.sortDirections=arguments[1]||[];this.normalizers=arguments[2]||[];this.contexts=arguments[3]||[]}else{if(!this.sortProps){this.sortProps=[];this.normalizers=[];this.sortDirections=[];this.contexts=[]}else{this.sortProps.clear();this.sortDirections.clear();this.normalizers.clear();this.contexts.clear()}
 for(var i=0;i<arguments.length;i++){this.sortProps[i]=arguments[i].property;this.sortDirections[i]=arguments[i].direction;this.normalizers[i]=arguments[i].normalizer;this.contexts[i]=arguments[i].context}}
 var _4=this.sortProps,_5=this.normalizers,_6=this.contexts;for(var i=0;i<_4.length;i++){Array.$506[i]=this.sortDirections[i];var _7=_4[i],_8=_5[i],_9=_6[i];var _10;if(_8==null){_10=this.$gj(_4[i])}else if(isc.isA.String(_8)){_10=_8}
@@ -889,7 +918,7 @@ this.clearProperty("$gm");_1.clear();_2.clear();Array.$506.clear();this.dataChan
 return null}
 ,isc.A.$gs=function(_1,_2){var _3=this.$gj(_1,_2);var _4=Array.$gk(_3);return _4||Array.$gl}
 ,isc.A.normalize=function(_1,_2){var _3=(this.normalizer?this.normalizer:this.$gs(_2,_1));return _3(_1,_2)}
-);isc.B._maxIndex=isc.C+6;isc.A=Array;isc.A.$gt="$gu";isc.A.$gv="$gw";isc.A=Array;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$a6="string";isc.A.$gx="text";isc.A.$gy="number";isc.A.$gz="integer";isc.A.$g0="float";isc.A.$g1="int";isc.A.$g2="boolean";isc.A._$Date_="Date";isc.A.$g3="Time";isc.A.$g4="date";isc.A.$g5="time";isc.A.$bl="object";isc.A.$g6={"float":"number","int:":"number","integer":"number","text":"string","Date":"date","Time":"date","time":"date"};isc.A.$gh=[];isc.A.$gi=[];isc.A.$506=[];isc.B.push(isc.A.$gl=function(_1,_2){return _1[_2]}
+);isc.B._maxIndex=isc.C+7;isc.A=Array;isc.A.$gt="$gu";isc.A.$gv="$gw";isc.A=Array;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$a6="string";isc.A.$gx="text";isc.A.$gy="number";isc.A.$gz="integer";isc.A.$g0="float";isc.A.$g1="int";isc.A.$g2="boolean";isc.A._$Date_="Date";isc.A.$g3="Time";isc.A.$g4="date";isc.A.$g5="time";isc.A.$bl="object";isc.A.$g6={"float":"number","int:":"number","integer":"number","text":"string","Date":"date","Time":"date","time":"date"};isc.A.$gh=[];isc.A.$gi=[];isc.A.$506=[];isc.B.push(isc.A.$gl=function(_1,_2){return _1[_2]}
 ,isc.A.$g7=function(_1,_2){return(isc.isA.String(_1[_2])?_1[_2].toLowerCase():isc.emptyString)}
 ,isc.A.$g8=function(_1,_2){var _3=_1[_2];return isc.isA.Number(_3)?_3:(0-Number.MAX_VALUE)}
 ,isc.A.$g9=function(_1,_2){var _3=_1[_2];if(_3==true)return 1;if(_3==false)return 0;if(_3==null)return-1;return-2}
@@ -932,29 +961,41 @@ return _2}
 isc.sortByKey=function(_1){var _2={},_3=isc.getKeys(_1).sort();for(var i=0;i<_3.length;i++){_2[_3[i]]=_1[_3[i]]}
 return _2}
 isc.sortByValue=function(_1){return isc.makeReverseMap(isc.sortByKey(isc.makeReverseMap(_1)))}
-isc.ClassFactory.defineClass("Time");isc.A=isc.Time;isc.A.UTCHoursOffset=0;isc.A.$he=[/^\s*(\d?\d)\s*[: ]\s*(\d?\d)\s*[: ]\s*(\d?\d)?\s*([AaPp][Mm]?)?\s*$/,/^\s*(\d?\d)\s*[: ]\s*(\d?\d)(\s*)([AaPp][Mm]?)?\s*$/,/^\s*(\d\d)(\d\d)(\d\d)?\s*([AaPp][Mm]?)?\s*$/,/^\s*(\d)(\d\d)(\d\d)?\s*([AaPp][Mm]?)?\s*$/,/^\s*(\d\d?)(\s)?(\s*)([AaPp][Mm]?)?\s*$/];isc.A.formatterMap={toTime:{showSeconds:true,padded:false,show24:false},to24HourTime:{showSeconds:true,padded:false,show24:true},toPaddedTime:{showSeconds:true,padded:true,show24:false},toPadded24HourTime:{showSeconds:true,padded:true,show24:true},toShortTime:{showSeconds:false,padded:false,show24:false},toShort24HourTime:{showSeconds:false,padded:false,show24:true},toShortPaddedTime:{showSeconds:false,padded:true,show24:false},toShortPadded24HourTime:{showSeconds:false,padded:true,show24:true}};isc.A.displayFormat="toTime";isc.A.shortDisplayFormat="toShortTime";isc.A.AMIndicator=" am";isc.A.PMIndicator=" pm";isc.A=isc.Time;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$hf=[null,":",null,":"];isc.A.$hg=[null,":"];isc.B.push(isc.A.toTime=function(_1,_2){return this.format(_1,_2,false)}
+isc.ClassFactory.defineClass("Time");isc.A=isc.Time;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$he=[/^\s*(\d?\d)\s*[: ]\s*(\d?\d)\s*[: ]\s*(\d?\d)?\s*([AaPp][Mm]?)?\s*([+-]\d{2}:\d{2}|Z)?\s*$/,/^\s*(\d?\d)\s*[: ]\s*(\d?\d)(\s*)([AaPp][Mm]?)?\s*([+-]\d{2}:\d{2}|Z)?\s*$/,/^\s*(\d\d)(\d\d)(\d\d)?\s*([AaPp][Mm]?)?\s*([+-]\d{2}:\d{2}|Z)?\s*$/,/^\s*(\d)(\d\d)(\d\d)?\s*([AaPp][Mm]?)?\s*([+-]\d{2}:\d{2}|Z)?\s*$/,/^\s*(\d\d?)(\s)?(\s*)([AaPp][Mm]?)?\s*([+-]\d{2}:\d{2}|Z)?\s*$/];isc.A.formatterMap={toTime:{showSeconds:true,padded:false,show24:false},to24HourTime:{showSeconds:true,padded:false,show24:true},toPaddedTime:{showSeconds:true,padded:true,show24:false},toPadded24HourTime:{showSeconds:true,padded:true,show24:true},toShortTime:{showSeconds:false,padded:false,show24:false},toShort24HourTime:{showSeconds:false,padded:false,show24:true},toShortPaddedTime:{showSeconds:false,padded:true,show24:false},toShortPadded24HourTime:{showSeconds:false,padded:true,show24:true}};isc.A.displayFormat="toTime";isc.A.shortDisplayFormat="toShortTime";isc.A.AMIndicator=" am";isc.A.PMIndicator=" pm";isc.B.push(isc.A.setDefaultDisplayTimezone=function(_1){if(_1==null)return;var _2,_3;if(isc.isA.Number(_1)){_1=-_1;_2=Math.floor(_1/ 60);_3=_1-(_2*60)}else if(isc.isA.String(_1)){var _4=_1.split(":");_2=_4[0];var _5=_2&&_2.startsWith("-");_3=_4[1];_2=(_5?-1:1)*parseInt(_2,10);_3=(_5?-1:1)*parseInt(_3,10)}
+if(isc.isA.Number(_2)&&isc.isA.Number(_3)){this.UTCHoursDisplayOffset=_2;this.UTCMinutesDisplayOffset=_3}}
+,isc.A.getDefaultDisplayTimezone=function(){var H=this.UTCHoursDisplayOffset,M=this.UTCMinutesDisplayOffset,_3=H<0;return(!_3?"+":"")+H.stringify(2)+":"+((_3?-1:1)*M).stringify(2)}
+);isc.B._maxIndex=isc.C+2;isc.A=isc.Time;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$hf=[null,":",null,":"];isc.A.$hg=[null,":"];isc.B.push(isc.A.toTime=function(_1,_2){return this.format(_1,_2,false)}
 ,isc.A.toShortTime=function(_1,_2){return this.format(_1,_2,true)}
 ,isc.A.format=function(_1,_2,_3){if(!isc.isA.Date(_1))return _1;var _4=_2;if(!_2&&!isc.isA.String(_2)&&!isc.isA.Function(_2)){_2=_3?this.shortDisplayFormat:this.displayFormat}
 if(isc.isA.Function(_2))return _2(_1);if(isc.isA.String(_2))_2=this.formatterMap[_2];if(!isc.isAn.Object(_2)){this.logWarn("Invalid time formatter:"+_4+" - using 'toTime'");_2=this.formatterMap.toTime}
-var _5=_2.showSeconds,_6=_2.padded,_7=_2.show24;var _8=_1.getUTCHours();_8-=isc.Time.UTCHoursOffset;var _9=_1.getUTCMinutes(),_10=_5?_1.getUTCSeconds():null,_11=_7?null:(_8>=12);if(_8<0)_8+=24;if(!_7){if(_8>12)_8=_8-12;if(_8==0)_8=12}
-if(_6)_8=_8.stringify(2);var _12=_5?this.$hf:this.$hg;_12[0]=_8;_12[2]=_9.stringify();if(_5)_12[4]=_10.stringify();if(!_7)_12[5]=(_11?this.PMIndicator:this.AMIndicator);else _12[5]=null;return _12.join(isc.emptyString)}
-,isc.A.parseInput=function(_1,_2){var _3=0,_4=0,_5=0,_6=0;if(isc.isA.Date(_1)){_3=_1.getUTCHours();_3-=isc.Time.UTCHoursOffset;_4=_1.getUTCMinutes();_5=_1.getUTCSeconds();_6=_1.getMilliseconds()}else if(_1){for(var i=0;i<isc.Time.$he.length;i++){var _8=isc.Time.$he[i].exec(_1);if(_8)break}
-if(_8){var _3=Math.min(parseInt(_8[1]|0,10),23),_4=Math.min(parseInt(_8[2]|0,10),59),_5=Math.min(parseInt(_8[3]|0,10),59),_9=_8[4];;if(_9){if(!this.$hh)this.$hh={p:true,P:true,pm:true,PM:true,Pm:true};if(this.$hh[_9]){if(_3<12)_3+=12}else if(_3==12)_3=0}}else if(_2)return null}else if(_2)return null;var _10=new Date();_3+=isc.Time.UTCHoursOffset;while(_3>=24)_3-=24;while(_3<0)_3+=24;_10.setUTCHours(_3);_10.setUTCMinutes(_4);_10.setUTCSeconds(_5);_10.setMilliseconds(_5);return _10}
-,isc.A.createDate=function(_1,_2,_3,_4){var _5=new Date();if(_1==null)_1=0;else _1+=isc.Time.UTCHoursOffset;while(_1>=24)_1-=24;while(_1<0)_1+=24;_5.setUTCHours(_1);if(_2==null)_2=0;_5.setUTCMinutes(_2);if(_3==null)_3=0;_5.setUTCSeconds(_3);if(_4==null)_4=0;_5.setMilliseconds(_4);return _5}
+var _5=_2.showSeconds,_6=_2.padded,_7=_2.show24;var _8=_1.getUTCHours(),_9=_1.getUTCMinutes();var _10=this.$68d(_8,_9,this.UTCHoursDisplayOffset,this.UTCMinutesDisplayOffset);_8=_10[0];_9=_10[1];var _11=_5?_1.getUTCSeconds():null,_12=_7?null:(_8>=12);if(!_7){if(_8>12)_8=_8-12;if(_8==0)_8=12}
+if(_6)_8=_8.stringify(2);var _13=_5?this.$hf:this.$hg;_13[0]=_8;_13[2]=_9.stringify();if(_5)_13[4]=_11.stringify();if(!_7)_13[5]=(_12?this.PMIndicator:this.AMIndicator);else _13[5]=null;return _13.join(isc.emptyString)}
+,isc.A.parseInput=function(_1,_2,_3){var _4=0,_5=0,_6=0,_7=0;var _8=_3?0:this.UTCHoursDisplayOffset,_9=_3?0:this.UTCMinutesDisplayOffset;if(isc.isA.Date(_1)){_3=true;_4=_1.getUTCHours();_5=_1.getUTCMinutes();_6=_1.getUTCSeconds();_7=_1.getUTCMilliseconds()}else if(_1){for(var i=0;i<isc.Time.$he.length;i++){var _11=isc.Time.$he[i].exec(_1);if(_11)break}
+if(_11){var _4=Math.min(parseInt(_11[1]|0,10),23),_5=Math.min(parseInt(_11[2]|0,10),59),_6=Math.min(parseInt(_11[3]|0,10),59),_12=_11[4];;if(_12){if(!this.$hh)this.$hh={p:true,P:true,pm:true,PM:true,Pm:true};if(this.$hh[_12]){if(_4<12)_4+=12}else if(_4==12)_4=0}
+if(_11[5]!=null&&_11[5]!=""&&_11[5].toLowerCase()!="z"){var _13=_11[5].split(":"),H=_13[0],_15=H&&H.startsWith("-"),M=_13[1];_8=parseInt(H,10);_9=(_15?-1:1)*parseInt(M,10)}}else if(_2)return null}else if(_2)return null;var _17=new Date();var _18=this.$68d(_4,_5,(0-_8),(0-_9));_4=_18[0];_5=_18[1];if(_4!=null)_17.setUTCHours(_4);if(_5!=null)_17.setUTCMinutes(_5);if(_6!=null)_17.setUTCSeconds(_6);if(_7!=null)_17.setUTCMilliseconds(_7);return _17}
+,isc.A.$68d=function(_1,_2,_3,_4){if(_2==null||_1==null){this.logWarn("applyTimezoneOffset passed null hours/minutes");return[_1,_2]}
+if(_3==null)_3=0;if(_4==null)_3=0;if(_3==0&&_4==0)return[_1,_2,0];_1+=_3;_2+=_4;while(_2>=60){_2-=60;_1+=1}
+while(_2<0){_2+=60;_1-=1}
+var _5=0;while(_1>=24){_1-=24;_5+=1}
+while(_1<0){_1+=24;_5-=1}
+return[_1,_2,_5]}
+,isc.A.createDate=function(_1,_2,_3,_4,_5){var _6=new Date();if(_1==null)_1=0;if(_2==null)_2=0;if(_3==null)_3=0;if(_4==null)_4=0;if(!_5){var _7=-this.UTCHoursDisplayOffset,_8=-this.UTCMinutesDisplayOffset;var _9=this.$68d(_1,_2,_7,_8);_1=_9[0];_2=_9[1]}
+_6.setUTCHours(_1);_6.setUTCMinutes(_2);_6.setUTCSeconds(_3);_6.setUTCMilliseconds(_4);return _6}
 ,isc.A.setShortDisplayFormat=function(_1){this.shortDisplayFormat=_1}
 ,isc.A.setNormalDisplayFormat=function(_1){this.displayFormat=_1}
 ,isc.A.compareTimes=function(_1,_2){if(isc.isA.String(_1))_1=isc.Time.parseInput(_1);if(isc.isA.String(_2))_2=isc.Time.parseInput(_2);if(_1==null&&_2==null)return true;if(!isc.isA.Date(_1)||!isc.isA.Date(_2))return false;return((_1.getUTCHours()==_2.getUTCHours())&&(_1.getUTCMinutes()==_2.getUTCMinutes())&&(_1.getUTCSeconds()==_2.getUTCSeconds()))}
-);isc.B._maxIndex=isc.C+8;isc.ClassFactory.defineClass("Page");isc.A=isc.Page;isc.A.$hi=[];isc.A.$hj=false;isc.A.defaultUnsupportedBrowserURL="[SKIN]/unsupported_browser.html";isc.A.$hk={};isc.A.$hl=["http://","https://","file://","mailto:","app-resource:","data:"];isc.A.textDirection=null;isc.A.LTR="ltr";isc.A.RTL="rtl";isc.A=isc.Page;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$hm="[SKIN]";isc.A.$hn="[SKIN]/";isc.A.$ho="[";isc.A.$hp="./";isc.A.$hq="..";isc.A.leaveScrollbarGap=isc.Browser.isMoz&&isc.Browser.geckoVersion<20051107;isc.A.getWidth=(isc.Browser.isNS?function(_1,_2){if(!_1)_1=window;if(isc.Browser.isMoz&&_1==window&&!_2){if(this.width!=null){return this.width-(this.leaveScrollbarGap?(isc.Element?isc.Element.getNativeScrollbarSize():16):0)}
+);isc.B._maxIndex=isc.C+9;isc.Time.setDefaultDisplayTimezone(new Date().getTimezoneOffset());isc.ClassFactory.defineClass("Page");isc.A=isc.Page;isc.A.$hi=[];isc.A.$hj=false;isc.A.defaultUnsupportedBrowserURL="[SKIN]/unsupported_browser.html";isc.A.$hk={};isc.A.protocolURLs=window.isc_protocolURLs||["http://","https://","file://","mailto:","app-resource:","data:"];isc.A.textDirection=null;isc.A.LTR="ltr";isc.A.RTL="rtl";isc.A=isc.Page;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$hm="[SKIN]";isc.A.$hn="[SKIN]/";isc.A.$ho="[";isc.A.$hp="./";isc.A.$hq="..";isc.A.leaveScrollbarGap=isc.Browser.isMoz&&isc.Browser.geckoVersion<20051107;isc.A.getWidth=(isc.Browser.isNS?function(_1,_2){if(!_1)_1=window;_2=_2||(isc.Browser.isMoz&&isc.Browser.geckoVersion>=20080529);if(isc.Browser.isMoz&&_1==window&&!_2){if(this.width!=null){return this.width-(this.leaveScrollbarGap?(isc.Element?isc.Element.getNativeScrollbarSize():16):0)}
 this.logInfo("NOTE: isc.Page.getWidth() unable to determine page width.  Returning 500","sizing");return 500}else{var _3=!isc.Browser.isStrict&&!this.leaveScrollbarGap&&isc.Browser.geckoVersion>=20051111&&_1.document.body!=null,_4;if(_3){_4=_1.document.body.clientWidth}
 if(_4==null||_4==0){_4=_1.innerWidth}
 if(_1==window)this.width=_4;return _4}}:function(_1){if(!_1)_1=window;var _2=_1.document.body;if(isc.Browser.isStrict&&!isc.Browser.isOpera)
 _2=_1.document.documentElement;if(_2){return _2.clientWidth}else{if(!isc.Page.isLoaded()){isc.Page.setEvent("load","isc.EH.$hr()",isc.Page.FIRE_ONCE)}
-this.logWarn("NOTE: isc.Page.getWidth() called before <BODY> tag was written out -- "+"value cannot be determined.  Returning 500");return 500}});isc.A.getHeight=(isc.Browser.isNS?function(_1,_2){if(!_1)_1=window;if(isc.Browser.isMoz&&_1==window&&!_2){if(this.height!=null)return this.height;return 500}else{var _3=!isc.Browser.isStrict&&isc.Browser.geckoVersion>=20051111&&_1.document.body!=null,_4;if(_3){_4=_1.document.body.clientHeight}
+this.logWarn("NOTE: isc.Page.getWidth() called before <BODY> tag was written out -- "+"value cannot be determined.  Returning 500");return 500}});isc.A.getHeight=(isc.Browser.isNS?function(_1,_2){if(!_1)_1=window;_2=_2||(isc.Browser.isMoz&&isc.Browser.geckoVersion>=20080529);if(isc.Browser.isMoz&&_1==window&&!_2){if(this.height!=null)return this.height;return 500}else{var _3=!isc.Browser.isStrict&&isc.Browser.geckoVersion>=20051111&&_1.document.body!=null,_4;if(_3){_4=_1.document.body.clientHeight}
 if(_4==null||_4==0){_4=_1.innerHeight}
 if(_1==window)this.height=_4;return _4}}:function(_1){if(!_1)_1=window;var _2=_1.document.body;if(isc.Browser.isStrict&&!isc.Browser.isOpera)
 _2=_1.document.documentElement;if(_2){return _2.clientHeight}else{this.logWarn("NOTE: isc.Page.getHeight() called before <BODY> tag was written out -- value cannot be determined.  Returning 500");return 500}});isc.A.getScrollHeight=(isc.Browser.isNS?function(_1){var _1=_1||document;var _2=_1.body.scrollHeight;if(isc.isA.Number(_2))return _2}:function(_1){var _1=_1||document;if(_1==null||_1.body==null)return 800;if(isc.Browser.version>=6){return Math.max(_1.body.scrollHeight,_1.documentElement.clientHeight)}
 return _1.body.scrollHeight});isc.A.getScrollLeft=(isc.Browser.isNS?function(){return window.pageXOffset}:function(){if(document==null||document.body==null)return 0;return(isc.Browser.isStrict?document.documentElement.scrollLeft:document.body.scrollLeft)});isc.A.getScrollTop=(isc.Browser.isNS?function(){return window.pageYOffset}:function(){if(document==null||document.body==null)return 0;return(isc.Browser.isStrict?document.documentElement.scrollTop:document.body.scrollTop)});isc.A.unsupportedBrowserAction="continue";isc.B.push(isc.A.finishedLoading=function(){if(this.width==null||this.height==null)isc.EH.$hr()
 isc.Page.$hj=true;isc.Log.logInfo("isc.Page is loaded");isc.EH.startIdleTimer();if(isc.Browser.isSafari)isc.Canvas.clearCSSCaches();if(!window.suppressAutoLogWindow){var _1=isc.LogViewer.getLogCookie();if(_1!=null&&_1.keepOpen){isc.Timer.setTimeout("isc.Log.show(true)",1000)}}
+if(isc.Time&&isc.Time.UTCHoursOffset!=null){isc.logWarn("This application includes code to set the Time.UTCHoursOffset attribute. "+"This property will be respected but has been deprecated in favor of the "+"classMethod isc.Time.setDefaultDisplayTimezone().");isc.Time.setDefaultDisplayTimezone(isc.Time.UTCHoursOffset.stringify()+":00")}
 if(isc.Page.pollPageSize)isc.EH.$hr()}
 ,isc.A.isLoaded=function(){return this.$hj}
 ,isc.A.getBlankFrameURL=function(){if(isc.Browser.isIE&&("https:"==window.location.protocol||document.domain!=location.hostname)){return this.getURL("[HELPERS]empty.html")}
@@ -966,7 +1007,7 @@ this.$hs();this.setIsomorphicDir(_1.isomorphicDir);this.setIsomorphicClientDir(_
 this.$hk.APP=_1;if(this.logIsInfoEnabled()){this.logInfo("app dir is "+this.$hk.APP)}
 this.setAppImgDir()}
 ,isc.A.getAppDir=function(){return this.$hk.APP}
-,isc.A.setAppImgDir=function(_1){isc.Page.$hk.APPIMG=isc.Page.getURL(_1!=null?_1:"[APP]images/")}
+,isc.A.setAppImgDir=function(_1){this.$hk.APPIMG=this.combineURLs(this.getAppDir(),_1!=null?_1:"[APP]images/")}
 ,isc.A.getAppImgDir=function(_1){if(_1!=null&&(isc.startsWith(_1,isc.slash)||this.getProtocol(_1)!=isc.emptyString))
 {return _1}
 if(_1)return this.$hk.APPIMG+_1;else return this.$hk.APPIMG}
@@ -995,8 +1036,9 @@ var _4=isc.slash;var _5=isc.Page.getProtocol(_1);if(isc.startsWith(_2,_4)){if(is
 _7.shift();if(_6.length==0)break;_6.pop()}
 _1=_5+_8+_4;if(_6.length>0)_1+=_6.join(_4)+_4;_2=_7.join(_4)}
 return _1+_2}
-,isc.A.getProtocol=function(_1){for(var i=0;i<isc.Page.$hl.length;i++){if(isc.startsWith(_1,isc.Page.$hl[i]))return isc.Page.$hl[i]}
+,isc.A.getProtocol=function(_1){for(var i=0;i<isc.Page.protocolURLs.length;i++){if(isc.startsWith(_1,isc.Page.protocolURLs[i]))return isc.Page.protocolURLs[i]}
 return isc.$ad}
+,isc.A.getLastSegment=function(_1){if(_1==null)return isc.emptyString;var _2=_1.lastIndexOf(isc.slash);if(_2==-1)return _1;return _1.substring(_2+1)}
 ,isc.A.isXHTML=function(){if(this.$hv!=null)return this.$hv;if(isc.Browser.isIE)return false;var _1=this.getWindow();return(this.$hv=(this.getDocument().constructor==this.getWindow().XMLDocument))}
 ,isc.A.isRTL=function(){return this.getTextDirection()==isc.Canvas.RTL}
 ,isc.A.getTextDirection=function(){if(this.textDirection==null){var _1=document.documentElement,_2=document.body,_3=(_2?_2.dir:null)||_1.dir;if(_3)return(this.textDirection=_3.toLowerCase());else if(_2)return(this.textDirection=this.LTR);return this.LTR}
@@ -1029,7 +1071,7 @@ return _5}
 if(this.unsupportedBrowserAction=="continue")return;var _2=this.unsupportedBrowserAction=="confirm"&&confirm(this.getUnsupportedBrowserPromptString())
 if(_2)return;if(_1==null)_1=isc.Page.defaultUnsupportedBrowserURL;var _3=true;window.location.replace(isc.Page.getURL(_1))}}
 ,isc.A.getUnsupportedBrowserPromptString=function(){var _1="This page uses the Isomorphic SmartClient web presentation layer "+"(Version"+isc.version+" - "+isc.buildDate+"). The web browser you are using is not supported by this version of SmartClient"+" and you may encounter errors on this page. Would you like to continue anyway?\n\n"+"(Reported userAgent string for this browser:"+navigator.userAgent+")";return _1}
-);isc.B._maxIndex=isc.C+47;if(isc.Page.isXHTML())isc.nbsp=isc.xnbsp;isc.Page.setDirectories();if(isc.Browser.isMoz){isc.Page.getWidth(null,true);isc.Page.getHeight(null,true)}
+);isc.B._maxIndex=isc.C+48;if(isc.Page.isXHTML())isc.nbsp=isc.xnbsp;isc.Page.setDirectories();if(isc.Browser.isMoz){isc.Page.getWidth(null,true);isc.Page.getHeight(null,true)}
 isc.addGlobal("Params",function(_1){if(!_1)_1=window;var _2=isc.isA.String(_1)?_1:_1.location.href;var _3=_2.indexOf("?"),_4=_2.indexOf("#");if(_4<0||_4<_3)_4=_2.length;if(_3!=-1){var _5=_2.substring(_3+1,_4).split("&");for(var i=0,_7,_8;i<_5.length;i++){_7=_5[i];if(!_7)continue;_8=_7.indexOf("=");this[_7.substring(0,_8)]=unescape(_7.substring(_8+1))}}})
 isc.params=new isc.Params();isc.getParams=function(_1){return new isc.Params(_1)}
 isc.ClassFactory.defineClass("Comm");isc.A=isc.Comm;isc.A.sendMethod="POST";isc.A.$hz=0;isc.A=isc.Comm;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.xmlHttpConstructors=["MSXML2.XMLHTTP","Microsoft.XMLHTTP","MSXML.XMLHTTP","MSXML3.XMLHTTP"];isc.A.$50c=[];isc.B.push(isc.A.$h0=function(_1,_2){isc.EH.$h1("XRP");isc.Class.fireCallback(_2,"xmlHttpRequest",[_1],null,true);isc.EH.$h2()}
@@ -1081,7 +1123,7 @@ this.$is[_1].removeWhere(this.$cp,_2)}}}
 ,isc.A.$iw=function(_1){var _2=this.$ix=this.$ix||{};if(!_2[_1]){_2[_1]="page"+_1.charAt(0).toUpperCase()+_1.substring(1)}
 return _2[_1]}
 ,isc.A.handleEvent=function(_1,_2,_3){if(_2==isc.EH.UNLOAD)isc.Canvas.$iy();var _4=isc.Page.$is[_2];if(_4==null||_4.length==0)return true;var _5=this.$iw(_2);var _6=true;this.$iv=_2;for(var i=0,_8=_4.length;_6&&(i<_8);i++){var _9=_4[i];if(!_9)continue;if(_9.fireStyle==isc.Page.FIRE_ONCE)_4[i]=null;if(this.logIsDebugEnabled()){this.logDebug("handleEvent("+_2+"): firing action => "+isc.Func.getShortBody(_9.action))}
-if(isc.isA.Function(_9.action)){_6=(_9.action(_1,_3)!=false)}else{var _10=_9.action;if(_10.destroyed){_4[i]=null;continue}
+if(isc.isA.Function(_9.action)){_6=(_9.action(_1,_3)!=false)}else{var _10=_9.action;if(!_10||_10.destroyed){_4[i]=null;continue}
 var _11=_9.functionName||_5;if(isc.isA.Function(_10[_11])){_6=(_10[_11](_1,_3)!=false)}}}
 this.$iv=null;this.$is[_2].removeEmpty();return _6}
 ,isc.A.actionsArePendingForEvent=function(_1){return(this.$is[_1]&&this.$is[_1].length!=0)}
@@ -1094,15 +1136,15 @@ this.$iu[_1].removeWhere("target",_2)}
 ,isc.A.handleKeyPress=function(){var _1=isc.EH,_2=_1.getKey(),_3=this.$iu;if(!_3[_2])return true;var _4=_3[_2],_5=_4.duplicate(),_6=_5.length,_7=true;for(var i=0;i<_6;i++){var _9=_5[i];if(!_4.contains(_9))continue;if(_9.ctrlKey!=null&&_9.ctrlKey!=_1.ctrlKeyDown())continue;if(_9.altKey!=null&&_9.altKey!=_1.altKeyDown())continue;if(_9.shiftKey!=null&&_9.shiftKey!=_1.shiftKeyDown())continue;if(_9.metaKey!=null&&_9.metaKey!=_1.metaKeyDown())continue;if(_9.action!=null&&!isc.isA.Function(_9.action)){isc.Func.replaceWithMethod(_9,"action","key,target")}
 _7=((_9.action(_2,_9.target)!=false)&&_7)}
 return _7}
-);isc.B._maxIndex=isc.C+8;isc.ClassFactory.defineClass("EventHandler");isc.EH=isc.Event=isc.EventHandler;isc.A=isc.EventHandler;isc.A.lastEvent={};isc.A.$i0=[];isc.A.$i1=[];isc.A.passThroughEvents=true;isc.A.maskNativeTargets=true;isc.A.STILL_DOWN_DELAY=100;isc.A.DOUBLE_CLICK_DELAY=500;isc.A.IDLE_DELAY=10;isc.A.STOP_BUBBLING="***STOP***";isc.A.ALL_EDGES=["T","L","B","R","TL","TR","BL","BR"];isc.A.eventTypes={MOUSE_DOWN:"mouseDown",RIGHT_MOUSE_DOWN:"rightMouseDown",MOUSE_MOVE:"mouseMove",MOUSE_UP:"mouseUp",SHOW_CONTEXT_MENU:"showContextMenu",CLICK:"click",DOUBLE_CLICK:"doubleClick",MOUSE_OUT:"mouseOut",MOUSE_STILL_DOWN:"mouseStillDown",MOUSE_OVER:"mouseOver",SET_DRAG_TRACKER:"setDragTracker",GET_DRAG_DATA:"getDragData",RELEASE_DRAG_DATA:"releaseDragData",DRAG_START:"dragStart",DRAG_STOP:"dragStop",DRAG_MOVE:"dragMove",DRAG_OUT:"dragOut",DRAG_REPOSITION_START:"dragRepositionStart",DRAG_REPOSITION_MOVE:"dragRepositionMove",DRAG_REPOSITION_STOP:"dragRepositionStop",DRAG_RESIZE_START:"dragResizeStart",DRAG_RESIZE_MOVE:"dragResizeMove",DRAG_RESIZE_STOP:"dragResizeStop",DROP_OVER:"dropOver",DROP_MOVE:"dropMove",DROP_OUT:"dropOut",DROP:"drop",KEY_DOWN:"keyDown",KEY_UP:"keyUp",KEY_PRESS:"keyPress",MOUSE_WHEEL:"mouseWheel",SELECT_START:"selectStart",SELECTION_CHANGE:"selectionChange",FOCUS_IN:"focusIn",FOCUS_OUT:"focusOut",IDLE:"idle",LOAD:"load",UNLOAD:"unload",RESIZE:"resize"};isc.A.$i2={mousemove:"mouseMove",mousedown:"mouseDown",mouseup:"mouseUp",mousewheel:"mouseWheel",selectionchange:"selectionChange",DOMMouseScroll:"mouseWheel",mouseMove:"mouseMove",mouseDown:"mouseDown",mouseUp:"mouseUp",mouseWheel:"mouseWheel",selectionstart:"selectionStart",selectionStart:"selectionStart",selectionchange:"selectionChange",selectionChange:"selectionChange"};isc.A.$i3="event,eventInfo";isc.A.DRAG_RESIZE="dragResize";isc.A.DRAG_REPOSITION="dragReposition";isc.A.DRAG="drag";isc.A.NONE="none";isc.A.TRACKER="tracker";isc.A.TARGET="target";isc.A.OUTLINE="outline";isc.A.INTERSECT_WITH_MOUSE="mouse";isc.A.INTERSECT_WITH_RECT="rect";isc.A.dragTargetShadowDepth=10;isc.A.$i4={A:true,AREA:true};isc.A.$i5={INPUT:true,TEXTAREA:true,SELECT:true,OPTION:true};isc.A.$i6="LABEL";isc.A.$i7={keydown:"keyDown",keyup:"keyUp",keypress:"keyPress"};isc.A.$i8={Backspace:8,Tab:9,Shift:16,Ctrl:17,Alt:18,Pause_Break:19,Caps_Lock:20,Page_Up:33,Page_Down:34,End:35,Home:36,Arrow_Left:37,Arrow_Up:38,Arrow_Right:39,Arrow_Down:40,Insert:45,Delete:46,Meta:91,f1:112,f2:113,f3:114,f4:115,f5:116,f6:117,f7:118,f8:119,f9:120,f10:121,f11:122,f12:123,Num_Lock:144,Scroll_Lock:145};isc.A.$iz={'0':'$i9','8':'Backspace','9':'Tab','13':'Enter','16':'Shift','17':'Ctrl','18':'Alt','19':'Pause_Break','20':'Caps_Lock','27':'Escape','32':'Space','33':'Page_Up','34':'Page_Down','35':'End','36':'Home','37':'Arrow_Left','38':'Arrow_Up','39':'Arrow_Right','40':'Arrow_Down','44':'Print_Screen','45':'Insert','46':'Delete','48':'0',"49":"1","50":"2","51":"3","52":"4","53":"5","54":"6","55":"7","56":"8","57":"9",'65':'A','66':'B','67':'C','68':'D','69':'E','70':'F','71':'G','72':'H','73':'I','74':'J','75':'K','76':'L','77':'M','78':'N','79':'O','80':'P','81':'Q','82':'R','83':'S','84':'T','85':'U','86':'V','87':'W','88':'X','89':'Y','90':'Z','91':'Meta','92':'Meta','93':'Menu','96':'0','97':'1','98':'2','99':'3','100':'4','101':'5','102':'6','103':'7','104':'8','105':'9','106':'*','107':'+','109':'-','110':'.','111':'/','112':'f1','113':'f2','114':'f3','115':'f4','116':'f5','117':'f6','118':'f7','119':'f8','120':'f9','121':'f10','122':'f11','123':'f12','144':'Num_Lock','145':'Scroll_Lock','160':'Shift','161':'Shift','162':'Ctrl','163':'Ctrl','164':'Alt','165':'Alt','186':';','187':'=','188':',','189':'-','190':'.','191':'/','192':'`','219':'[','220':'\\','221':']','222':"'"};isc.A.$ja={'8':'Backspace','9':'Tab','13':'Enter','27':'Escape','32':'Space','33':'1','34':"'",'35':'3','36':'4','37':'5','38':'7','39':"'",'40':'9','41':'0','42':'8','43':'=','44':',','45':'-','46':'.','47':'/','48':'0','49':'1','50':'2','51':'3','52':'4','53':'5','54':'6','55':'7','56':'8','57':'9','58':';','59':';','60':',','61':'=','62':'.','63':'/','64':'2','65':'A','66':'B','67':'C','68':'D','69':'E','70':'F','71':'G','72':'H','73':'I','74':'J','75':'K','76':'L','77':'M','78':'N','79':'O','80':'P','81':'Q','82':'R','83':'S','84':'T','85':'U','86':'V','87':'W','88':'X','89':'Y','90':'Z','91':'[','92':'\\','93':']','94':'6','95':'-','96':'`','97':'A','98':'B','99':'C','100':'D','101':'E','102':'F','103':'G','104':'H','105':'I','106':'J','107':'K','108':'L','109':'M','110':'N','111':'O','112':'P','113':'Q','114':'R','115':'S','116':'T','117':'U','118':'V','119':'W','120':'X','121':'Y','122':'Z','123':'[','124':'\\','125':']','126':'`'};isc.A.$jb={'3':"Enter",'25':"Tab",'63232':"Arrow_Up",'63233':"Arrow_Down",'63234':"Arrow_Left",'63235':"Arrow_Right",'64236':"f1",'64237':"f2",'64238':"f3",'64239':"f4",'64240':"f5",'64241':"f6",'64242':"f7",'64243':"f8",'64244':"f9",'64245':"f10",'64246':"f11",'63247':"f12",'63273':"Home",'63275':"End",'63276':"Page_Up",'63277':"Page_Down"};isc.A.$jc={};isc.A.dragTrackerDefaults={ID:"isc_dragTracker",width:10,height:10,offsetX:-10,offsetY:-10,autoDraw:false,visibility:"hidden",overflow:"visible",cursor:"arrow"};isc.EventHandler.addClassProperties(isc.EventHandler.eventTypes)
-isc.A=isc.EventHandler;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$je="f10";isc.A.$20w="Escape";isc.A.$jf="Tab";isc.A.$jg="IMG";isc.A.$jh="progid:DXImageTransform.Microsoft.AlphaImageLoader";isc.A.$ji={};isc.A.$jj="BODY";isc.A.$jk="HTML";isc.A.$jl="eventProxy";isc.A.$jm="[object Text]";isc.A.$jn={autoDraw:false,$jo:true,$jp:false,overflow:"hidden",visibility:"hidden",$jq:false,getTarget:function(){return this.$jr},show:function(){var _1=this.masterElement;this.moveAbove(_1);return this.Super("show",arguments)}};isc.A.$js=isc.Browser.isIE?isc.undef:true;isc.A.$jt="handleNativeEvents";isc.A.$49r="APPLET";isc.A.$ju={mouseMove:true,mouseOver:true,mouseOut:true};isc.A.$41z="selectionChange";isc.A.$jv="$jw";isc.A.$jx=0;isc.A.$jy={load:"LOD",mousedown:"MDN",mouseup:"MUP",mousemove:"MMV",mouseout:"MOU",contextmenu:"CXT",keypress:"KPR",keydown:"KDN",keyup:"KUP",resize:"RSZ"};isc.A.$jz="nativeEvents";isc.A.$j0="event";isc.A.$j1=(isc.Browser.isMoz?"if(event.getPreventDefault&&event.getPreventDefault())return;":isc.Browser.isSafari?"if(event.returnValue==false)return;":"")+"var returnVal=arguments.callee.$ch.isc.EH.dispatch(arguments.callee.$j2,event);"+(!isc.Browser.isIE&&isc.Browser.isDOM?"if(returnVal==false)event.preventDefault();else if(returnVal==isc.EH.STOP_BUBBLING)event.stopPropogation();":"")+"return returnVal;";isc.A.$j3={};isc.A.$j4={onmousedown:"mousedown",onmouseup:"mouseup",onclick:"click",ondblclick:"dblclick",oncontextmenu:"contextmenu",onmousewheel:"mousewheel",onmouseover:"mouseover",onmouseout:"mouseout",onmousemove:"mousemove",onresize:"resize",onload:"load",onunload:"unload",onselecttext:"selecttext",onselectionchanged:"selectionchanged",onkeydown:"keydown",onkeyup:"keyup",onkeypress:"keypress"};isc.A.$649={};isc.A.getMouseEventProperties=(isc.Browser.isIE?function(_1){var _2=this.lastEvent;if(!_1)_1=this.getWindow().event;_2.DOMevent=_1;_2.eventType=this.$i2[_1.type];_2.y=parseInt(_1.clientY)+this.ns.Page.getScrollTop();_2.x=parseInt(_1.clientX);if(!isc.Page.isRTL()){_2.x+=this.ns.Page.getScrollLeft()}else{var _3=this.ns.Page.getScrollLeft();if(_3>0){var _4=(this.ns.Page.getScrollWidth()-this.ns.Page.getWidth());_2.x-=(_4-_3)}
+);isc.B._maxIndex=isc.C+8;isc.ClassFactory.defineClass("EventHandler");isc.EH=isc.Event=isc.EventHandler;isc.A=isc.EventHandler;isc.A.lastEvent={};isc.A.$i0=[];isc.A.$i1=[];isc.A.passThroughEvents=true;isc.A.maskNativeTargets=true;isc.A.STILL_DOWN_DELAY=100;isc.A.DOUBLE_CLICK_DELAY=500;isc.A.IDLE_DELAY=10;isc.A.STOP_BUBBLING="***STOP***";isc.A.ALL_EDGES=["T","L","B","R","TL","TR","BL","BR"];isc.A.eventTypes={MOUSE_DOWN:"mouseDown",RIGHT_MOUSE_DOWN:"rightMouseDown",MOUSE_MOVE:"mouseMove",MOUSE_UP:"mouseUp",SHOW_CONTEXT_MENU:"showContextMenu",CLICK:"click",DOUBLE_CLICK:"doubleClick",MOUSE_OUT:"mouseOut",MOUSE_STILL_DOWN:"mouseStillDown",MOUSE_OVER:"mouseOver",SET_DRAG_TRACKER:"setDragTracker",GET_DRAG_DATA:"getDragData",RELEASE_DRAG_DATA:"releaseDragData",DRAG_START:"dragStart",DRAG_STOP:"dragStop",DRAG_MOVE:"dragMove",DRAG_OUT:"dragOut",DRAG_REPOSITION_START:"dragRepositionStart",DRAG_REPOSITION_MOVE:"dragRepositionMove",DRAG_REPOSITION_STOP:"dragRepositionStop",DRAG_RESIZE_START:"dragResizeStart",DRAG_RESIZE_MOVE:"dragResizeMove",DRAG_RESIZE_STOP:"dragResizeStop",DROP_OVER:"dropOver",DROP_MOVE:"dropMove",DROP_OUT:"dropOut",DROP:"drop",KEY_DOWN:"keyDown",KEY_UP:"keyUp",KEY_PRESS:"keyPress",MOUSE_WHEEL:"mouseWheel",SELECT_START:"selectStart",SELECTION_CHANGE:"selectionChange",FOCUS_IN:"focusIn",FOCUS_OUT:"focusOut",IDLE:"idle",LOAD:"load",UNLOAD:"unload",RESIZE:"resize"};isc.A.$i2={mousemove:"mouseMove",mousedown:"mouseDown",mouseup:"mouseUp",mousewheel:"mouseWheel",selectionchange:"selectionChange",DOMMouseScroll:"mouseWheel",mouseMove:"mouseMove",mouseDown:"mouseDown",mouseUp:"mouseUp",mouseWheel:"mouseWheel",selectionstart:"selectionStart",selectionStart:"selectionStart",selectionchange:"selectionChange",selectionChange:"selectionChange"};isc.A.$i3="event,eventInfo";isc.A.DRAG_RESIZE="dragResize";isc.A.DRAG_REPOSITION="dragReposition";isc.A.DRAG="drag";isc.A.NONE="none";isc.A.TRACKER="tracker";isc.A.TARGET="target";isc.A.OUTLINE="outline";isc.A.INTERSECT_WITH_MOUSE="mouse";isc.A.INTERSECT_WITH_RECT="rect";isc.A.dragTargetShadowDepth=10;isc.A.$i4={A:true,AREA:true};isc.A.$i5={INPUT:true,TEXTAREA:true,SELECT:true,OPTION:true};isc.A.$i6="LABEL";isc.A.$i7={keydown:"keyDown",keyup:"keyUp",keypress:"keyPress"};isc.A.$i8={Backspace:8,Tab:9,Shift:16,Ctrl:17,Alt:18,Pause_Break:19,Caps_Lock:20,Page_Up:33,Page_Down:34,End:35,Home:36,Arrow_Left:37,Arrow_Up:38,Arrow_Right:39,Arrow_Down:40,Insert:45,Delete:46,Meta:91,f1:112,f2:113,f3:114,f4:115,f5:116,f6:117,f7:118,f8:119,f9:120,f10:121,f11:122,f12:123,Num_Lock:144,Scroll_Lock:145};isc.A.$iz={'0':'$i9','8':'Backspace','9':'Tab','13':'Enter','16':'Shift','17':'Ctrl','18':'Alt','19':'Pause_Break','20':'Caps_Lock','27':'Escape','32':'Space','33':'Page_Up','34':'Page_Down','35':'End','36':'Home','37':'Arrow_Left','38':'Arrow_Up','39':'Arrow_Right','40':'Arrow_Down','44':'Print_Screen','45':'Insert','46':'Delete','48':'0',"49":"1","50":"2","51":"3","52":"4","53":"5","54":"6","55":"7","56":"8","57":"9",'65':'A','66':'B','67':'C','68':'D','69':'E','70':'F','71':'G','72':'H','73':'I','74':'J','75':'K','76':'L','77':'M','78':'N','79':'O','80':'P','81':'Q','82':'R','83':'S','84':'T','85':'U','86':'V','87':'W','88':'X','89':'Y','90':'Z','91':'Meta','92':'Meta','93':'Menu','96':'0','97':'1','98':'2','99':'3','100':'4','101':'5','102':'6','103':'7','104':'8','105':'9','106':'*','107':'+','109':'-','110':'.','111':'/','112':'f1','113':'f2','114':'f3','115':'f4','116':'f5','117':'f6','118':'f7','119':'f8','120':'f9','121':'f10','122':'f11','123':'f12','144':'Num_Lock','145':'Scroll_Lock','160':'Shift','161':'Shift','162':'Ctrl','163':'Ctrl','164':'Alt','165':'Alt','186':';','187':'=','188':',','189':'-','190':'.','191':'/','192':'`','219':'[','220':'\\','221':']','222':"'"};isc.A.$ja={'8':'Backspace','9':'Tab','13':'Enter','27':'Escape','32':'Space','33':'1','34':"'",'35':'3','36':'4','37':'5','38':'7','39':"'",'40':'9','41':'0','42':'8','43':'=','44':',','45':'-','46':'.','47':'/','48':'0','49':'1','50':'2','51':'3','52':'4','53':'5','54':'6','55':'7','56':'8','57':'9','58':';','59':';','60':',','61':'=','62':'.','63':'/','64':'2','65':'A','66':'B','67':'C','68':'D','69':'E','70':'F','71':'G','72':'H','73':'I','74':'J','75':'K','76':'L','77':'M','78':'N','79':'O','80':'P','81':'Q','82':'R','83':'S','84':'T','85':'U','86':'V','87':'W','88':'X','89':'Y','90':'Z','91':'[','92':'\\','93':']','94':'6','95':'-','96':'`','97':'A','98':'B','99':'C','100':'D','101':'E','102':'F','103':'G','104':'H','105':'I','106':'J','107':'K','108':'L','109':'M','110':'N','111':'O','112':'P','113':'Q','114':'R','115':'S','116':'T','117':'U','118':'V','119':'W','120':'X','121':'Y','122':'Z','123':'[','124':'\\','125':']','126':'`'};isc.A.$jb={'3':"Enter",'25':"Tab",'63232':"Arrow_Up",'63233':"Arrow_Down",'63234':"Arrow_Left",'63235':"Arrow_Right",'64236':"f1",'64237':"f2",'64238':"f3",'64239':"f4",'64240':"f5",'64241':"f6",'64242':"f7",'64243':"f8",'64244':"f9",'64245':"f10",'64246':"f11",'63247':"f12",'63273':"Home",'63275':"End",'63276':"Page_Up",'63277':"Page_Down"};isc.A.$jc={};isc.A.dynamicBackMask=false;isc.A.alwaysBackMask=false;isc.A.dragTrackerDefaults={ID:"isc_dragTracker",width:10,height:10,offsetX:-10,offsetY:-10,autoDraw:false,visibility:"hidden",overflow:"visible",cursor:"arrow"};isc.EventHandler.addClassProperties(isc.EventHandler.eventTypes)
+isc.A=isc.EventHandler;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$je="f10";isc.A.$20w="Escape";isc.A.$jf="Tab";isc.A.$70a={keydown:true,keyup:true,keypress:true};isc.A.$jg="IMG";isc.A.$jh="progid:DXImageTransform.Microsoft.AlphaImageLoader";isc.A.$ji={};isc.A.$jj="BODY";isc.A.$jk="HTML";isc.A.$jl="eventProxy";isc.A.$jm="[object Text]";isc.A.$jn={autoDraw:false,$jo:true,$jp:false,overflow:"hidden",visibility:"hidden",$jq:false,getTarget:function(){return this.$jr},show:function(){var _1=this.masterElement;this.moveAbove(_1);return this.Super("show",arguments)}};isc.A.$js=isc.Browser.isIE?isc.undef:true;isc.A.$jt="handleNativeEvents";isc.A.$49r="APPLET";isc.A.$ju={mouseMove:true,mouseOver:true,mouseOut:true};isc.A.$41z="selectionChange";isc.A.$jv="$jw";isc.A.$jx=0;isc.A.$jy={load:"LOD",mousedown:"MDN",mouseup:"MUP",mousemove:"MMV",mouseout:"MOU",contextmenu:"CXT",keypress:"KPR",keydown:"KDN",keyup:"KUP",resize:"RSZ"};isc.A.$jz="nativeEvents";isc.A.$j0="event";isc.A.$j1=(isc.Browser.isMoz?"if(event.getPreventDefault&&event.getPreventDefault())return;":isc.Browser.isSafari?"if(event.returnValue==false)return;":"")+"var returnVal=arguments.callee.$ch.isc.EH.dispatch(arguments.callee.$j2,event);"+(!isc.Browser.isIE&&isc.Browser.isDOM?"if(returnVal==false)event.preventDefault();else if(returnVal==isc.EH.STOP_BUBBLING)event.stopPropogation();":"")+"return returnVal;";isc.A.$j3={};isc.A.$j4={onmousedown:"mousedown",onmouseup:"mouseup",onclick:"click",ondblclick:"dblclick",oncontextmenu:"contextmenu",onmousewheel:"mousewheel",onmouseover:"mouseover",onmouseout:"mouseout",onmousemove:"mousemove",onresize:"resize",onload:"load",onunload:"unload",onselecttext:"selecttext",onselectionchanged:"selectionchanged",onkeydown:"keydown",onkeyup:"keyup",onkeypress:"keypress"};isc.A.$649={};isc.A.getMouseEventProperties=(isc.Browser.isIE?function(_1){var _2=this.lastEvent;if(!_1)_1=this.getWindow().event;_2.DOMevent=_1;_2.eventType=this.$i2[_1.type];_2.y=parseInt(_1.clientY)+this.ns.Page.getScrollTop();_2.x=parseInt(_1.clientX);if(!isc.Page.isRTL()){_2.x+=this.ns.Page.getScrollLeft()}else{var _3=this.ns.Page.getScrollLeft();if(_3>0){var _4=(this.ns.Page.getScrollWidth()-this.ns.Page.getWidth());_2.x-=(_4-_3)}
 _2.x-=15}
 _2.nativeTarget=_1.srcElement;_2.target=this.getEventTargetCanvas(_1,_2.nativeTarget);var _5=_1.wheelDelta;if(_5!=null)_2.wheelDelta=-Math.round(_5/ 120);else _2.wheelDelta=null;_2.screenX=_1.screenX;_2.screenY=_1.screenY;_2.buttonNum=_1.button;_2.shiftKey=(_1.shiftKey==true);_2.ctrlKey=(_1.ctrlKey==true);_2.altKey=(_1.altKey==true);_2.metaKey=(_1.metaKey==true);return _2}:function(_1){var _2=this.lastEvent;_2.DOMevent=_1;_2.eventType=this.$i2[_1.type];if(isc.Browser.isSafari){var _3=isc.Browser.safariVersion>=523.12
 _2.x=parseInt(_1.x);_2.y=parseInt(_1.y);if(_3){_2.x+=isc.Page.getScrollLeft();_2.y+=isc.Page.getScrollTop()}
 if(_2.eventType!=this.MOUSE_WHEEL){var _3=true;_2.x=parseInt(_1.clientX)+(_3?isc.Page.getScrollLeft():0);_2.y=parseInt(_1.clientY)+(_3?isc.Page.getScrollTop():0)}}else{if(_2.eventType!=this.MOUSE_WHEEL){var _3=true;_2.x=parseInt(_1.clientX)+(_3?isc.Page.getScrollLeft():0);_2.y=parseInt(_1.clientY)+(_3?isc.Page.getScrollTop():0)}}
 _2.nativeTarget=_1.target;_2.$j5=null;_2.target=this.getEventTargetCanvas(_1,_2.nativeTarget);_2.screenX=_1.screenX;_2.screenY=_1.screenY;if(_2.eventType==this.MOUSE_WHEEL){var _4=_1.wheelDelta,_5=_1.detail;if(_5==0||_5==null&&_4!=null){_2.wheelDelta=-Math.round(_4/ 120);if(!isc.isA.Number(_2.wheelDelta))_2.wheelDelta=null}else{if(isc.Canvas.useNativeWheelDelta&&_1.detail==_1.SCROLL_PAGE_UP){_2.wheelDelta=-Math.floor(_2.target.height/ isc.Canvas.scrollWheelDelta)}else if(isc.Canvas.useNativeWheelDelta&&_1.detail==_1.SCROLL_PAGE_DOWN){_2.wheelDelta=Math.floor(_2.target.height/ isc.Canvas.scrollWheelDelta)}else{var _6=_1.detail/ 3;if(!isc.isA.Number(_6))_6=0;if(_6>15||_6<-15)_6=(_6>0?1:-1);_2.wheelDelta=_6}}}else{_2.wheelDelta=null}
 if(_2.eventType==isc.EH.MOUSE_MOVE){if(!this.$j6)_2.buttonNum=0}else{_2.buttonNum=((_1.which==1||isc.Browser.isSafari&&_1.which==65536)?1:2)}
-_2.shiftKey=(_1.shiftKey==true);_2.ctrlKey=(_1.ctrlKey==true);_2.altKey=(_1.altKey==true);_2.metaKey=(_1.metaKey==true);return _2});isc.A.HARD="hard";isc.A.SOFT="soft";isc.A.$j7=0;isc.A.clickMaskRegistry=[];isc.A.$cp='ID';isc.B.push(isc.A.handleSyntheticEvent=function(_1){var _2=_1.target;_1.$49s=true;if(_2){_1.clientX+=_2.getPageLeft();_1.clientY+=_2.getPageTop();if(isc.Browser.isIE){_1.clientX+=_2.getLeftMargin()+_2.getLeftBorderSize()+_2.getLeftPadding()+2;_1.clientY+=_2.getTopMargin()+_2.getRightBorderSize()+_2.getTopPadding()+2}
+_2.shiftKey=(_1.shiftKey==true);_2.ctrlKey=(_1.ctrlKey==true);_2.altKey=(_1.altKey==true);_2.metaKey=(_1.metaKey==true);return _2});isc.A.$688="f1";isc.A.$689="help";isc.A.HARD="hard";isc.A.SOFT="soft";isc.A.$j7=0;isc.A.clickMaskRegistry=[];isc.A.$cp='ID';isc.B.push(isc.A.handleSyntheticEvent=function(_1){var _2=_1.target;_1.$49s=true;if(_2){_1.clientX+=_2.getPageLeft();_1.clientY+=_2.getPageTop();if(isc.Browser.isIE){_1.clientX+=_2.getLeftMargin()+_2.getLeftBorderSize()+_2.getLeftPadding()+2;_1.clientY+=_2.getTopMargin()+_2.getRightBorderSize()+_2.getTopPadding()+2}
 switch(_1.type){case"mouseup":this.handleMouseUp(_1);break;case"mousedown":this.handleMouseDown(_1);break;case"mousemove":this.handleMouseMove(_1);break}}}
 ,isc.A.handleEvent=function(_1,_2,_3){var _4=isc.EH;if(isc.Page.handleEvent(_1,_2,_3)==false)return false;if(_4.targetIsEnabled(_1)&&_4.bubbleEvent(_1,_2,_3)==false){return false}
 return true}
@@ -1110,15 +1152,18 @@ return true}
 return(isc.Page.handleEvent(null,isc.EH.LOAD)!=false)}else{try{return(isc.Page.handleEvent(null,isc.EH.LOAD)!=false)}catch(e){isc.Log.$am(e);throw e;}}}
 ,isc.A.handleUnload=function(_1){var _2=isc.EH;var _3=(isc.Page.handleEvent(null,_2.UNLOAD)!=false);if(_3==true){this.releaseEvents()}
 return _3}
-,isc.A.$j9=function(_1){if(!isc.Page.isLoaded())return false;var _2=isc.EH;var _3=_2.lastEvent;if(!_1)_1=_2.getWindow().event;_2.getKeyEventProperties(_1);var _4=false,_5=true;if(_2.$ka==_3.keyName){_5=_2.handleKeyPress();_4=true}else _5=_2.handleKeyDown(_1);_2.$ka=_3.keyName;if(_5!=false&&((isc.Browser.isIE&&!_4&&_2.$i8[_3.keyName]!=null)||(isc.Browser.isMoz&&_3.keyName==this.$je&&this.shiftKeyDown())))
-{_5=_2.handleKeyPress(_1)}
-return _5}
+,isc.A.$j9=function(_1,_2){if(!isc.Page.isLoaded())return false;var _3=isc.EH;var _4=_3.lastEvent;if(!_1)_1=_3.getWindow().event;_3.getKeyEventProperties(_1);if(isc.Browser.isIE&&_4.keyName==this.$688&&!_2){return}
+var _5=false,_6=true;if(_3.$ka==_4.keyName){_6=_3.handleKeyPress();_5=true}else{_6=_3.handleKeyDown(_1)}
+_3.$ka=_4.keyName;if(_6!=false&&((isc.Browser.isIE&&!_5&&_3.$i8[_4.keyName]!=null)||(isc.Browser.isMoz&&_4.keyName==this.$je&&this.shiftKeyDown())))
+{_6=_3.handleKeyPress(_1)}
+if(_6==false){this.cancelKeyEvent(_1)}
+return _6}
 ,isc.A.handleKeyDown=function(_1,_2){var _3=isc.EH,_4=_3.lastEvent,_5;var _6=_3.eventHandledNatively(_4.eventType,_4.nativeKeyTarget);if(_6)_5=_3.$js;if(_2!=null)isc.addProperties(_4,_2);if(!_6){var _7=[_4,_4.target,_4.keyName];var _8=_4.keyTarget;if(_8==null)_8=this.getEventTargetCanvas(_1,_4.nativeKeyTarget);if(_3.targetIsEnabled(_8))
 _5=(_3.bubbleEvent(_8,_3.KEY_DOWN,_7)!=false)}
 if(_5!=false&&this.clickMaskUp()&&_4.keyName==this.$jf){var _9,_10=this.clickMaskRegistry;for(var i=_10.length-1;i>=0;i--){if(this.isHardMask(_10[i])){_9=_10[i];break}}
 if(_9)_5=false}
 return _5}
-,isc.A.$kb=function(_1){if(!isc.Page.isLoaded())return false;var _2=isc.EH,_3=_2.lastEvent;if(!_1)_1=_2.getWindow().event;_2.getKeyEventProperties(_1);if(_2.$ka==_2.lastEvent.keyName){if(_2.handleKeyPress(_1)==false)return false}
+,isc.A.$kb=function(_1){if(!isc.Page.isLoaded())return false;var _2=isc.EH,_3=_2.lastEvent;if(!_1)_1=_2.getWindow().event;_2.getKeyEventProperties(_1);if(_2.$ka==_2.lastEvent.keyName){if(_2.handleKeyPress(_1)==false){this.cancelKeyEvent(_1);return false}}
 var _4=_2.handleKeyUp(_1)
 return _4}
 ,isc.A.handleKeyUp=function(_1,_2){var _3=isc.EH,_4=_3.lastEvent,_5=[_4,_4.target,_4.keyName];if(_3.eventHandledNatively(_4.eventType,_4.nativeKeyTarget)){return _3.$js}
@@ -1127,7 +1172,9 @@ var _7=_4.keyTarget;if(_7==null)_7=this.getEventTargetCanvas(_1,_4.nativeKeyTarg
 _6=(_3.bubbleEvent(_7,_3.KEY_UP,_5)!=false);if(!isc.Browser.isMac&&_4.keyName==_3.$je&&_3.shiftKeyDown()&&isc.Menu&&isc.Menu.$kc&&isc.Menu.$kc.length>0)
 {_6=false}
 _3.clearKeyEventProperties();return _6}
-,isc.A.$kd=function(_1){if(!isc.Page.isLoaded())return false;var _2=isc.EH;var _3=_2.lastEvent,_4=_2.KEY_PRESS;if(!_1)_1=_2.getWindow().event;_2.getKeyEventProperties(_1);_3.eventType=_4;if(isc.Browser.isMoz&&_3.keyName==this.$je&&this.shiftKeyDown())return;var _5=_2.handleKeyPress(_1);return _5}
+,isc.A.$kd=function(_1){if(!isc.Page.isLoaded())return false;var _2=isc.EH;var _3=_2.lastEvent,_4=_2.KEY_PRESS;if(!_1)_1=_2.getWindow().event;_2.getKeyEventProperties(_1);_3.eventType=_4;if(isc.Browser.isMoz&&_3.keyName==this.$je&&this.shiftKeyDown())return;var _5=_2.handleKeyPress(_1);if(_5==false){this.cancelKeyEvent(_1)}
+return _5}
+,isc.A.cancelKeyEvent=function(_1){if(isc.Browser.isIE||isc.Browser.isSafari){if(this.$70a[_1.type]){try{_1.keyCode=0}catch(e){}}}}
 ,isc.A.handleKeyPress=function(_1,_2){var _3=isc.EH,_4=_3.lastEvent,_5=_3.KEY_PRESS;if(_2!=null){isc.addProperties(_4,_2)}
 var _6={keyName:_4.keyName,characterValue:_4.characterValue};_4.eventType=_5;_3.$ka=null;if(isc.Page.handleEvent(_4.keyTarget,_5)==false)return false;var _7=(_3.eventHandledNatively(_5,_4.nativeKeyTarget));if(_7!==false){_3.logDebug("keyPress handled natively");return _3.$js}else{_3.logDebug("keyPress not handled natively")}
 var _8=_4.keyTarget;if(_8==null)_8=this.getEventTargetCanvas(_1,_4.nativeKeyTarget);if(_3.targetIsEnabled(_8)){var _9=_3.bubbleEvent(_8,_4.eventType,_6)
@@ -1256,6 +1303,13 @@ delete _1.lastMoveTarget;if(_1.dragTarget.dragAppearance!=_1.TRACKER)
 _1.dragAppearance=_1.dragTarget.dragAppearance;if(_1.dragAppearance==_1.TRACKER){_1.dragMoveTarget=_1.$lk();if(!_1.dragMoveAction)_1.dragMoveAction=_1.$ll;_1.dragTracker.setOverflow(isc.Canvas.VISIBLE);_1.bubbleEvent(_1.dragTarget,_1.SET_DRAG_TRACKER);_1.dragOffsetX=_1.dragTracker.offsetX;_1.dragOffsetY=_1.dragTracker.offsetY}else if(_1.dragAppearance==_1.OUTLINE){_1.dragMoveTarget=_1.getDragOutline(_1.dragTarget);if(!_1.dragMoveAction)_1.dragMoveAction=_1.$ll}else if(_1.dragAppearance==_1.TARGET){_1.dragMoveTarget=_1.dragTarget;if(!_1.dragMoveAction)_1.dragMoveAction=_1.$ll;if(_1.dragTarget.showDragShadow)this.$lm();if(_1.dragTarget.dragOpacity!=null)this.$ln()}else{}
 if(_1.dragMoveTarget){if(_1.dragMoveTarget!=_1.dragTarget){_1.dragMoveTarget.dragIntersectStyle=_1.dragTarget.dragIntersectStyle}
 _1.dragMoveTarget.show();_1.dragMoveTarget.bringToFront()}
+var _4=_1.dragMoveTarget?_1.dragMoveTarget:_1.dragTarget;if((isc.Browser.isIE||isc.Browser.isMoz)&&_1.dragAppearance!=_1.OUTLINE&&!(_4.$lo||_4.neverBackMask))
+{if(_1.alwaysBackMask){this.$lp(_4)}else{var _5=[];if(isc.BrowserPlugin){var _6=isc.BrowserPlugin.instances;for(var i=0;i<_6.length;i++){var _8=_6[i];if(_8.isVisible()&&(_4.parentElement==null||_4.parentElement.contains(_8,true)))
+{_5.add({instance:_8,rect:_8.getPageRect()})}}}
+if(isc.Browser.isIE&&isc.Browser.minorVersion>=5.5&&isc.NativeSelectItem){var _9=isc.NativeSelectItem.instances;for(var i=0;i<_9.length;i++){var _10=_9[i];if(_10.isVisible()&&(_4.parentElement==null||_4.parentElement.contains(_10.containerWidget,true)))
+{_5.add({instance:_10,rect:_10.getPageRect()})}}}
+if(_5.length>0&&_1.dynamicBackMask===false)
+{this.$lp(_4)}else{_1.$lq=_5}}}
 _1.showEventMasks((_1.dragOperation==_1.DRAG_RESIZE));_1.dragging=true;this.logInfo("Started dragOperation: "+_1.dragOperation+" with dragTarget: "+_1.dragTarget+" dragAppearance: "+_1.dragAppearance,"dragDrop");return true}
 ,isc.A.$lm=function(){var _1=isc.EH;var _2=_1.dragTarget;_1.$lr=(!_2.showShadow);_1.$ls=_2.shadowDepth;_2.shadowDepth=_1.dragTargetShadowDepth;_2.updateShadow();if(!_2.showShadow)_2.setShowShadow(true)}
 ,isc.A.$lt=function(){var _1=isc.EH;var _2=_1.dragTarget;if(_1.$lr)_2.setShowShadow(false);_2.shadowDepth=_1.$ls;_2.updateShadow();delete _1.$lr;delete _1.$ls}
@@ -1267,7 +1321,11 @@ _1.showEventMasks((_1.dragOperation==_1.DRAG_RESIZE));_1.dragging=true;this.logI
 ,isc.A.$lz=function(){var _1=this.dragMoveTarget;if(!_1)return;var _2=[_1];if(_1._backMask)_2.add(_1._backMask);if(_1.$l0)_2.add(_1.$l0);if(_1._shadow)_2.add(_1._shadow);return _2}
 ,isc.A.$l1=function(_1){var _2=this.$ji;if(!_2[_1]){_2[_1]=_1+"Move"}
 return _2[_1]}
-,isc.A.handleDragMove=function(){var _1=this,_2=_1.lastEvent;isc.$54j=true;_1.dropTarget=_1.getDropTarget(_2);isc.$54j=false;if(_1.dragMoveAction)_1.dragMoveAction();if(_1.handleEvent(_1.dragTarget,this.$l1(_1.dragOperation))==false){delete _1.dropTarget;return false}
+,isc.A.handleDragMove=function(){var _1=this,_2=_1.lastEvent;isc.$54j=true;_1.dropTarget=_1.getDropTarget(_2);isc.$54j=false;if(_1.$lq&&_1.dynamicBackMask){var _3=false;var _4=_1.dragMoveTarget?_1.dragMoveTarget:_1.dragTarget;var _5=_4.getRect();for(var i=0;i<_1.$lq.length;i++){var _7=_1.$lq[i];if(isc.Canvas.rectsIntersect(_7.rect,_5))
+{_1.$l2=_7.instance;_3=true;break}}
+if(_1.$l2){if(_1.$l2.repaintIfRequired)_1.$l2.repaintIfRequired()}
+if(_3){this.$lp(_4)}else{this.$ly(_4);delete _1.$l2}}else if(isc.BrowserPlugin){isc.BrowserPlugin.handleDragMoveNotify()}
+if(_1.dragMoveAction)_1.dragMoveAction();if(_1.handleEvent(_1.dragTarget,this.$l1(_1.dragOperation))==false){delete _1.dropTarget;return false}
 if(_1.dropTarget!=_1.lastDropTarget){this.logDebug("New drop target: "+_1.dropTarget,"dragDrop");if(_1.lastDropTarget){_1.handleEvent(_1.lastDropTarget,_1.DROP_OUT)}
 if(_1.dropTarget){_1.handleEvent(_1.dropTarget,_1.DROP_OVER)}
 _1.lastDropTarget=_1.dropTarget}
@@ -1282,11 +1340,11 @@ if(_10!=null)_10.$l5(_2.dragScrollDirection)}}
 ,isc.A.handleDragStop=function(){var _1=this,_2=_1.lastEvent,_3=false;_1.dragging=false;this.logInfo("end of drag interaction","dragDrop");_1.dragOffsetX=_1.dragOffsetY=0;var _4=_1.dragTarget,_5=_1.dragMoveTarget,_6=_1.dragOperation;if(_5&&(_5==_1.dragTracker||_5==_1.dragOutline))
 {_5.hide()}else{if(_4.showDragShadow)_1.$lt();if(_4.dragOpacity!=null)_1.$lv()}
 if(this.dragTracker&&this.dragTracker.$l6){this.dragTracker.destroy();delete this.dragTracker}
-var _7=_1.dropTarget;if(_7){_1.handleEvent(_1.dropTarget,_1.DROP_OUT);if(_7.willAcceptDrop())_1.handleEvent(_7,_1.DROP);_3=true}
-var _8=(_4==_5);if(_1.handleEvent(_4,_6+"Stop")!=false){_3=true;if(_6==_1.DRAG_RESIZE){if(!_8){_4.setPageRect(_5.getPageLeft(),_5.getPageTop(),_5.getWidth(),_5.getHeight(),true)}
-var _9=_4.getVisibleWidth()-_1.dragTargetStartRect[2],_10=_4.getVisibleHeight()-_1.dragTargetStartRect[3];_4.dragResized(_9,_10)}else if(_6==_1.DRAG_REPOSITION){if(!_8){_4.setPageRect(_5.getPageLeft(),_5.getPageTop());_4.bringToFront()}
-_1.dragTarget.dragRepositioned()}}else{if(_6==_1.DRAG_RESIZE){if(_8){_4.setRect(_1.dragTargetStartRect)}}else if(_1.dragOperation==_1.DRAG_REPOSITION){if(_8){_4.moveTo(_1.dragTargetStartRect[0],_1.dragTargetStartRect[1])}}}
-_1.clearDragProperties();_1.hideEventMasks();var _11=_1.lastEvent.target;if(_11)_1.handleEvent(_11,_1.MOUSE_OVER);_1.lastMoveTarget=_11;return _3}
+var _7=_1.dragMoveTarget?_1.dragMoveTarget:_1.dragTarget;this.$ly(_7);if(_1.$lq)delete _1.$lq;var _8=_1.dropTarget;if(_8){_1.handleEvent(_1.dropTarget,_1.DROP_OUT);if(_8.willAcceptDrop())_1.handleEvent(_8,_1.DROP);_3=true}
+var _9=(_4==_5);if(_1.handleEvent(_4,_6+"Stop")!=false){_3=true;if(_6==_1.DRAG_RESIZE){if(!_9){_4.setPageRect(_5.getPageLeft(),_5.getPageTop(),_5.getWidth(),_5.getHeight(),true)}
+var _10=_4.getVisibleWidth()-_1.dragTargetStartRect[2],_11=_4.getVisibleHeight()-_1.dragTargetStartRect[3];_4.dragResized(_10,_11)}else if(_6==_1.DRAG_REPOSITION){if(!_9){_4.setPageRect(_5.getPageLeft(),_5.getPageTop());_4.bringToFront()}
+_1.dragTarget.dragRepositioned()}}else{if(_6==_1.DRAG_RESIZE){if(_9){_4.setRect(_1.dragTargetStartRect)}}else if(_1.dragOperation==_1.DRAG_REPOSITION){if(_9){_4.moveTo(_1.dragTargetStartRect[0],_1.dragTargetStartRect[1])}}}
+_1.clearDragProperties();_1.hideEventMasks();var _12=_1.lastEvent.target;if(_12)_1.handleEvent(_12,_1.MOUSE_OVER);_1.lastMoveTarget=_12;return _3}
 ,isc.A.getEventTargetCanvas=function(_1,_2){var _3=this,_4=this.getWindow();if(!_2)_2=(isc.Browser.isIE?_1.srcElement:_1.target);if(!_3.$l7(_2)){return _3.lastTarget}
 if(_1&&_1.$49s)return _1.target;if(!_2||_2.tagName==this.$jj||_2.tagName==this.$jk){return(_3.lastTarget=null)}
 if(_2&&_2.tagName&&_2.tagName==this.$49r){var _5=isc.Applet?isc.Applet.idForName(_2.name):null;return _5?window[_5]:_3.lastTarget}
@@ -1315,7 +1373,7 @@ return _11}
 ,isc.A.unregisterMaskableItem=function(_1){this.$i1.remove(_1);if(_1._eventMask)_1._eventMask.destroy();delete _1._eventMask}
 ,isc.A.makeEventMask=function(_1,_2,_3){if(isc.isA.Function(_1.makeEventMask))return _1.makeEventMask(_2,_3);var _4=this.$jn;if(!_4.contents)_4.contents=isc.Browser.isIE&&isc.Browser.version>6?isc.Canvas.blankImgHTML(1600,1200):isc.Canvas.spacerHTML(1600,1200);var _5=isc.Canvas.create({ID:_1.getID()+"_eventMask",cursor:_1.cursor,$jr:_1},_4,_2);_5.setRect(_3?_3:_1.getRect());_1._eventMask=_5;_1.addPeer(_5);return _5}
 ,isc.A.showEventMasks=function(_1,_2){var _3=this,_4=_3.$i1;if(_1){if(!_3._eventMask)_3._eventMask=isc.ScreenSpan.create({ID:"isc_EH_eventMask",mouseDown:function(){this.hide()},pointersToThis:[{object:_3,property:"_eventMask"}]});_3._eventMask.show();_3._eventMask.bringToFront();if(isc.BrowserPlugin){_4.intersect(isc.BrowserPlugin.instances).map("$mb")}}else{for(var i=0;i<_4.length;i++){var _6=_4[i];if(_2&&_2[_6.getID()]){_6.$mc()}else{_6.$mb()}}}}
-,isc.A.hideEventMasks=function(){var _1=this,_2=_1.$i1;if(_1._eventMask&&_1._eventMask.isVisible()){_1._eventMask.hide();if(isc.BrowserPlugin){_2.intersect(isc.BrowserPlugin.instances).map("$mc")}}else{for(var i=0;i<_2.length;i++){_2[i].$mc()}}}
+);isc.evalBoundary;isc.B.push(isc.A.hideEventMasks=function(){var _1=this,_2=_1.$i1;if(_1._eventMask&&_1._eventMask.isVisible()){_1._eventMask.hide();if(isc.BrowserPlugin){_2.intersect(isc.BrowserPlugin.instances).map("$mc")}}else{for(var i=0;i<_2.length;i++){_2[i].$mc()}}}
 ,isc.A.eventHandledNatively=function(_1,_2){var _3=_1;if(!this.reverseEventTypes[_1]){if(this.$i2[_1])
 _3=this.$i2[_1];else if(this.$i7[_1])
 _3=this.$i7[_1]}
@@ -1331,7 +1389,7 @@ if(_11!=false){_10=true;break}}
 _7=_7.parentNode}}}else{_10=_8;if(_10==_3.$me)_10=false}
 if(_10){return true}else if(_8!=null){return false}}
 if(_5&&this.$mf(_6,_1,_4))return true;return false}
-);isc.evalBoundary;isc.B.push(isc.A.isMouseEvent=function(_1){_1=_1||this.lastEvent.eventType;if(this.$mg==null){this.$mg={mouseOver:true,mouseover:true,mouseDown:true,mousedown:true,rightMouseDown:true,mouseMove:true,mousemove:true,mouseOut:true,mouseout:true,mouseUp:true,mouseup:true,DOMMouseScroll:true,mousewheel:true,mouseWheel:true,click:true,doubleClick:true,doubleclick:true,showContextMenu:true,showcontextmenu:true,selectStart:true,selectstart:true}}
+,isc.A.isMouseEvent=function(_1){_1=_1||this.lastEvent.eventType;if(this.$mg==null){this.$mg={mouseOver:true,mouseover:true,mouseDown:true,mousedown:true,rightMouseDown:true,mouseMove:true,mousemove:true,mouseOut:true,mouseout:true,mouseUp:true,mouseup:true,DOMMouseScroll:true,mousewheel:true,mouseWheel:true,click:true,doubleClick:true,doubleclick:true,showContextMenu:true,showcontextmenu:true,selectStart:true,selectstart:true}}
 if(this.$mg[_1])return true;return false}
 ,isc.A.isKeyEvent=function(_1){_1=_1||this.lastEvent.eventType;if(this.$mh==null){this.$mh={};var _2=this.$mh;_2[this.KEY_DOWN]=true;_2[this.KEY_PRESS]=true;_2[this.KEY_UP]=true;var _3=this.$i7;for(var _4 in _3)_2[_4]=true}
 if(this.$mh[_1])return true;return false}
@@ -1341,7 +1399,8 @@ if(this.$mh[_1])return true;return false}
 return false}
 ,isc.A.bubbleEvent=function(_1,_2,_3,_4){var _5=this,_6=_5.lastEvent;var _7=this.logIsDebugEnabled()&&!this.$ju[_2];var _8=this.isMouseEvent(_2);if(_8){if(_4==null)_4=this.targetIsMasked(_1);if(_4){if(_7){this.logDebug(_2+" on "+_1+" blocked by clickmask")}
 return false}}
-var _9=this.$mi(_2),_10;while(_1){if(_1.destroyed)break;var _11=(_1.eventParent||_1.parentElement);if(_11&&_11.eventProxy)_11=_11.eventProxy;if(_1[_9]!=null){_10=_9}else if(_1[_2]!=null&&_1[_2]!=isc.Class.NO_OP&&!isc.is.emptyString(_1[_2])){_10=_2;if(isc.isA.String(_1[_2])){_1.convertToMethod(_2)}
+var _9=this.$mi(_2),_10;while(_1){if(_1.destroyed)break;var _11=null;if(_1.mouseEventParent&&_2.startsWith("mouse")){_11=_1.mouseEventParent}else if(_1.keyEventParent&&_2.startsWith("key")){_11=_1.keyEventParent}else{_11=(_1.eventParent||_1.parentElement)}
+if(_11&&_11.eventProxy)_11=_11.eventProxy;if(_1[_9]!=null){_10=_9}else if(_1[_2]!=null&&_1[_2]!=isc.Class.NO_OP&&!isc.is.emptyString(_1[_2])){_10=_2;if(isc.isA.String(_1[_2])){_1.convertToMethod(_2)}
 if(_7){this.logDebug("Bubbling event '"+_2+"', target '"+_1+"' has handler: "+this.echoLeaf(_1[_2]))}}
 if(_1[_10]!=null){var _12;_12=_1[_10](_6,_3);if(_12==false){if(_7){this.logDebug("Bubbling for event '"+_2+"' cancelled via false return value by target: "+_1)}
 return false}
@@ -1349,7 +1408,8 @@ if(_12==_5.STOP_BUBBLING){if(_7){this.logDebug("Bubbling for event '"+_2+"' canc
 return _5.STOP_BUBBLING}}
 if(_1.bubbleEvents==false||(_1.bubbleMouseEvents==false&&_5.isMouseEvent(_2)))
 {if(_7){this.logDebug("Bubbling for event '"+_2+"' stopped by '"+_1+"' which does not allow bubbling")}
-return true}
+return true}else if(isc.isAn.Array(_1.bubbleMouseEvents)){if(_1.bubbleMouseEvents.contains(_2)){if(_7){this.logDebug("Bubbling for event '"+_2+"' stopped by '"+_1+"' which does not allow bubbling")}
+return true}}
 _1=_11}
 if(_7)this.logDebug("Event '"+_2+"' bubbled to top");return true}
 ,isc.A.$mi=function(_1){if(!this.$jc[_1]){this.$jc[_1]="handle"+_1.charAt(0).toUpperCase()+_1.substring(1)}
@@ -1364,6 +1424,9 @@ if(isc.EH.$mj)return true;var _5=isc.EH.mouseIsDown()?_1.mouseDownTarget():null,
 ,isc.A.handleSelectionChange=function(_1){if(!_1)_1=window.event;var _2=isc.EH;var _3=_2.lastEvent;var _4=isc.Element.$mk(document);if(_4){var _5=_2.getEventTargetCanvas(_1,_4);_3.nativeKeyTarget=_4
 _3.keyTarget=_5;_3.eventType=this.$41z;if(_5){_5.keyTarget=_5;_2.bubbleEvent(_3.keyTarget,"selectionChange")}}
 return true}
+,isc.A.handleNativeHelp=function(){if(this.$69a){if(this.$69a()==false)return false}
+if(this.$69b){if(this.$69b()==false)return false}
+return isc.EH.$j9(window.event,true)}
 ,isc.A.handleNativeDragStart=function(){if(isc.EH.dragTarget)return false;var _1=isc.EH.mouseDownTarget();if(_1)return!!(_1.$kr());if(this.$ml)return this.$ml();if(this.$mm)return this.$mm()}
 ,isc.A.handleResize=function(_1){if(isc.EH.resizeTimer==null){isc.EH.resizeTimer=isc.Timer.setTimeout("isc.EH.$hr()",0)}
 return true}
@@ -1411,10 +1474,10 @@ if(!this.$j8()){this.captureEvent(_1,"onunload",_2.UNLOAD,_2.handleUnload)}
 this.captureEvent(_1,"onresize",_2.RESIZE,_2.handleResize);this.captureEvent(_4,"onmousedown",_2.MOUSE_DOWN,_2.handleMouseDown);this.captureEvent(_4,"onmousemove",_2.MOUSE_MOVE,_2.handleMouseMove);this.captureEvent(_4,"onmouseup",_2.MOUSE_UP,_2.handleMouseUp);this.captureEvent(_4,"onclick",_2.CLICK,_2.handleNativeClick);this.captureEvent(_4,"ondblclick",_2.DOUBLE_CLICK,_2.handleNativeClick);this.captureEvent(_4,"onscroll","scroll",_2.handleScroll);this.captureEvent(_4,"onmousewheel",_2.MOUSE_WHEEL,_2.handleMouseWheel);if(isc.Browser.isMoz){_1.addEventListener("DOMMouseScroll",_2.handleDOMMouseScroll,true)}
 this.captureEvent(_4,"onmouseout",_2.MOUSE_OUT,_2.handleNativeMouseOut);this.captureEvent(_4,"oncontextmenu",_2.SHOW_CONTEXT_MENU,_2.handleContextMenu);this.captureEvent(_4,"onselectstart",_2.SELECT_START,_2.handleSelectStart);this.captureEvent(_1,"onselectstart",_2.SELECT_START,_2.handleSelectStart);if(isc.Browser.isIE){this.captureEvent(_4,"onselectionchange",_2.SELECTION_CHANGE,_2.handleSelectionChange)}
 if(_1.isc_captureKeyEvents!=false){this.captureEvent(_4,"onkeydown",_2.KEY_DOWN,_2.$j9);this.captureEvent(_4,"onkeypress",_2.KEY_PRESS,_2.$kd);this.captureEvent(_4,"onkeyup",_2.KEY_UP,_2.$kb)}
-if(isc.Browser.isIE){this.$mm=_1.ondragstart;this.$ml=_4.ondragstart;_4.ondragstart=_1.ondragstart=_2.handleNativeDragStart}}
+if(isc.Browser.isIE){this.$mm=_1.ondragstart;this.$ml=_4.ondragstart;_4.ondragstart=_1.ondragstart=_2.handleNativeDragStart;this.$69b=_1.onhelp;this.$69a=_4.onhelp;_4.onhelp=_1.onhelp=_2.handleNativeHelp}}
 ,isc.A.$j8=function(){return(isc.Browser.isSafari&&isc.Browser.safariVersion<=412)}
 ,isc.A.releaseEvents=function(_1){var _2=this;if(_1==null)_1=this.getWindow();var _3=_1.document,_4=this.$649;for(var _5 in _4){if(!this.$mt){_3[_5]=null}else{if(isc.Browser.isIE){_3.detachEvent(_5,_4[_5])}else if(isc.Browser.isDOM){_3.removeEventListener(_5,_4[_5],false)}}}
-if(isc.Browser.isIE){_3.ondragstart=null}
+if(isc.Browser.isIE){_3.ondragstart=_1.onhelp=null;_3.onhelp=_1.onhelp=null}
 delete this.$649}
 ,isc.A.getLastEvent=function(){return this.lastEvent}
 ,isc.A.getEventType=function(_1){return(_1||this.lastEvent).eventType}
@@ -1444,10 +1507,11 @@ var _4=this.determineEventKeyName(_1);if(_4!=null){_2.keyName=_4}else if(_2.even
 ,isc.A.getKeyEventType=function(_1){if(!_1)return;return this.$i7[_1]}
 ,isc.A.$mv=function(_1){if(isc.Browser.isIE)return(_1.keyCode||null);if(isc.Browser.isMoz){return(_1.which||null)}
 return(_1.which||_1.keyCode||null)}
-,isc.A.determineEventKeyName=function(_1){if(_1==null)return;var _2=_1.keyCode,_3=_1.which,_4=isc.EH,_5=_4.getKeyEventType(_1.type);if(isc.Browser.isIE){if(_5==_4.KEY_DOWN||_5==_4.KEY_UP){return _4.$iz[_2]}
+,isc.A.determineEventKeyName=function(_1){if(_1==null)return;var _2=_1.keyCode,_3=_1.which,_4=isc.EH,_5=_4.getKeyEventType(_1.type);if(_1.type==this.$689)return this.$688;if(isc.Browser.isIE){if(_5==_4.KEY_DOWN||_5==_4.KEY_UP){return _4.$iz[_2]}
 if(_5==_4.KEY_PRESS){if(_4.$ka!=null)return _4.$ka;var _6=_4.$ja[_2];if(!_6&&this.getWindow().event.ctrlKey){_6=isc.EH.$mw(_2)}
 return _6}}else if(isc.Browser.isMoz){if(_5==_4.KEY_DOWN||_5==_4.KEY_UP){return _4.$iz[_2]}else if(_5==_4.KEY_PRESS){if(_3==0&&_2!=0)return _4.$iz[_2];if(_4.$ka!=null)return _4.$ka;if(_2==0){return _4.$ja[_3]}else{return _4.$iz[_3]}}}else if(isc.Browser.isSafari){if(_5==_4.KEY_DOWN||_5==_4.KEY_UP){return _4.$iz[_2]}
-var _7=(_3!=null?_3:_2);if(_7!=null&&_7!=0){if(this.getWindow().event.ctrlKey){return(isc.EH.$ja[_7]||isc.EH.$mw(_7))}
+var _7=(_3!=null?_3:_2);if(_7!=null&&_7!=0){if(this.getWindow().event.ctrlKey){var _8=isc.EH.$ja[_7];if(_8==null){if(_7==10)_8="Enter";else _8=isc.EH.$mw(_7)}
+return _8}
 var _8=isc.EH.$ja[_7];if(_8==null)_8=isc.EH.$jb[_7]
 return _8}else if(_5==this.KEY_PRESS){return null}}else{var _7=_3;if(_7==null||(_7==0&&_2))_7=_2
 if(_7!=null)return isc.EH.$ja[_7]}
@@ -1499,7 +1563,7 @@ if(_6){var _14;if(_9!=null){_14=[];for(var i=_4-1;i>=0;i--){var _16=_2[i];_14.ad
 this.$nb(_14,true)}
 if(_12!=null&&!_12.destroyed&&!this.targetIsMasked(_12)){if(this.logIsInfoEnabled("clickMask")){this.logInfo("focusing in "+_12+" on clickMask hide","clickMask")}
 var _17=(isc.Browser.isIE&&this.lastEvent.eventType==this.MOUSE_DOWN)
-if(_17){this.$k7=_12}else{_12.focus()}}}
+if(_17){this.$k7=_12}else{try{_12.focus()}catch(e){}}}}
 this.updateEventMasks()}
 ,isc.A.$na=function(_1,_2){var _3=this.clickMaskRegistry;if(_2){for(var i=_1+1;i<_3.length;i++){if(this.isHardMask(_3[i]))return _3[i]}}else{for(var i=_1-1;i>=0;i--){if(this.isHardMask(_3[i]))return _3[i]}}
 return null}
@@ -1547,7 +1611,7 @@ var _4=(_3.mode!=isc.EH.SOFT);this.$lj(_3)
 if(_4)return false;_3=_2[_2.indexOf(_3)-1]}
 return true}
 ,isc.A.$lj=function(_1){var _2=_1.autoHide,_3=_1.clickAction;if(_2==true)this.hideClickMask(_1.ID);if(_3!=null)this.fireCallback(_3)}
-);isc.B._maxIndex=isc.C+160;isc.EventHandler.captureEvents();isc.ClassFactory.defineClass("Element",null,null,true);isc.A=isc.Element;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$wq=window.isc_insertAfterBodyStart;isc.A.$wr="isc_global_insertion_marker";isc.A.$n7="afterBegin";isc.A.$n9="afterEnd";isc.A.$n6="beforeBegin";isc.A.$n8="beforeEnd";isc.A.$w2=isc.Browser.isMoz?"border-left-width":"borderLeftWidth";isc.A.$w3=isc.Browser.isMoz?"border-top-width":"borderTopWidth";isc.A.$oi=isc.Browser.isMoz?"margin-left":"marginLeft";isc.A.$ok=isc.Browser.isMoz?"margin-top":"marginTop";isc.A.$27r="none";isc.A.$nk={};isc.A.$419={border:"borderStyle",borderWidth:"borderStyle",borderLeft:"borderLeftStyle",borderRight:"borderRightStyle",borderTop:"borderTopStyle",borderBottom:"borderBottomStyle",borderLeftWidth:"borderLeftStyle",borderRightWidth:"borderRightStyle",borderBottomWidth:"borderBottomStyle",borderTopWidth:"borderTopStyle"};isc.A.$nl={};isc.A.$39=";";isc.B.push(isc.A.get=function(_1,_2){_2=_2||this.getDocument();if(isc.Browser.isDOM)return _2.getElementById(_1)}
+);isc.B._maxIndex=isc.C+162;isc.EventHandler.captureEvents();isc.ClassFactory.defineClass("Element",null,null,true);isc.A=isc.Element;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$wq=window.isc_insertAfterBodyStart;isc.A.$wr="isc_global_insertion_marker";isc.A.$n7="afterBegin";isc.A.$n9="afterEnd";isc.A.$n6="beforeBegin";isc.A.$n8="beforeEnd";isc.A.$w2=isc.Browser.isMoz?"border-left-width":"borderLeftWidth";isc.A.$w3=isc.Browser.isMoz?"border-top-width":"borderTopWidth";isc.A.$oi=isc.Browser.isMoz?"margin-left":"marginLeft";isc.A.$ok=isc.Browser.isMoz?"margin-top":"marginTop";isc.A.$27r="none";isc.A.$nk={};isc.A.$419={border:"borderStyle",borderWidth:"borderStyle",borderLeft:"borderLeftStyle",borderRight:"borderRightStyle",borderTop:"borderTopStyle",borderBottom:"borderBottomStyle",borderLeftWidth:"borderLeftStyle",borderRightWidth:"borderRightStyle",borderBottomWidth:"borderBottomStyle",borderTopWidth:"borderTopStyle"};isc.A.$nl={};isc.A.$39=";";isc.B.push(isc.A.get=function(_1,_2){_2=_2||this.getDocument();if(isc.Browser.isDOM)return _2.getElementById(_1)}
 ,isc.A.$mk=function(_1){if(!_1)_1=document;if(isc.Browser.isIE){var _2=_1.selection,_3=_2.type.toLowerCase(),_4=(_3=="text"||_3=="none");if(!_2)return null;if(_4){var _5=_2.createRange();return _5?_5.parentElement():null}else{var _5=_2.createRange(),_6;for(var i=0;i<_5.length;i++){if(!_6){_6=_5(i).parentElement}else{while(!_6.contains(_5(i))){_6=_6.parentElement}}}
 return _6}}}
 ,isc.A.findAttribute=function(_1,_2,_3){if(!_1)return null;if(_1[_2]==_3||(_1.getAttribute&&_1.getAttribute(_2)==_3)){return _1}
@@ -1565,7 +1629,7 @@ var _5;if(_4){var _6=_1.ownerDocument.createElement("DIV");_6.innerHTML=_3;_5=_6
 switch(_2){case"beforeBegin":_1.parentNode.insertBefore(_5,_1)
 break;case"afterBegin":_1.insertBefore(_5,_1.firstChild);break;case"beforeEnd":_1.appendChild(_5);break;case"afterEnd":if(_1.nextSibling)_1.parentNode.insertBefore(_5,_1.nextSibling);else _1.parentNode.appendChild(_5);break}
 if(_4)return _5}
-,isc.A.clear=function(_1){if(_1==null)return;if(isc.Page.isLoaded()&&isc.Browser.isIE){_1.outerHTML=isc.emptyString;return}
+,isc.A.clear=function(_1,_2){if(_1==null)return;if(!_2&&isc.Page.isLoaded()&&isc.Browser.isIE){_1.outerHTML=isc.emptyString;return}
 if(_1.parentNode){_1.parentNode.removeChild(_1)}else{isc.Log.logWarn("element parentNode null");_1.innerHTML=""}}
 ,isc.A.isBorderBox=function(_1){if(!_1)return;if(!isc.Browser.isMoz)return isc.Browser.isBorderBox;return(_1.style.MozBoxSizing=="border-box")}
 ,isc.A.getScrollHeight=function(_1){if(_1==null)return 0;var _2=((_1.scrollHeight!=null&&_1.scrollHeight!="undefined")?_1.scrollHeight:_1.offsetHeight);var _3=this.$yq(_1);return _3>_2?_3:_2}
@@ -1674,7 +1738,7 @@ if(_2&&_6.length>0)return _6;return null}
 return this.$yf(_1)}
 ,isc.A.getStyleText=function(_1,_2){if(!isc.allowDuplicateStyles)_2=false;var _3=this.$nl,_4=_3[_1];if(_4!=null)return _4;var _5=this.getStyleDeclaration(_1,_2);if(_5==null){if(!isc.Browser.isSafari||isc.Page.isLoaded())
 this.$nl[_1]=isc.emptyString;return isc.emptyString}
-if(_2){for(var i=_5.length-1;i>-1;i--){var _7=_5[i];var _8=_7.cssText;if(_8==null)continue;if(!_8.endsWith(this.$39))_8+=this.$39;if(_4==null)_4=_8;else _4+=_8}
+if(_2){for(var i=_5.length-1;i>-1;i--){var _7=_5[i];var _8=_7.cssText;if(_8==null)continue;if(!isc.endsWith(_8,this.$39))_8+=this.$39;if(_4==null)_4=_8;else _4+=_8}
 if(_4==null)_4=isc.$ad}else{_4=(_5.cssText||isc.$ad)}
 if(!isc.endsWith(_4,isc.semi))_4+=isc.semi;return(_3[_1]=_4)}
 ,isc.A.$50f=function(){isc.Element.$nk={};isc.Element.$nl={};isc.Element.$yj=isc.Element.$yk=isc.Element.$yl=null}
@@ -1683,20 +1747,20 @@ if(!isc.endsWith(_4,isc.semi))_4+=isc.semi;return(_3[_1]=_4)}
 ,isc.A.$tf=function(_1){return this.$sd(_1).left}
 ,isc.A.$tg=function(_1){return this.$sd(_1).right}
 ,isc.A.$sd=function(_1){if(this.$yk==null)this.$yk={};else if(this.$yk[_1]!=null){return this.$yk[_1]}
-var _2={top:0,bottom:0,left:0,right:0},_3=isc.Element.getStyleEdges(_1);if(_3==null)return _2;var _4=_3.marginTop,_5=_3.marginBottom,_6=_3.marginLeft,_7=_3.marginRight,_8=isc.px;if(isc.isA.String(_4)&&_4.endsWith(_8))
-_2.top=parseInt(_4);if(isc.isA.String(_5)&&_5.endsWith(_8))
-_2.bottom=parseInt(_5);if(isc.isA.String(_6)&&_6.endsWith(_8))
-_2.left=parseInt(_6);if(isc.isA.String(_7)&&_7.endsWith(_8))
+var _2={top:0,bottom:0,left:0,right:0},_3=isc.Element.getStyleEdges(_1);if(_3==null)return _2;var _4=_3.marginTop,_5=_3.marginBottom,_6=_3.marginLeft,_7=_3.marginRight,_8=isc.px;if(isc.isA.String(_4)&&isc.endsWith(_4,_8))
+_2.top=parseInt(_4);if(isc.isA.String(_5)&&isc.endsWith(_5,_8))
+_2.bottom=parseInt(_5);if(isc.isA.String(_6)&&isc.endsWith(_6,_8))
+_2.left=parseInt(_6);if(isc.isA.String(_7)&&isc.endsWith(_7,_8))
 _2.right=parseInt(_7);this.$yk[_1]=_2;return _2}
 ,isc.A.$tn=function(_1){return this.$tj(_1).top}
 ,isc.A.$to=function(_1){return this.$tj(_1).bottom}
 ,isc.A.$tl=function(_1){return this.$tj(_1).left}
 ,isc.A.$tm=function(_1){return this.$tj(_1).right}
 ,isc.A.$tj=function(_1){if(this.$yj==null)this.$yj={};else if(this.$yj[_1]!=null){return this.$yj[_1]}
-var _2={top:0,bottom:0,left:0,right:0},_3=isc.Element.getStyleEdges(_1);if(_3==null)return _2;var _4=_3.borderTopWidth,_5=_3.borderBottomWidth,_6=_3.borderLeftWidth,_7=_3.borderRightWidth,_8=isc.px;if(isc.isA.String(_4)&&_4.endsWith(_8))
-_2.top=parseInt(_4);if(isc.isA.String(_5)&&_5.endsWith(_8))
-_2.bottom=parseInt(_5);if(isc.isA.String(_6)&&_6.endsWith(_8))
-_2.left=parseInt(_6);if(isc.isA.String(_7)&&_7.endsWith(_8))
+var _2={top:0,bottom:0,left:0,right:0},_3=isc.Element.getStyleEdges(_1);if(_3==null)return _2;var _4=_3.borderTopWidth,_5=_3.borderBottomWidth,_6=_3.borderLeftWidth,_7=_3.borderRightWidth,_8=isc.px;if(isc.isA.String(_4)&&isc.endsWith(_4,_8))
+_2.top=parseInt(_4);if(isc.isA.String(_5)&&isc.endsWith(_5,_8))
+_2.bottom=parseInt(_5);if(isc.isA.String(_6)&&isc.endsWith(_6,_8))
+_2.left=parseInt(_6);if(isc.isA.String(_7)&&isc.endsWith(_7,_8))
 _2.right=parseInt(_7);this.$yj[_1]=_2;return _2}
 ,isc.A.$ym=function(_1){return this.$tn(_1)+this.$to(_1)}
 ,isc.A.$yn=function(_1){return this.$tl(_1)+this.$tm(_1)}
@@ -1707,10 +1771,10 @@ _2.right=parseInt(_7);this.$yj[_1]=_2;return _2}
 ,isc.A.$tq=function(_1){if(this.$yl==null)this.$yl={};else if(this.$yl[_1]!=null){return this.$yl[_1]}
 var _2={top:0,bottom:0,left:0,right:0},_3=isc.Element.getStyleEdges(_1);if(_3==null){_2.nullLeft=true;_2.nullRight=true;_2.nullTop=true;_2.nullBottom=true;return _2}
 var _4=_3.paddingTop,_5=_3.paddingBottom,_6=_3.paddingLeft,_7=_3.paddingRight,_8=isc.px;_2.nullTop=(_4==null||_4==isc.emptyString);_2.nullBottom=(_5==null||_5==isc.emptyString)
-_2.nullLeft=(_6==null||_6==isc.emptyString);_2.nullRight=(_7==null||_7==isc.emptyString);if(isc.isA.String(_4)&&_4.endsWith(_8))
-_2.top=parseInt(_4);if(isc.isA.String(_5)&&_5.endsWith(_8))
-_2.bottom=parseInt(_5);if(isc.isA.String(_6)&&_6.endsWith(_8))
-_2.left=parseInt(_6);if(isc.isA.String(_7)&&_7.endsWith(_8))
+_2.nullLeft=(_6==null||_6==isc.emptyString);_2.nullRight=(_7==null||_7==isc.emptyString);if(isc.isA.String(_4)&&isc.endsWith(_4,_8))
+_2.top=parseInt(_4);if(isc.isA.String(_5)&&isc.endsWith(_5,_8))
+_2.bottom=parseInt(_5);if(isc.isA.String(_6)&&isc.endsWith(_6,_8))
+_2.left=parseInt(_6);if(isc.isA.String(_7)&&isc.endsWith(_7,_8))
 _2.right=parseInt(_7);this.$yl[_1]=_2;return _2}
 ,isc.A.$s1=function(_1){return this.$tt(_1)+this.$tu(_1)}
 ,isc.A.$sw=function(_1){return this.$tr(_1)+this.$ts(_1)}
@@ -1721,14 +1785,14 @@ return isc.Element.$yi}
 );isc.B._maxIndex=isc.C+68;isc.Element.$50g=function(){var _1=this.$x4={borderLeftWidth:"border-left-width",borderRightWidth:"border-right-width",borderTopWidth:"border-top-width",borderBottomWidth:"border-bottom-width",marginLeft:"margin-left",marginRight:"margin-right",marginTop:"margin-top",marginBottom:"margin-bottom",paddingLeft:"padding-left",paddingRight:"padding-right",paddingTop:"padding-top",paddingBottom:"padding-bottom"}
 var _2=this.$yc=isc.addProperties({position:"position",overflow:"overflow",top:"top",left:"left",width:"width",height:"height",display:"display"},_1);if(isc.Browser.isIE||isc.Browser.isOpera){this.$yb=isc.getKeys(_2);this.$x3=isc.getKeys(_1)}}
 isc.Element.$50g();isc.ClassFactory.defineClass("Canvas");isc.isA.Canvas=function(_1){return(_1!=null&&_1._isA_Canvas)}
-isc.A=isc.Canvas;isc.A._isA_Canvas=true;isc.A.AUTO="auto";isc.A.ANYTHING="**anything**";isc.A.ABSOLUTE="absolute";isc.A.RELATIVE="relative";isc.A.INHERIT="inherit";isc.A.VISIBLE="visible";isc.A.HIDDEN="hidden";isc.A.COMPLETE="complete";isc.A.DRAWN="complete";isc.A.DRAWING_HANDLE="drawingHandle";isc.A.HANDLE_DRAWN="handleDrawn";isc.A.UNDRAWN="undrawn";isc.A.SCROLL="scroll";isc.A.CLIP_H="clip-h";isc.A.CLIP_V="clip-v";isc.A.IGNORE="ignore";isc.A.NATIVE="native";isc.A.CLIP="clip";isc.A.NESTED_DIV="nestedDiv";isc.A.CENTER="center";isc.A.LEFT="left";isc.A.RIGHT="right";isc.A.TOP="top";isc.A.BOTTOM="bottom";isc.A.UP="up";isc.A.DOWN="down";isc.A.BOTH="both";isc.A.NONE="none";isc.A.VERTICAL="vertical";isc.A.HORIZONTAL="horizontal";isc.A.MARKED="marked";isc.A.MIDDLE="middle";isc.A.ALL="all";isc.A.DEFAULT="default";isc.A.ARROW="default";isc.A.WAIT="wait";isc.A.HAND=(isc.Browser.isMoz?"pointer":"hand");isc.A.MOVE="move";isc.A.HELP="help";isc.A.TEXT="text";isc.A.CROSSHAIR="crosshair";isc.A.NOT_ALLOWED="not-allowed";isc.A.COL_RESIZE=(isc.Browser.isIE&&isc.Browser.version>=6?"col-resize":"e-resize");isc.A.ROW_RESIZE=(isc.Browser.isIE&&isc.Browser.version>=6?"row-resize":"n-resize");isc.A.TILE="tile";isc.A.STRETCH="stretch";isc.A.NORMAL="normal";isc.A.REPEAT="repeat";isc.A.NO_REPEAT="no-repeat";isc.A.REPEAT_X="repeat-x";isc.A.REPEAT_Y="repeat-y";isc.A.LTR="ltr";isc.A.RTL="rtl";isc.A.BEFORE="before";isc.A.AFTER="after";isc.A.NEAREST="nearest";isc.A.$ng=200000;isc.A.$nh=199950;isc.A.$ni=800000;isc.A.TAB_INDEX_GAP=50;isc.A.TAB_INDEX_FLOOR=1000;isc.A.TAB_INDEX_CEILING=32766;isc.A.$nj=[];isc.A.textStyleAttributes=["fontFamily","fontSize","color","backgroundColor","fontWeight","fontStyle","textDecoration","textAlign"];isc.A.$42a=(!isc.Browser.isIE?"margin:0px;border:0px;padding:0px;background-image:none;background-color:transparent;":"margin:0px;border:0px;padding:0px;background-color:transparent;filter:none;background-image:none;");isc.A.$nm=[];isc.A._redrawQueueDelay=(0);isc.A.$nn=200;isc.A._canvasList=[];isc.A._iscInternalCount=0;isc.A._stats={redraws:0,clears:0,destroys:0,draws:0};isc.A.$no={};isc.A.$np={};isc.A.$nq=[];isc.A.useMozBackMasks=false;isc.A.useNativeWheelDelta=true;isc.A.scrollWheelDelta=50;isc.A=isc.Canvas.getPrototype();isc.A._isA_Canvas=true;isc.A.autoDraw=true;isc.A.htmlPosition="afterBegin";isc.A.position=null;isc.A.left=0;isc.A.top=0;isc.A.defaultWidth=100;isc.A.defaultHeight=100;isc.A.minWidth=10;isc.A.maxWidth=10000;isc.A.minHeight=10;isc.A.maxHeight=10000;isc.A.zIndex=isc.Canvas.AUTO;isc.A.autoShowParent=false;isc.A.visibility=isc.Canvas.INHERIT;isc.A.styleName="normal";isc.A.contents=isc.nbsp;isc.A.backgroundRepeat=isc.Canvas.REPEAT;isc.A.mozOutlineOffset="-1px";isc.A.appImgDir="";isc.A.skinImgDir="images/";isc.A.cursor=isc.Canvas.DEFAULT;isc.A.disabledCursor=isc.Canvas.DEFAULT;isc.A.noDropCursor=isc.Canvas.NOT_ALLOWED;isc.A.$65q=(isc.Browser.isMoz&&isc.Browser.geckoVersion<20081201);isc.A.overflow=isc.Canvas.VISIBLE;isc.A.alwaysShowVScrollbar=false;isc.A.showCustomScrollbars=!((isc.Browser.isOpera||isc.Browser.isIE&&isc.Browser.version>4)||(isc.Browser.isUnix&&isc.Browser.isMoz&&isc.Browser.geckoVersion>=20020826&&isc.Browser.geckoVersion<=20031007));isc.A.scrollbarSize=16;isc.A.scrollbarConstructor="Scrollbar";isc.A.scrollLeft=0;isc.A.scrollTop=0;isc.A.scrollDelta=20;isc.A.$nr="unset";isc.A.enabled="unset";isc.A.redrawOnDisable=false;isc.A.$jp=true;isc.A.$jo=true;isc.A.$ns=true;isc.A.$nt=true;isc.A.$jq=true;isc.A.$nu=true;isc.A.showFocusOutline=true;isc.A._useNativeTabIndex=(isc.Browser.isIE&&isc.Browser.version>=5)||(isc.Browser.isMoz&&isc.Browser.geckoVersion>=20051111);isc.A.$kn=(isc.Browser.isMoz&&isc.Browser.geckoVersion<20051111)||isc.Browser.isSafari||isc.Browser.isOpera;isc.A.contextMenuProperties={autoDraw:false,width:200,showIcons:true};isc.A.clippedCorners=["TL","TR","BL","BR"];isc.A.cornerClipColor="FFFFFF";isc.A.cornerClipImage="[SKIN]corner.gif";isc.A.cornerClipSize=10;isc.A.$nv={_generated:true,overflow:"hidden",$jp:false,$jo:false,autoDraw:false,skinImgDir:"images/corners/",draw:function(){this.Super("draw",arguments)}};isc.A.dragOutlineStyle="dragOutline";isc.A.dragStartDistance=5;isc.A.canDragScroll=true;isc.A.dragScrollDelay=100;isc.A.dragScrollThreshold="10%";isc.A.minDragScrollIncrement=1;isc.A.maxDragScrollIncrement="5%";isc.A.dragIntersectStyle=isc.EventHandler.INTERSECT_WITH_MOUSE;isc.A.dragRepositionCursor=isc.Canvas.MOVE;isc.A.dragScrollType="any";isc.A.hoverDelay=300;isc.A.showHover=true;isc.A.edgeMarginSize=5;isc.A.edgeCursorMap={"T":"n-resize","L":"w-resize","B":"s-resize","R":"e-resize","TL":"nw-resize","TR":"ne-resize","BL":"sw-resize","BR":"se-resize"};isc.A.dragAppearance=isc.EventHandler.OUTLINE;isc.A.dropTypes=isc.Canvas.ANYTHING;isc.A.mouseStillDownInitialDelay=400;isc.A.mouseStillDownDelay=100;isc.A.doubleClickDelay=250;isc.A.refreshVariable="refresh";isc.A.$ks=(isc.Browser.isMoz&&(!isc.Browser.isUnix||isc.Browser.geckoVersion>20031007));isc.A.useClipDiv=(isc.Browser.isMoz||isc.Browser.isSafari||isc.Browser.isOpera);isc.A.manageChildOverflow=true;isc.A.$nw={};isc.A.percentBox="visible";isc.A.$520="viewport";isc.A.snapHGap=20;isc.A.snapVGap=20;isc.A.snapHDirection=isc.Canvas.AFTER;isc.A.snapVDirection=isc.Canvas.AFTER;isc.A.snapAxis=isc.Canvas.BOTH;isc.A.snapOnDrop=true;isc.A=isc.Canvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$nx="resize";isc.A.$ny="draw";isc.A.$nz="hidden";isc.A.$n0="redraw";isc.A.$n1="undefined";isc.A.$n2="draws";isc.A.$n3="drawing";isc.A.$n4="redraws";isc.A.$n5="autoDraw";isc.A.$n6="beforeBegin";isc.A.$n7="afterBegin";isc.A.$n8="beforeEnd";isc.A.$n9="afterEnd";isc.A.$oa=">";isc.A.$ob="'";isc.A.$oc="initWidget";isc.A.$55w="html";isc.A.$od="initial draw";isc.A.$oe="parentDrawn";isc.A.$of="eventProxy";isc.A.reuseDOMIDs=false;isc.A.$og="canvas";isc.A.$oh="canvas_clipDiv";isc.A.$oi="MARGIN-LEFT:";isc.A.$oj="MARGIN-RIGHT:";isc.A.$ok="MARGIN-TOP:";isc.A.$ol="MARGIN-BOTTOM:";isc.A.$om="MARGIN:";isc.A.$on="</div>";isc.A.$oo="</div></div>";isc.A.$op=[];isc.A.isBorderBox=(isc.Browser.isMoz||isc.Browser.isBorderBox);isc.A.$oq="isc.EH.focusInCanvas(";isc.A.$or="if(event.target!=this)return;isc.EH.focusInCanvas(";isc.A.$os="if(window.isc)isc.EH.blurFocusCanvas(";isc.A.$ot=",true);";isc.A.$ou="autoChild:";isc.A.$ov=["<DIV ID='",null,"'style='position:absolute;width:1px;height:1px;overflow:hidden;left:",null,"px;top:",null,"px;'>&nbsp;</DIV>"];isc.A.$ow="scrollSizeDiv";isc.A.$ox="enforceScrollSize";isc.A.$oy="-1px";isc.A.useClientRectAPI=true;isc.A.useBoxObjectAPI=false;isc.A.useBoxObjectAPISelectively=true;isc.A.$65h="0px";isc.A.$oz="left";isc.A.$o0="top";isc.A.$o1="right";isc.A.$o2="bottom";isc.A.$o3="center";isc.A.$o4="childMoved";isc.A.$o5="height";isc.A.$o6="width";isc.A.$oz="left";isc.A.$o0="top";isc.A.$o7="$o8";isc.A.$o9="%";isc.A.$pa="*";isc.A.$pb={height:"_percent_height",width:"_percent_width",left:"_percent_left",top:"_percent_top"};isc.A.$pc="resized";isc.A.$pd="childResized";isc.A.shouldSetNoDropTracker=isc.Browser.isOpera;isc.A.noDropTracker="[SKIN]/shared/no_drop.png";isc.A.adjustOverflowWhileDirty=true;isc.A.$pe={hidden:true,visible:true,scroll:true,auto:true,"clip-v":true,"clip-h":true,ignore:true};isc.A.$pf="sizing";isc.A.$pg="overflow";isc.A.$ph="px";isc.A.$27r="none";isc.A.$411="relative";isc.A.$pi="disabled";isc.A.$27r="none";isc.A.$pj="styleName";isc.A.$pk="eventpart";isc.A.$f8="count";isc.A.$pl=["edgeImage","edgeColor","customEdges","shownEdges","edgeSize","edgeTop","edgeBottom","edgeLeft","edgeRight","edgeOffset","edgeOffsetTop","edgeOffsetBottom","edgeOffsetLeft","edgeOffsetRight","canDragResize","canDragReposition"];isc.A.shadowDepth=4;isc.A.dragResizeFromShadow=true;isc.A.$pm="shadow";isc.A.isGroup=false;isc.A.groupBorderCSS="2px solid black";isc.A.groupLabelPadding=10;isc.A.showGroupLabel=true;isc.A.groupLabelDefaults={_constructor:"Label",overflow:"visible",height:1,width:1,padding:5,wrap:false,vAlign:"center",align:"center"};isc.B.push(isc.A.init=function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13){if(isc.$cv)arguments.$cw=this;this.ns.ClassFactory.addGlobalID(this);this._canvasList(true);if(this.position==null){this.position=this.htmlElement!=null?isc.Canvas.RELATIVE:isc.Canvas.ABSOLUTE}
+isc.A=isc.Canvas;isc.A._isA_Canvas=true;isc.A.AUTO="auto";isc.A.ANYTHING="**anything**";isc.A.ABSOLUTE="absolute";isc.A.RELATIVE="relative";isc.A.INHERIT="inherit";isc.A.VISIBLE="visible";isc.A.HIDDEN="hidden";isc.A.COMPLETE="complete";isc.A.DRAWN="complete";isc.A.DRAWING_HANDLE="drawingHandle";isc.A.HANDLE_DRAWN="handleDrawn";isc.A.UNDRAWN="undrawn";isc.A.SCROLL="scroll";isc.A.CLIP_H="clip-h";isc.A.CLIP_V="clip-v";isc.A.IGNORE="ignore";isc.A.NATIVE="native";isc.A.CLIP="clip";isc.A.NESTED_DIV="nestedDiv";isc.A.CENTER="center";isc.A.LEFT="left";isc.A.RIGHT="right";isc.A.TOP="top";isc.A.BOTTOM="bottom";isc.A.UP="up";isc.A.DOWN="down";isc.A.BOTH="both";isc.A.NONE="none";isc.A.VERTICAL="vertical";isc.A.HORIZONTAL="horizontal";isc.A.MARKED="marked";isc.A.MIDDLE="middle";isc.A.ALL="all";isc.A.DEFAULT="default";isc.A.ARROW="default";isc.A.WAIT="wait";isc.A.HAND=(isc.Browser.isMoz?"pointer":"hand");isc.A.MOVE="move";isc.A.HELP="help";isc.A.TEXT="text";isc.A.CROSSHAIR="crosshair";isc.A.NOT_ALLOWED="not-allowed";isc.A.COL_RESIZE=(isc.Browser.isIE&&isc.Browser.version>=6?"col-resize":"e-resize");isc.A.ROW_RESIZE=(isc.Browser.isIE&&isc.Browser.version>=6?"row-resize":"n-resize");isc.A.TILE="tile";isc.A.STRETCH="stretch";isc.A.NORMAL="normal";isc.A.REPEAT="repeat";isc.A.NO_REPEAT="no-repeat";isc.A.REPEAT_X="repeat-x";isc.A.REPEAT_Y="repeat-y";isc.A.LTR="ltr";isc.A.RTL="rtl";isc.A.BEFORE="before";isc.A.AFTER="after";isc.A.NEAREST="nearest";isc.A.$ng=200000;isc.A.$nh=199950;isc.A.$ni=800000;isc.A.TAB_INDEX_GAP=50;isc.A.TAB_INDEX_FLOOR=1000;isc.A.TAB_INDEX_CEILING=32766;isc.A.$nj=[];isc.A.textStyleAttributes=["fontFamily","fontSize","color","backgroundColor","fontWeight","fontStyle","textDecoration","textAlign"];isc.A.$42a=(!isc.Browser.isIE?"margin:0px;border:0px;padding:0px;background-image:none;background-color:transparent;":"margin:0px;border:0px;padding:0px;background-color:transparent;filter:none;background-image:none;");isc.A.$nm=[];isc.A._redrawQueueDelay=(0);isc.A.$nn=200;isc.A._canvasList=[];isc.A._iscInternalCount=0;isc.A._stats={redraws:0,clears:0,destroys:0,draws:0};isc.A.$no={};isc.A.$np={};isc.A.$nq=[];isc.A.useMozBackMasks=false;isc.A.useNativeWheelDelta=true;isc.A.scrollWheelDelta=50;isc.A=isc.Canvas.getPrototype();isc.A._isA_Canvas=true;isc.A.autoDraw=true;isc.A.htmlPosition="afterBegin";isc.A.position=null;isc.A.left=0;isc.A.top=0;isc.A.defaultWidth=100;isc.A.defaultHeight=100;isc.A.minWidth=10;isc.A.maxWidth=10000;isc.A.minHeight=10;isc.A.maxHeight=10000;isc.A.zIndex=isc.Canvas.AUTO;isc.A.autoShowParent=false;isc.A.visibility=isc.Canvas.INHERIT;isc.A.styleName="normal";isc.A.contents=isc.nbsp;isc.A.backgroundRepeat=isc.Canvas.REPEAT;isc.A.mozOutlineOffset="-1px";isc.A.appImgDir="";isc.A.skinImgDir="images/";isc.A.cursor=isc.Canvas.DEFAULT;isc.A.disabledCursor=isc.Canvas.DEFAULT;isc.A.noDropCursor=isc.Canvas.NOT_ALLOWED;isc.A.$65q=(isc.Browser.isMoz&&isc.Browser.geckoVersion<20081201);isc.A.overflow=isc.Canvas.VISIBLE;isc.A.alwaysShowVScrollbar=false;isc.A.showCustomScrollbars=!((isc.Browser.isOpera||isc.Browser.isIE&&isc.Browser.version>4)||(isc.Browser.isUnix&&isc.Browser.isMoz&&isc.Browser.geckoVersion>=20020826&&isc.Browser.geckoVersion<=20031007));isc.A.scrollbarSize=16;isc.A.scrollbarConstructor="Scrollbar";isc.A.scrollLeft=0;isc.A.scrollTop=0;isc.A.scrollDelta=20;isc.A.$nr="unset";isc.A.enabled="unset";isc.A.redrawOnDisable=false;isc.A.$jp=true;isc.A.$jo=true;isc.A.$ns=true;isc.A.$nt=true;isc.A.$jq=true;isc.A._redrawWithParent=true;isc.A.showFocusOutline=true;isc.A._useNativeTabIndex=(isc.Browser.isIE&&isc.Browser.version>=5)||(isc.Browser.isMoz&&isc.Browser.geckoVersion>=20051111);isc.A.$kn=(isc.Browser.isMoz&&isc.Browser.geckoVersion<20051111)||isc.Browser.isSafari||isc.Browser.isOpera;isc.A.contextMenuProperties={autoDraw:false,width:200,showIcons:true};isc.A.clippedCorners=["TL","TR","BL","BR"];isc.A.cornerClipColor="FFFFFF";isc.A.cornerClipImage="[SKIN]corner.gif";isc.A.cornerClipSize=10;isc.A.$nv={_generated:true,overflow:"hidden",$jp:false,$jo:false,autoDraw:false,skinImgDir:"images/corners/",draw:function(){this.Super("draw",arguments)}};isc.A.dragOutlineStyle="dragOutline";isc.A.dragStartDistance=5;isc.A.canDragScroll=true;isc.A.dragScrollDelay=100;isc.A.dragScrollThreshold="10%";isc.A.minDragScrollIncrement=1;isc.A.maxDragScrollIncrement="5%";isc.A.dragIntersectStyle=isc.EventHandler.INTERSECT_WITH_MOUSE;isc.A.dragRepositionCursor=isc.Canvas.MOVE;isc.A.dragScrollType="any";isc.A.hoverDelay=300;isc.A.showHover=true;isc.A.edgeMarginSize=5;isc.A.edgeCursorMap={"T":"n-resize","L":"w-resize","B":"s-resize","R":"e-resize","TL":"nw-resize","TR":"ne-resize","BL":"sw-resize","BR":"se-resize"};isc.A.dragAppearance=isc.EventHandler.OUTLINE;isc.A.dropTypes=isc.Canvas.ANYTHING;isc.A.mouseStillDownInitialDelay=400;isc.A.mouseStillDownDelay=100;isc.A.doubleClickDelay=250;isc.A.refreshVariable="refresh";isc.A.$ks=(isc.Browser.isMoz&&(!isc.Browser.isUnix||isc.Browser.geckoVersion>20031007));isc.A.useClipDiv=(isc.Browser.isMoz||isc.Browser.isSafari||isc.Browser.isOpera);isc.A.manageChildOverflow=true;isc.A.$nw={};isc.A.percentBox="visible";isc.A.$520="viewport";isc.A.snapHGap=20;isc.A.snapVGap=20;isc.A.snapHDirection=isc.Canvas.AFTER;isc.A.snapVDirection=isc.Canvas.AFTER;isc.A.snapAxis=isc.Canvas.BOTH;isc.A.snapOnDrop=true;isc.A=isc.Canvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$nx="resize";isc.A.$ny="draw";isc.A.$nz="hidden";isc.A.$n0="redraw";isc.A.$n1="undefined";isc.A.$n2="draws";isc.A.$n3="drawing";isc.A.$n4="redraws";isc.A.$n5="autoDraw";isc.A.$n6="beforeBegin";isc.A.$n7="afterBegin";isc.A.$n8="beforeEnd";isc.A.$n9="afterEnd";isc.A.$oa=">";isc.A.$ob="'";isc.A.$oc="initWidget";isc.A.$55w="html";isc.A.$od="initial draw";isc.A.$oe="parentDrawn";isc.A.$of="eventProxy";isc.A.reuseDOMIDs=false;isc.A.$og="canvas";isc.A.$oh="canvas_clipDiv";isc.A.$oi="MARGIN-LEFT:";isc.A.$oj="MARGIN-RIGHT:";isc.A.$ok="MARGIN-TOP:";isc.A.$ol="MARGIN-BOTTOM:";isc.A.$om="MARGIN:";isc.A.$on="</div>";isc.A.$oo="</div></div>";isc.A.$op=[];isc.A.isBorderBox=(isc.Browser.isMoz||isc.Browser.isBorderBox);isc.A.$oq="isc.EH.focusInCanvas(";isc.A.$or="if(event.target!=this)return;isc.EH.focusInCanvas(";isc.A.$os="if(window.isc)isc.EH.blurFocusCanvas(";isc.A.$ot=",true);";isc.A.$ou="autoChild:";isc.A.$ov=["<DIV ID='",null,"'style='position:absolute;width:1px;height:1px;overflow:hidden;left:",null,"px;top:",null,"px;'>&nbsp;</DIV>"];isc.A.$ow="scrollSizeDiv";isc.A.$ox="enforceScrollSize";isc.A.$oy="-1px";isc.A.useClientRectAPI=true;isc.A.useBoxObjectAPI=false;isc.A.useBoxObjectAPISelectively=true;isc.A.$65h="0px";isc.A.$oz="left";isc.A.$o0="top";isc.A.$o1="right";isc.A.$o2="bottom";isc.A.$o3="center";isc.A.$o4="childMoved";isc.A.$o5="height";isc.A.$o6="width";isc.A.$oz="left";isc.A.$o0="top";isc.A.$o7="$o8";isc.A.$o9="%";isc.A.$pa="*";isc.A.$pb={height:"_percent_height",width:"_percent_width",left:"_percent_left",top:"_percent_top"};isc.A.$pc="resized";isc.A.$pd="childResized";isc.A.shouldSetNoDropTracker=isc.Browser.isOpera;isc.A.noDropTracker="[SKIN]/shared/no_drop.png";isc.A.adjustOverflowWhileDirty=true;isc.A.$pe={hidden:true,visible:true,scroll:true,auto:true,"clip-v":true,"clip-h":true,ignore:true};isc.A.$pf="sizing";isc.A.$pg="overflow";isc.A.$ph="px";isc.A.$27r="none";isc.A.$411="relative";isc.A.$pi="disabled";isc.A.$27r="none";isc.A.$pj="styleName";isc.A.$pk="eventpart";isc.A.$f8="count";isc.A.$pl=["edgeImage","edgeColor","customEdges","shownEdges","edgeSize","edgeTop","edgeBottom","edgeLeft","edgeRight","edgeOffset","edgeOffsetTop","edgeOffsetBottom","edgeOffsetLeft","edgeOffsetRight","canDragResize","canDragReposition"];isc.A.shadowDepth=4;isc.A.dragResizeFromShadow=true;isc.A.$pm="shadow";isc.A.isGroup=false;isc.A.groupBorderCSS="2px solid black";isc.A.groupLabelPadding=10;isc.A.showGroupLabel=true;isc.A.groupLabelStyleName="groupLabel";isc.A.groupLabelDefaults={_constructor:"Label",overflow:"visible",height:1,width:1,wrap:false,vAlign:"center",align:"center"};isc.B.push(isc.A.init=function(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13){if(isc.$cv)arguments.$cw=this;this.ns.ClassFactory.addGlobalID(this);this._canvasList(true);if(this.position==null){this.position=this.htmlElement!=null?isc.Canvas.RELATIVE:isc.Canvas.ABSOLUTE}
 if(this.className!=null&&this.logIsInfoEnabled(this.$pj)){this.logInfo("'className' property specified. This property has been deprecated in "+"favor of 'styleName' as of SmartClient 5.5.",this.$pj)}
 if(this.styleName!=null){if(this.className!=null){var _14=this.getPrototype(),_15=(this.styleName!=_14.styleName),_16=(this.className!=_14.className);if(_15)this.className=this.styleName;else if(_16)this.styleName=this.className;else this.styleName=this.className}else{this.className=this.styleName}}else if(this.className!=null){this.styleName=this.className}
 if(this.size!=null)this.height=this.width=this.size;this.$pn=this.width;this.$po=this.height;if(this.width==null)this.width=this.defaultWidth;if(this.height==null)this.height=this.defaultHeight;this.$o8=this.height;if(isc.isA.String(this.margin)){var _17=parseInt(this.margin);if(isc.isA.Number(_17))this.margin=_17;else{this.logWarn("Invalid setting for this.margin:"+this.margin+". This should be a numeric value - ignoring");this.margin=null}}
 if(isc.isA.String(this.padding)){var _18=parseInt(this.padding);if(isc.isA.Number(_18))this.padding=_18;else{this.logWarn("Invalid setting for this.padding:"+this.padding+". This should be set to a numeric value - ignoring");this.padding=null}}
 if(this.border!=null&&!isc.isA.String(this.border)){this.border=this.$63e(this.border)}
 if(this.percentSource)this.setPercentSource(this.percentSource,true);this.$pp=true;this.resizeTo(this.width,this.$o8);this.moveTo(this.left,this.top);this.$pp=null;if(this.children&&!isc.isAn.Array(this.children))this.children=[this.children];if(this.peers&&!isc.isAn.Array(this.peers))this.peers=[this.peers];if(this.enabled!=this.$nr){this.logWarn("Widget initialized with explicitly specified 'enabled' property. "+"This property has been deprecated - use 'disabled' instead.");this.disabled=!this.enabled}
-if(this.redrawOnEnable!=null){this.logWarn("Widget initialized with deprcated 'redrawOnEnable' - use 'redrawOnDisable' instead.");this.redrawOnDisable=this.redrawOnEnable}
+if(this.redrawOnEnable!=null){this.logWarn("Widget initialized with deprecated 'redrawOnEnable' - use 'redrawOnDisable' instead.");this.redrawOnDisable=this.redrawOnEnable}
 this.initWidget(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13);this.$pq();if(this.showShadow)this.$pr();if(this.clipCorners)this.$ps();if(this.useBackMask&&((isc.Browser.isIE&&isc.Browser.minorVersion>=5.5)||(isc.Canvas.useMozBackMasks&&isc.Browser.isMoz))){this.makeBackMask()}
 if(this.isGroup){delete this.isGroup;this.setIsGroup(true)}
 if(this.children)this.children.setProperty(this.$n5,false);if(this.peers)this.peers.setProperty(this.$n5,false);if(this.observes){var _19,_20,_21=this.observes,_22=_21.length;for(var i=0;i<_22;i++){var _19=_21[i];if(!_19)continue;if(isc.isA.String(_19.source))_20=this.getGlobalReference(_19.source);else _20=_19.source;if(_20){this.observe(_20,_19.message,_19.action)}}}
@@ -1737,10 +1801,14 @@ if(this.htmlElement){var _24=this.htmlElement;delete this.htmlElement;this.setHt
 if(this.eventProxy!=null){if(!isc.isA.Canvas(this.eventProxy)){this.logWarn("Canvas ID:'"+this.getID()+"' initialized with bad eventProxy. "+"This property should be set to another Canvas instance. Clearing this property.")
 delete this.eventProxy}else{if(this.eventProxy.$kt==null)this.eventProxy.$kt=[];this.eventProxy.$kt.add(this)}}
 var _25=this.parentElement;if(_25){this.parentElement=null;if(isc.isA.String(_25))_25=window[_25];_25.addChild(this)}
+if(this.autoFetchAsFilter!=null){var _26=this.autoFetchAsFilter?"substring":"exact";this.logWarn("This component has autoFetchAsFilter explicitly specified as:"+this.autoFetchAsFilter+". This attribute is deprecated in favor of "+"this.autoFetchTextMatchStyle. Defaulting autoFetchTextMatchStyle to \""+_26+"\" based on this setting.");this.autoFetchTextMatchStyle=_26}
+this.initializeValuesManager();if(this.showPanelHeader==true){if(this.setupPanelHeader)this.setupPanelHeader();if(this.refreshPanelControls)this.refreshPanelControls()}
 if(this.autoDraw&&!this.parentElement&&!isc.noAutoDraw){if(isc.Browser.isSafari&&isc.deferAutoDraw&&!isc.Page.isLoaded()&&this.position!="relative")
 {isc.Page.setEvent("load",this.getID()+".draw()")}else{this.draw()}}}
 ,isc.A.initWidget=function(){}
 ,isc.A.setID=function(_1){var _2=this.pointersToThis=this.pointersToThis||[];_2.add({object:window,property:this.ID});this.ID=_1;window[this.ID]=this;this.clear();this.draw()}
+,isc.A.clearIDs=function(){this.clear();window[this.ID]=null;if(this.children){for(var i=0;i<this.children.length;i++){this.children[i].clearIDs()}}
+if(this.peers){for(var i=0;i<this.peers.length;i++){this.peers[i].clearIDs()}}}
 ,isc.A.getDrawnState=function(){if(this.$if==true)return isc.Canvas.COMPLETE;if(this.$pu==true)return isc.Canvas.HANDLE_DRAWN;if(this.$pv==true)return isc.Canvas.DRAWING_HANDLE;return isc.Canvas.UNDRAWN}
 ,isc.A.setDrawnState=function(_1){if(_1==isc.Canvas.COMPLETE)this.$if=true;else this.$if=false;if(_1==isc.Canvas.HANDLE_DRAWN)this.$pu=true;else this.$pu=false;if(_1==isc.Canvas.DRAWING_HANDLE)this.$pv=true;else this.$pv=false}
 ,isc.A.isDrawn=function(){return!!this.$if}
@@ -1760,35 +1828,35 @@ this.logWarn("negative or zero area: height: "+this.getHeight()+", width: "+this
 if(this.deferredDrawEvent!=null){this.logInfo("draw() called while object already pending a delayed draw - no action to take","drawing");return false}
 if(this.parentElement!=null&&(!isc.isA.Canvas(this.parentElement)||this.parentElement.getDrawnState()==isc.Canvas.UNDRAWN))
 {this.logWarn("Attempt to draw child of an undrawn parent - ignoring"+this.getStackTrace(),"drawing");return false}
-if(isc.Browser.isSafari&&!isc.Page.isLoaded()){var _2=isc.Browser.safariVersion;if(parseInt(_2)<100){this.drawDeferred();return false}else{if(!isc.Canvas.$p1){isc.Canvas.logWarn("Isomorphic recommends drawing components after page load in Safari, as "+"some sizing information may not be available until the page has "+"completely loaded.  If you are encountering sizing issues for any "+"component try setting 'autoDraw' to false, and setting up an event "+"to draw the component on the Page level 'load' event.","drawing");isc.Canvas.$p1=true}}}
+if(isc.Browser.isSafari&&!isc.Page.isLoaded()){var _2=isc.Browser.safariVersion;if(parseInt(_2)<100){this.drawDeferred();return false}else{}}
 return true}
 ,isc.A.$p2=function(){return false}
 ,isc.A.$p4=function(){if(this.$p5)return true;var _1=this.parentElement;while(_1){if(_1.$p5)return true;_1=_1.parentElement}
 if(this.children){for(var i=0;i<this.children.length;i++){if(this.children[i].$p2())return true}}
 return false}
 ,isc.A.draw=function(_1){if(isc.$cv)arguments.$cw=this;if(!this.readyToDraw())return this;if(this.overflow==isc.Canvas.AUTO)this.getTabIndex();if(this.logIsInfoEnabled(this.$n2)){this.logInfo("draw(): drawing "+this.Class+(this.parentElement?" with parent: "+this.parentElement:"")+(!isc.Page.isLoaded()?" before page load":"")+(this.logIsDebugEnabled(this.$n2)?this.getStackTrace():""),this.$n2)}
-this.$p6(this.$n2);var _2=false;if(this.autoFetchData&&!this.$p7&&this.fetchData){if(!this.dataSource){this.logWarn("autoFetchData is set, but no dataSource is specified, can't fetch")}else{_2=!isc.RPCManager.startQueue();if(this.autoFetchAsFilter&&this.filterData){this.filterData(this.getInitialCriteria())}else{this.fetchData(this.getInitialCriteria())}
-this.$p7=true}}
-if(this.peers!=null&&this.peers.getLength()>0){this.predrawPeers()}
+this.$p6(this.$n2);var _2=this.doInitialFetch();if(this.peers!=null&&this.peers.getLength()>0){this.predrawPeers()}
 if(isc.Browser.isIE&&this.fixIEOpacity&&!this.masterElement){var _3=this.parentElement;while(_3){if(_3.opacity!=null&&_3.opacity!=100){this.setOpacity(100,null,true);break}
 _3=_3.parentElement}}
 if(this.htmlElement!=null&&this.matchElement){if(isc.isA.String(this.htmlElement))this.htmlElement=isc.Element.get(this.htmlElement);var _4=isc.Element.getNativeInnerWidth(this.htmlElement),_5=isc.Element.getNativeInnerHeight(this.htmlElement);this.setWidth(_4);this.setHeight(_5)}
-var _6=this.parentElement;var _7=(!isc.Page.isLoaded()&&!this.drawContext&&(_6==null&&this.position==isc.Canvas.RELATIVE));_7=_7||this.$p2();var _8=this.separateContentInsertion;if(isc.Page.isLoaded()||!_7){this.$p8(!_8);if(_8)this.$p9();this.drawChildren();this.$qa()}else{var _3=this.parentElement;if((isc.Browser.isOpra||isc.Browser.isIE)&&this.getDocument().readyState=="complete")
+var _6=this.parentElement;var _7=(!isc.Page.isLoaded()&&!this.drawContext&&(_6==null&&this.position==isc.Canvas.RELATIVE));_7=_7||this.$p2();var _8=this.separateContentInsertion;if(isc.Page.isLoaded()||!_7){this.$p8(!_8);if(_8)this.$p9();this.drawChildren();this.$qa()}else{var _3=this.parentElement;if((isc.Browser.isOpera||isc.Browser.isIE)&&this.getDocument().readyState=="complete")
 {isc.Page.finishedLoading()}
 this.$qb()}
 if(_2)isc.RPCManager.sendQueue();if(this.$kn&&this.$kk())this.makeFocusProxy();if(this.accessKey!=null&&this.$qc()&&this.$kk()){this.$qd()}
 if(this.$qe!=null)
 this.enforceScrollSize(this.$qe[0],this.$qe[1]);if(this.$qf())isc.EH.$mz([this]);if(this.clipCorners)this.$qg();if(!_1&&this.isVisible())this.show();if(this.parentElement)this.parentElement.childDrawn(this);if(this.masterElement)this.masterElement.peerDrawn(this);if(this.parentElement==null&&this.position==this.$411){this.$412=this.getPageLeft();this.$413=this.getPageTop();isc.Page.setEvent("resize",this,isc.Page.FIRE_ONCE,"$414")}
 return this}
-,isc.A.getInitialCriteria=function(){return this.initialCriteria}
+,isc.A.doInitialFetch=function(){}
 ,isc.A.$qb=function(){this.setDrawnState(isc.Canvas.DRAWING_HANDLE);var _1=this.getDocument(),_2=this.separateContentInsertion;if(this.children!=null&&this.$p2()){this.$p5=true;var _3=this.getTagStart(),_4=this.getTagEnd();_1.write(_2?_3:_3+this.$px())
 this.drawChildren();_1.write(_2?this.$px()+_4:_4);this.setDrawnState(isc.Canvas.HANDLE_DRAWN)}else{_1.write(isc.SB.concat(this.getTagStart(),(_2?null:this.$px()),this.getTagEnd()));this.setDrawnState(isc.Canvas.HANDLE_DRAWN);if(_2)this.$p9();this.drawChildren()}
 this.$qa();if(isc.Browser.isMoz&&this.getScrollingMechanism()==isc.Canvas.NATIVE)
 this.checkNativeScroll();return this}
 ,isc.A.drawDeferred=function(){var _1=(isc.Page.isLoaded()?"idle":"load");if(this.deferredDrawEvent!=null){this.logInfo("drawDeferred() called when object is already pending drawing "+"- No action to take.");return}
 var _2=this.getID();this.deferredDrawEvent=isc.Page.setEvent(_1,"delete "+_2+".deferredDrawEvent;"+_2+".draw();",isc.Page.FIRE_ONCE)}
-,isc.A.getPrintHTML=function(printProperties,callback){this.isPrinting=true;if(printProperties==null){printProperties=isc.addProperties({},this.printProperties);printProperties.topLevelCanvas=this;printProperties.omitControls=isc.Canvas.printOmitControls;printProperties.includeControls=isc.Canvas.printIncludeControls;printProperties.isDrawn=this.isDrawn();printProperties.isVisible=this.isVisible()}else{printProperties=isc.addProperties(printProperties,this.printProperties)}
-this.currentPrintProperties=printProperties||{};var HTML=[this.getPrintTagStart(),,,this.getPrintTagEnd()];if(!this.children||this.children.length==0||this.allowContentAndChildren){HTML[1]=this.getPrintInnerHTML()}
+,isc.A.getPrintHTML=function(printProperties,callback){this.isPrinting=true;printProperties=isc.addProperties({},printProperties,this.printProperties);if(printProperties.topLevelCanvas==null){printProperties.topLevelCanvas=this;printProperties.isDrawn=this.isDrawn();printProperties.isVisible=this.isVisible()}
+if(printProperties.omitControls==null)
+printProperties.omitControls=isc.Canvas.printOmitControls;if(printProperties.includeControls==null)
+printProperties.includeControls=isc.Canvas.printIncludeControls;this.currentPrintProperties=printProperties||{};var HTML=[this.getPrintTagStart(),,,this.getPrintTagEnd()];if(!this.children||this.children.length==0||this.allowContentAndChildren){HTML[1]=this.getPrintInnerHTML()}
 delete printProperties.inline;if(printProperties.omitComponents){var omitComponents=printProperties.omitComponents
 for(var i=0;i<omitComponents.length;i++){if(isc.isA.String(omitComponents[i]))
 omitComponents[i]=window[omitComponents[i]];if(!isc.isAn.Instance(omitComponents[i]))omitComponents[i]=[]}
@@ -1826,7 +1894,7 @@ if(!this.$qj)return;var _1=this.$qq();if(_1!=null){if(isc.Browser.isDOM){if(_1.p
 this.$qr=null}
 this.$qj=null}
 ,isc.A.$qc=function(){return(isc.Browser.isMoz&&this._useNativeTabIndex)}
-,isc.A.$qd=function(){var _1=this.accessKey;if(!_1||!this.isDrawn()||!this.$kk())return;var _2=this.$qs("focusProxy");var _3=isc.StringBuffer.concat("<a id='",_2,"' onfocus='var _0=window.",this.getID(),";if(_0){_0.focus()}' ","accessKey='"+_1+"'></a>");isc.Element.insertAdjacentHTML(this.getClipHandle(),"beforeEnd",_3);this.$qt=isc.Element.get(_2)}
+,isc.A.$qd=function(){var _1=this.accessKey;if(!_1||!this.isDrawn()||!this.$kk())return;var _2=this.$qs("focusProxy");var _3=isc.StringBuffer.concat("<a id='",_2,"' href='javascript:void(0)","' onfocus='var _0=window.",this.getID(),";if(_0){_0.focus()}' ","accessKey='"+_1+"'></a>");isc.Element.insertAdjacentHTML(this.getClipHandle(),"beforeEnd",_3);this.$qt=isc.Element.get(_2)}
 ,isc.A.$qu=function(){var _1=this.$qt;delete this.$qt;if(_1)isc.Element.clear(_1)}
 ,isc.A.drawChildren=function(){if(this.children==null)return true;if(this.isDrawn()){this.logWarn("drawChildren() is only safe to call BEFORE a canvas has been drawn"+this.getStackTrace());return}
 if(this.children&&this.logIsInfoEnabled(this.$n3)){this.logInfo("drawChildren(): "+this.children.length+" children",this.$n3)}
@@ -1873,7 +1941,7 @@ isc.Element.insertAdjacentHTML(_2,this.$n7,_1)}
 ,isc.A.$rd=function(){var _1=this.isPrinting;this.isPrinting=false;var _2=this.$px();if(isc.Browser.isMoz){var _3=this.getHandle();while(_3.hasChildNodes())_3.removeChild(_3.firstChild);var _4=_3.ownerDocument.createRange();_4.selectNodeContents(_3);_4.collapse(true);var _5=_4.createContextualFragment(_2);_3.appendChild(_5)}else{this.getHandle().innerHTML=_2}
 this.isPrinting=_1}
 ,isc.A.modifyContent=function(){}
-,isc.A.redrawChildren=function(){if(!this.children)return true;this.logInfo("redrawChildren(): "+this.children.length+" children","drawing");for(var _1=this.children,i=0;i<_1.length;i++){var _3=_1[i];if(!isc.isA.Canvas(_3))continue;if(_3.$nu){_3.redraw(false)}}}
+,isc.A.redrawChildren=function(){if(!this.children)return true;this.logInfo("redrawChildren(): "+this.children.length+" children","drawing");for(var _1=this.children,i=0;i<_1.length;i++){var _3=_1[i];if(!isc.isA.Canvas(_3))continue;if(_3._redrawWithParent){_3.redraw(false)}}}
 ,isc.A.redrawPredrawnPeers=function(){if(!this.peers||this.peers.getLength<1)return;for(var _1=this.peers,i=0;i<_1.length;i++){if(_1[i]&&_1[i].$jp&&_1[i].$q0){_1[i].redraw("redrawPeers")}}}
 ,isc.A.redrawPeers=function(){if(!this.peers)return true;this.logInfo("redrawPeers(): "+this.peers.length+" peers","drawing");for(var _1=this.peers,i=0;i<_1.length;i++){if(_1[i]&&_1[i].$jp&&!_1[i].$q0){_1[i].redraw("redrawPeers")}}}
 ,isc.A.updateFromServer=function(_1){_1=isc.clone(_1);isc.addProperties(_1,{useXmlHttpRequest:true,evalResult:true,suppressAutoDraw:true});if(!_1.evalVars)_1.evalVars={};if(!_1.evalVars.targetComponent)_1.evalVars.targetComponent=this;isc.rpc.sendRequest(_1)}
@@ -1887,26 +1955,28 @@ isc.clearPrompt();if(this.$ri){if(!isc.isA.Function(this.$ri)){this.$ri=isc.Func
 if(!isc.isA.Function(this.$ri)){this.logError("Can't convert "+_2+" callback '"+this.$ri+" to a function - not firing callback!");return}
 this.$ri(_4)}}
 ,isc.A.clear=function(_1){this.$66p=true;if(!_1&&this.logIsInfoEnabled("clears")){var _2="clear()"+(this.children&&this.children.length>0?" ("+this.getChildCount()+" children) ":"")+(this.logIsDebugEnabled("clears")?this.getStackTrace():"");this.logInfo(_2,"clears")}
-this.$rk();if(this._eventMask)this.ns.EH.unregisterMaskableItem(this);if(this==isc.Canvas.$rl)isc.Canvas.hideResizeThumbs();if(this.children){for(var _3=this.children,i=0;i<_3.length;i++){var _5=_3[i];if(!isc.isA.Canvas(_5))continue;_5.clear(true)}}
-if(this.parentElement)this.parentElement.childCleared(this);if(this.masterElement)this.masterElement.peerCleared(this);if(this.getHandle())this.clearHandle();if(this.$kn)this.$qp();delete this.$re;delete this.$qt;if(this.deferredDrawEvent){isc.Page.clearEvent(this.deferredDrawEvent);delete this.deferredDrawEvent}
-if(this.peers){for(var _3=this.peers,i=0;i<_3.length;i++){_3[i].clear(true)}}
+this.$rk();if(this._eventMask)this.ns.EH.unregisterMaskableItem(this);if(this==isc.Canvas.$rl)isc.Canvas.hideResizeThumbs();if(this.$kn)this.$qp();if(this.children){for(var _3=this.children,i=0;i<_3.length;i++){var _5=_3[i];if(!isc.isA.Canvas(_5))continue;_5.$74w=true;_5.clear(true);_5.$74w=null}}
+if(this.getHandle())this.clearHandle();if(this.parentElement)this.parentElement.childCleared(this);if(this.masterElement)this.masterElement.peerCleared(this);delete this.$re;delete this.$qt;if(this.deferredDrawEvent){isc.Page.clearEvent(this.deferredDrawEvent);delete this.deferredDrawEvent}
+if(this.peers){for(var _3=this.peers,i=0;i<_3.length;i++){if(this.$74w)_3[i].$74w=true;_3[i].clear(true);_3[i].$74w=null}}
 if(this.canAcceptDrop)this.ns.EH.unregisterDroppableItem(this);this.setDrawnState(isc.Canvas.UNDRAWN);delete this.$66p}
 ,isc.A.destroy=function(_1){if(this.doNotDestroy){this.clear();return}
-if(this.destroyed)return;this.destroying=true;if(this.$rm)isc.Timer.clearTimeout(this.$rn);this.hideClickMask();if(!this.$ih){this.$p6("destroys");if(!_1){this.logInfo("destroy()"+(this.children&&this.children.length>0?" ("+this.getChildCount()+" children) ":"")+(this.logIsDebugEnabled("destroys")?this.getStackTrace():""),"destroys")}}
-if(isc.Hover.lastHoverCanvas==this)isc.Hover.hide();this.clear(true);if(this.children){for(var _2=this.children.duplicate(),i=0;i<_2.length;i++){var _4=_2[i];if(!isc.isA.Canvas(_4))continue;_4.destroy(true)}}
+if(this.destroyed)return;this.destroying=true;if(this.$rm)isc.Timer.clearTimeout(this.$rn);this.hideClickMask();this.$75s(true,_1);if(isc.Hover.lastHoverCanvas==this)isc.Hover.hide();this.clear(true);this.deparent();this.depeer();if(this.children){for(var _2=this.children.duplicate(),i=0;i<_2.length;i++){var _4=_2[i];if(!isc.isA.Canvas(_4))continue;_4.destroy(true)}}
 if(this.peers){for(var _2=this.peers.duplicate(),i=0;i<_2.length;i++){_2[i].destroy(true)}}
 delete this.peers;delete this.children;if(this.hscrollbar&&!this.hscrollbar.destroyed){this.hscrollbar.destroy(true);delete this.hscrollbar}
 if(this.vscrollbar&&!this.vscrollbar.destroyed){this.vscrollbar.destroy(true);delete this.vscrollbar}
-this.deparent();this.depeer();if(this.eventProxy!=null)this.clearEventProxy();if(this.$kt!=null){for(var _2=this.$kt.duplicate(),i=0;i<_2.length;i++){_2[i].clearEventProxy()}}
+if(this.$542){var _5=this.$542;for(var _6 in _5){var _7=_5[_6];for(var i=0;i<_7.length;i++){var _8=_7[i],_4=_8?window[_8]:null;if(_4&&!_4.destroyed&&_4.destroy&&!_4.dontAutoDestroy)
+{_4.destroy()}}
+delete this[_6]}}
+if(this.eventProxy!=null)this.clearEventProxy();if(this.$kt!=null){for(var _2=this.$kt.duplicate(),i=0;i<_2.length;i++){_2[i].clearEventProxy()}}
 if(this.locatorParent&&this.locatorParent.locatorChildDestroyed){this.locatorParent.locatorChildDestroyed(this)}
-delete this.locatorParent;this._canvasList();isc.Canvas.$ro(this);this.$rp();isc.EH.canvasDestroyed(this);isc.ClassFactory.dereferenceGlobalID(this);if(this.pointersToThis!=null){for(var i=0;i<this.pointersToThis.length;i++){var _5=this.pointersToThis[i];if(_5.object&&(_5.object[_5.property]==this)){var _6;_5.object[_5.property]=_6}}
+delete this.locatorParent;this._canvasList();isc.Canvas.$ro(this);this.$rp();isc.EH.canvasDestroyed(this);isc.ClassFactory.dereferenceGlobalID(this);if(this.pointersToThis!=null){for(var i=0;i<this.pointersToThis.length;i++){var _9=this.pointersToThis[i];if(_9.object&&(_9.object[_9.property]==this)){var _10;_9.object[_9.property]=_10}}
 delete this.pointersToThis}
-if(this.$rr){for(var _7 in this){delete this[_7]}}
+if(this.$rr){for(var _11 in this){delete this[_11]}}
 this.$63x();this.destroyed=true}
-,isc.A.markForDestroy=function(){if(isc.$cv)arguments.$cw=this;if(this.destroyed||this.destroying||this.isPendingDestroy())return;this.$65i=true;if(this.logIsInfoEnabled("destroys")){this.logInfo("markForDestroy() - setting up delayed destroy() call for this component.","destroys")}
-isc.Canvas.scheduleDestroy(this)}
+,isc.A.markForDestroy=function(){if(isc.$cv)arguments.$cw=this;if(this.destroyed||this.destroying||this.isPendingDestroy())return;this.$65i=true;this.$75s(false,false);isc.Canvas.scheduleDestroy(this)}
 ,isc.A.isPendingDestroy=function(){return!this.destroyed&&!this.destroying&&(this.$65i==true)}
-,isc.A.clearHandle=function(){if(!this.getHandle())return;this.$p6("clears");this.getHandle().eventProxy=null;this.getClipHandle().eventProxy=null;var _1=this.getClipHandle();this.$q3=null;this.$rs=null;this._clipDiv=null;isc.Element.clear(_1)}
+,isc.A.$75s=function(_1,_2){if(this.$ih)return;if(_1)this.$p6("destroys");if(!_2&&this.logIsInfoEnabled("destroys")){this.logInfo((_1?"destroy()":"markForDestroy()")+(this.children&&this.children.length>0?" ("+this.getChildCount()+" children) ":"")+(this.logIsDebugEnabled("destroys")?this.getStackTrace():""),"destroys")}}
+,isc.A.clearHandle=function(){if(!this.getHandle())return;this.$p6("clears");this.getHandle().eventProxy=null;this.getClipHandle().eventProxy=null;var _1=this.getClipHandle();this.$q3=null;this.$rs=null;this._clipDiv=null;isc.Element.clear(_1,this._clearWithRemoveChild)}
 ,isc.A.replaceWith=function(_1){if(!isc.isAn.Object(_1))return;var _2;if(isc.Browser.isDOM){var _3=isc.ClassFactory.getNextGlobalID();isc.Element.insertAdjacentHTML(this.getClipHandle(),"afterEnd","<DIV ID="+_3+"></DIV>");var _2=this.getDocument().getElementById(_3);_1.drawContext={element:_2}}
 var _4=this.parentElement,_5=this.masterElement,_6=(isc.isA.Layout(_4)&&_4.hasMember(this)),_7=(_6?_4.getMemberNumber(this):0);this.destroy();if(isc.isA.Canvas(_1)){_1.clear()}else{_1.autoDraw=false;_1=isc.ClassFactory.newInstance(_1);if(_1==null){this.logWarn("canvas.replaceWith(): Unable to create a widget "+"instance from the argument passed in.  Returning.")
 return}}
@@ -1918,7 +1988,7 @@ return _1}
 return _4}
 if(!this.$rt)this.$rt={};if(!this.$rt[_1])
 this.$rt[_1]=isc.ClassFactory.getDOMID(this.getID(),_1);return this.$rt[_1]}
-,isc.A.$557=function(_1){if(!this.$rt)return null;for(var _2 in this.$rt){if(_2==_1)return this.$rt[_2]}}
+,isc.A.$557=function(_1){if(!this.$rt)return null;for(var _2 in this.$rt){if(this.$rt[_2]==_1)return _2}}
 ,isc.A.$63x=function(){if(!this.reuseDOMIDs)return;if(this.$63y){for(var i=0;i<this.$63y.length;i++){isc.ClassFactory.releaseDOMID(this.$63y[i])}}
 if(this.$rt){for(var i in this.$rt){isc.ClassFactory.releaseDOMID(this.$rt[i])}}}
 ,isc.A.getCanvasName=function(){if(!this.$ru)this.$ru=this.$qs(this.$og,true);return this.$ru}
@@ -1927,20 +1997,20 @@ if(this.$rt){for(var i in this.$rt){isc.ClassFactory.releaseDOMID(this.$rt[i])}}
 _2.$r1=" accessKey="}
 var _8=isc.Browser.isMoz;var _9=this.opacity;if(!isc.Browser.isIE){if(_9!=null)_9=_9/ 100}
 if(isc.Browser.isMoz){if(this.smoothFade&&(_9==1||_9==null))_9=0.9999}
-if(this.useClipDiv){var _10=this.containsIFrame(),_11=this.getCurrentCursor();var _12,_13=this._useNativeTabIndex;if(_13&&this.$kk()){_12=isc.SB.concat(_2.$ry,this.$qn(),_2.$rz,this.$qo(),!this.isDisabled()?_2.$r0+this.getTabIndex():null,(!this.$qc()&&this.accessKey!=null)?_2.$r1+this.accessKey:null)}
-var _14=isc.StringBuffer.concat("<div id='",this.$rv(),"' eventProxy=",_4,(this.className?" class='"+this.className+"'":""),_12," style='","POSITION:",this.position,";LEFT:",this.left,"px;TOP:",this.top,"px;WIDTH:",_6,"px;HEIGHT:",_7,"px;Z-INDEX:",this.zIndex,(this.visibility==_2.INHERIT?"":";VISIBILITY:"+this.visibility),(this.backgroundColor==null?"":";BACKGROUND-COLOR:"+this.backgroundColor),(this.backgroundImage==null?"":";BACKGROUND-IMAGE:url("+this.getImgURL(this.backgroundImage)+")"+";BACKGROUND-REPEAT:"+this.backgroundRepeat+(this.backgroundPosition?";BACKGROUND-POSITION:"+this.backgroundPosition:"")),(this.border?";BORDER:"+this.border:""),(this.padding!=null||this.$415?";PADDING:0px":""),this.$r2(),(_9!=null?(this.$65q?";-moz-opacity:":";opacity:")+_9:""),(_8?";-moz-box-sizing:border-box":null),(_8&&_13&&this.mozOutlineOffset!=null?";-moz-outline-offset:"+this.mozOutlineOffset:null),(_8&&_13&&this.mozOutlineColor!=null?";-moz-outline-color:"+this.mozOutlineColor:null),(_8&&_13&&!this.showFocusOutline?";-moz-outline-style:none":null),";OVERFLOW:",_3,";' ONSCROLL='return "+_4+".$lh()'>","<div id='",this.getCanvasName(),"' eventProxy='",_4,(this.textDirection!=null?"' dir='"+this.textDirection:""),"' style='POSITION:relative;VISIBILITY:inherit",(!this.$r3&&!isc.Browser.isOpera&&!((isc.Browser.isSafari||isc.Browser.isFirefox)&&_10)?";FLOAT:left":""),";Z-INDEX:",this.zIndex,(_11==_2.AUTO?"":";CURSOR:"+_11),(this.padding!=null?";PADDING:"+this.padding+"px":""),(this.topPadding!=null?";padding-top:"+this.topPadding+"px":""),(this.bottomPadding!=null?";padding-bottom:"+this.bottomPadding+"px":""),(this.leftPadding!=null?";padding-left:"+this.leftPadding+"px":""),(this.rightPadding!=null?";padding-right:"+this.rightPadding+"px":""),";'>")}else{if(!_2.$r4){_2.$r5=" style='POSITION:absolute;LEFT:";_2.$r6=" style='POSITION:relative;LEFT:";_2.$bd=" class='";_2.$416="'";_2.$r7=";VISIBILITY:";_2.$r8=";CURSOR:";var _15=_2.$r4=[];_15[0]="<div id=";_15[2]=" eventProxy=";_15[15]="px;TOP:";_15[22]="px;WIDTH:";_15[28]="px;HEIGHT:";_15[34]="px;Z-INDEX:";_15[44]=";OVERFLOW:";_15[59]="' ONSCROLL='return ";_15[61]=".$lh()' "}
-var _15=_2.$r4;_15[1]=this.getCanvasName();_15[3]=_4;if(this.className!=null){_15[4]=_2.$bd;_15[5]=this.className;_15[6]=_2.$416}else{_15[4]=_15[5]=_15[6]=null}
-_15[7]=(this.textDirection!=null?" dir="+this.textDirection:null);_15[8]=(this.position==_2.RELATIVE?_2.$r6:_2.$r5);isc.$bk(_15,this.left,9,6);isc.$bk(_15,this.top,16,6);isc.$bk(_15,_6,23,5);isc.$bk(_15,_7,29,5);if(this.zIndex!=_2.AUTO)isc.$bk(_15,this.zIndex,35,9);else{_15[35]=this.zIndex;_15[36]=_15[37]=_15[38]=_15[39]=_15[40]=_15[41]=_15[42]=_15[43]=null}
-_15[45]=_3;if(this.visibility!=_2.INHERIT){_15[46]=_2.$r7;_15[47]=this.visibility}else{_15[46]=_15[47]=null}
-_15[48]=(this.backgroundColor==null?null:";BACKGROUND-COLOR:"+this.backgroundColor);_15[49]=(this.backgroundImage==null?null:";BACKGROUND-IMAGE:url("+this.getImgURL(this.backgroundImage)+");BACKGROUND-REPEAT:"+this.backgroundRepeat+(this.backgroundPosition?";BACKGROUND-POSITION:"+this.backgroundPosition:""));_15[50]=(_8?";-moz-box-sizing:border-box":null);var _11=this.getCurrentCursor();if(_11==_2.AUTO){_15[51]=_15[52]=null}else{_15[51]=_2.$r8;_15[52]=_11}
-_15[53]=this.$r2();_15[54]=(this.padding!=null?";PADDING:"+this.padding+isc.px:null);if(this.topPadding!=null)
-_15[54]=(_15[54]||"")+";padding-top:"+this.topPadding+"px";if(this.bottomPadding!=null)
-_15[54]=(_15[54]||"")+";padding-bottom:"+this.bottomPadding+"px";if(this.leftPadding!=null)
-_15[54]=(_15[54]||"")+";padding-left:"+this.leftPadding+"px";if(this.rightPadding!=null)
-_15[54]=(_15[54]||"")+";padding-right:"+this.rightPadding+"px";_15[55]=(this.border?";BORDER:"+this.border:null);if(isc.Browser.isIE){_15[56]=(_9==null?null:";filter:progid:DXImageTransform.Microsoft.Alpha(opacity="+_9+")");if(this.$r9){_15[57]=";filter:progid:DXImageTransform.Microsoft.iris(irisStyle=circle)"}else{_15[57]=null}}else{if(_9!=null){_15[56]=(this.$65q?";-moz-opacity:":";opacity:")+_9}else{_15[56]=null}}
-_15[60]=_4;var _16=64;if(this.$kk()&&this._useNativeTabIndex){_15[64]=_2.$ry;_15[65]=this.$qn();_15[66]=_2.$rz;_15[67]=this.$qo();if(!this.isDisabled()){_15[68]=_2.$r0;isc.$bk(_15,this.getTabIndex(),69,5);if(this.accessKey!=null){_15[74]=_2.$r1;_15[75]=this.accessKey;_16=76}else _16=74;if(!this.showFocusOutline){if(!_2.$sa)_2.$sa=" hideFocus=true";_15[_16]=_2.$sa;_16+=1}}else _16=68}
-_15.length=_16;_15[_16]=this.$oa;if(_1)return _15;return _15.join(isc.emptyString)}
-return _14}
+if(this.useClipDiv){var _10=this.getCurrentCursor(),_11,_12=this._useNativeTabIndex;this.$73u=this.$73v();if(_12&&this.$kk()){_11=isc.SB.concat(_2.$ry,this.$qn(),_2.$rz,this.$qo(),!this.isDisabled()?_2.$r0+this.getTabIndex():null,(!this.$qc()&&this.accessKey!=null)?_2.$r1+this.accessKey:null)}
+var _13=isc.StringBuffer.concat("<div id='",this.$rv(),"' eventProxy=",_4,(this.className?" class='"+this.className+"'":""),_11," style='","POSITION:",this.position,";LEFT:",this.left,"px;TOP:",this.top,"px;WIDTH:",_6,"px;HEIGHT:",_7,"px;Z-INDEX:",this.zIndex,(this.visibility==_2.INHERIT?"":";VISIBILITY:"+this.visibility),(this.backgroundColor==null?"":";BACKGROUND-COLOR:"+this.backgroundColor),(this.backgroundImage==null?"":";BACKGROUND-IMAGE:url("+this.getImgURL(this.backgroundImage)+")"+";BACKGROUND-REPEAT:"+this.backgroundRepeat+(this.backgroundPosition?";BACKGROUND-POSITION:"+this.backgroundPosition:"")),(this.border?";BORDER:"+this.border:""),(this.padding!=null||this.$415?";PADDING:0px":""),this.$r2(),(_9!=null?(this.$65q?";-moz-opacity:":";opacity:")+_9:""),(_8?";-moz-box-sizing:border-box":null),(_8&&_12&&this.mozOutlineOffset!=null?";-moz-outline-offset:"+this.mozOutlineOffset:null),(_8&&_12&&this.mozOutlineColor!=null?";-moz-outline-color:"+this.mozOutlineColor:null),(_8&&_12&&!this.showFocusOutline?";-moz-outline-style:none":null),";OVERFLOW:",_3,";' ONSCROLL='return "+_4+".$lh()'>","<div id='",this.getCanvasName(),"' eventProxy='",_4,(this.textDirection!=null?"' dir='"+this.textDirection:""),"' style='POSITION:relative;VISIBILITY:inherit",this.$73u?";FLOAT:"+this.$73u:"",";Z-INDEX:",this.zIndex,(_10==_2.AUTO?"":";CURSOR:"+_10),(this.padding!=null?";PADDING:"+this.padding+"px":""),(this.topPadding!=null?";padding-top:"+this.topPadding+"px":""),(this.bottomPadding!=null?";padding-bottom:"+this.bottomPadding+"px":""),(this.leftPadding!=null?";padding-left:"+this.leftPadding+"px":""),(this.rightPadding!=null?";padding-right:"+this.rightPadding+"px":""),";'>")}else{if(!_2.$r4){_2.$r5=" style='POSITION:absolute;LEFT:";_2.$r6=" style='POSITION:relative;LEFT:";_2.$bd=" class='";_2.$416="'";_2.$r7=";VISIBILITY:";_2.$r8=";CURSOR:";var _14=_2.$r4=[];_14[0]="<div id=";_14[2]=" eventProxy=";_14[15]="px;TOP:";_14[22]="px;WIDTH:";_14[28]="px;HEIGHT:";_14[34]="px;Z-INDEX:";_14[44]=";OVERFLOW:";_14[59]="' ONSCROLL='return ";_14[61]=".$lh()' "}
+var _14=_2.$r4;_14[1]=this.getCanvasName();_14[3]=_4;if(this.className!=null){_14[4]=_2.$bd;_14[5]=this.className;_14[6]=_2.$416}else{_14[4]=_14[5]=_14[6]=null}
+_14[7]=(this.textDirection!=null?" dir="+this.textDirection:null);_14[8]=(this.position==_2.RELATIVE?_2.$r6:_2.$r5);isc.$bk(_14,this.left,9,6);isc.$bk(_14,this.top,16,6);isc.$bk(_14,_6,23,5);isc.$bk(_14,_7,29,5);if(this.zIndex!=_2.AUTO)isc.$bk(_14,this.zIndex,35,9);else{_14[35]=this.zIndex;_14[36]=_14[37]=_14[38]=_14[39]=_14[40]=_14[41]=_14[42]=_14[43]=null}
+_14[45]=_3;if(this.visibility!=_2.INHERIT){_14[46]=_2.$r7;_14[47]=this.visibility}else{_14[46]=_14[47]=null}
+_14[48]=(this.backgroundColor==null?null:";BACKGROUND-COLOR:"+this.backgroundColor);_14[49]=(this.backgroundImage==null?null:";BACKGROUND-IMAGE:url("+this.getImgURL(this.backgroundImage)+");BACKGROUND-REPEAT:"+this.backgroundRepeat+(this.backgroundPosition?";BACKGROUND-POSITION:"+this.backgroundPosition:""));_14[50]=(_8?";-moz-box-sizing:border-box":null);var _10=this.getCurrentCursor();if(_10==_2.AUTO){_14[51]=_14[52]=null}else{_14[51]=_2.$r8;_14[52]=_10}
+_14[53]=this.$r2();_14[54]=(this.padding!=null?";PADDING:"+this.padding+isc.px:null);if(this.topPadding!=null)
+_14[54]=(_14[54]||"")+";padding-top:"+this.topPadding+"px";if(this.bottomPadding!=null)
+_14[54]=(_14[54]||"")+";padding-bottom:"+this.bottomPadding+"px";if(this.leftPadding!=null)
+_14[54]=(_14[54]||"")+";padding-left:"+this.leftPadding+"px";if(this.rightPadding!=null)
+_14[54]=(_14[54]||"")+";padding-right:"+this.rightPadding+"px";_14[55]=(this.border?";BORDER:"+this.border:null);if(isc.Browser.isIE){_14[56]=(_9==null?null:";filter:progid:DXImageTransform.Microsoft.Alpha(opacity="+_9+")");if(this.$r9){_14[57]=";filter:progid:DXImageTransform.Microsoft.iris(irisStyle=circle)"}else{_14[57]=null}}else{if(_9!=null){_14[56]=(this.$65q?";-moz-opacity:":";opacity:")+_9}else{_14[56]=null}}
+_14[60]=_4;var _15=64;if(this.$kk()&&this._useNativeTabIndex){_14[64]=_2.$ry;_14[65]=this.$qn();_14[66]=_2.$rz;_14[67]=this.$qo();if(!this.isDisabled()){_14[68]=_2.$r0;isc.$bk(_14,this.getTabIndex(),69,5);if(this.accessKey!=null){_14[74]=_2.$r1;_14[75]=this.accessKey;_15=76}else _15=74;if(!this.showFocusOutline){if(!_2.$sa)_2.$sa=" hideFocus=true";_14[_15]=_2.$sa;_15+=1}}else _15=68}
+_14.length=_15;_14[_15]=this.$oa;if(_1)return _14;return _14.join(isc.emptyString)}
+return _13}
 );isc.evalBoundary;isc.B.push(isc.A.$r2=function(){if(!this.$sb()&&this.$sc==null){if(this.margin==null)return null;return isc.SB.concat(isc.semi,this.$om,this.margin,isc.px)}
 var _1=this.$sd(),_2=isc.SB.concat(isc.semi,this.$oi,_1.left,isc.px,isc.semi,this.$oj,_1.right,isc.px,isc.semi,this.$ok,_1.top,isc.px,isc.semi,this.$ol,_1.bottom,isc.px);return _2}
 ,isc.A.getTagEnd=function(){if(this.useClipDiv)return this.$oo;return this.$on}
@@ -2010,7 +2080,7 @@ if(_14==null&&this.$kk()&&this.$sp){_14=this}
 if(_14!=null)_1.$sq(_14)}
 _1.draw();this.adjustOverflow("addChild")}
 return _1}
-,isc.A.$sn=function(){var _1=this.children;if(!_1||_1.length==0)return;for(var i=0;i<_1.length;i++){var _3=_1[i];_3.topElement=this.topElement;_3.$sn()}}
+,isc.A.$sn=function(){if(this.dataPath)this.setDataPath(this.dataPath);var _1=this.children;if(!_1||_1.length==0)return;for(var i=0;i<_1.length;i++){var _3=_1[i];_3.topElement=this.topElement;_3.$sn()}}
 ,isc.A.reparent=function(_1){if(this.getID()==_1.getID())return false;if((this.parentElement==_1.parentElement)&&this.getClipHandle()&&_1.getClipHandle()&&(this.getClipHandle().parentNode==_1.getClipHandle().parentNode)){return false}
 this._adjacentHandle=_1.getClipHandle();if(_1.parentElement){_1.parentElement.addChild(this)}else{if(this.parentElement)this.deparent();else this.clear();this.draw()}
 return true}
@@ -2179,13 +2249,13 @@ if(_5){for(var i=0;i<_5.length;i++){var _13=_5[i];_7.right+=_13.getVisibleWidth(
 if(this.$sb()){var _14=this.$pq();_7.left+=_14.$tb,_7.right+=_14.$tc,_7.top+=_14.$td,_7.bottom+=_14.$te}
 return(this.$s8=_7)}
 );isc.evalBoundary;isc.B.push(isc.A.$ta=function(){var _1=this.$if;this.$if=false;var _2=this.$s9();this.$if=_1;return _2}
-,isc.A.$s9=function(){if(this.$s7!=null)return this.$s7;var _1={},_2=isc.px;if(!this.isDrawn()){var _3=this.margin;if(isc.isA.String(_3)){if(_3.endsWith(_2)||parseInt(_3)+""==_3)
+,isc.A.$s9=function(){if(this.$s7!=null)return this.$s7;var _1={},_2=isc.px;if(!this.isDrawn()){var _3=this.margin;if(isc.isA.String(_3)){if(isc.endsWith(_3,_2)||parseInt(_3)+isc.emptyString==_3)
 _3=parseInt(_3)}
-if(isc.isA.Number(_3)){_1.top=_3;_1.bottom=_3;_1.left=_3;_1.right=_3;this.$s7=_1;return _1}}else{var _4=this.getStyleHandle(),_5=_4.marginLeft,_6=_4.marginRight,_7=_4.marginTop,_8=_4.marginBottom;if(isc.isA.String(_5)&&_5.endsWith(_2))
-_5=parseInt(_5);if(isc.isA.String(_6)&&_6.endsWith(_2))
+if(isc.isA.Number(_3)){_1.top=_3;_1.bottom=_3;_1.left=_3;_1.right=_3;this.$s7=_1;return _1}}else{var _4=this.getStyleHandle(),_5=_4.marginLeft,_6=_4.marginRight,_7=_4.marginTop,_8=_4.marginBottom;if(isc.isA.String(_5)&&isc.endsWith(_5,_2))
+_5=parseInt(_5);if(isc.isA.String(_6)&&isc.endsWith(_6,_2))
 _6=parseInt(_6)
-if(isc.isA.String(_7)&&_7.endsWith(_2))
-_7=parseInt(_7);if(isc.isA.String(_8)&&_8.endsWith(_2))
+if(isc.isA.String(_7)&&isc.endsWith(_7,_2))
+_7=parseInt(_7);if(isc.isA.String(_8)&&isc.endsWith(_8,_2))
 _8=parseInt(_8)
 if(isc.isA.Number(_5))_1.left=_5;if(isc.isA.Number(_6))_1.right=_6;if(isc.isA.Number(_7))_1.top=_7;if(isc.isA.Number(_8))_1.bottom=_8}
 if(this.className){if(!isc.isA.Number(_1.left))
@@ -2205,11 +2275,11 @@ return(this.$s7=_1)}
 ,isc.A.getHBorderSize=function(){return(this.getLeftBorderSize()+this.getRightBorderSize())}
 ,isc.A.getVBorderSize=function(){return this.getTopBorderSize()+this.getBottomBorderSize()}
 ,isc.A.$tj=function(){if(this.$tk!=null)return this.$tk;var _1={},_2=isc.px;if(!this.isDrawn()){var _3=this.border;if(_3!=null&&isc.contains(_3,_2)){var _4=_3.match(/\s*\d+px/g);if(isc.isAn.Array(_4))_4=parseInt(_4[0]);else _4=parseInt(_4);if(isc.isA.Number(_4)){this.$tk={left:_4,right:_4,top:_4,bottom:_4}
-return this.$tk}}}else{var _5=this.getStyleHandle(),_6=_5.borderLeftWidth,_7=_5.borderRightWidth,_8=_5.borderTopWidth,_9=_5.borderBottomWidth;if(isc.isA.String(_6)&&_6.endsWith(_2))
-_6=parseInt(_6);if(isc.isA.String(_7)&&_7.endsWith(_2))
+return this.$tk}}}else{var _5=this.getStyleHandle(),_6=_5.borderLeftWidth,_7=_5.borderRightWidth,_8=_5.borderTopWidth,_9=_5.borderBottomWidth;if(isc.isA.String(_6)&&isc.endsWith(_6,_2))
+_6=parseInt(_6);if(isc.isA.String(_7)&&isc.endsWith(_7,_2))
 _7=parseInt(_7)
-if(isc.isA.String(_8)&&_8.endsWith(_2))
-_8=parseInt(_8);if(isc.isA.String(_9)&&_9.endsWith(_2))
+if(isc.isA.String(_8)&&isc.endsWith(_8,_2))
+_8=parseInt(_8);if(isc.isA.String(_9)&&isc.endsWith(_9,_2))
 _9=parseInt(_9)
 if(isc.isA.Number(_6))_1.left=_6;if(isc.isA.Number(_7))_1.right=_7;if(isc.isA.Number(_8))_1.top=_8;if(isc.isA.Number(_9))_1.bottom=_9}
 if(this.className){if(!isc.isA.Number(_1.left))
@@ -2236,10 +2306,10 @@ if(_1==null){_3.style.padding=null;if(this.useClipDiv)this.getClipHandle().style
 ,isc.A.getRightPadding=function(){return this.$tq().right}
 ,isc.A.getVPadding=function(){return this.getTopPadding()+this.getBottomPadding()}
 ,isc.A.getHPadding=function(){return this.getLeftPadding()+this.getRightPadding()}
-,isc.A.$tq=function(){if(this.$tp!=null)return this.$tp;var _1={},_2=isc.px;if(this.isDrawn()&&this.getHandle()!=null){var _3=this.getHandle().style;if(_3.paddingTop!=null&&!isc.isAn.emptyString(_3.paddingTop)&&_3.paddingTop.endsWith(_2)){_1.top=parseInt(_3.paddingTop)}
-if(_3.paddingBottom!=null&&!isc.isAn.emptyString(_3.paddingBottom)&&_3.paddingBottom.endsWith(_2)){_1.bottom=parseInt(_3.paddingBottom)}
-if(_3.paddingLeft!=null&&!isc.isAn.emptyString(_3.paddingLeft)&&_3.paddingLeft.endsWith(_2)){_1.left=parseInt(_3.paddingLeft)}
-if(_3.paddingRight!=null&&!isc.isAn.emptyString(_3.paddingRight)&&_3.paddingRight.endsWith(_2)){_1.right=parseInt(_3.paddingRight)}}else if(this.padding){_1.left=_1.right=_1.bottom=_1.top=parseInt(this.padding)}
+,isc.A.$tq=function(){if(this.$tp!=null)return this.$tp;var _1={},_2=isc.px;if(this.isDrawn()&&this.getHandle()!=null){var _3=this.getHandle().style;if(_3.paddingTop!=null&&!isc.isAn.emptyString(_3.paddingTop)&&isc.endsWith(_3.paddingTop,_2)){_1.top=parseInt(_3.paddingTop)}
+if(_3.paddingBottom!=null&&!isc.isAn.emptyString(_3.paddingBottom)&&isc.endsWith(_3.paddingBottom,_2)){_1.bottom=parseInt(_3.paddingBottom)}
+if(_3.paddingLeft!=null&&!isc.isAn.emptyString(_3.paddingLeft)&&isc.endsWith(_3.paddingLeft,_2)){_1.left=parseInt(_3.paddingLeft)}
+if(_3.paddingRight!=null&&!isc.isAn.emptyString(_3.paddingRight)&&isc.endsWith(_3.paddingRight,_2)){_1.right=parseInt(_3.paddingRight)}}else if(this.padding){_1.left=_1.right=_1.bottom=_1.top=parseInt(this.padding)}
 if(this.className){if(!isc.isA.Number(_1.left))_1.left=isc.Element.$tr(this.className);if(!isc.isA.Number(_1.right))_1.right=isc.Element.$ts(this.className);if(!isc.isA.Number(_1.top))_1.top=isc.Element.$tt(this.className);if(!isc.isA.Number(_1.bottom))_1.bottom=isc.Element.$tu(this.className)}else{if(!isc.isA.Number(_1.left))_1.left=0;if(!isc.isA.Number(_1.right))_1.right=0;if(!isc.isA.Number(_1.top))_1.top=0;if(!isc.isA.Number(_1.bottom))_1.bottom=0}
 return(this.$tp=_1)}
 ,isc.A.containsPoint=function(_1,_2,_3){if(isc.$cv)arguments.$cw=this;if(!this.isVisible()||!this.isDrawn())return false;if(_3==null)_3=false;var _4=this.getPageLeft()+this.getLeftMargin();if(_1<_4)return false;var _5=this.getPageTop()+this.getTopMargin();if(_2<_5)return false;var _6=_3?this.getViewportWidth():(this.getVisibleWidth()-this.getHMarginSize());if(_1>_4+_6)return false;var _7=_3?this.getViewportHeight():(this.getVisibleHeight()-this.getVMarginSize());if(_2>_5+_7)return false;var _8=0,_9=0;var _10=this.$tv=this.$tv||[];_10.length=1;_10[0]=this;var i=1,_12=this;while(_12.parentElement!=null){_12=_12.parentElement
@@ -2312,11 +2382,11 @@ _1-=this.getScrollbarSize();return _1-this.getHMarginBorderPad()}
 ,isc.A.getHMarginBorderPad=function(){return this.getHMarginSize()+this.getHBorderPad()}
 ,isc.A.getClipWidth=function(){return this.getVisibleWidth()}
 ,isc.A.getClipHeight=function(){return this.getVisibleHeight()}
-,isc.A.getVisibleWidth=function(_1){if((this.$if||this.$pu)&&(this.overflow==isc.Canvas.VISIBLE||this.overflow==isc.Canvas.CLIP_V)){return Math.max(this.width,(this.getScrollWidth(_1)+this.getHMarginBorder()))}else{var _2=this.isAnimating(this.$do)?this.$showAnimationInfo:this.isAnimating(this.$zb)?this.$hideAnimationInfo:null;if(_2!=null&&!_2.$1l&&this.vscrollOn){var _3=0;if(this.vscrollbar.visibility==isc.Canvas.HIDDEN){_3=this.getScrollbarSize()}else{_3=this.getScrollbarSize()-this.vscrollbar.getWidth()}
+,isc.A.getVisibleWidth=function(_1){if((this.$if||this.$pu)&&(this.overflow==isc.Canvas.VISIBLE||this.overflow==isc.Canvas.CLIP_V)){return Math.max(this.width,(this.getScrollWidth(_1)+this.getHMarginBorder()))}else{var _2=this.isAnimating(this.$do)?this.$showAnimationInfo:this.isAnimating(this.$zb)?this.$hideAnimationInfo:null;if(_2!=null&&!_2.$1l&&this.vscrollOn){var _3=0;if(this.vscrollbar.visibility==isc.Canvas.HIDDEN){_3=this.getScrollbarSize()}else{_3=this.getScrollbarSize()-this.getScrollbarSize()}
 return Math.max(this.getWidth()-_3,1)}
 return this.getWidth()}}
 ,isc.A.getVisibleHeight=function(_1){if((this.$if||this.$pu)&&(this.overflow==isc.Canvas.VISIBLE||this.overflow==isc.Canvas.CLIP_H))
-{return Math.max(this.getHeight(),(this.getScrollHeight(_1)+this.getVMarginBorder()))}else{var _2=this.isAnimating(this.$do)?this.$showAnimationInfo:this.isAnimating(this.$zb)?this.$hideAnimationInfo:null;if(_2!=null&&_2.$1l&&this.hscrollOn){var _3=0;if(this.hscrollbar.visibility==isc.Canvas.HIDDEN){_3=this.getScrollbarSize()}else{_3=this.getScrollbarSize()-this.hscrollbar.getHeight()}
+{return Math.max(this.getHeight(),(this.getScrollHeight(_1)+this.getVMarginBorder()))}else{var _2=this.isAnimating(this.$do)?this.$showAnimationInfo:this.isAnimating(this.$zb)?this.$hideAnimationInfo:null;if(_2!=null&&_2.$1l&&this.hscrollOn){var _3=0;if(this.hscrollbar&&this.hscrollbar.visibility==isc.Canvas.HIDDEN){_3=this.getScrollbarSize()}else{_3=this.getScrollbarSize()-this.getScrollbarSize()}
 return Math.max(this.getHeight()-_3,1)}
 return this.getHeight()}}
 ,isc.A.getPeerRect=function(){var _1=this.getPageRect();if(this.peers==null)return _1;for(var i=0;i<this.peers.length;i++){var _3=this.peers[i];if(!_3.isDrawn()||(this.isVisible()&&!_3.isVisible()))continue;if((!this.vscrollOn&&_3==this.vscrollbar)||(!this.hscrollOn&&_3==this.hscrollbar))continue;var _4=_3.getPageRect();if(_4[0]<_1[0])_1[0]=_4[0];if(_4[1]<_1[1])_1[1]=_4[1];var _5=_4[0]+_4[2];if(_5>_1[0]+_1[2])_1[2]=_5-_1[0];var _6=_4[1]+_4[3];if(_6>_1[1]+_1[3])_1[3]=_6-_1[1]}
@@ -2357,7 +2427,7 @@ var _5=this.getDelta(this.$oz,_1,this.getLeft()),_6=this.getDelta(this.$o0,_2,th
 ,isc.A.moveToEvent=function(_1,_2){var _3=this.ns.EH.getLastEvent(),x=_3.x,y=_3.y;if(isc.isA.Number(_1))x-=_1;if(isc.isA.Number(_2))y-=_2;var _6=this.ns.EH;var _7=_6.getDragTarget(_3);var _8;if(_6.getDragTarget().canDrop){_8=_6.getDropTarget(_3);if(_8){if(!_7.snapOnDrop||!_8.shouldSnapOnDrop(_7)){_8=null}}else{_8=_6.getDragTarget(_3).parentElement}}else{_8=_6.getDragTarget(_3).parentElement}
 if(isc.isA.Canvas(_8)&&(_7.snapToGrid==true||(_7.snapToGrid==null&&_8.childrenSnapToGrid==true)))
 {if(_8.noSnapDragOffset(this)){x=_3.x,y=_3.y}
-if(_8.snapAxis==isc.Canvas.HORIZONTAL||_8.snapAxis==isc.Canvas.BOTH)
+if(_8.suppressHSnapOffset==true)x=_3.x;if(_8.suppressVSnapOffset==true)y=_3.y;if(_8.snapAxis==isc.Canvas.HORIZONTAL||_8.snapAxis==isc.Canvas.BOTH)
 {var _9=(_8.getPageLeft()+_8.getLeftBorderSize()+_8.getLeftMargin()-_8.getScrollLeft());x-=_9;x=_8.getHSnapPosition(x)+_8.getHSnapOrigin(_7);x+=_9}
 if(_8.snapAxis==isc.Canvas.VERTICAL||_8.snapAxis==isc.Canvas.BOTH)
 {var _9=(_8.getPageTop()+_8.getTopBorderSize()+_8.getTopMargin()-_8.getScrollTop())
@@ -2449,7 +2519,7 @@ if(_2<0||_2>_4)return 0;var _7=_1*
 ((_2/ _4)*(_5-_6)+_6);return parseInt(_7)}
 ,isc.A.hasInherentHeight=function(){if(this.inherentHeight!=null)return this.inherentHeight;return(this.children==null&&(this.overflow==isc.Canvas.VISIBLE||this.overflow==isc.Canvas.CLIP_H))}
 ,isc.A.hasInherentWidth=function(){if(this.inherentWidth!=null)return this.inherentWidth;return(this.children==null&&(this.overflow==isc.Canvas.VISIBLE||this.overflow==isc.Canvas.CLIP_V))}
-,isc.A.canOverflowWidth=function(){return this.overflow==isc.Canvas.VISIBLE||this.overflow==isc.Canvas.CLIP_H}
+);isc.evalBoundary;isc.B.push(isc.A.canOverflowWidth=function(){return this.overflow==isc.Canvas.VISIBLE||this.overflow==isc.Canvas.CLIP_H}
 ,isc.A.canOverflowHeight=function(){return this.overflow==isc.Canvas.VISIBLE||this.overflow==isc.Canvas.CLIP_V}
 ,isc.A.getOverflow=function(){return this.overflow}
 ,isc.A.setOverflow=function(_1){if(this.$va!=null&&!this.$vb)
@@ -2462,7 +2532,7 @@ var _3=this.getStyleHandle();_3.overflow=this.$rw();var _4=this.$rx();_3.width=_
 {_3.clip=(isc.Browser.isIE?"rect(auto)":"")}
 this.adjustOverflow("setOverflow");if(_2==isc.Canvas.VISIBLE&&_1!=isc.Canvas.VISIBLE){var _5=Math.max(this.getScrollWidth()-this.getInnerWidth(),0),_6=Math.max(this.getScrollHeight()-this.getInnerHeight(),0);if(_5>0||_6>0)this.$5y(-_5,-_6,"overflow changed")}else if(_2!=isc.Canvas.VISIBLE&&_1==isc.Canvas.VISIBLE){var _5=Math.max(this.getScrollWidth()-this.getInnerWidth(),0),_6=Math.max(this.getScrollHeight()-this.getInnerHeight(),0);if(_5>0||_6>0)this.$5y(_5,_6,"overflow changed")}
 if((_1==isc.Canvas.HIDDEN||_1==isc.Canvas.VISIBLE)&&(_2==isc.Canvas.HIDDEN||_2==isc.Canvas.VISIBLE)){}else{this.$ur()}}
-);isc.evalBoundary;isc.B.push(isc.A.$t6=function(_1){if(!this.isDrawn()||this.isDirty()||this.destroying||this.$66p)return;if(!this.$rm){if(this.logIsDebugEnabled())
+,isc.A.$t6=function(_1){if(!this.isDrawn()||this.isDirty()||this.destroying||this.$66p)return;if(!this.$rm){if(this.logIsDebugEnabled())
 this.logDebug("delaying adjustOverflow: "+(_1?_1:this.getStackTrace()));var _2=this;this.$rn=isc.Timer.setTimeout(function(){if(!_2.destroyed)_2.adjustOverflow(_1,true)},0)}
 this.$rm=true}
 ,isc.A.adjustForContent=function(_1){var _2="adjustForContent() called";if(_1)this.adjustOverflow(_2);else this.$t6(_2)}
@@ -2498,7 +2568,7 @@ if(this.snapTo!=null&&_11&&(_1==this.$oe||_1==this.$ny))
 {this.$qw(true)}
 this.$uy=_6;this.$uz=_7;if((_2!=null&&_2!=_6)||(_3!=null&&_3!=_7))
 {if(!_11&&_1==this.$nx)return;this.$5y(_6-_2,_7-_3,this.$pg)}}else if(this.overflow==_5.HIDDEN){this.$q5(this.left,this.top,this.getWidth(),this.getHeight());if(isc.Browser.isIE&&this.isRTL()){this.scrollLeft=this.getClipHandle().scrollLeft}
-this.$51s()}else if(this.overflow==_5.CLIP_H){var _7=this.getScrollHeight(),_13=this.getVMarginBorder(),_17=Math.max(_7+_13,this.getHeight());this.$uz=_17;this.setClip(0,this.getWidth(),_17,0);this.$q5(this.left,this.top,this.getWidth(),_17)}else if(this.overflow==_5.CLIP_V){var _6=this.getScrollWidth(),_12=this.getHMarginBorder();if((isc.Browser.isIE||isc.Browser.isMoz||isc.Browser.isOpera)&&(_6>this.getInnerWidth())&&(this.$uy==_6)){this.$q5(this.left,this.top,this.getWidth(),this.getHeight());_6=this.getScrollWidth(true)
+if(this.scrollLeft!=0||this.scrollTop!=0)this.$51s()}else if(this.overflow==_5.CLIP_H){var _7=this.getScrollHeight(),_13=this.getVMarginBorder(),_17=Math.max(_7+_13,this.getHeight());this.$uz=_17;this.setClip(0,this.getWidth(),_17,0);this.$q5(this.left,this.top,this.getWidth(),_17)}else if(this.overflow==_5.CLIP_V){var _6=this.getScrollWidth(),_12=this.getHMarginBorder();if((isc.Browser.isIE||isc.Browser.isMoz||isc.Browser.isOpera)&&(_6>this.getInnerWidth())&&(this.$uy==_6)){this.$q5(this.left,this.top,this.getWidth(),this.getHeight());_6=this.getScrollWidth(true)
 if(_6>this.getInnerWidth()){this.$q5(this.left,this.top,_6+_12,this.getHeight())}}else{this.$q5(this.left,this.top,Math.max(_6+_12,this.getWidth()),this.getHeight())}
 var _18=Math.max(_6+_12,this.getWidth());this.setClip(0,_18,this.getHeight(),0);this.$uy=_18}else{if(isc.Browser.isIE&&this.showCustomScrollbars&&this.getScrollingMechanism()==isc.Canvas.NATIVE)
 {var _19=this.scrollLeft,_20=this.scrollTop;if(this.getScrollLeft()!=_19||this.getScrollTop()!=_20){this.$lh()}}
@@ -2524,16 +2594,16 @@ this.$51s()}
 if((this._useNativeTabIndex||this.$kn)&&_23!=this.$kk())
 {this.$ur()}}
 return true}
-,isc.A.$51s=function(){var _1=Math.max(0,this.getScrollBottom()),_2=Math.max(0,this.getScrollRight()),_3=this.getScrollLeft(),_4=this.getScrollTop(),_5=false;if(_3>_2){_5=true;_3=_2}
+,isc.A.$51s=function(){if(this.scrollLeft==0&&this.scrollTop==0)return;var _1=Math.max(0,this.getScrollBottom()),_2=Math.max(0,this.getScrollRight()),_3=this.getScrollLeft(),_4=this.getScrollTop(),_5=false;if(_3>_2){_5=true;_3=_2}
 if(_4>_1){_5=true;_4=_1}
 if(_5){this.scrollTo(_3,_4)}}
 ,isc.A.checkNativeScroll=function(){var _1=this.getScrollHandle();if(this.getScrollingMechanism()!=isc.Canvas.NATIVE||_1==null)return;if(_1.scrollLeft!=this.scrollLeft||_1.scrollTop!=this.scrollTop){this.scrollTo(this.scrollLeft,this.scrollTop)}}
-,isc.A.$u1=function(){var _1=this.hscrollbar;if(!_1){_1=this.hscrollbar=isc.ClassFactory.newInstance(this.scrollbarConstructor,{ID:this.getID()+"_hscroll",autoDraw:false,_generated:true,zIndex:this.getZIndex()+1,vertical:false,scrollTarget:this,visibility:this.visibility,$jp:false,$jo:false,$nu:false,$u3:false})}
+,isc.A.$u1=function(){var _1=this.hscrollbar;if(!_1){_1=this.hscrollbar=isc.ClassFactory.newInstance(this.scrollbarConstructor,{ID:this.getID()+"_hscroll",autoDraw:false,_generated:true,zIndex:this.getZIndex()+1,vertical:false,scrollTarget:this,visibility:this.visibility,$jp:false,$jo:false,_redrawWithParent:false,$u3:false})}
 if(!isc.Page.isLoaded()){var _2=this;isc.Page.setEvent("load",function(){if(!_2.destroyed)_2.$u1()});return}
 if(!this.hscrollOn)return;_1.setRect(this.getOffsetLeft()+this.getLeftMargin()+(this.vscrollOn&&this.isRTL()?this.scrollbarSize:0),this.getOffsetTop()+this.getHeight()-
 (this.getBottomMargin()+this.scrollbarSize),this.getOuterViewportWidth(),this.scrollbarSize);if(!_1.masterElement){this.addPeer(_1)}else{if(this.visibility!=isc.Canvas.HIDDEN)_1.show()}}
 ,isc.A.$u2=function(){var _1=this.vscrollbar
-if(!_1){_1=this.vscrollbar=isc.ClassFactory.newInstance(this.scrollbarConstructor,{ID:this.getID()+"_vscroll",autoDraw:false,_generated:true,zIndex:this.getZIndex()+1,vertical:true,scrollTarget:this,visibility:this.visibility,$jp:false,$jo:false,$nu:false,$u3:false})}
+if(!_1){_1=this.vscrollbar=isc.ClassFactory.newInstance(this.scrollbarConstructor,{ID:this.getID()+"_vscroll",autoDraw:false,_generated:true,zIndex:this.getZIndex()+1,vertical:true,scrollTarget:this,visibility:this.visibility,$jp:false,$jo:false,_redrawWithParent:false,$u3:false})}
 if(!isc.Page.isLoaded()){var _2=this;isc.Page.setEvent("load",function(){if(!_2.destroyed)_2.$u2()});return}
 if(!this.vscrollOn)return;_1.setShowCorner(this.hscrollOn&&this.vscrollOn);_1.setRect(this.getOffsetLeft()+(this.isRTL()?this.getLeftMargin():this.getWidth()-(this.getRightMargin()+this.getScrollbarSize())),this.getOffsetTop()+this.getTopMargin(),this.getScrollbarSize(),this.getHeight()-this.getVMarginSize());if(!_1.masterElement){this.addPeer(_1)}else{if(this.visibility!=isc.Canvas.HIDDEN)_1.show()}}
 ,isc.A.scrollByPage=function(_1,_2){var _3=(_1?this.getViewportHeight():this.getViewportWidth())-
@@ -2591,7 +2661,7 @@ if(_4=="Home"){this.scrollTo(null,0);return false}else if(_4=="End"){this.scroll
 return _3}
 ,isc.A.$q5=function(_1,_2,_3,_4){if(this.showCustomScrollbars&&this.vscrollOn&&_1!=null&&this.isRTL()){_1+=this.getScrollbarSize()}
 if(_3!=null||_4!=null){var _5=this.$sf(_3,_4);_3=_5[0];_4=_5[1]}
-var _6=this.getStyleHandle();if(_6){if(isc.isA.Number(_1))this.$u9(_6,isc.Canvas.LEFT,_1);if(isc.isA.Number(_2))this.$u9(_6,isc.Canvas.TOP,_2);if(isc.isA.Number(_3))this.$u9(_6,this.$o6,Math.max(_3,1));if(isc.isA.Number(_4))this.$u9(_6,this.$o5,Math.max(_4,1))}}
+var _6=this.getStyleHandle();if(_6){if(_1!=null&&isc.isA.Number(_1))this.$u9(_6,isc.Canvas.LEFT,_1);if(_2!=null&&isc.isA.Number(_2))this.$u9(_6,isc.Canvas.TOP,_2);if(_3!=null&&isc.isA.Number(_3))this.$u9(_6,this.$o6,Math.max(_3,1));if(_4!=null&&isc.isA.Number(_4))this.$u9(_6,this.$o5,Math.max(_4,1))}}
 ,isc.A.$u9=function(_1,_2,_3){if(isc.Browser.isIE||isc.Browser.isOpera){if(!isc.Browser.isStrict){_1[_2]=_3}else{if(_3<0&&(_2==this.$o6||_2==this.$o5))_3=0;_1[_2]=_3+this.$ph}}else{if(_1==null){return}
 _1[_2]=_3+this.$ph}}
 ,isc.A.$qi=function(){var _1=this._backMask;if(!_1)return;if(this.showEdges){var _2=this.$l0,_3=this.maskEdgeCenterOnly,_4=_3?_2.$y4:_2.$tb,_5=_3?_2.$y5:_2.$tc,_6=_3?_2.$y6:_2.$td,_7=_3?_2.$y7:_2.$te,_8=this.getVisibleWidth()-(_4+_5),_9=this.getVisibleHeight()-(_6+_7);if(_8<=0||_9<=0)_1.hide();else{if(this.isVisible())_1.show();_1.setRect(this.getLeft()+_4,this.getTop()+_6,_8,_9)}}else{_1.setRect(this.getRect())}}
@@ -2702,18 +2772,22 @@ _5.$v0(_4);this.$v0(null);this.$vv(null);this.$v1(_1.$vz(),_1);this.$v2()}
 var _2=_1,_3=this.$vz(),_4=this.$vy();if(isc.EH.$kl==this)isc.EH.$kl=_3;if(isc.EH.$kj==this)isc.EH.$kj=_4;if(_3!=null)
 _3.$vv(_4);if(_4!=null)
 _4.$v0(_3);this.$v0(null);this.$vv(null);this.$v1(_1,_1.$vy());this.$v2()}
-,isc.A.$v1=function(_1,_2){if(_2==null)return this.$vr();if(_1==null){var _3=_2.$vy();_2.$rp();this.$vv(_3);this.$v0(null);this.$vk(_2.tabIndex,true);isc.EH.$kj=this;_2.$v1(this,_3);return}
+);isc.evalBoundary;isc.B.push(isc.A.$v1=function(_1,_2){if(_2==null)return this.$vr();if(_1==null){var _3=_2.$vy();_2.$rp();this.$vv(_3);this.$v0(null);this.$vk(_2.tabIndex,true);isc.EH.$kj=this;_2.$v1(this,_3);return}
 this.$vv(_2);_2.$v0(this);this.$v0(_1);_1.$vv(this);var _4=_1.tabIndex+_1.getTabIndexSpan(),_5=_2.tabIndex,_6=_4+Math.floor((_5-_4)/2),_7=this.getTabIndexSpan();if((_6+_7)>_5){_2.$v3((_6+_7)-_5)}
 if(this.logIsDebugEnabled("tabIndex")){this.logDebug("Putting "+this.getID()+" in tab order between: "+_1.getID()+":"+_1.tabIndex+", and :"+_2.getID()+":"+_2.tabIndex+". Resulting tabIndex:"+_6,"tabIndex")}
 this.$vk(_6,true)}
-);isc.evalBoundary;isc.B.push(isc.A.$v3=function(_1){var _2=this.$vy();if(_2==null){this.$vk(this.tabIndex+_1+isc.Canvas.TAB_INDEX_GAP,true);return}
+,isc.A.$v3=function(_1){var _2=this.$vy();if(_2==null){this.$vk(this.tabIndex+_1+isc.Canvas.TAB_INDEX_GAP,true);return}
 var _3=_2.getTabIndex(),_4=_3-this.getTabIndexSpan();if(this.tabIndex+_1<_4)this.$vk(_4,true);else{_2.$v3(_1-(_4-this.tabIndex));this.$vk(_2.tabIndex-this.getTabIndexSpan(),true)}}
 ,isc.A.$vy=function(_1){if(!_1)return this.$v4;else return this.$vw}
 ,isc.A.$vz=function(){return this.$vy(true)}
 ,isc.A.$vv=function(_1,_2){if(!_2)this.$v4=_1;else this.$vw=_1}
 ,isc.A.$v0=function(_1){return this.$vv(_1,true)}
 ,isc.A.$kf=function(_1,_2){var _3=this;do{_3=(_1?_3.$vy():_3.$vz())}while(_3&&(isc.EH.targetIsMasked(_3,_2)||_3.isDisabled()||!_3.isDrawn()||!_3.isVisible()||!_3.$kk()))
-if(_3){this.logInfo("focusInNextTabElement() shifting focus to:"+_3,"syntheticTabIndex");_3.focusAtEnd(_1)}else if(_1){this.logInfo("focusInNextTabElement() shifting focus to first widget","syntheticTabIndex");if(isc.EH.$kj==null||(isc.EH.$kj==this&&this.isMasked(_2)))return;isc.EH.$kh(_2)}else{this.logInfo("focusInNextTabElement() shifting focus to last widget","syntheticTabIndex");if(isc.EH.$kl==null||(isc.EH.$kl==this&&this.isMasked(_2)))return;isc.EH.$kg(_2)}}
+if(_3){this.logInfo("focusInNextTabElement() shifting focus to:"+_3,"syntheticTabIndex");_3.focusAtEnd(_1)}else if(_1){this.logInfo("focusInNextTabElement() shifting focus to first widget","syntheticTabIndex");if(isc.EH.$kj==null||(isc.EH.$kj==this&&(this.isDisabled()||!this.isDrawn()||!this.isVisible()||!this.$kk()||this.isMasked(_2))))
+{return}
+isc.EH.$kh(_2)}else{this.logInfo("focusInNextTabElement() shifting focus to last widget","syntheticTabIndex");if(isc.EH.$kl==null||(isc.EH.$kl==this&&(this.isDisabled()||!this.isDrawn()||!this.isVisible()||!this.$kk()||this.isMasked(_2))))
+{return}
+isc.EH.$kg(_2)}}
 ,isc.A.$v2=function(){var _1=isc.isA.Layout(this)?this.members:this.children;if(!_1||_1.length==0)return;var _2=this.$vy();for(var i=_1.length-1;i>=0;i--){if(_1[i]==null||(_1[i].tabIndex!=null&&!_1[i].$sp))continue;if(_2==null)_1[i].$sq(this);else _1[i].$vx(_2);_2=_1[i]}}
 ,isc.A.$v5=function(){var _1=this.children;if(isc.Layout&&isc.isA.Layout(this))_1=this.members;if(_1!=null){for(var i=_1.length-1;i>=0;i--){var _3=_1[i].$v5();if(_3!=null)return _3}}
 if(this.tabIndex==null||this.$sp)return this;return null}
@@ -2741,11 +2815,14 @@ this.zIndexChanged(_2,_1)}
 ,isc.A.setContents=function(_1){if(_1!=null)this.contents=_1;this.markForRedraw("setContents")}
 ,isc.A.containsIFrame=function(){return this.contentsURL!=null&&this.contentsType=="page"}
 ,isc.A.getContentsURL=function(){return this.contentsURL}
-,isc.A.setContentsURL=function(_1){this.contentsURL=_1;_1=isc.Page.getURL(_1);_1=isc.rpc.addParamsToURL(_1,this.contentsURLParams);if(!this.isDrawn())return;if(this.containsIFrame()){var _2=this.$sk();if(!_2||!_1)this.markForRedraw("setContentsURL");else _2.src=_1}}
+,isc.A.setContentsURL=function(_1,_2){this.contentsURL=_1;_1=isc.Page.getURL(_1);var _3=isc.addProperties({},this.contentsURLParams,_2),_1=isc.rpc.addParamsToURL(_1,_3);if(!this.isDrawn())return;if(this.containsIFrame()){var _4=this.$sk();if(!_4||!_1)this.markForRedraw("setContentsURL");else _4.src=_1}}
+,isc.A.$73v=function(){var _1=!this.$r3&&!isc.Browser.isOpera&&!((isc.Browser.isSafari||isc.Browser.isFirefox)&&this.containsIFrame());return _1?isc.Canvas.$oz:null}
+,isc.A.$73w=function(){var _1=this.$73v();if(_1!=this.$73u)
+this.getHandle().style.float=this.$73u=_1}
 ,isc.A.setBackgroundColor=function(_1){if(_1)this.backgroundColor=_1;if(this.isDrawn()){return this.getStyleHandle().backgroundColor=_1}}
 ,isc.A.setBackgroundImage=function(_1){if(_1)this.backgroundImage=_1;if(this.isDrawn()){if(this.isDrawn())this.getStyleHandle().backgroundImage='url('+this.getImgURL(this.backgroundImage)+')'}}
 ,isc.A.setBorder=function(_1){this.$tk=null;if(_1!=null&&!isc.isA.String(_1)){_1=this.$63e(_1)}
-if(_1==null)return;if(_1.endsWith(";"))_1=_1.slice(0,_1.length-1);this.border=_1;var _2=this.getStyleHandle();if(!_2)return;if(_2.border!=_1){_2.border=_1}
+if(_1==null)return;if(isc.endsWith(_1,isc.semi))_1=_1.slice(0,_1.length-1);this.border=_1;var _2=this.getStyleHandle();if(!_2)return;if(_2.border!=_1){_2.border=_1}
 this.adjustOverflow("setBorder");this.innerSizeChanged("Border thickness changed")}
 ,isc.A.$63e=function(_1){var _2=_1;if(isc.isA.Number(_1)){_1+="px solid"}else{_1=null;this.logWarn("this.border defined as "+_2+". This property should have a string value - dropping this attribute.")}
 return _1}
@@ -2816,6 +2893,7 @@ return _3}
 return false}
 ,isc.A.$mb=function(){if(this._eventMask.visibility==isc.Canvas.HIDDEN)this._eventMask.show()}
 ,isc.A.$mc=function(){if(this._eventMask.visibility!=isc.Canvas.HIDDEN)this._eventMask.hide()}
+,isc.A.handleDrop=function(_1,_2){if(this.onDrop!=null&&(this.onDrop()==false))return false;return this.drop(_1,_2)}
 ,isc.A.getHSnapPosition=function(_1,_2){if(!_2){_2=this.snapHDirection}
 if(_2!=isc.Canvas.BEFORE&&_2!=isc.Canvas.AFTER&&_2!=isc.Canvas.NEAREST){return _1}
 var _3=Math.floor(_1/ this.snapHGap)*this.snapHGap;var _4=_3+this.snapHGap;var _5=_3+this.snapHGap/ 2;if(_2==isc.Canvas.BEFORE){return _3}else if(_2==isc.Canvas.AFTER){return _4}else{if(_1<=_5)return _3;else return _4}}
@@ -2870,7 +2948,7 @@ if(this.edgeShowCenter!=null)_2.showCenter=this.edgeShowCenter;if(!this.edgesAsC
 ,isc.A.setIsGroup=function(_1){if(_1==this.isGroup)return;var _2=this.shouldShowGroupLabel()&&this.isDrawn();if(_2)this.clear();if(_1){this.$55t=this.border;this.setBorder(this.groupBorderCSS);if(this.shouldShowGroupLabel())this.$55u()}else{this.setBorder(this.$55t||"");if(this.shouldShowGroupLabel())this.$55v()}
 this.isGroup=_1;if(_2)this.draw()}
 ,isc.A.shouldShowGroupLabel=function(){return this.showGroupLabel}
-,isc.A.makeGroupLabel=function(){if(!this.groupLabel){var _1={autoDraw:false,$jo:false,$ns:true,backgroundColor:this.getGroupLabelBackgroundColor(),eventProxy:this}
+,isc.A.makeGroupLabel=function(){if(!this.groupLabel){var _1={autoDraw:false,$jo:false,$ns:true,backgroundColor:this.getGroupLabelBackgroundColor(),eventProxy:this,styleName:this.groupLabelStyleName}
 if(this.groupTitle!=null)_1.contents=this.groupTitle;this.groupLabel=this.createAutoChild("groupLabel",_1)}else{if(this.groupTitle!=null)this.groupLabel.setContents(this.groupTitle);this.groupLabel.setBackgroundColor(this.getGroupLabelBackgroundColor())}}
 ,isc.A.getGroupLabelBackgroundColor=function(){if(this.groupLabelBackgroundColor)return this.groupLabelBackgroundColor;if(this.backgroundColor!=null)return this.backgroundColor;return"white"}
 ,isc.A.$55u=function(){this.makeGroupLabel();var _1=this.groupLabel;var _2;if(_1.overflow==isc.Canvas.VISIBLE){if(_1.parentElement!=null)_1.deparent();_1.setTop(-1000);_1.draw();_2=_1.getVisibleHeight()}else{_2=_1.getVisibleHeight()}
@@ -2878,7 +2956,7 @@ var _3=Math.round(_2/ 2);this.$wi(_1,isc.Canvas.TOP,_3);var _4=_2-_3;if(this.pad
 this.getTopMargin();_1.moveAbove(this);if(_1.isDrawn()&&!this.isDrawn())_1.clear()}
 ,isc.A.$55v=function(){if(!this.groupLabel)return;var _1=this.groupLabel;this.$wj(_1,isc.Canvas.TOP);this.setTopPadding(null);_1.clear();_1.depeer()}
 ,isc.A.setGroupTitle=function(_1){this.groupTitle=_1;if(this.groupLabel){this.groupLabel.setContents(this.groupTitle)}else{this.$55u()}}
-);isc.B._maxIndex=isc.C+509;isc.A=isc.Canvas;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$hm="[SKIN]";isc.A.printOmitControls=["Button","StretchImgButton","ImgButton","MenuButton","Toolbar","ToolStrip","ButtonItem","ToolbarItem"];isc.A.printIncludeControls=["Label"];isc.A.$ws=0;isc.A.$wt="ID='";isc.A.$ob="'";isc.A.$wu="absmiddle";isc.A.$wv=[,,," eventpart='valueicon' style='vertical-align:middle;margin-left:",,"px;margin-right:",,"px;'"];isc.A.$ww={};isc.A.$wx={png:true,PNG:true,Png:true};isc.A.$wy=["<a",," href='",,"' target='",,"'",,,,">",,"</a>"];isc.A.$wz="[SKINIMG]/blank.gif";isc.A.$w0="0";isc.A.$w1="clearRedrawQueue";isc.A.$65j=[];isc.A.$65k=0;isc.A.$65l="clearDestroyQueue";isc.A.$tw=[];isc.B.push(isc.A.stripScriptTags=function(_1){return _1.replace(/<script([^>]*)?>(.|\n|\r)*?<\/script>/ig,isc.emptyString)}
+);isc.B._maxIndex=isc.C+514;isc.A=isc.Canvas;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$hm="[SKIN]";isc.A.printOmitControls=["Button","StretchImgButton","ImgButton","MenuButton","Toolbar","ToolStrip","ButtonItem","ToolbarItem"];isc.A.printIncludeControls=["Label"];isc.A.$ws=0;isc.A.$wt="ID='";isc.A.$ob="'";isc.A.$wu="absmiddle";isc.A.$wv=[,,," eventpart='valueicon' style='vertical-align:middle;margin-left:",,"px;margin-right:",,"px;'"];isc.A.$ww={};isc.A.$wx={png:true,PNG:true,Png:true};isc.A.$wy=["<a",," href='",,"' target='",,"'",,,,">",,"</a>"];isc.A.$wz="[SKINIMG]/blank.gif";isc.A.$w0="0";isc.A.$w1="clearRedrawQueue";isc.A.$65j=[];isc.A.$65k=0;isc.A.$65l="clearDestroyQueue";isc.A.$tw=[];isc.B.push(isc.A.stripScriptTags=function(_1){return _1.replace(/<script([^>]*)?>(.|\n|\r)*?<\/script>/ig,isc.emptyString)}
 ,isc.A.stripLinkTags=function(_1){return _1.replace(/<link([^>]*)?>/ig,isc.emptyString)}
 ,isc.A.getById=function(_1){var _2=window[_1]||null;return _2?(isc.isA.Canvas(_2)?_2:null):null}
 ,isc.A.getNextZIndex=function(){return(isc.Canvas.$ng+=18)}
@@ -2904,7 +2982,7 @@ return _5.join(_4||isc.emptyString)}
 ,isc.A.$wf=function(_1,_2,_3,_4,_5,_6,_7){return isc.Canvas.imgHTML(_1,_2,_3,_4,_5,_6,_7,null,true)}
 ,isc.A.imgHTML=function(_1,_2,_3,_4,_5,_6,_7,_8,_9){var _10;if(isc.isAn.Object(_1)){if(_1.width!=null)_2=_1.width;if(_1.height!=null)_3=_1.height;if(_1.name!=null)_4=_1.name;if(_1.extraStuff!=null)_5=_1.extraStuff;if(_1.imgDir!=null)_6=_1.imgDir;if(_1.align!=null)_10=_1.align;if(_1.activeAreaHTML!=null)_7=_1.activeAreaHTML;_1=_1.src}
 if(_1==null||isc.isAn.emptyString(_1)){return(_9?[isc.$ad]:isc.$ad)}
-var _11=this.$xd;if(!_11){this.$xe="<img src='";this.$xf="' width='";this.$xg="' height='";this.$xh="' align='";this.$xi=(isc.Page.isXHTML()?"' id='":"' name='");this.$xj="' ";this.$xk=isc.Browser.isOpera?"middle":"TEXTTOP";this.$xl=" border='0' suppress='TRUE'/>";this.$xd=_11=[this.$xe];if(isc.Browser.isIE8Strict){this.$xm="' style='filter:\"progid:DXImageTransform.Microsoft.AlphaImageLoader(src=";this.$xn=",sizingMethod=scale)\";"}else{this.$xm="' style='filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src=\"";this.$xn="\",sizingMethod=\"scale\");"}}
+var _11=this.$xd;if(!_11){this.$xe="<img src='";this.$xf="' width='";this.$xg="' height='";this.$xh="' align='";this.$xi=(isc.Page.isXHTML()?"' id='":"' name='");this.$xj="' ";this.$xk=isc.Browser.isOpera?"middle":"TEXTTOP";this.$xl=" border='0' suppress='TRUE'/>";this.$xd=_11=[this.$xe];this.$xm="' style='filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src=\"";this.$xn="\",sizingMethod=\"scale\");"}
 if(_10==null)_10=this.$xk;if(!this.$hu)this.$hu=this.getImgURL("[SKIN]/blank.gif");if(isc.Browser.isSafari&&(_2>32000||_3>32000)){this.logWarn("Attempting to draw an image of size "+_2+" x "+_3+".  Images larger than 32000 pixels in either direction are not reliably "+" rendered in this browser.")}
 var _12=this.getImgURL(_1,_6,_8);if(_9)_11=[this.$xe];if(isc.Page.isXHTML())_12=isc.makeXMLSafe(_12);if(!this.$xo(_8)||!this.$xp(_1)){_11[1]=_12}else{_11[1]=this.$hu;_11[3]=this.$xm;_11[4]=_12;_11[5]=this.$xn;if(_2==null)_2=16;if(_3==null)_3=16}
 if(_2){_11[6]=this.$xf;_11[7]=_2}
@@ -2928,7 +3006,7 @@ return _2}
 _3[7]=_1||this.$w0;_3[9]=_2||this.$w0;return _3.join(isc.$ad)}
 ,isc.A.spacerHTML=function(_1,_2,_3){if(_1==0&&_2==0)return isc.$ad;if(isc.Browser.isMoz||isc.Browser.isSafari||isc.Browser.isOpera||isc.Browser.isStrict||(_2<3&&isc.Browser.isIE&&(isc.Browser.minorVersion==5.5||isc.Browser.isMac)))
 {var _4;if(isc.Browser.isSafari){_4=32000}else if(isc.Browser.isFirefox&&isc.Browser.geckoVersion>=20090219){_4=17895580}else if(isc.Browser.isIE&&isc.Browser.isStrict){_4=16000}
-if(_4!=null&&(_1>_4||_2>_4)){var _5=isc.SB.create(),_6=_4,_7=parseInt(_2/ _6),_8=parseInt(_1/ _6);_5.append("<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 MARGIN=0>");for(var i=0;i<=_7;i++){_5.append("<TR>");for(var j=0;j<=_8;j++){_5.append("<TD>");var _11=((i==j)||(i>_8&&j==0)||(j>_7&&i==0));if(_11){var _12=(i<_7?_6:_2-(i*_6)),_13=(j<_8?_6:_1-(j*_6));_5.append(this.blankImgHTML(_13,_12))}
+if(_4!=null&&(_1>_4||_2>_4)){var _5=isc.SB.create(),_6=_4,_7=Math.floor(_2/ _6),_8=Math.floor(_1/ _6);_5.append("<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 MARGIN=0>");for(var i=0;i<=_7;i++){_5.append("<TR>");for(var j=0;j<=_8;j++){_5.append("<TD>");var _11=((i==j)||(i>_8&&j==0)||(j>_7&&i==0));if(_11){var _12=(i<_7?_6:_2-(i*_6)),_13=(j<_8?_6:_1-(j*_6));_5.append(this.blankImgHTML(_13,_12))}
 _5.append("</TD>")}
 _5.append("</TR>")}
 _5.append("</TABLE>");return _5.toString()}
@@ -2977,12 +3055,12 @@ return[_8,_9]}
 ,isc.A.$iy=function(){if(isc.Browser.isIE)this.$xt();var _1=isc.Log.logViewer;if(_1&&_1.logWindowLoaded()){_1._logWindow.openerUnloading();_1._logWindow=null}}
 ,isc.A.$xt=function(){var _1=this._canvasList;for(var i=0;i<_1.length;i++){var _3=_1[i];if(_3){if(_3.$q3){_3.$q3.eventProxy=null;_3.$q3=null}}}
 return true}
-,isc.A.snapToEdge=function(_1,_2,_3,_4){var _5,_6,_7;if(isc.isAn.Array(_1)){_6=false;_7=[_1[1],_1[0]];_5=[_1[2],_1[3]]}else if(_3.masterElement){_6=(_3.percentBox==_3.$520),_5=[_6?_1.getViewportWidth():_1.getVisibleWidth(),_6?_1.getViewportHeight():_1.getVisibleHeight()];_7=[_1.getTop()+(_6?(_1.getTopBorderSize()+_1.getTopMargin()):0),_1.getLeft()+(_6?(_1.getLeftBorderSize()+_1.getLeftMargin()):0)]}else{_6=true;_5=[_1.getViewportWidth(),_1.getViewportHeight()];_7=[0,0]}
-var _8=isc.Canvas.$52c(_2,_7,_5,false);var _9=isc.Canvas.$52c((_4||_2),_8,[_3.getVisibleWidth(),_3.getVisibleHeight()],true);if(_3.snapOffsetLeft!=null)_9[1]+=_3.snapOffsetLeft;if(_3.snapOffsetTop!=null)_9[0]+=_3.snapOffsetTop;_3.moveTo(_9[1],_9[0]);_3.$jo=false}
+,isc.A.snapToEdge=function(_1,_2,_3,_4,_5){var _6,_7,_8;if(isc.isAn.Array(_1)){_7=false;_8=[_1[1],_1[0]];_6=[_1[2],_1[3]]}else if(_3.masterElement){_7=(_3.percentBox==_3.$520),_6=[_7?_1.getViewportWidth():_1.getVisibleWidth(),_7?_1.getViewportHeight():_1.getVisibleHeight()];_8=[_1.getTop()+(_7?(_1.getTopBorderSize()+_1.getTopMargin()):0),_1.getLeft()+(_7?(_1.getLeftBorderSize()+_1.getLeftMargin()):0)]}else if(isc.isA.Canvas(_5)){_7=(_3.percentBox==_3.$520),_6=[_7?_5.getViewportWidth():_5.getVisibleWidth(),_7?_5.getViewportHeight():_5.getVisibleHeight()];_8=[_5.getPageTop()+(_7?(_5.getTopBorderSize()+_5.getTopMargin()):0),_5.getPageLeft()+(_7?(_5.getLeftBorderSize()+_5.getLeftMargin()):0)]}else{_7=true;_6=[_1.getViewportWidth(),_1.getViewportHeight()];_8=[0,0]}
+var _9=isc.Canvas.$52c(_2,_8,_6,false);var _10=isc.Canvas.$52c((_4||_2),_9,[_3.getVisibleWidth(),_3.getVisibleHeight()],true);if(_3.snapOffsetLeft!=null)_10[1]+=_3.snapOffsetLeft;if(_3.snapOffsetTop!=null)_10[0]+=_3.snapOffsetTop;_3.moveTo(_10[1],_10[0]);_3.$jo=false}
 ,isc.A.$52c=function(_1,_2,_3,_4){var _5=_3[0],_6=_3[1];var _7;if(_1=="TL")_7=[0,0];else if(_1=="T")_7=[0,_5/ 2];else if(_1=="TR")_7=[0,_5];else if(_1=="R")_7=[_6/ 2,_5];else if(_1=="BR")_7=[_6,_5];else if(_1=="B")_7=[_6,_5/ 2];else if(_1=="BL")_7=[_6,0];else if(_1=="L")_7=[_6/ 2,0];else if(_1=="C")_7=[_6/ 2,_5/ 2];else _7=[0,0];_7[0]=Math.floor(_7[0]);_7[1]=Math.floor(_7[1]);if(_4)return[_2[0]-_7[0],_2[1]-_7[1]];else return[_2[0]+_7[0],_2[1]+_7[1]]}
-);isc.B._maxIndex=isc.C+42;isc.Canvas.registerStringMethods({resized:"deltaX,deltaY",showIf:"canvas",childRemoved:"child,name",peerRemoved:"peer,name",deparented:"oldParent,name",depeered:"oldMaster,name",focusChanged:"hasFocus",scrolled:null,hover:""});isc.Canvas.$yx=function(){var _1=isc.EH,_2={};for(var _3 in _1.eventTypes){this.registerStringMethods(_1.eventTypes[_3],_1.$i3);var _4=_1.eventTypes[_3];if(this.getInstanceProperty(_4)==null){_2[_4]=isc.Class.NO_OP}}
+);isc.B._maxIndex=isc.C+42;isc.Canvas.registerStringMethods({resized:"deltaX,deltaY",showIf:"canvas",childRemoved:"child,name",peerRemoved:"peer,name",deparented:"oldParent,name",depeered:"oldMaster,name",focusChanged:"hasFocus",scrolled:null,hover:"",onDrop:""});isc.Canvas.$yx=function(){var _1=isc.EH,_2={};for(var _3 in _1.eventTypes){this.registerStringMethods(_1.eventTypes[_3],_1.$i3);var _4=_1.eventTypes[_3];if(this.getInstanceProperty(_4)==null){_2[_4]=isc.Class.NO_OP}}
 this.addMethods(_2)}
-isc.Canvas.$yx();isc.defineClass("BackMask","Canvas");isc.A=isc.BackMask.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.autoDraw=false;isc.A.$lo=true;isc.A._generated=true;isc.A.useClipDiv=false;isc.A.hideUsingDisplayNone=isc.Browser.isMoz;isc.A.overflow=isc.Canvas.HIDDEN;isc.A.contents="<iframe width='100%' height='100%' border='0' frameborder='0' src=\""+isc.Page.getBlankFrameURL()+"\" marginwidth='0' marginheight='0' scrolling='no' tabIndex='-1' tabStop='false'></iframe>";isc.A.$ns=false;isc.A.$jo=false;isc.A.$jp=false;isc.A.$nu=false;isc.B.push(isc.A.masterMoved=function(){this.masterElement.$qi()}
+isc.Canvas.$yx();isc.defineClass("BackMask","Canvas");isc.A=isc.BackMask.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.autoDraw=false;isc.A.$lo=true;isc.A._generated=true;isc.A.useClipDiv=false;isc.A.hideUsingDisplayNone=isc.Browser.isMoz;isc.A.overflow=isc.Canvas.HIDDEN;isc.A.contents="<iframe width='100%' height='100%' border='0' frameborder='0' src=\""+isc.Page.getBlankFrameURL()+"\" marginwidth='0' marginheight='0' scrolling='no' tabIndex='-1' tabStop='false'></iframe>";isc.A.$ns=false;isc.A.$jo=false;isc.A.$jp=false;isc.A._redrawWithParent=false;isc.B.push(isc.A.masterMoved=function(){this.masterElement.$qi()}
 ,isc.A.masterResized=function(){this.masterElement.$qi()}
 ,isc.A.draw=function(_1,_2,_3){if(this.suppressed)return this;if(!this.readyToDraw())return this;this.invokeSuper(isc.BackMask,this.$ny,_1,_2,_3);if(this.masterElement.overflow==isc.Canvas.VISIBLE)this.masterElement.$qi();return this}
 ,isc.A.show=function(){if(!this.suppressed)this.invokeSuper(isc.BackMask,"show")}
@@ -3000,7 +3078,7 @@ return _5;case"button":case"reset":case"submit":return null;default:return _3.va
 for(var i=0;i<_2.elements.length;i++){var _5=_2.elements[i];if(_5.name!=null){var _6=this.getFormElementValue(_2,_2.elements[i]);if(_6!=null)_3[_5.name]=_6}}
 return _3},getFormElement:function(_1,_2){if(typeof _2=="object")return _2;var _3=this.getForm(_1);if(_3)return _3.elements[_2];return null}};isc.Canvas.addClassMethods(isc.$yz)
 isc.Canvas.addMethods(isc.$yz)
-isc.setAutoDraw=function(_1){if(_1==null)_1=true;isc.Canvas.addProperties({autoDraw:_1})};isc.defineClass("PrintCanvas","Canvas");isc.A=isc.PrintCanvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.redrawOnResize=false;isc.A.overflow="hidden";isc.A.useExplicitHeight=isc.Browser.isSafari;isc.A.printFrameURL="[HELPERS]printFrame.html";isc.B.push(isc.A.initWidget=function(){this.Super("initWidget",arguments)}
+isc.setAutoDraw=function(_1){if(_1==null)_1=true;isc.Canvas.addProperties({autoDraw:_1})};isc.allowDuplicateStyles=true;isc.defineClass("PrintCanvas","Canvas");isc.A=isc.PrintCanvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.redrawOnResize=false;isc.A.overflow="hidden";isc.A.useExplicitHeight=isc.Browser.isSafari;isc.A.printFrameURL="[HELPERS]printFrame.html";isc.B.push(isc.A.initWidget=function(){this.Super("initWidget",arguments)}
 ,isc.A.resized=function(){if(this.useExplicitHeight){var _1=this.getIFrameHandle();if(_1){_1.style.width=this.getInnerWidth();_1.style.height=this.getInnerHeight()}}}
 ,isc.A.getInnerHTML=function(){var _1="100%",_2="100%";if(this.useExplicitHeight){_1=this.getInnerWidth();_2=this.getInnerHeight()}
 return"<iframe height='"+_2+"' width='"+_1+"' scrolling='auto' id='"+this.getIFrameID()+"' frameborder='0' src=\""+this.getPrintFrameURL(this.title)+"\"></iframe>"}
@@ -3009,40 +3087,84 @@ return"<iframe height='"+_2+"' width='"+_1+"' scrolling='auto' id='"+this.getIFr
 ,isc.A.getIFrameHandle=function(){return document.getElementById(this.getIFrameID())}
 ,isc.A.getIFrameWindow=function(){return this.getIFrameHandle().contentWindow}
 ,isc.A.iframeLoad=function(){this.iframeLoaded=true}
-,isc.A.setHTML=function(_1,_2){if(!this.iframeLoaded){this.delayCall("setHTML",[_1,_2],100);return}
+,isc.A.setHTML=function(_1,_2){if(!this.isDrawn()){this.$741={HTML:_1,callback:_2};return}
+if(!this.iframeLoaded){this.delayCall("setHTML",[_1,_2],100);return}
 var _3=this.getIFrameWindow();_3.assignHTML(_1);this.fireCallback(_2,["printPreview","callback"],[this,_2])}
+,isc.A.draw=function(){this.Super("draw",arguments);if(this.$741!=null){var _1=this.$741;this.$741=null;this.setHTML(_1.HTML,_1.callback)}}
 ,isc.A.setTitle=function(_1){this.title=_1;if(!this.iframeLoaded)return}
 ,isc.A.printHTML=function(_1,_2,_3){var _4=this;this.setTitle(_2);this.setHTML(_1,function(){_4.print()})}
-,isc.A.print=function(){this.getIFrameWindow().doPrint()}
+,isc.A.print=function(){if(!this.isDrawn()){this.logWarn("print(): Attempt to print an undrawn PrintCanvas. Ignoring.");return}
+if(!this.iframeLoaded){this.delayCall("print",[],100);return}
+this.getIFrameWindow().doPrint()}
 ,isc.A.printComplete=function(){}
-);isc.B._maxIndex=isc.C+13;isc.A=isc.Canvas;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.printComponents=function(_1,_2,_3,_4){isc.Canvas.getPrintHTML(_1,_2,{target:this,methodName:"$57f",title:_3,debugOnly:_4})}
+);isc.B._maxIndex=isc.C+14;isc.A=isc.Canvas;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.printComponents=function(_1,_2,_3,_4){isc.Canvas.getPrintHTML(_1,_2,{target:this,methodName:"$57f",title:_3,debugOnly:_4})}
 ,isc.A.$57f=function(_1,_2){var _3=_2.title,_4=_2.debugOnly;if(!this.$55z)this.$55z=isc.PrintCanvas.create({width:"100%",height:"100%",autoDraw:false,backgroundColor:"white"});this.$55z.moveTo(null,-isc.Page.getHeight());if(!this.$55z.isDrawn())this.$55z.draw();this.$55z.printHTML(_1,_3,_4)}
-,isc.A.getPrintPreview=function(_1,_2,_3,_4){isc.Canvas.getPrintHTML(_1,_2,{target:this,methodName:"$57g",origCallback:_4,previewProperties:_3})}
+,isc.A.getPrintPreview=function(_1,_2,_3,_4,_5){if(_3==null)_3={};_3.autoDraw=true;isc.Canvas.getPrintHTML(_1,_2,{target:this,methodName:"$57g",origCallback:_4,previewProperties:_3},_5)}
 ,isc.A.$57g=function(_1,_2){var _3=isc.PrintCanvas.create(_2.previewProperties);_3.setHTML(_1,{target:this,methodName:"$57h",origCallback:_2.origCallback})}
-,isc.A.$57h=function(_1,_2){if(_2.origCallback){this.fireCallback(_2.origCallback,["printPreview"],_1)}}
+,isc.A.$57h=function(_1,_2){if(_2.origCallback){this.fireCallback(_2.origCallback,["printPreview"],[_1])}}
 ,isc.A.showPrintPreview=function(_1,_2,_3,_4,_5){if(!isc.PrintWindow){isc.definePrintWindow()}
-if(!isc.PrintWindow)return;_3=isc.addProperties({width:"100%",height:"100%",autoDraw:false},_3);if(!this.$57i){this.$57i=isc.PrintWindow.create(_3)}
+if(!isc.PrintWindow)return;if(_3==null)_3={};_3.autoDraw=false;if(_3.width==null)_3.width="100%";if(_3.height==null)_3.height="100%";if(_3.left==null)_3.left=0;if(_3.top==null)_3.top=0;if(!this.$57i){this.$57i=isc.PrintWindow.create(_3)}else{this.$57i.setProperties(_3)}
 this.$57i.showPrintPreview(_1,_2,_4,_5)}
 );isc.B._maxIndex=isc.C+6;isc.definePrintWindow=function(){if(!isc.Window){isc.logWarn("Attempting to create PrintWindow class with no defined Window class. "+"Ensure the required 'Containers' module is laoded");return}
-isc.defineClass("PrintWindow","Window");isc.PrintWindow.addProperties({isModal:true,headerControls:["headerIcon","headerLabel","printButton","closeButton"],printButtonDefaults:{_constructor:"IButton",height:20,click:"this.creator.printClicked()"},showMinimizeButton:false,title:"Print Preview",printButtonTitle:"Print",initWidget:function(){this.printButtonDefaults.title=this.printButtonTitle;this.Super("initWidget",arguments)},showPrintPreview:function(_3,_4,_5,_6){if(!isc.isAn.Array(_3))_3=[_3];isc.Canvas.getPrintHTML(_3,_4,{target:this,methodName:"$57j",origCallback:_5},_6)},$57j:function(_3,_4){if(!this.previewPane){this.previewPane=this.createPreviewPane();this.addItem(this.previewPane)}
-this.previewPane.addProperties({title:this.title});this.setVisibility("hidden");if(!this.isDrawn())this.draw();this.previewPane.setHTML(_3,{target:this,methodName:"$57h",origCallback:_4.origCallback})},$57h:function(_3,_4){if(!this.isVisible())this.show();this.bringToFront();if(_4.origCallback){this.fireCallback(_4.origCallback,["printPreview"],_3)}},printClicked:function(){var _1=this.getPrintCanvas();if(!_1)return;_1.print()},createPreviewPane:function(_3){var _2=isc.PrintCanvas.create({width:"100%",height:"100%"});return _2},getPrintCanvas:function(){return this.previewPane}})}
-isc.A=isc.Canvas;isc.A.COPY="copy";isc.A.MOVE="move";isc.A.CLONE="clone";isc.A=isc.Canvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.showComplexFields=true;isc.A.ignoreEmptyCriteria=true;isc.A.dragRecategorize=true;isc.A.duplicateDragMessage="Duplicates not allowed";isc.A.addDropValues=true;isc.A.fieldIdProperty="name";isc.A.$301="false;";isc.A.$18r="false";isc.A.styleOpposite="cellHiliteOpposite";isc.A.hiliteProperty="_hilite";isc.A.hiliteMarker="$63i";isc.A.$578=0;isc.A.$579=[];isc.A.dragDataAction=isc.Canvas.MOVE;isc.A.dragTrackerStyle="gridDragTracker";isc.A.canAddFormulaFields=false;isc.A.addFormulaFieldText="Add formula column...";isc.A.editFormulaFieldText="Edit formula...";isc.A.canAddSummaryFields=false;isc.A.addSummaryFieldText="Add summary column...";isc.A.editSummaryFieldText="Edit summary format...";isc.B.push(isc.A.bindToDataSource=function(_1,_2){if(this.dataSource==null&&this.data!=null)this.dataSource=this.data.dataSource;var _3=this.getDataSource();if(_3!=null&&isc.isA.String(_3)){this.logWarn("unable to look up DataSource: "+_3+", databinding will not be used");return _1}
+isc.defineClass("PrintWindow","Window");isc.PrintWindow.addProperties({isModal:true,headerControls:["headerIcon","headerLabel","printButton","closeButton"],printButtonDefaults:{_constructor:"IButton",height:20,click:"this.creator.printClicked()"},showMinimizeButton:false,showShadow:false,title:"Print Preview",printButtonTitle:"Print",setPrintButtonTitle:function(_3){this.printButtonTitle=_3;if(this.printButton!=null)this.printButton.setTitle(_3)},initWidget:function(){this.printButtonDefaults.title=this.printButtonTitle;this.Super("initWidget",arguments)},showPrintPreview:function(_3,_4,_5,_6){if(!isc.isAn.Array(_3))_3=[_3];isc.Canvas.getPrintHTML(_3,_4,{target:this,methodName:"$57j",origCallback:_5},_6)},$57j:function(_3,_4){if(!this.previewPane){this.previewPane=this.createPreviewPane();this.addItem(this.previewPane)}
+this.previewPane.addProperties({title:this.title});this.setVisibility("hidden");if(!this.isDrawn())this.draw();this.previewPane.setHTML(_3,{target:this,methodName:"$57h",origCallback:_4.origCallback})},$57h:function(_3,_4){if(!this.isVisible())this.show();this.bringToFront();if(_4.origCallback){this.fireCallback(_4.origCallback,["printPreview","printWindow"],[_3,this])}},printClicked:function(){var _1=this.getPrintCanvas();if(!_1)return;_1.print()},createPreviewPane:function(_3){var _2=isc.PrintCanvas.create({width:"100%",height:"100%"});return _2},getPrintCanvas:function(){return this.previewPane}})}
+isc.ClassFactory.defineInterface("DataBoundComponent");isc.A=isc.Canvas;isc.A.COPY="copy";isc.A.MOVE="move";isc.A.CLONE="clone";isc.A=isc.Canvas;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$70l="/";isc.B.push(isc.A.getFieldImageDimensions=function(_1,_2){var _3,_4;var _5,_6,_7;if(isc.isA.String(_1.imageWidth)){_5=_1.imageWidth}else{_3=_1.imageWidth}
+if(isc.isA.String(_1.imageHeight)){_6=_1.imageHeight}else{_4=_1.imageHeight}
+if(isc.isA.String(_1.imageSize)){_7=_1.imageSize}else{_3=_3||_1.imageSize;_4=_4||_1.imageSize}
+if(_2!=null){_3=_3||_2[_5]||_2[_7];_4=_4||_2[_6]||_2[_7]}
+return{width:_3,height:_4}}
+,isc.A.$70m=function(_1,_2){if(!_2||_1==null||isc.isAn.emptyString(_1))return;var _3=_1.contains(this.$70l);if(_3){var _4=_1.split(this.$70l),_5=[];if(isc.isAn.emptyString(_4.last()))_4.length-=1;for(var i=0;i<_4.length;i++){if(isc.isAn.emptyString(_4[i]))continue;if(_2==null){_5.length=0;break}
+_5.add(_2);if(i==_4.length-1){delete _2[_4[i]]}else{_2=_2[_4[i]]}}
+for(var i=_5.length-1;i>0;i--){if(isc.isAn.emptyObject(_5[i])){delete _5[i-1][_4[i-1]]}}}else{delete _2[_1]}}
+,isc.A.$70n=function(_1,_2,_3){if(_3==null)return;var _4=_1.contains(this.$70l);if(_4){_1.trim(isc.Canvas.$70l);var _5=_1.split(this.$70l);for(var i=0;i<_5.length;i++){if(isc.isAn.emptyString(_5[i]))continue;if(i==_5.length-1){_3[_5[i]]=_2}else{var _7=_3[_5[i]]
+if(!isc.isAn.Object(_7)||isc.isA.Date(_7))
+{_3[_5[i]]={}}else if(isc.isAn.Array(_7)){var _8=(parseInt(_5[i+1])==_5[i+1])
+if(!_8){this.logInfo("saving a field value in a nested data object: overwriting "+"an array"+this.echo(_3[_5[i]])+" with an object with nested values.");_3[_5[i]]={}}}
+_3=_3[_5[i]]}}}else{_3[_1]=_2}
+return _3}
+,isc.A.$70o=function(_1,_2){if(_2==null)return;if(_1==null)return;var _3=_1.contains(this.$70l);if(_3){var _4=_1.split(this.$70l);if(isc.isAn.emptyString(_4.last()))_4.length-=1;for(var i=0;i<_4.length;i++){if(isc.isAn.emptyString(_4[i]))continue;if(i==_4.length-1){return _2[_4[i]]}else{if(_2[_4[i]]==null)return;_2=_2[_4[i]]}}}else{return _2[_1]}}
+,isc.A.$702=function(_1,_2){if(_1==null)return""+_2;if(_2==null)return _1+"";if(isc.isA.String(_2)&&_2.startsWith(this.$70l))_2=_2.substring(1);if(isc.isA.String(_1)&&_1.endsWith(this.$70l)){return _1+_2}else{return _1+this.$70l+_2}}
+);isc.B._maxIndex=isc.C+5;isc.A=isc.Canvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.showComplexFields=true;isc.A.ignoreEmptyCriteria=true;isc.A.dragRecategorize=true;isc.A.duplicateDragMessage="Duplicates not allowed";isc.A.addDropValues=true;isc.A.fieldIdProperty="name";isc.A.dataArity="multiple";isc.A.autoTrackSelection=true;isc.A.$301="false;";isc.A.$18r="false";isc.A.styleOpposite="cellHiliteOpposite";isc.A.hiliteProperty="_hilite";isc.A.hiliteMarker="$63i";isc.A.$578=0;isc.A.$579=[];isc.A.dragDataAction=isc.Canvas.MOVE;isc.A.dragTrackerStyle="gridDragTracker";isc.A.canExport=true;isc.A.canPrint=true;isc.A.panelControls=["action:edit","action:editNew","action:sort","action:export","action:print"];isc.A.dbcProperties=["autoFetchData","autoFetchTextMatchStyle","autoFetchAsFilter","dataSource"];isc.A.badFormulaResultValue=".";isc.A.missingSummaryFieldValue="-";isc.A.canAddFormulaFields=false;isc.A.addFormulaFieldText="Add formula column...";isc.A.editFormulaFieldText="Edit formula...";isc.A.removeFormulaFieldText="Remove formula...";isc.A.canAddSummaryFields=false;isc.A.addSummaryFieldText="Add summary column...";isc.A.editSummaryFieldText="Edit summary format...";isc.A.removeSummaryFieldText="Remove summary column..";isc.A.$685=["isInteger","isFloat","isBoolean","isString"];isc.A.$746="partial";isc.A.$75a={};isc.A.$75b=null;isc.B.push(isc.A.initializeValuesManager=function(){var _1=this.valuesManager;delete this.valuesManager;if(_1!=null){if(isc.ValuesManager==null){this.logWarn("Widget initialized with specified 'valuesManager' proprety but "+"ValuesManager class is not loaded. This functionality requires the "+"Forms module.");return}
+if(isc.isA.ValuesManager(_1)){_1.addMember(this)}else if(isc.isA.ValuesManager(window[_1])){window[_1].addMember(this)}else if(isc.isA.String(_1)){isc.ValuesManager.create({ID:_1,dataSource:this.dataSource,members:[this]})}else{this.logWarn("Widget initialized with invalid 'valuesManager' property:"+isc.Log.echo(_1)+", clearing this property out")}}}
+,isc.A.setDataPath=function(_1){this.dataPath=_1;if(this.getFields==null||this.getFields()==null)return;if(_1==null){delete this.$704;if(this.valuesManager&&this.$703){this.valuesManager.removeMember(this);delete this.$703}
+return}
+var _2;var _3=this;while(_3&&(!_3.valuesManager||_3.$703)&&!_3.dataSource)
+{if(_3.dataPath){if(_2){_2=isc.Canvas.$702(_3.dataPath,_2)}else{_2=_3.dataPath}}
+_3=_3.parentElement}
+this.$704=_2;if(_3){if(_3!=this){if(_3.valuesManager==null){_3.createDefaultValuesManager()}
+_3.valuesManager.addMember(this,true)}}}
+,isc.A.getFullDataPath=function(){return this.$704||this.dataPath}
+,isc.A.createDefaultValuesManager=function(_1){if(!_1)_1=[];_1.add(this);isc.ValuesManager.create({members:_1,ID:this.getID()+"$705",dataSource:this.dataSource})}
+,isc.A.getDataPathField=function(_1){var _2=this.getDataSource(),_3=_1.split(isc.slash),_4;if(!_2)return;for(var i=0;i<_3.length;i++){var _6=_3[i];_4=_2.getField(_6);_2=_4?_2.getSchema(_4.type):_2;if(_4==null){this.logWarn("Unable to find dataSource field matching specified dataPath: '"+_1+"'");return}}
+return _4}
+,isc.A.registerWithDataView=function(_1){if(!this.inputDataPath)return;_1=this.parentElement;while(_1&&!isc.isA.DataView(_1))_1=_1.parentElement;if(!_1){this.logWarn("Component initialized with an inputDataPath property, but no DataView "+"was found in the parent hierarchy. inputDataPath is only applicable to "+"DataBoundComponents and FormItems being managed by a DataView");return}
+_1.registerItem(this)}
+,isc.A.bindToDataSource=function(_1){if(this.dataPath)this.setDataPath(this.dataPath);if(this.dataSource==null&&this.data!=null)this.dataSource=this.data.dataSource;var _2=this.fields||this.items;if(isc.isAn.Array(_2))this.originalFields=_2.duplicate();var _3=this.getDataSource();if(_3!=null&&isc.isA.String(_3)){this.logWarn("unable to look up DataSource: "+_3+", databinding will not be used");return _1}
 var _4=(_1==null||_1.length==0),_5;if(_3){var _6=this.useFlatFields;if(_6==null)_6=_3.useFlatFields;_5=_6?_3.getFlattenedFields():_3.getFields()}
 if(_3==null||_5==null){if(_1!=null&&isc.SimpleType){for(var i=0;i<_1.length;i++){isc.SimpleType.addTypeDefaults(_1[i])}}
+this.addFieldValidators(_1);return _1}
+if(this.doNotUseDefaultBinding)return[];if(_3!=null&&_4){_1=[];for(var _8 in _5){var _9=_5[_8];if(!this.shouldUseField(_9,_3))continue;_1.add(isc.addProperties({},_9))}
+this.addFieldValidators(_1);return _1}
+if(_3!=null&&!_4){if(this.useAllDataSourceFields){var _10=this;var _11=_3.combineFieldOrders(_5,_1,function(_9,_3){return _10.shouldUseField(_9,_3)});this.addFieldValidators(_11);return _11}else{for(var i=0;i<_1.length;i++){var _9=_1[i];if(!_9)continue;var _8=_9[this.fieldIdProperty];isc.SimpleType.addTypeDefaults(_9);_9=this.combineFieldData(_9)}
+this.addFieldValidators(_1);return _1}}}
+,isc.A.combineFieldData=function(_1){var _2=this.getDataSource();if(_1.dataPath){isc.DataSource.combineFieldData(_1,this.getDataPathField(_1.dataPath));return _1}else if(_2.getField(_1.name)){return _2.combineFieldData(_1)}
 return _1}
-if(_3!=null&&_4){_1=[];for(var _8 in _5){var _9=_5[_8];if(!this.shouldUseField(_9,_3))continue;_1.add(isc.addProperties({},_9))}
-return _1}
-if(_3!=null&&!_4){if(this.useAllDataSourceFields){var _10=this;return _3.combineFieldOrders(_5,_1,function(_9,_3){return _10.shouldUseField(_9,_3)})}else{for(var i=0;i<_1.length;i++){var _9=_1[i];if(!_9)continue;var _8=_9[this.fieldIdProperty];isc.SimpleType.addTypeDefaults(_9);if(!_3.getField(_8))continue;_9=_3.combineFieldData(_9)}
-return _1}}}
 ,isc.A.shouldUseField=function(_1,_2){if(_1.hidden&&!this.showHiddenFields)return false;if(_1.canFilter==false&&this.showFilterFieldsOnly){return false}
 if(_1.detail&&!this.showDetailFields)return false;if(!this.showComplexFields&&_2.fieldIsComplexType(_1.name))return false;return true}
+,isc.A.addFieldValidators=function(_1){if(_1==null)return;var _2={type:"required"};for(var i=0;i<_1.length;i++){var _4=_1[i];if(_4.required){var _5=isc.addProperties({},_2),_6=_4.requiredMessage||this.requiredMessage;if(_6!=null)_5.errorMessage=_6;if(!_4.validators){_4.validators=[_5]}else{if(!isc.isAn.Array(_4.validators)){_4.validators=[_4.validators]}
+if(!isc.isAn.Array(_4.validators)){_4.validators=[_4.validators]}
+if(!_4.validators.containsProperty("type",_5.type)){if(_4.validators.$69){_4.validators=_4.validators.duplicate()}
+_4.validators.add(_5)}else if(_6!=null){var _7=this.getDataSource(),v=_4.validators.find("type",_5.type);if(v.errorMessage==null||(_7&&v.errorMessage==_7.requiredMessage)){v.errorMessage=_6}}}}}}
 ,isc.A.getField=function(_1){if(!this.fields)return null;return isc.Class.getArrayItem(_1,this.fields,this.fieldIdProperty)}
 ,isc.A.getFieldNum=function(_1){if(!this.fields)return-1;if(isc.isA.Object(_1)&&(_1[this.fieldIdProperty]!=null)){_1=_1[this.fieldIdProperty]}
 return isc.Class.getArrayItemIndex(_1,this.fields,this.fieldIdProperty)}
+,isc.A.isXMLRequired=function(_1){if(!_1||!this.useXMLRequired||!_1.xmlRequired)return false;if(!_1.dataPath)return true;var _2=this.getDataSource();if(!_2)return true;var _3=_1.dataPath.split(isc.slash),_1;for(var i=0;i<_3.length;i++){var _5=_3[i];if(!_2)return true;_1=_2.getField(_5);if(!_1)return true;if(_1.xmlMinOccurs!=null&&_1.xmlMinOccurs<1){return false}
+_2=_2.getSchema(_1.type)}
+return true}
 ,isc.A.evalViewState=function(_1,_2,_3){if(isc.isA.String(_1)){var _4=_1;try{_1=isc.eval(_1)}catch(e){if(!_3)
 this.logWarn("Unable to parse "+_2+" object passed in: "+_4+" Ignoring.");return}}
 return _1}
-,isc.A.getFieldState=function(_1){var _2=[];var _3=this.getAllFields();if(_3){for(var i=0;i<_3.length;i++){var _5=_3[i],_6=_5[this.fieldIdProperty],_7=this.getStateForField(_6);_2.add(_7)}}
+,isc.A.getFieldState=function(_1){var _2=[];var _3=this.getAllFields();if(_3){for(var i=0;i<_3.length;i++){var _5=_3[i],_6=_5[this.fieldIdProperty],_7=this.getStateForField(_6,_1);_2.add(_7)}}
 return isc.Comm.serialize(_2)}
 ,isc.A.getStateForField=function(_1,_2){var _3=this.getAllFields().find(this.fieldIdProperty,_1),_4={name:_1};if(!this.fieldShouldBeVisible(_3))_4.visible=false;if(_3.userFormula)_4.userFormula=_3.userFormula;if(_3.userSummary)_4.userSummary=_3.userSummary;if(_2||_3.userSummary||_3.userFormula){_4.title=_3.title}
 if(this.getSpecifiedFieldWidth)_4.width=this.getSpecifiedFieldWidth(_3);return _4}
@@ -3061,8 +3183,11 @@ return true}
 ,isc.A.setDataSource=function(_1,_2){if(isc.$cv)arguments.$cw=this;this.dataSource=_1||this.dataSource;if(this.setFields)this.setFields(_2);if(this.dataSource){if(this.isA("DynamicForm"))this.setData({});else this.setData([])}
 this.markForRedraw("bind")}
 ,isc.A.bind=function(_1,_2){this.setDataSource(_1,_2)}
-,isc.A.getDataSource=function(){if(isc.isA.String(this.dataSource)){var _1=isc.DS.get(this.dataSource);if(_1!=null)return _1;_1=this.getWindow()[this.dataSource];if(_1&&isc.isA.DataSource(_1))return(this.dataSource=_1)}
+,isc.A.getDataSource=function(){if(isc.isA.String(this.dataSource)){if(this.serviceNamespace||this.serviceName){this.dataSource=this.lookupSchema()}else{var _1=isc.DS.get(this.dataSource);if(_1!=null)return _1;_1=this.getWindow()[this.dataSource];if(_1&&isc.isA.DataSource(_1))return(this.dataSource=_1)}}
 return this.dataSource}
+,isc.A.lookupSchema=function(){var _1;if(this.serviceName)_1=isc.WebService.getByName(this.serviceName,this.serviceNamespace);else _1=isc.WebService.get(this.serviceNamespace);if((this.serviceNamespace||this.serviceName)&&_1==null){this.logWarn("Could not find WebService definition: "+(this.serviceName?"serviceName: "+this.serviceName:"")+(this.serviceNamespace?"   serviceNamespace: "+this.serviceNamespace:""))}
+if(!isc.isA.String(this.dataSource)){this.logWarn("this.dataSource was not a String in lookupSchema");return}
+var _2;if(_1)_2=_1.getSchema(this.dataSource);return _2||this.dataSource}
 ,isc.A.fieldValuesAreEqual=function(_1,_2,_3){if(_2==_3)return true;if(_1==null)return false;if(_1.type=="date"){if(isc.isA.Date(_2)&&isc.isA.Date(_3)){return(Date.compareDates(_2,_3)==0)}}else if(_1.type=="valueMap"){if(isc.isAn.Array(_2)&&isc.isAn.Array(_3)){return _2.equals(_3)}else if(isc.isAn.Object(_2)&&isc.isAn.Object(_3)){for(var i in _2){if(_3[i]!=_2[i])return false}
 for(var j in _3){if(_2[j]!=_3[j])return false}
 return true}}
@@ -3070,16 +3195,23 @@ return false}
 ,isc.A.setFields=function(_1){_1=this.bindToDataSource(_1);this.fields=_1}
 ,isc.A.getSerializeableFields=function(_1,_2){_1.addList(["zIndex","data"]);if(this.ID&&this.ID.startsWith("isc_"))_1.add("ID");if(this.dataSource)_1.addList(["fields","items"]);if(this.getClassName()!="Canvas"&&this.getClassName()!="Layout"){_1.add("children")}
 return this.Super("getSerializeableFields",arguments)}
-,isc.A.addField=function(_1,_2){var _3=(this.fields||this.items||isc.$ac).duplicate();_3.addAt(_1,_2);this.setFields(_3)}
-,isc.A.removeField=function(_1){var _2=(this.fields||this.items||isc.$ac).duplicate();_2.remove(_2.find("name",_1));this.setFields(_2)}
+,isc.A.addField=function(_1,_2){if(_1==null)return;var _3=(this.fields||this.items||isc.$ac).duplicate();var _4=this.getField(_1.name);if(_4)_3.remove(_4);if(_2==null||_2>_3.length)_2=_3.length;_3.addAt(_1,_2);this.setFields(_3)}
+,isc.A.removeField=function(_1){var _2=(this.fields||this.items||isc.$ac).duplicate();var _3=_1.name?_1.name:_1;_2.remove(_2.find("name",_3));this.setFields(_2)}
+,isc.A.setCanEdit=function(_1){this.canEdit=_1}
 ,isc.A.filterData=function(_1,_2,_3){this.$wo("filter",_1,_2,_3)}
 ,isc.A.fetchData=function(_1,_2,_3){if(!_3)_3={};if(!_3.textMatchStyle)_3.textMatchStyle="exact";this.$wo("fetch",_1,_2,_3)}
+,isc.A.$71s=function(_1){return(this.canExport!=false&&_1.canExport!=false&&!_1.userFormula&&!_1.userSummary&&!_1.hidden)}
 ,isc.A.exportData=function(_1){if(!_1)_1={};if(this.sortField)_1.sortBy=(!this.sortDirection?"-":"")+this.sortField;if(!_1.textMatchStyle){var _2=this.data.context;if(_2&&_2.textMatchStyle)_1.textMatchStyle=_2.textMatchStyle}
-if(!this.exportAll){var _3=this.exportFields;if(!_3){_3=[];for(var i=0;i<this.fields.length;i++){var _5=this.fields.get(i);if(!_5.hidden&&!_5.userFormula&&!_5.userSummary){_3.add(_5.name);if(_5.displayField)_3.add(_5.displayField)}}}
+if(!this.exportAll&&!_1.exportFields){var _3=this.exportFields;if(!_3){_3=[];for(var i=0;i<this.fields.length;i++){var _5=this.fields.get(i);if(this.$71s(_5)){_3.add(_5.name);if(_5.displayField&&!_5.optionDataSource)_3.add(_5.displayField)}}}
 if(_3&&_3.length>0)_1.exportFields=_3}
 this.getDataSource().exportData(this.getCriteria(),_1)}
-,isc.A.setCriteria=function(_1){if(this.data&&this.data.setCriteria)this.data.setCriteria(_1)}
-,isc.A.getCriteria=function(){return this.data&&this.data.getCriteria?this.data.getCriteria():null}
+,isc.A.setCriteria=function(_1){if(this.data&&this.data.setCriteria)this.data.setCriteria(_1);else this.initialCriteria=_1}
+,isc.A.getCriteria=function(){if(!this.isDrawn()&&(!this.data||this.data.getLength()==0)){return isc.shallowClone(this.initialCriteria)}
+else if(this.data&&this.data.getCriteria)return isc.shallowClone(this.data.getCriteria());else return null}
+,isc.A.doInitialFetch=function(){var _1=false;if(this.autoFetchData&&!this.$p7&&this.fetchData){if(!this.dataSource){this.logWarn("autoFetchData is set, but no dataSource is specified, can't fetch")}else{_1=!isc.RPCManager.startQueue();this.fetchData(this.getInitialCriteria(),null,this.getInitialFetchContext());this.$p7=true}}
+return _1}
+,isc.A.getInitialCriteria=function(){return this.initialCriteria}
+,isc.A.getInitialFetchContext=function(){var _1={};_1.textMatchStyle=this.autoFetchTextMatchStyle;return _1}
 ,isc.A.fetchRelatedData=function(_1,_2,_3,_4){var _5=isc.isA.DataSource(_2)?_2:isc.isA.String(_2)?isc.DS.get(_2):isc.isA.Canvas(_2)?_2.dataSource:null;if(!_5){this.logWarn("schema not understood: "+this.echoLeaf(_2));return}
 var _6=this.getDataSource().getTreeRelationship(_5);var _7={};_7[_6.parentIdField]=_1[_6.idField];this.fetchData(_7,_3,_4)}
 ,isc.A.clearCriteria=function(_1,_2){this.$wo("filter",null,_1,_2)}
@@ -3091,14 +3223,15 @@ this.filterWithCriteria(_2,_4.operation,_4)}
 var _5=this.getData();if(this.useExistingDataModel(_1,_2,_3)){this.updateDataModel(_4,_2,_3)}else{_5=this.createDataModel(_4,_2,_3)}
 this.setData(_5);if(!_3.$326&&this.requestVisibleRows!=null){var _6=this.data,_7=_6.fetchDelay;_6.fetchDelay=0;this.requestVisibleRows();_6.fetchDelay=_7}}
 ,isc.A.useExistingDataModel=function(_1,_2,_3){var _4=this.getData();if(!isc.isA.ResultSet(_4))return false;var _5=_4.getOperationId("fetch");return _5==null||_5==_2.ID}
-,isc.A.createDataModel=function(_1,_2,_3){if(this.logIsInfoEnabled("ResultSet")){this.logInfo("Creating new isc.ResultSet for operation '"+_2.ID+"' with filterValues: "+isc.Comm.serialize(_1),"ResultSet")}
+,isc.A.createDataModel=function(_1,_2,_3){if(this.logIsInfoEnabled("ResultSet")){this.logInfo("Creating new isc.ResultSet for operation '"+_2.ID+"' with filterValues: "+this.echoFull(_1),"ResultSet")}
 var _4=this.getDataSource();if(!_4){this.logWarn("No DataSource or invalid DataSource specified, can't create data model"+this.getStackTrace());return null}
 var _5=this.dataProperties||{};if(this.dataFetchDelay)_5.fetchDelay=this.dataFetchDelay;isc.addProperties(_5,{operation:_2,filter:_1,context:_3,componentId:this.ID});return _4.getResultSet(_5)}
-,isc.A.updateDataModel=function(_1,_2,_3){this.logDebug("Setting filter to: "+isc.Comm.serialize(_1));var _4=this.getData();_4.setContext(_3);_4.setCriteria(_1)}
+,isc.A.updateDataModel=function(_1,_2,_3){this.logDebug("Setting filter to: "+this.echoFull(_1));var _4=this.getData();_4.setContext(_3);_4.setCriteria(_1)}
 ,isc.A.requestVisibleRows=function(){return this.data.get(0)}
-,isc.A.invalidateCache=function(){if(this.data&&this.data.invalidateCache!=null)return this.data.invalidateCache();else if(this.isGrouped)this.fetchData()}
+,isc.A.invalidateCache=function(){if(this.data&&this.data.invalidateCache!=null)return this.data.invalidateCache();else if(this.isGrouped&&isc.isA.ResultSet(this.originalData)){this.originalData.invalidateCache();this.regroup()}}
 ,isc.A.willFetchData=function(_1,_2){if(this.data&&this.data.willFetchData!=null){return this.data.willFetchData(_1,_2)}
 return true}
+,isc.A.findByKey=function(_1){return this.data.findByKey(_1)}
 ,isc.A.addData=function(_1,_2,_3){return this.$wp("add",_1,_2,_3)}
 ,isc.A.updateData=function(_1,_2,_3){return this.$wp("update",_1,_2,_3)}
 ,isc.A.removeData=function(_1,_2,_3){return this.$wp("remove",_1,_2,_3)}
@@ -3117,18 +3250,21 @@ var _4=this.buildRequest(_2,"remove",_1),_5=this.getDataSource();if(_3.length>0)
 ,isc.A.deleteRecords=function(_1,_2,_3,_4){isc.addProperties(_3,{prompt:(_3.prompt||isc.RPCManager.removeDataPrompt)});var _5=isc.RPCManager.startQueue();if(!isc.isAn.Array(_1))_1=[_1];for(var i=0;i<_1.length;i++){if(_1[i].$52e)continue;_4.performDSOperation(_2.type,_1[i],null,_3)}
 if(!_5)isc.RPCManager.sendQueue()}
 ,isc.A.createSelectionModel=function(){if(this.selection)this.destroySelectionModel();if(this.canSelectCells){var _1=[];if(this.numRows!=null){for(var i=0;i<this.numRows;i++){_1[i]={}}}}else{var _1=this.data}
-var _3,_4={ID:this.getID()+"_selection",data:_1,target:this,selectionProperty:this.selectionProperty,simpleDeselect:this.simpleDeselect,dragSelection:this.canDragSelect};if(this.canSelectCells&&this.fields!=null)_4.numCols=this.fields.length;if(this.recordEnabledProperty!=null)_4.enabledProperty=this.recordEnabledProperty;if(this.data.getNewSelection){_3=this.data.getNewSelection(_4)}
+var _3,_4={ID:this.getID()+"_selection",data:_1,target:this,selectionProperty:this.selectionProperty,simpleDeselect:this.simpleDeselect,dragSelection:this.canDragSelect};if(this.canSelectCells&&this.fields!=null)_4.numCols=this.fields.length;if(this.recordEnabledProperty!=null)_4.enabledProperty=this.recordEnabledProperty;if(this.recordCanSelectProperty!=null)_4.canSelectProperty=this.recordCanSelectProperty;if(this.cascadeSelection!=null)_4.cascadeSelection=this.cascadeSelection;if(this.data.getNewSelection){_3=this.data.getNewSelection(_4)}
 if(_3==null){if(this.canSelectCells){_3=isc.CellSelection.create(_4)}else{_3=isc.Selection.create(_4)}}
 this.selection=_3}
 ,isc.A.destroySelectionModel=function(){if(!this.selection)return;if(this.selection.destroy)this.selection.destroy();delete this.selection}
+,isc.A.removeSelectionMarkers=function(_1){var _2=true;if(!isc.isAn.Array(_1)){_1=[_1];_2=false}
+_1.clearProperty(this.selectionProperty||this.selection?this.selection.selectionProperty:null);return _2?_1:_1[0]}
 ,isc.A.getSelection=function(){if(!this.selection)return null;if(this.canSelectCells){var _1=this.selection.getSelectedCells();if(_1==null)return null;var _2=[];for(var i=0;i<_1.length;i++){var _4=_1[i],_5=this.getCellRecord(_4[0],_4[1]);if(_5==null)continue;_2.add(_5)}
 return _2}else{return this.selection.getSelection()}}
 ,isc.A.getSelectedRecord=function(){if(!this.selection)return null;return this.selection.getSelectedRecord()}
 ,isc.A.getSelectionObject=function(){return this.selection}
 ,isc.A.selectRecord=function(_1,_2,_3){this.selectRecords(_1,_2,_3)}
 ,isc.A.deselectRecord=function(_1,_2){this.selectRecord(_1,false,_2)}
-,isc.A.selectRecords=function(_1,_2,_3){if(_2==null)_2=true;if(!isc.isAn.Array(_1))_1=[_1];for(var i=0;i<_1.length;i++){if(_1[i]==null)continue;if(isc.isA.Number(_1[i]))_1[i]=this.getRecord(_1[i],_3)}
-var _5=this.getSelectionObject(_3);if(_5)_5.selectList(_1,_2,_3)}
+,isc.A.selectRecords=function(_1,_2,_3){if(_2==null)_2=true;if(!isc.isAn.Array(_1))_1=[_1];if(isc.isA.ResultSet(this.data)&&!this.data.lengthIsKnown()){this.logWarn("ignoring attempt to select records while data is loading");return}
+for(var i=0;i<_1.length;i++){if(_1[i]==null)continue;if(isc.isA.Number(_1[i])){var _5=_1[i];_1[i]=this.getRecord(_5,_3)}}
+var _6=this.getSelectionObject(_3);if(_6)_6.selectList(_1,_2,_3)}
 ,isc.A.deselectRecords=function(_1,_2){this.selectRecords(_1,false)}
 ,isc.A.selectAllRecords=function(){this.selection.selectAll()}
 ,isc.A.deselectAllRecords=function(){this.selection.deselectAll()}
@@ -3136,63 +3272,70 @@ var _5=this.getSelectionObject(_3);if(_5)_5.selectList(_1,_2,_3)}
 ,isc.A.getRecord=function(_1,_2){if(this.data)return this.data.get(_1);return null}
 ,isc.A.getHilites=function(){return this.hilites}
 ,isc.A.setHilites=function(_1){this.hilites=_1;if(_1==null)return;this.$63j(this.hilites)}
-,isc.A.$63j=function(_1,_2){for(var i=0;i<_1.length;i++){if(_1[i].id==null){this.$63k=this.$63k||0;_1[i].id=this.$63k}}
+,isc.A.$63j=function(_1,_2){for(var i=0;i<_1.length;i++){if(_1[i].id==null){this.$63k=this.$63k||0;_1[i].id=this.$63k++}}
 this.$58b=_1.makeIndex("id");if(!_2)this.applyHilites()}
-,isc.A.applyHilites=function(){var _1=this.hilites,_2=this.data;if(!_1)return;if(_1&&!this.$58b)this.$63j(_1,true);if(isc.isA.ResultSet(_2))_2=_2.getAllLoadedRows()
-_2.setProperty(this.hiliteMarker,null);for(var i=0;i<_1.length;i++){this.applyHilite(_1[i],_2)}
+,isc.A.applyHilites=function(){var _1=this.hilites,_2=this.data;if(!_1)return;if(_1&&!this.$58b)this.$63j(_1,true);if(isc.isA.ResultSet(_2))_2=_2.getAllLoadedRows();if(isc.isA.Tree(_2))_2=_2.getAllItems();_2.setProperty(this.hiliteMarker,null);for(var i=0;i<_1.length;i++){this.applyHilite(_1[i],_2)}
 this.redrawHilites()}
 ,isc.A.getHilite=function(_1){if(isc.isAn.Object(_1))return _1;if(this.hilites==null)return null;if(!this.$58b&&this.hilites){this.$63j(this.hilites)}
 var _2=this.$58b[_1];if(_2==null)_2=this.hilites[_1];return _2}
-,isc.A.applyHilite=function(_1,_2,_3){_1=this.getHilite(_1);if(!_1.criteria)return;if(_1.disabled)return;var _3=_3||_1.fieldName;if(_3==null)_3=this.fields.getProperty("name");var _4=this.getDataSource().applyFilter(_2,_1.criteria);var _5=isc.isAn.Array(_3)?_3:[_3];if(this.logIsDebugEnabled("hiliting")){this.logDebug("applying filter: "+isc.Comm.serialize(_1.criteria)+", produced matches: "+isc.echoLeaf(_4)+", on fields: "+_5,"hiliting")}
+,isc.A.applyHilite=function(_1,_2,_3){_1=this.getHilite(_1);if(!_1.criteria)return;if(_1.disabled)return;var _3=_3||_1.fieldName;if(_3==null)_3=this.fields.getProperty("name");var _4=[];if(this.getDataSource()){_4=this.getDataSource().applyFilter(_2,_1.criteria)}else{_4=this.unboundApplyFilter(_2,_1.criteria)}
+var _5=isc.isAn.Array(_3)?_3:[_3];if(this.logIsDebugEnabled("hiliting")){this.logDebug("applying filter: "+this.echoFull(_1.criteria)+", produced matches: "+isc.echoLeaf(_4)+", on fields: "+_5,"hiliting")}
 for(var j=0;j<_5.length;j++){var _7=this.getField(_5[j]);for(var i=0;i<_4.length;i++){var _9=_4[i];this.hiliteRecord(_9,_7,_1)}}}
+,isc.A.unboundApplyFilter=function(_1,_2){var _3=[];if(_1){if(_2){for(var _4=0;_4<_1.length;_4++){if(this.evaluateCriterion(_1[_4],_2)){_3.add(_1[_4])}}}else{_3=_1}}
+return _3}
+,isc.A.evaluateCriterion=function(_1,_2){var _3=isc.DataSource.$57z.find("ID",_2.operator);if(_3==null){isc.logWarn("Attempted to use unknown operator "+_2.operator);return false}
+return _3.condition(_2.value,_1,_2.fieldName,_2,_3,this)}
 ,isc.A.hiliteRecord=function(_1,_2,_3){var _4=_1[this.hiliteMarker];if(_4==null)_4=_1[this.hiliteMarker]=this.$578++;var _5=_2.$58c=_2.$58c||{},_6=_5[_4];if(_6==null)_5[_4]=_3.id;else _5[_4]=[_6,_3.id]}
 ,isc.A.getHiliteCSSText=function(_1){var _1=this.getHilite(_1);if(!_1)return;return _1.cssText||_1.style}
-,isc.A.addHiliteCSSText=function(_1,_2,_3){if(!_1)return _3;var _4=_1[this.hiliteMarker],_5=this.getField(_2);if(!_5.$58c)return;var _6=_5.$58c[_4];if(_6==null)return;if(!isc.isAn.Array(_6)){this.$579[0]=_6;_6=this.$579}
+,isc.A.addHiliteCSSText=function(_1,_2,_3){if(!_1)return _3;var _4=_1[this.hiliteMarker],_5=this.getField(_2);if(!_5||!_5.$58c)return _3;var _6=_5.$58c[_4];if(_6==null)return _3;if(!isc.isAn.Array(_6)){this.$579[0]=_6;_6=this.$579}
 for(var i=0;i<_6.length;i++){var _8=this.getHiliteCSSText(_6[i]);if(_8!=null){_3=_3?_3+isc.semi+_8:_8}}
 return _3}
 ,isc.A.addObjectHilites=function(_1,_2,_3){if(!this.hilites||!_1)return _2;var _4;if(!isc.isAn.Array(_1)){this.$579[0]=_1;_4=this.$579}
-for(var i=0;i<_4.length;i++){var _6,_7,_8,_9=_4[i];if(isc.isA.String(_9))_6=_9;else _6=(_9!=null?_9[this.hiliteProperty]:null);_7=this.getHilite(_6);if(_7!=null&&!_7.disabled){_8=_7.cssText||_7.style;var _10=(!_7.fieldName||!_3||_7.fieldName==_3.name);if(_8!=null&&_8!=isc.emptyString&&_10){if(_2==null)_2=_8;else _2+=this.$24m+_8}}}
+for(var i=0;i<_4.length;i++){var _6,_7,_8,_9=_4[i];if(isc.isA.String(_9))_6=_9;else _6=(_9!=null?_9[this.hiliteProperty]:null);_7=this.getHilite(_6);if(_7!=null&&!_7.disabled){_8=_7.cssText||_7.style;var _10=(!_7.fieldName||!_3||_7.fieldName==_3.name);if(_8!=null&&_8!=isc.emptyString&&_10){if(_2==null)_2=_8;else _2+=isc.semi+_8}}}
 return _2}
-,isc.A.getFieldHilites=function(_1,_2){if(!_1)return null;if(_1[this.hiliteProperty]!=null){var _3=this.getHilite(_1[this.hiliteProperty]);if(_3.fieldName==_2.name)return[_3];else return null}
+,isc.A.getFieldHilites=function(_1,_2){if(!_1||!_2)return null;if(_1[this.hiliteProperty]!=null){var _3=this.getHilite(_1[this.hiliteProperty]);if(_3&&_3.fieldName==_2.name)return[_3];else return null}
 if(_1[this.hiliteMarker]!=null){var _4=_1[this.hiliteMarker];if(!_2.$58c)return null;else return _2.$58c[_4]}}
 ,isc.A.applyHiliteHTML=function(_1,_2){if(!this.hilites)return _2;var _3,_4,_5;if(!isc.isAn.Array(_1)){this.$579[0]=_1;_1=this.$579}
-for(var i=0;i<_1.length;i++){_5=_1[i];_3=this.getHilite(_5);if(_3.htmlValue!=null)_2=_3.htmlValue;if(_3!=null&&!_3.disabled){_4=_3.htmlBefore;if(_4!=null&&_4.length>0){_2=_4+_2}
+for(var i=0;i<_1.length;i++){_5=_1[i];_3=this.getHilite(_5);if(_3!=null){if(_3.htmlValue!=null)_2=_3.htmlValue;if(!_3.disabled){_4=_3.htmlBefore;if(_4!=null&&_4.length>0){_2=_4+_2}
 _4=_3.htmlAfter;if(_4!=null&&_4.length>0){_2=_2+_4}
-var _7=_3.htmlOpposite,_8=_3.styleOpposite||this.styleOpposite;if(_7){if(!isc.Browser.isIE){_2="<nobr><div class='"+_8+"' style='float:left'>&nbsp;"+_7+"&nbsp;</div>"+_2+"</nobr>"}else{_2="<nobr><table align=left><tr><td class='"+_8+"'>"+_7+"</td></tr></table>"+_2+"</nobr>"}}}}
+var _7=_3.htmlOpposite,_8=_3.styleOpposite||this.styleOpposite;if(_7){if(!isc.Browser.isIE){_2="<nobr><div class='"+_8+"' style='float:left'>&nbsp;"+_7+"&nbsp;</div>"+_2+"</nobr>"}else{_2="<nobr><table align=left><tr><td class='"+_8+"'>"+_7+"</td></tr></table>"+_2+"</nobr>"}}}}}
 return _2}
 ,isc.A.enableHilite=function(_1,_2){if(_2==null)_2=true;var _3=this.getHilite(_1);if(_3==null)return;_3.disabled=!_2;this.redrawHilites()}
 ,isc.A.disableHilite=function(_1){this.enableHilite(_1,false)}
 ,isc.A.enableHiliting=function(_1){if(_1==null)_1=true;if(this.hilites)this.hilites.setProperty("disabled",!_1);this.redrawHilites()}
 ,isc.A.disableHiliting=function(){this.enableHiliting(false)}
 ,isc.A.redrawHilites=function(){this.markForRedraw()}
-,isc.A.editHilites=function(){if(this.hiliteWindow){this.hiliteEditor.setHilites(this.getHilites());this.hiliteWindow.show();return}
-var _1=this,_2=this.hiliteEditor=isc.HiliteEditor.create({autoDraw:false,dataSource:this.getDataSource(),hilites:this.getHilites(),callback:function(_4){_1.setHilites(_4);_1.hiliteWindow.hide()}}),_3=this.hiliteWindow=isc.Window.create({autoDraw:true,items:[_2],autoSize:true,autoCenter:true,isModal:true,showModalMask:true,closeClick:function(){this.hide()},title:"Edit Highlights",bodyProperties:{layoutMargin:8,membersMargin:8}});return _3}
-,isc.A.transferRecords=function(_1,_2,_3,_4){if(!isc.isAn.Array(this.$67k))this.$67k=[];this.$67k.add({dropRecords:_1,targetRecord:_2,index:_3,sourceWidget:_4});if(this.$67l&&this.$67l!=0){isc.logWarn("transferRecords was invoked but the prior transfer is not yet complete - \
-                     the transfer will be queued up to run after the current transfer");return}
-this.$67m=true;this.$67n=[];this.$67l=0;if(isc.isAn.Array(this.data)&&this.data.length==0&&this.dataSource&&!this.saveLocally)
+,isc.A.editHilites=function(){if(this.hiliteWindow){this.hiliteEditor.clearHilites();this.hiliteEditor.setHilites(this.getHilites());this.hiliteWindow.show();return}
+var _1=this,_2=this.hiliteEditor=isc.HiliteEditor.create({autoDraw:false,dataSource:this.getDataSource(),hilites:this.getHilites(),callback:function(_4){if(_4!=null)_1.setHilites(_4);_1.hiliteWindow.hide()}}),_3=this.hiliteWindow=isc.Window.create({autoDraw:true,items:[_2],autoSize:true,autoCenter:true,isModal:true,showModalMask:true,closeClick:function(){this.hide()},title:"Edit Highlights",bodyProperties:{layoutMargin:8,membersMargin:8}});return _3}
+,isc.A.transferRecords=function(_1,_2,_3,_4,_5){if(!this.$67u("transferRecords",_1,_2,_3,_4,_5)){return}
+if(isc.isAn.Array(this.data)&&this.data.length==0&&this.dataSource&&!this.saveLocally)
 {this.fetchData(null,null,{$326:true});this.data.setFullLength(0)}
-if(_4==this){if(_3!=null&&!this.isGrouped)this.data.slideList(_1,_3)}else{var _5=this.getDataSource();var _6=_4.getDataSource();if(_5&&_5==_6&&_4.dragDataAction==isc.Canvas.MOVE){var _7=isc.rpc.startQueue();for(var i=0;i<_1.length;i++){var _9=_1[i];isc.addProperties(_9,this.getDropValues(_9,_6,_2,_3,_4));this.$61f(_9,_6)}
-if(!_7)isc.rpc.sendQueue()}else{if(!isc.isAn.Array(_1))_1=[_1];if(this.selectionType==isc.Selection.MULTIPLE||this.selectionType==isc.Selection.SIMPLE)
+if(_4==this){if(_3!=null&&!this.isGrouped)this.data.slideList(_1,_3)}else{var _6=this.getDataSource();var _7=_4.getDataSource();if(_6&&_6==_7&&_4.dragDataAction==isc.Canvas.MOVE){var _8=isc.rpc.startQueue();for(var i=0;i<_1.length;i++){var _10={};var _11=_6.getPrimaryKeyFieldNames();for(var j=0;j<_11.length;j++){_10[_11[j]]=_1[i][_11[j]]}
+isc.addProperties(_10,this.getDropValues(_10,_7,_2,_3,_4));this.$61f(_10,_7,null,_4)}
+if(!_8)isc.rpc.sendQueue()}else{if(!isc.isAn.Array(_1))_1=[_1];if(this.selectionType==isc.Selection.MULTIPLE||this.selectionType==isc.Selection.SIMPLE)
 {this.selection.deselectAll();this.selection.selectList(_1)}else if(this.selectionType==isc.Selection.SINGLE){this.selection.selectSingle(_1[0])}
-if(_5){this.$67o=isc.rpc.startQueue();for(var i=0;i<_1.length;i++){if(_1[i].$52e)continue;var _9=isc.clone(_1[i]);isc.addProperties(_9,this.getDropValues(_9,_6,_2,_3,_4));if(_5!=_6){if(this.dragRecategorize){var _10=_5.getForeignKeysByRelation(_9,_6);var _11=false;var _12=[];if(_6)_12=_6.getPrimaryKeyFields();var _13;for(var _14 in _12){if(_10[_14]!==_13){this.logWarn("ListGrid dragRecategorize: source has dataSource:"+_6.getID()+". foreignKey relationship with "+"target dataSource "+_5.getID()+" is based on primary key which cannot be modified.");_11=true}}
-if(!_11){isc.addProperties(_9,_10)}}
-if(_5.titleField&&_6&&_6.titleField&&_5.titleField!=_6.titleField){var _13;if(_9[_5.titleField]===_13){_9[_5.titleField]=_9[_6.titleField]}}}
-this.$61d(_9,_6,_4,_10)}}else{if(this.isGrouped){for(var i=0;i<_1.length;i++){if(!this.$61e(_1[i])){this.$52u(_1[i],true);this.originalData.add(_1[i])}}}else{for(var i=0;i<_1.length;i++){if(_3!=null){if(this.$61d(_1[i],null,_4,null,_3)){_3++}}else{this.$61d(_1[i],null,_4)}}}}}}
+if(_6){this.$67o=isc.rpc.startQueue();for(var i=0;i<_1.length;i++){if(_1[i].$52e)continue;var _10={};isc.addProperties(_10,_1[i]);isc.addProperties(_10,this.getDropValues(_10,_7,_2,_3,_4));if(_6!=_7){if(this.dragRecategorize){var _13=_6.getForeignKeysByRelation(_10,_7);var _14=false;var _15=[];if(_7)_15=_7.getPrimaryKeyFields();var _16;for(var _17 in _15){if(_13[_17]!==_16){this.logWarn("ListGrid dragRecategorize: source has dataSource:"+_7.getID()+". foreignKey relationship with "+"target dataSource "+_6.getID()+" is based on primary key which cannot be modified.");_14=true}}
+if(!_14){isc.addProperties(_10,_13)}}
+if(_6.titleField&&_7&&_7.titleField&&_6.titleField!=_7.titleField){var _16;if(_10[_6.titleField]===_16){_10[_6.titleField]=_10[_7.titleField]}}}
+this.$61d(_10,_7,_4,_13)}}else{if(this.isGrouped){for(var i=0;i<_1.length;i++){if(!this.$61e(_1[i])){this.$52u(_1[i],true);this.originalData.add(_1[i])}}}else{for(var i=0;i<_1.length;i++){if(_3!=null){if(this.$61d(_1[i],null,_4,null,_3)){_3++}}else{this.$61d(_1[i],null,_4)}}}}}}
 if(this.canReorderRecords&&this.$60z()!=null){this.unsort()}
-if(!this.$67l){isc.Log.logDebug("Invoking transferDragData from inside transferRecords - no server \
-                         queries needed?","dragDrop");_4.transferDragData(this.$67n,this);if(_5){if(!this.$67o)isc.rpc.sendQueue()}}
+if(!this.$67l){isc.Log.logDebug("Invoking transferDragData from inside transferRecords - no server "+"queries needed?","dragDrop");_4.transferDragData(this.$67n,this);if(_6){if(!this.$67o)isc.rpc.sendQueue()}}
 this.$67m=false}
-,isc.A.$61f=function(_1,_2,_3){if(!this.preventDuplicates){_2.updateData(_1,null,_3);return}
-var _4=this.getCleanRecordData(_1);if(this.data.find(_4,null,Array.DATETIME_VALUES)){}else{if(this.data.allMatchingRowsCached()){_2.updateData(_1,null,_3)}else{_2.fetchData(_4,function(_5,_6,_7){if(_6&&_6.length>0){}else{_2.updateData(_1,null,_3)}},{sendNoQueue:true})}}}
-,isc.A.$61d=function(_1,_2,_3,_4,_5,_6){var _7=this.getDataSource(),_8;if(_7)_8=_7.getPrimaryKeyFields();if(_7&&_7==_2){var _9;if(_8&&isc.firstKey(_8)!=null){for(var _10 in _8){if(_8[_10].type=="sequence"){_9=true;break}}}
-if(_9){var _11;for(var _10 in _8){_1[_10]=_11}
-_7.addData(_1);return true}}
-if(!this.preventDuplicates){if(_7){_7.addData(_1)}else{if(isc.Tree&&isc.isA.Tree(this.data)){this.data.add(_1,_6,_5)}else{if(_5!=null)this.data.addAt(_1,_5);else this.data.add(_1)}}
+,isc.A.$67u=function(_1,_2,_3,_4,_5,_6){if(!isc.isAn.Array(this.$67k))this.$67k=[];if(this.$67l&&this.$67l!=0){isc.logWarn("transferRecords was invoked but the prior transfer is not yet complete - \
+                     the transfer will be queued up to run after the current transfer");this.$67k.add({implementation:_1,dropRecords:_2,targetRecord:_3,index:_4,sourceWidget:_5,callback:_6});return false}
+this.$67k.addAt({implementation:_1,dropRecords:_2,targetRecord:_3,index:_4,sourceWidget:_5,callback:_6},0);this.$67m=true;this.$67n=[];this.$67l=0;return true}
+,isc.A.$61f=function(_1,_2,_3,_4){var _5=this;if(!this.preventDuplicates){if(!_4.$67v)_4.$67v=0;_4.$67v++;_2.updateData(_1,function(){_4.$67w()},_3);return}
+var _6=this.getCleanRecordData(_1);if(this.data.find(_6,null,Array.DATETIME_VALUES)){isc.Log.logDebug("Found client-side duplicate, skipping update for '"+_1[isc.firstKey(_1)]+"'","dragDrop");this.$67n.add(this.getCleanRecordData(_1))}else{if(this.data.allMatchingRowsCached()){if(!_4.$67v)_4.$67v=0;_4.$67v++;_2.updateData(_1,function(){_4.$67w()},_3)}else{isc.Log.logDebug("Incrementing dup query count: was "+_5.$67l,"dragDrop");this.$67l++;_2.fetchData(_6,function(_7,_8,_9){if(_8&&_8.length>0){isc.Log.logDebug("Found server-side duplicate, skipping update for '"+_1[isc.firstKey(_1)]+"'","dragDrop");_5.$67n.add(_5.getCleanRecordData(_8[0]))}else{if(!_4.$67v)_4.$67v=0;_4.$67v++;_2.updateData(_1,function(){_4.$67w()},_3)}
+isc.Log.logDebug("Decrementing dup query count: was "+_5.$67l,"dragDrop");if(--_5.$67l==0&&!_5.$67m){if(_4.dragDataAction==isc.Canvas.MOVE){isc.Log.logDebug("Invoking transferDragData from inside callback","dragDrop");_4.transferDragData(_5.$67n,_5);delete _5.$67n;if(!_5.$67o)isc.rpc.sendQueue()}}},{sendNoQueue:true})}}}
+,isc.A.$61d=function(_1,_2,_3,_4,_5,_6){var _7=this.getDataSource(),_8,_9=this;if(_7)_8=_7.getPrimaryKeyFields();if(_7&&_7==_2){var _10;if(_8&&isc.firstKey(_8)!=null){for(var _11 in _8){if(_8[_11].type=="sequence"){_10=true;break}}}
+if(_10){var _12;for(var _11 in _8){_1[_11]=_12}
+if(!_3.$67v)_3.$67v=0;_3.$67v++;_7.addData(_1,function(){_3.$67w()});return true}}
+if(!this.preventDuplicates){if(_7){if(!_3.$67v)_3.$67v=0;_3.$67v++;_7.addData(_1,function(){_3.$67w()})}else{if(isc.Tree&&isc.isA.Tree(this.data)){this.data.add(_1,_6,_5)}else{if(_5!=null)this.data.addAt(_1,_5);else this.data.add(_1)}}
 return true}
-if(this.$61e(_1,_2,_4)){isc.warn(this.duplicateDragMessage);isc.Log.logDebug("Found client-side duplicate, adding '"+_1[isc.firstKey(_1)]+"' to exception list","dragDrop");this.$67n.add(this.getCleanRecordData(_1));return false}else{if(!_7){if(isc.Tree&&isc.isA.Tree(this.data)){this.data.add(_1,_6,_5);return true}else{if(_5!=null)this.data.addAt(_1,_5);else this.data.add(_1);return true}}else{if(!isc.ResultSet||!isc.isA.ResultSet(this.data)){_7.addData(_1);return true}else{if(this.data.allRowsCached()||(_4&&isc.firstKey(_4)&&this.data.allMatchingRowsCached())){_7.addData(_1);return true}
-if(_7&&_2==_7){if(_8&&isc.firstKey(_8)!=null){var _12=isc.applyMask(_1,_8)}else{_12=this.getCleanRecordData(_1)}}else if(_4&&isc.firstKey(_4)){_12=isc.addProperties({},this.data.getCriteria());isc.addProperties(_12,_4)}else{_12=this.getCleanRecordData(_1)}
-var _13=this;isc.Log.logDebug("Incrementing dup query count: was "+_13.$67l,"dragDrop");this.$67l++;_7.fetchData(_12,function(_14,_15,_16){if(_15&&_15.length>0){isc.warn(_13.duplicateDragMessage);isc.Log.logDebug("Found server-side duplicate, adding '"+_1[isc.firstKey(_1)]+"' to exception list","dragDrop");_13.$67n.add(_13.getCleanRecordData(_1))}else{_7.addData(_1,null,{sendNoQueue:false})}
-isc.Log.logDebug("Decrementing dup query count: was "+_13.$67l,"dragDrop");if(--_13.$67l==0&&!_13.$67m){if(_3.dragDataAction==isc.Canvas.MOVE){isc.Log.logDebug("Invoking transferDragData from inside callback","dragDrop");_3.transferDragData(_13.$67n,_13);delete _13.$67n;if(!_13.$67o)isc.rpc.sendQueue()}}},{sendNoQueue:true})}}}}
+if(this.$61e(_1,_2,_4)){isc.warn(this.duplicateDragMessage);isc.Log.logDebug("Found client-side duplicate, adding '"+_1[isc.firstKey(_1)]+"' to exception list","dragDrop");this.$67n.add(this.getCleanRecordData(_1));return false}else{if(!_7){if(isc.Tree&&isc.isA.Tree(this.data)){this.data.add(_1,_6,_5);return true}else{if(_5!=null)this.data.addAt(_1,_5);else this.data.add(_1);return true}}else{if(!isc.ResultSet||!isc.isA.ResultSet(this.data)){if(!_3.$67v)_3.$67v=0;_3.$67v++;_7.addData(_1,function(){_3.$67w()});return true}else{if(this.data.allRowsCached()||(_4&&isc.firstKey(_4)&&this.data.allMatchingRowsCached())){if(!_3.$67v)_3.$67v=0;_3.$67v++;_7.addData(_1,function(){_3.$67w()});return true}
+if(_7&&_2==_7){if(_8&&isc.firstKey(_8)!=null){var _13=isc.applyMask(_1,_8)}else{_13=this.getCleanRecordData(_1)}}else if(_4&&isc.firstKey(_4)){_13=isc.addProperties({},this.data.getCriteria());isc.addProperties(_13,_4)}else{_13=this.getCleanRecordData(_1)}
+isc.Log.logDebug("Incrementing dup query count: was "+_9.$67l,"dragDrop");this.$67l++;_7.fetchData(_13,function(_14,_15,_16){if(_15&&_15.length>0){isc.warn(_9.duplicateDragMessage);isc.Log.logDebug("Found server-side duplicate, adding '"+_1[isc.firstKey(_1)]+"' to exception list","dragDrop");_9.$67n.add(_9.getCleanRecordData(_1))}else{if(!_3.$67v)_3.$67v=0;_3.$67v++;_7.addData(_1,function(){_3.$67w()})}
+isc.Log.logDebug("Decrementing dup query count: was "+_9.$67l,"dragDrop");if(--_9.$67l==0&&!_9.$67m){if(_3.dragDataAction==isc.Canvas.MOVE){isc.Log.logDebug("Invoking transferDragData from inside callback","dragDrop");_3.transferDragData(_9.$67n,_9);delete _9.$67n;if(!_9.$67o)isc.rpc.sendQueue()}}},{sendNoQueue:true})}}}}
 ,isc.A.$61e=function(_1,_2,_3){var _4=this.getDataSource(),_5;if(!this.preventDuplicates)return false;if(_4)_5=_4.getPrimaryKeyFields();if(_4&&_4==_2){if(_5&&isc.firstKey(_5)!=null){for(var _6 in _5){if(_5[_6].type=="sequence"){return false}}}}
 if(!_4){var _7=this.getCleanRecordData(_1)}else if(_4&&_2==_4){if(_5&&isc.firstKey(_5)!=null){_7=isc.applyMask(_1,_5)}else{_7=this.getCleanRecordData(_1)}}else if(_3&&isc.firstKey(_3)){_7={};var _8=this.data.getCriteria();if(!_4.isAdvancedCriteria(_8)){var _9=this.data.context;if(_9&&(_9.textMatchStyle==null||_9.textMatchStyle=="exact")){isc.addProperties(_7,_8)}}
 isc.addProperties(_7,_3)}else{_7=this.getCleanRecordData(_1)}
@@ -3200,21 +3343,29 @@ if(this.data.find(_7,null,Array.DATETIME_VALUES))return true;else return false}
 ,isc.A.getCleanRecordData=function(_1){if(isc.ResultTree&&isc.isA.ResultTree(this.data)){return this.data.getCleanNodeData(_1,false)}
 var _2={};for(var _3 in _1){if(_3.startsWith("_selection_"))continue;_2[_3]=_1[_3]}
 return _2}
+,isc.A.$67w=function(_1,_2,_3){if(this.$67v){isc.Log.logDebug("Decrementing update count - was "+this.$67v,"dragDrop");this.$67v-=1}
+if(!this.$67v){isc.Log.logDebug("All updates complete, calling dragComplete()","dragDrop");if(isc.isA.Function(this.dragComplete))this.dragComplete()}}
 ,isc.A.getDropValues=function(_1,_2,_3,_4,_5,_6){if(!this.addDropValues)return;var _7={},_8;if(this.data&&this.data.getNodeDataSource){_8=this.data.getNodeDataSource(_3)}
 if(!_8){_8=this.getDataSource()}
 if(this.data&&this.data.getCriteria)_7=this.data.getCriteria(_8);var _9;if(isc.isAn.emptyObject(_7)||!_8.isAdvancedCriteria(_7)){var _10=this.data.context;if(_10&&(_10.textMatchStyle==null||_10.textMatchStyle=="exact")){_9=isc.addProperties({},_7);if(this.dropValues){_9=isc.addProperties(_9,this.dropValues)}
 return _9}}
 return this.dropValues}
-,isc.A.transferDragData=function(_1,_2){var _3;if(_2&&_2.$67k){_3=_2.$67k.shift().dropRecords}else{_3=this.getDragData()}
-var _4=this.dragDataAction==isc.Canvas.COPY||this.dragDataAction==isc.Canvas.CLONE;if(_4){for(var i=0;i<_3.length;i++){var _6=_3[i];if(_6.$29a!=null){for(var _7=0;_7<_6.$29a.length;_7++){this.removeEmbeddedComponent(_6,_6.$29a[_7])}}
-delete _6.$29a}
-_3=isc.clone(_3)}else if(this.dragDataAction==isc.Canvas.MOVE){if(this.selection&&this.selection.deselectList)this.selection.deselectList(_3);if(this.dataSource){var _8=_2?_2.getDataSource():null;if(_8!=this.getDataSource()){var _9=isc.rpc.startQueue();for(var i=0;i<_3.length;i++){var _10=this.getCleanRecordData(_3[i]);if(!_1||!_1.find(_10,null,Array.DATETIME_VALUES)){this.getDataSource().removeData(_3[i])}}
-if(!_9)isc.rpc.sendQueue()}}else if(this.data){for(var i=0;i<_3.length;i++){var _10=this.getCleanRecordData(_3[i]);if(!_1||!_1.find(_10,null,Array.DATETIME_VALUES)){this.data.remove(_3[i]);this.data.remove(_3[i]);if(this.isGrouped){this.originalData.remove(_3[i])}}}}}
-if(_2&&_2.$67k&&_2.$67k.length>0){var _11=_2.$67k.shift();isc.Timer.setTimeout(function(){_2.transferRecords(_11.dropRecords,_11.targetRecord,_11.index,_11.sourceWidget)},0)}
+,isc.A.transferDragData=function(_1,_2){var _3=[],_4,_5,_6;if(_2&&_2.$67k){_6=_2.$67k.shift();_4=_6.dropRecords;_5=_6.callback}else{_4=this.getDragData();_6={}}
+for(var i=0;i<_4.length;i++){var _8=this.getCleanRecordData(_4[i]);if(!_1||!_1.find(_8,null,Array.DATETIME_VALUES)){_3.add(_4[i])}}
+if(this.dragDataAction==isc.Canvas.MOVE&&_2!=this&&!_6.noRemove){if(this.dataSource){var _9=_2.getDataSource();if(_9!=this.getDataSource()){var _10=isc.rpc.startQueue();for(var i=0;i<_3.length;i++){this.getDataSource().removeData(_3[i])}
+if(!_10)isc.rpc.sendQueue()}}else if(this.data){for(var i=0;i<_3.length;i++){this.data.remove(_3[i]);if(this.isGrouped){this.originalData.remove(_3[i])}}}
+if(this.selection&&this.selection.deselectList){this.selection.deselectList(_4)}}
+if(_2){if(isc.isA.Function(_2.dropComplete))_2.dropComplete(_3);if(_5){this.fireCallback(_5,"records",[_3])}
+if(_2.$67k&&_2.$67k.length>0){var _11=_2.$67k.shift();isc.Timer.setTimeout(function(){if(_11.implementation=="transferNodes"){_2.transferNodes(_11.dropRecords,_11.targetRecord,_11.index,_11.sourceWidget,_11.callback)}else{_2.transferRecords(_11.dropRecords,_11.targetRecord,_11.index,_11.sourceWidget,_11.callback)}},0)}}
 return _3}
 ,isc.A.getDragData=function(){var _1=(this.selection&&this.selection.getSelection)?this.selection.getSelection():null;return _1}
-,isc.A.transferSelectedData=function(_1,_2){if(!this.isValidTransferSource(_1))return;if(_2==null)_2=this.data.getLength()
-else _2=Math.min(_2,this.data.getLength());var _3=_1.getDragData();var _4=this.data.get(_2);this.transferRecords(_3,_4,_2,_1)}
+,isc.A.cloneDragData=function(){var _1=(this.selection&&this.selection.getSelection)?this.selection.getSelection():null;var _2=this.dragDataAction==isc.Canvas.COPY||this.dragDataAction==isc.Canvas.CLONE;if(_2&&_1){for(var i=0;i<_1.length;i++){var _4=_1[i];if(_4.$29a!=null){for(var _5=0;_5<_4.$29a.length;_5++){this.removeEmbeddedComponent(_4,_4.$29a[_5])}}
+delete _4.$29a}
+if(isc.isA.ResultTree(this.data)||isc.isA.Tree(this.data)){_1=this.data.getCleanNodeData(_1)}else{if(isc.isAn.Array(_1)){_1=isc.shallowClone(_1)}else{_1=isc.addProperties({},_1)}}}
+return _1}
+);isc.evalBoundary;isc.B.push(isc.A.transferSelectedData=function(_1,_2,_3){if(!this.isValidTransferSource(_1)){if(_3)this.fireCallback(_3);return}
+if(_2==null)_2=this.data.getLength()
+else _2=Math.min(_2,this.data.getLength());var _4=_1.cloneDragData();var _5=this.data.get(_2);this.transferRecords(_4,_5,_2,_1,_3)}
 ,isc.A.isValidTransferSource=function(_1){if(!_1||!_1.transferDragData){this.logWarn("transferSelectedData(): "+(_1?"Invalid ":"No ")+"source widget passed in - "+(_1||"")+" taking no action.");return false}
 if(_1==this){this.logWarn("transferSelectedData(): target parameter contains a pointer back to this grid - ignoring");return false}
 return true}
@@ -3223,14 +3374,16 @@ return true}
 ,isc.A.makeDragLine=function(){if(this._dragLine)return false;var _1={ID:this.getID()+"_dragLine",width:2,height:2,overflow:isc.Canvas.HIDDEN,visibility:isc.Canvas.HIDDEN,isMouseTransparent:true,dropTarget:this,redrawOnResize:false,styleName:"dragLine"};if(this.ns.Element.getStyleEdges(_1.styleName)==null){_1.backgroundColor="black"}
 isc.addProperties(_1,this.dragLineDefaults,this.dragLineProperties);this._dragLine=this.ns.Canvas.create(_1);return true}
 ,isc.A.hideDragLine=function(){if(this._dragLine)this._dragLine.hide()}
+,isc.A.configureFrom=function(_1){var _2=this.dbcProperties;for(var i=0;i<_2.length;i++){this[_2[i]]=_1[_2[i]];if(_2[i]=="dataSource"){var _4=this.autoFetchData;this.autoFetchData=false;this.setDataSource(isc.DS.getDataSource(this.dataSource));this.autoFetchData=_4}}
+this.setCriteria(_1.getCriteria());this.setData(_1.getData())}
 ,isc.A.addFormulaField=function(){this.editFormulaField()}
-,isc.A.editFormulaField=function(_1){if(isc.FormulaBuilder==null)return;var _2=this,_3=!_1?false:true;if(!_3){_1={name:_2.getUniqueFieldName("formulaField"),title:"New Field",width:"50",canFilter:false,canSortClientOnly:true}}
+,isc.A.editFormulaField=function(_1){if(isc.FormulaBuilder==null)return;var _2=this,_3=!_1?false:true;if(!_3){_1={name:_2.getUniqueFieldName("formulaField"),title:"New Field",width:"50",canFilter:false,canExport:false,canSortClientOnly:true}}
 this.$65y=isc.Window.create({title:"Formula Editor ["+_1.title+"]",showMinimizeButton:false,showMaximizeButton:false,isModal:true,showModalMask:true,autoSize:true,autoCenter:true,autoDraw:true,headerIconProperties:{padding:1,src:"[SKINIMG]ListGrid/formula_menuItem.png"},closeClick:function(){this.items.get(0).completeEditing(true);return this.Super('closeClick',arguments)},items:[isc.FormulaBuilder.create({width:300,component:_2,dataSource:_2.getDataSource(),editMode:_3,field:_1,mathFunctions:isc.MathFunction.getDefaultFunctionNames(),fireOnClose:function(){_2.userFieldCallback(this)}},this.formulaBuilderProperties)]},this.formulaBuilderProperties)}
 ,isc.A.getFormulaFieldValue=function(_1,_2){return this.getFormulaFunction(_1)(_2,this)}
 ,isc.A.getFormulaFunction=function(_1){if(!_1.userFormula)return null;var _2=_1.$65w;if(_2!=null)return _2;_2=_1.$65w=_1.sortNormalizer=isc.FormulaBuilder.generateFunction(_1.userFormula,this.getAllFields(),this);return _2}
 ,isc.A.addSummaryField=function(){this.editSummaryField()}
 ,isc.A.editSummaryField=function(_1){if(isc.FormulaBuilder==null)return;var _2=this,_3=!_1?false:true;if(isc.isA.String(_1)){_1=this.getField(_1)}
-if(!_3){_1={name:_2.getUniqueFieldName("summaryField"),title:"New Field",width:"50",canFilter:false,canSortClientOnly:true}}
+if(!_3){_1={name:_2.getUniqueFieldName("summaryField"),title:"New Field",width:"50",canFilter:false,canExport:false,canSortClientOnly:true}}
 this.$65y=isc.Window.create({title:"Summary Editor ["+_1.title+"]",showMinimizeButton:false,showMaximizeButton:false,isModal:true,showModalMask:true,autoSize:true,autoCenter:true,autoDraw:true,headerIconProperties:{padding:1,src:"[SKINIMG]ListGrid/formula_menuItem.png"},closeClick:function(){this.items.get(0).completeEditing(true);return this.Super('closeClick',arguments)},items:[isc.SummaryBuilder.create({width:300,component:_2,dataSource:_2.getDataSource(),editMode:_3,field:_1,fireOnClose:function(){_2.userFieldCallback(this)}},this.summaryBuilderProperties)]},this.summaryEditorProperties)}
 ,isc.A.userFieldCallback=function(_1){if(!_1)return;var _2=this.$65y;if(_1.cancelled){_2.destroy();return}
 var _3=_1.getUpdatedFieldObject();if(this.hideField&&_1.shouldHideUsedFields()){var _4=_1.getUsedFields();for(var i=0;i<_4.length;i++){var _6=_4.get(i);this.hideField(_6.name)}}
@@ -3243,7 +3396,80 @@ return _1+_3}
 ,isc.A.getTitleFieldValue=function(_1){}
 ,isc.A.getTitleField=function(){if(this.titleField!=null)return this.titleField;if(this.dataSource!=null){var _1=this.getDataSource().getTitleField();if(!this.getField(_1))_1=this.getFields()[0][this.fieldIdProperty];this.titleField=_1}else{var _2=this.getFields().getProperty(this.fieldIdProperty);this.titleField=_2.contains("title")?"title":_2.contains("label")?"label":_2.contains("name")?"name":_2.contains("id")?"id":_2.first()}
 return this.titleField}
-);isc.B._maxIndex=isc.C+100;isc.ClassFactory.defineClass("MathFunction","Class");isc.A=isc.MathFunction;isc.A.$65z={};isc.A=isc.MathFunction;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.registerFunction=function(_1){if(!this.$65z[_1.name]){this.$65z[_1.name]=_1}}
+,isc.A.getRecordHiliteCSSText=function(_1,_2,_3){if(_3!=null&&_3.userSummary){var _4=isc.SummaryBuilder.getFieldDetailsFromValue(_3.userSummary.summaryVars,this.getAllFields(),this),_5=_4.usedFields;for(var _6=0;_6<_5.length;_6++){_2=this.getRecordHiliteCSSText(_1,_2,_5[_6])}}
+_2=this.addObjectHilites(_1,_2,_3);_2=this.addHiliteCSSText(_1,this.getFieldNum(_3),_2);return _2}
+,isc.A.convertCSSToProperties=function(_1,_2){if(_1==null)return null;var _3=_1.split(";"),_4;_3.map(function(_9){var _5=_9.split(":");if(_5.length!=2)return null;var _6=/^\s*(\S*)\s*$/,_7=_5[0].cssToCamelCaps().replace(_6,"$1"),_8=_5[1].replace(_6,"$1");if(!_2||_2.contains(_7)){if(!_4)_4={};_4[_7]=_8}});return _4}
+,isc.A.getExportFieldValue=function(_1,_2,_3){return this.getSpecificFieldValue(_1,_2,false)}
+,isc.A.getClientExportData=function(_1){var _2=this.originalData||this.data,_3=[],_4=this.getAllFields(),_5,_6,_7;if(isc.isA.Object(_1)){_5=_1.includeHiddenFields;_6=_1.allowedProperties;_7=_1.includeCollapsedNodes}
+if(isc.isA.ResultSet(_2))_2=_2.getAllLoadedRows();if(isc.isA.ResultTree(_2)){if(_7)_2=_2.getAllNodes();else _2=_2.getOpenList()}
+for(var _8=0;_8<_2.getLength();_8++){var _9={},_10=_2[_8];for(var _11=0;_11<_4.length;_11++){var _12=_4[_11];if((!this.fields.contains(_12))&&!_5)continue;var _13=_12.title||_12.name,_14=this.getExportFieldValue(_10,_12.name,_11);if(_14==null||_14=="&nbsp;")_14="";_14=this.htmlUnescapeExportFieldValue(_14);var _15=this.htmlUnescapeExportFieldTitle(_13);_9[_15]=_14;var _16=this.getRecordHiliteCSSText(_10,null,_12),_17=this.convertCSSToProperties(_16,_6);if(_17)_9[_15+"$style"]=_17}
+_3.push(_9)}
+return _3}
+,isc.A.htmlUnescapeExportFieldTitle=function(_1){return this.htmlUnescapeExportFieldValue(_1)}
+,isc.A.htmlUnescapeExportFieldValue=function(_1){if(isc.isA.String(_1))return _1.unescapeHTML().replace(/<.*?>/g,isc.emptyString);return _1}
+,isc.A.exportClientData=function(_1){var _2=this.getClientExportData(),_3=_1,_4=_3&&_3.exportAs?_3.exportAs:"csv",_5=_3&&_3.exportFilename?_3.exportFilename:"export",_6=_3&&_3.exportDisplay?_3.exportDisplay:"download";var _7={showPrompt:false,transport:"hiddenFrame",exportResults:true,downloadResult:true,downloadToNewWindow:(_6=="window"),download_filename:(_6=="window"?_5:null)};isc.DMI.callBuiltin({methodName:"downloadClientExport",arguments:[_2,_4,_5,_6],requestParams:_7})}
+,isc.A.getSort=function(){return this.$73p?isc.shallowClone(this.$73p):null}
+,isc.A.setSort=function(_1){this.$73p=isc.shallowClone(_1);if(this.data&&this.$73p&&this.$73p.length>0){if(this.data.setSort)this.data.setSort(this.$73p);else if(this.data.sortByProperty){var _2=this.$73p[0];this.data.sortByProperty(_2.property,Array.shouldSortAscending(_2.direction),_2.normalizer,_2.context)}}}
+,isc.A.askForSort=function(){if(isc.MultiSortDialog&&this.canMultiSort!=false){isc.MultiSortDialog.askForSort(this,this.getSort(),this.getID()+".multiSortReply(sortLevels)")}}
+,isc.A.multiSortReply=function(_1){if(_1!=null){this.setSort(_1)}}
+,isc.A.addValidationError=function(_1,_2,_3){var _4=false;if(isc.isAn.Array(_3)){for(var i=0;i<_3.length;i++){_4=this.addValidationError(_1,_2,_3[i])||_4}
+return _4}
+if(!_1[_2]){_1[_2]=_3;_4=true}else{if(!isc.isAn.Array(_1[_2]))_1[_2]=[_1[_2]];if(!_1[_2].contains(_3)){_1[_2].add(_3);_4=true}}
+return _4}
+,isc.A.isFieldDependentOnOtherField=function(_1,_2){if(!_1.validators)return false;var _3=this.getDataSource();for(var i=0;i<_1.validators.length;i++){var _5=_1.validators[i];if(!_5)continue;if(!_5.$74r&&_5.applyWhen&&_3!=null){_5.$74r=_3.getCriteriaFields(_5.applyWhen)}
+if(_5.dependentFields&&_5.dependentFields.contains(_2)){return true}
+if(_5.$74r&&_5.$74r.length>0&&_5.$74r.contains(_2))
+{return true}}
+return false}
+,isc.A.getFieldDependencies=function(_1){if(!_1.validators)return null;var _2=this.getDataSource(),_3=[];for(var i=0;i<_1.validators.length;i++){var _5=_1.validators[i];if(!_5)continue;if(!_5.$74r&&_5.applyWhen&&_2!=null){_5.$74r=_2.getCriteriaFields(_5.applyWhen)}
+if(_5.dependentFields){if(!isc.isAn.Array(_5.dependentFields)){_5.dependentFields=[_5.dependentFields]}
+for(var i=0;i<_5.dependentFields.length;i++){_3.add(_5.dependentFields[i])}}
+if(_5.$74r&&_5.$74r.length>0)
+{_3.addList(_5.$74r)}}
+return(_3.length==0?null:_3)}
+,isc.A.validateFieldAndDependencies=function(_1,_2,_3,_4,_5){var _6={},_7=false,_8={valid:true,errors:null,resultingValue:null};_4[_1.name]=_3;var _9=this.validateField(_1,_1.validators,_3,_4,_5);if(_9!=null){_8.valid=_9.valid;_8.stopOnError=_9.stopOnError;if(_9.errors!=null){this.addValidationError(_6,_1.name,_9.errors)}
+if(_9.resultingValue!=null){_8.resultingValue=_9.resultingValue;_4[_1.name]=_9.resultingValue}
+_7=true}
+var _10=_1.name,_11=this.getFields()||[];for(var i=0;i<_11.length;i++){var _13=_11[i];if(_13.name!=_10&&this.isFieldDependentOnOtherField(_13,_10)){_9=this.validateField(_13,_13.validators,_4[_13.name],_4,_5);if(_9!=null){if(_9.errors!=null){this.addValidationError(_6,_13.name,_9.errors)}else{this.addValidationError(_6,_13.name,null)}
+if(_9.resultingValue!=null){_4[_13.name]=_9.resultingValue}}}}
+_8.errors=_6;return(_7?_8:null)}
+,isc.A.validateField=function(_1,_2,_3,_4,_5){if(!_2)return null;var _6=[],_7=false,_8=null,_9={valid:true,errors:null,resultingValue:null},_10=false,_11=false;if(!isc.isAn.Array(_2)){_2=[_2]}
+for(var i=0;i<_2.length;i++){var _13=_2[i];if(!_13)continue;if(_5&&_5.typeValidationsOnly&&!this.$685.contains(_13.type))
+{continue}
+if(_5&&_5.dontValidateNullValue&&_3==null&&_13.type!="required"&&_13.type!='requiredIf')
+{continue}
+if(!_5||!_5.changing||(_13.validateOnChange!=false&&(_13.validateOnChange||_1.validateOnChange||this.validateOnChange)))
+{if(isc.Validator.isServerValidator(_13)){_10=true;if(_13.stopOnError)_11=true;continue}
+if(_13.applyWhen){var _14=this.getDataSource(),_15=_13.applyWhen;if(_14==null){isc.logWarn("Conditional validator criteria ignored because form has no dataSource")}else{var _16=_14.applyFilter([_4],_15);if(_16.length==0){isc.Validator.performAction(null,_1,_13,this);continue}}}
+_7=true;var _17=(isc.Validator.processValidator(_1,_13,_3,null,_4)==true);isc.Validator.performAction(_17,_1,_13,this);if(!_17){var _18=isc.Validator.getErrorMessage(_13);if(_18==null&&_5&&_5.unknownErrorMessage){_18=_5.unknownErrorMessage}
+_6.add(_18);if(_13.stopOnError)_8=true}
+if(_13.resultingValue!=null){_9.resultingValue=_13.resultingValue;_3=_13.resultingValue}
+if(!_17&&_13.stopIfFalse)break}}
+if(_10){_11=this.$75e(_11,_1.stopOnError,this.stopOnError);var _19=((_5&&_5.serverValidationMode)?_5.serverValidationMode:this.$746),_20=isc.addProperties({},_4),_21=(_11||_1.synchronousValidation||this.synchronousValidation||false);_20[_1.name]=_3;this.fireServerValidation(_1,_20,_19,_21)}
+_9.stopOnError=(_6.length>0&&this.$75e(_8,_1.stopOnError,this.stopOnError));_9.errors=(_6.length==0?null:_6);_9.valid=(_6.length==0);return(_7?_9:null)}
+,isc.A.$75e=function(_1,_2,_3){if(_1!=null)return _1;return(_2==null&&_3)||_2||false}
+,isc.A.fireServerValidation=function(_1,_2,_3,_4){var _5=this.getDataSource();if(_5!=null){var _6={showPrompt:_4,prompt:isc.RPCManager.validateDataPrompt,validationMode:_3,clientContext:{component:this,fieldName:_1.name}};if(!_4){var _7=this.$75c(_1);_6.clientContext.pendingFields=_7}
+_5.validateData(_2,this.$742,_6)}}
+,isc.A.$742=function(_1,_2,_3){if(_1.status==isc.DSResponse.STATUS_FAILURE){isc.logWarn("Server-side validation for "+_10.name+" failed: "+_1.data)}
+var _4=_1.clientContext,_5=_4.component,_6=_4.pendingFields;if(_1.errors){var _7=isc.DynamicForm.getSimpleErrors(_1.errors);for(var _8 in _7){var _9=_7[_8],_10=_5.getField(_8);if(_9!=null&&_10!=null){if(!isc.isAn.Array(_9))_9=[_9];var _11=null;for(var i=0;i<_9.length;i++){_5.addFieldErrors(_8,_9[i].errorMessage,false);if(_9[i].stopOnError)_11=true}
+_10.redraw();_11=_5.$75e(_11,_10.stopOnError,_5.stopOnError);if(_8==_4.fieldName&&_11==true&&!_10.hasFocus){if(!_10.synchronousValidation&&!_5.synchronousValidation){isc.logWarn("Server validation for "+_8+" signaled stopOnError but validation is not set for"+" synchronousValidation:true - stop ignored.")}else{_5.focusInItem(_10)}}}}}
+if(_6){_5.$75d(_6)}}
+,isc.A.$75c=function(_1){var _2=this.getFields()||[],_3=[_1.name],_4=_1.name;this.$75a[_4]=(this.$75a[_4]==null?1:this.$75a[_4]++);for(var i=0;i<_2.length;i++){var _6=_2[i];if(_6.name!=_4&&this.isFieldDependentOnOtherField(_6,_4)){var _7=_6.name;_3.add(_7);this.$75a[_7]=(this.$75a[_7]==null?1:this.$75a[_7]++)}}
+return _3}
+,isc.A.$75d=function(_1){var _2=false;for(var i=0;i<_1.length;i++){this.$75a[_1[i]]--;if(this.$75a[_1[i]]==0){delete this.$75a[_1[i]];_2=true}}
+if(_2&&this.$75b!=null){var _4=true;for(var i=0;i<this.$75b;i++){if(this.$75a[this.$75b[i]]>0){_4=false;break}}
+if(_4){this.$75b=null;isc.clearPrompt()}}}
+,isc.A.blockOnFieldBusy=function(_1){if(this.$75b!=null)return true;var _2=false;for(var _3 in this.$75a){_2=true;break}
+if(!_2)return false;var _4=this.getFieldDependencies(_1)||[];_4.add(_1.name);var _5=[];for(var i=0;i<_4.length;i++){var _7=_4[i];if(this.$75a[_7]>0){_5.add(_7)}}
+if(_5.length>0){this.$75b=_5;this.delayCall("showValidationBlockingPrompt");return true}
+return false}
+,isc.A.showValidationBlockingPrompt=function(){if(this.$75b)isc.showPrompt(isc.RPCManager.validateDataPrompt)}
+,isc.A.enableField=function(_1){if(_1==null||isc.isAn.emptyString(_1))return;var _2=this.getField(_1);if(_2){_2.disabled=false;this.redraw()}}
+,isc.A.disableField=function(_1){if(_1==null||isc.isAn.emptyString(_1))return;var _2=this.getField(_1);if(_2){_2.disabled=true;this.redraw()}}
+,isc.A.showField=function(_1){if(_1==null||isc.isAn.emptyString(_1))return;var _2=this.getField(_1);if(_2){_2.hidden=false;this.redraw()}}
+,isc.A.hideField=function(_1){if(_1==null||isc.isAn.emptyString(_1))return;var _2=this.getField(_1);if(_2){_2.hidden=true;this.redraw()}}
+,isc.A.setFieldCanEdit=function(_1,_2){if(_1==null||isc.isAn.emptyString(_1))return;var _3=this.getField(_1);if(_3){_3.canEdit=_2;this.redraw()}}
+);isc.B._maxIndex=isc.C+151;isc.ClassFactory.defineClass("MathFunction","Class");isc.A=isc.MathFunction;isc.A.$65z={};isc.A=isc.MathFunction;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.registerFunction=function(_1){if(!this.$65z[_1.name]){this.$65z[_1.name]=_1}}
 ,isc.A.getRegisteredFunctionNames=function(){return isc.getKeys(this.$65z)}
 ,isc.A.getDefaultFunctionNames=function(){var _1=this.getDefaultFunctions(),_2=_1.makeIndex("name",false);return isc.getKeys(_2)}
 ,isc.A.getRegisteredFunctions=function(){return isc.getValues(this.$65z)}
@@ -3253,7 +3479,7 @@ _1.sortByProperties(["defaultSortPosition"],["true"]);return _1}
 ,isc.A.getDefaultFunctionIndex=function(){return this.getDefaultFunctions().makeIndex("name",false)}
 ,isc.A.isRegistered=function(_1){if(this.$65z[_1])return true;return false}
 );isc.B._maxIndex=isc.C+8;isc.A=isc.MathFunction.getPrototype();isc.A.defaultSortPosition=-1;isc.MathFunction.registerFunction(isc.MathFunction.create({name:"max",description:"Maximum of two values",usage:"max(value1, value2)",defaultSortPosition:1,jsFunction:function(_1,_2){return Math.max(_1,_2)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"min",description:"Minimum of two values",usage:"min(value1, value2)",defaultSortPosition:2,jsFunction:function(_1,_2){return Math.min(_1,_2)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"round",description:"Round a value up or down, optionally providing <i>decimalDigits</i> "+"as the maximum number of decimal places to round to.  For fixed or precision "+"rounding, use <i>toFixed()</i> and <i>toPrecision()</i> respectively.",usage:"round(value,decimalDigits)",defaultSortPosition:3,jsFunction:function(_1,_2){if(_2){var _3=Math.pow(10,_2),_4=Math.round(_1*_3)/_3;return _4}
-return Math.round(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"ceil",description:"Round a value up",usage:"ceil(value)",defaultSortPosition:4,jsFunction:function(_1){return Math.ceil(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"floor",description:"Round a value down",usage:"floor(value)",defaultSortPosition:5,jsFunction:function(_1){return Math.floor(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"abs",description:"Absolute value",usage:"abs(value)",defaultSortPosition:6,jsFunction:function(_1){return Math.abs(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"pow",description:"Value1 to the power of Value2",usage:"pow(value1, value2)",defaultSortPosition:7,jsFunction:function(_1,_2){return Math.pow(_1,_2)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"sin",description:"Sine of a value",usage:"sin(value)",defaultSortPosition:8,jsFunction:function(_1){return Math.sin(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"cos",description:"Cosine of a value",usage:"cos(value)",defaultSortPosition:9,jsFunction:function(_1){return Math.cos(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"tan",description:"Tangent of a value",usage:"tan(value)",defaultSortPosition:10,jsFunction:function(_1){return Math.tan(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"ln",description:"Natural logarithm of a value",usage:"ln(value)",defaultSortPosition:11,jsFunction:function(_1){return Math.log(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"log",description:"logarithm of a value with the specified <i>base</i>",usage:"log(base, value)",defaultSortPosition:12,jsFunction:function(_1,_2){return Math.log(_2)/Math.log(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"asin",description:"Arcsine of a value",usage:"asin(value)",defaultSortPosition:13,jsFunction:function(_1){return Math.asin(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"acos",description:"Arccosine of a value",usage:"acos(value)",defaultSortPosition:14,jsFunction:function(_1){return Math.acos(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"atan",description:"Arctangent of a value (-PI/2 to PI/2 radians)",usage:"atan(value)",defaultSortPosition:15,jsFunction:function(_1){return Math.atan(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"atan2",description:"Angle theta of a point (-PI to PI radians)",usage:"atan2(value1,value2)",defaultSortPosition:16,jsFunction:function(_1,_2){return Math.atan2(_1,_2)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"exp",description:"The value of E<sup>value</sup>",usage:"exp(value)",defaultSortPosition:17,jsFunction:function(_1){return Math.exp(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"random",description:"Random number between 0 and 1",usage:"random()",defaultSortPosition:18,jsFunction:function(){return Math.random()}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"sqrt",description:"Square root of a value",usage:"sqrt(value)",defaultSortPosition:19,jsFunction:function(_1){return Math.sqrt(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"toPrecision",description:"Format a number to a length of <i>precision</i> digits, rounding or "+"adding a decimal point and zero-padding as necessary.  Note that the values "+"123, 12.3 and 1.23 have an equal precision of 3.  Returns a formatted "+"string and should be used as the outermost function call in a formula. "+"For rounding, use <i>round()</i>.",usage:"toPrecision(value,precision)",defaultSortPosition:20,jsFunction:function(_1,_2){var _3=_1;if(isc.isA.String(_3))_3=parseFloat(_3);if(isNaN(_3))return _1;return _3.toPrecision(_2)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"toFixed",description:"Round or zero-pad a number to <i>digits</i> decimal places.  Returns "+"a formatted string and should be used as the outermost function call in a "+"formula.  To round values or restrict precision, use <i>round()</i> and "+"<i>toPrecision()</i> respectively.",usage:"toFixed(value,digits)",defaultSortPosition:21,jsFunction:function(_1,_2){var _3=_1;if(isc.isA.String(_3))_3=parseFloat(_3);if(isNaN(_3))return _1;return _3.toFixed(_2)}}));isc.defineClass("EdgedCanvas","Canvas");isc.A=isc.EdgedCanvas.getPrototype();isc.A.redrawOnResize=false;isc.A.$nu=false;isc.A.$jp=false;isc.A.$jo=false;isc.A.useClipDiv=false;isc.A.overflow=isc.Browser.isMoz?isc.Canvas.VISIBLE:isc.Canvas.HIDDEN;isc.A.$ks=false;isc.A.$tb=0;isc.A.$td=0;isc.A.$tc=0;isc.A.$te=0;isc.A.$y0=["TL","T","TR","L","center","R","BL","B","BR"];isc.A.skinImgDir="images/edges/";isc.A.edgeImage="[SKIN]/rounded/frame/FFFFFF/6.png";isc.A.shownEdges={TL:true,T:true,TR:true,L:true,R:true,BL:true,B:true,BR:true};isc.A.edgeSize=6;isc.A=isc.EdgedCanvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$61h="<TD class='";isc.A.$61i="' ></TD>";isc.A.$y2="<TABLE CELLPADDING=0 CELLSPACING=0 "+"STYLE='height:100%;width:100%;table-layout:fixed'>"+"<COL WIDTH=";isc.A.$y3="><COL><COL WIDTH=";isc.A.$4n=" class=";isc.A.addEdgeStyleSuffix=false;isc.A.forceMozRowHeight=true;isc.B.push(isc.A.initWidget=function(){this.invokeSuper(isc.EdgedCanvas,this.$oc);var _1=this.customEdges;if(_1){var _2=this.shownEdges={};if(_1.contains("T")){_2.T=_2.TL=_2.TR=true}
+return Math.round(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"ceil",description:"Round a value up",usage:"ceil(value)",defaultSortPosition:4,jsFunction:function(_1){return Math.ceil(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"floor",description:"Round a value down",usage:"floor(value)",defaultSortPosition:5,jsFunction:function(_1){return Math.floor(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"abs",description:"Absolute value",usage:"abs(value)",defaultSortPosition:6,jsFunction:function(_1){return Math.abs(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"pow",description:"Value1 to the power of Value2",usage:"pow(value1, value2)",defaultSortPosition:7,jsFunction:function(_1,_2){return Math.pow(_1,_2)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"sin",description:"Sine of a value",usage:"sin(value)",defaultSortPosition:8,jsFunction:function(_1){return Math.sin(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"cos",description:"Cosine of a value",usage:"cos(value)",defaultSortPosition:9,jsFunction:function(_1){return Math.cos(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"tan",description:"Tangent of a value",usage:"tan(value)",defaultSortPosition:10,jsFunction:function(_1){return Math.tan(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"ln",description:"Natural logarithm of a value",usage:"ln(value)",defaultSortPosition:11,jsFunction:function(_1){return Math.log(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"log",description:"logarithm of a value with the specified <i>base</i>",usage:"log(base, value)",defaultSortPosition:12,jsFunction:function(_1,_2){return Math.log(_2)/Math.log(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"asin",description:"Arcsine of a value",usage:"asin(value)",defaultSortPosition:13,jsFunction:function(_1){return Math.asin(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"acos",description:"Arccosine of a value",usage:"acos(value)",defaultSortPosition:14,jsFunction:function(_1){return Math.acos(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"atan",description:"Arctangent of a value (-PI/2 to PI/2 radians)",usage:"atan(value)",defaultSortPosition:15,jsFunction:function(_1){return Math.atan(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"atan2",description:"Angle theta of a point (-PI to PI radians)",usage:"atan2(value1,value2)",defaultSortPosition:16,jsFunction:function(_1,_2){return Math.atan2(_1,_2)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"exp",description:"The value of E<sup>value</sup>",usage:"exp(value)",defaultSortPosition:17,jsFunction:function(_1){return Math.exp(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"random",description:"Random number between 0 and 1",usage:"random()",defaultSortPosition:18,jsFunction:function(){return Math.random()}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"sqrt",description:"Square root of a value",usage:"sqrt(value)",defaultSortPosition:19,jsFunction:function(_1){return Math.sqrt(_1)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"toPrecision",description:"Format a number to a length of <i>precision</i> digits, rounding or "+"adding a decimal point and zero-padding as necessary.  Note that the values "+"123, 12.3 and 1.23 have an equal precision of 3.  Returns a formatted "+"string and should be used as the outermost function call in a formula. "+"For rounding, use <i>round()</i>.",usage:"toPrecision(value,precision)",defaultSortPosition:20,jsFunction:function(_1,_2){var _3=_1;if(isc.isA.String(_3))_3=parseFloat(_3);if(isNaN(_3))return _1;return _3.toPrecision(_2)}}));isc.MathFunction.registerFunction(isc.MathFunction.create({name:"toFixed",description:"Round or zero-pad a number to <i>digits</i> decimal places.  Returns "+"a formatted string and should be used as the outermost function call in a "+"formula.  To round values or restrict precision, use <i>round()</i> and "+"<i>toPrecision()</i> respectively.",usage:"toFixed(value,digits)",defaultSortPosition:21,jsFunction:function(_1,_2){var _3=_1;if(isc.isA.String(_3))_3=parseFloat(_3);if(isNaN(_3))return _1;return _3.toFixed(_2)}}));isc.defineClass("EdgedCanvas","Canvas");isc.A=isc.EdgedCanvas.getPrototype();isc.A.redrawOnResize=false;isc.A._redrawWithParent=false;isc.A.$jp=false;isc.A.$jo=false;isc.A.useClipDiv=false;isc.A.overflow=isc.Browser.isMoz?isc.Canvas.VISIBLE:isc.Canvas.HIDDEN;isc.A.$ks=false;isc.A.$tb=0;isc.A.$td=0;isc.A.$tc=0;isc.A.$te=0;isc.A.$y0=["TL","T","TR","L","center","R","BL","B","BR"];isc.A.skinImgDir="images/edges/";isc.A.edgeImage="[SKIN]/rounded/frame/FFFFFF/6.png";isc.A.shownEdges={TL:true,T:true,TR:true,L:true,R:true,BL:true,B:true,BR:true};isc.A.edgeSize=6;isc.A=isc.EdgedCanvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$61h="<TD class='";isc.A.$61i="' ></TD>";isc.A.$y2="<TABLE CELLPADDING=0 CELLSPACING=0 "+"STYLE='height:100%;width:100%;table-layout:fixed'>"+"<COL WIDTH=";isc.A.$y3="><COL><COL WIDTH=";isc.A.$4n=" class=";isc.A.addEdgeStyleSuffix=false;isc.A.forceMozRowHeight=true;isc.B.push(isc.A.initWidget=function(){this.invokeSuper(isc.EdgedCanvas,this.$oc);var _1=this.customEdges;if(_1){var _2=this.shownEdges={};if(_1.contains("T")){_2.T=_2.TL=_2.TR=true}
 if(_1.contains("B")){_2.B=_2.BL=_2.BR=true}
 if(_1.contains("L")){_2.L=_2.TL=_2.BL=true}
 if(_1.contains("R")){_2.R=_2.TR=_2.BR=true}}
@@ -3261,7 +3487,8 @@ this.updateEdgeSizes()}
 ,isc.A.updateEdgeSizes=function(){var _1=this.edgeSize;this.$y4=this.$du(this.edgeLeft,_1);this.$y5=this.$du(this.edgeRight,_1);this.$y6=this.$du(this.edgeTop,_1);this.$y7=this.$du(this.edgeBottom,_1);var _2=this.shownEdges,_3=this.edgeOffset;if(_2.L)this.$tb=this.$du(this.edgeOffsetLeft,_3,this.$y4);if(_2.R)this.$tc=this.$du(this.edgeOffsetRight,_3,this.$y5);if(_2.T)this.$td=this.$du(this.edgeOffsetTop,_3,this.$y6);if(_2.B)this.$te=this.$du(this.edgeOffsetBottom,_3,this.$y7);this.markForRedraw()}
 ,isc.A.getInnerWidth=function(_1,_2,_3){var _4=this.invokeSuper(isc.EdgedCanvas,"getInnerWidth",_1,_2,_3);return _4-this.$tb-this.$tc}
 ,isc.A.getInnerHeight=function(_1,_2,_3){var _4=this.invokeSuper(isc.EdgedCanvas,"getInnerHeight",_1,_2,_3);return _4-this.$td-this.$te}
-,isc.A.getInnerHTML=function(){var _1=isc.SB.create(),_2=this.edgeImage,_3=_2.lastIndexOf(isc.dot),_4=_2.substring(0,_3),_5=_2.substring(_3),_6=this.getImgURL(_4),_7="<TD HEIGHT=",_8="<TD",_9,_10;if(!(isc.Browser.isStrict&&isc.Browser.isIE&&isc.Browser.version>=8)){var _11=isc.EdgedCanvas.$y8;if(!_11){_11=isc.EdgedCanvas.$y8={width:"100%",height:"100%"};if(isc.Browser.isSafari)_11.align="middle";if(isc.Browser.isStrict&&!isc.Browser.isTransitional)
+,isc.A.getInnerHTML=function(){var _1=isc.SB.create(),_2=this.edgeImage,_3=_2.lastIndexOf(isc.dot),_4=_2.substring(0,_3),_5=_2.substring(_3),_6=this.getImgURL(_4),_7="<TD HEIGHT=",_8="<TD",_9,_10;if(!((isc.Browser.isStrict&&isc.Browser.isIE&&isc.Browser.version>=8)||(isc.Browser.isMoz&&isc.Browser.isUnix)))
+{var _11=isc.EdgedCanvas.$y8;if(!_11){_11=isc.EdgedCanvas.$y8={width:"100%",height:"100%"};if(isc.Browser.isSafari)_11.align="middle";if(isc.Browser.isStrict&&!isc.Browser.isTransitional)
 _11.extraStuff="style='display:block;'"}
 _11.src=_2;var _12=this.imgHTML(_11);if(isc.Browser.isSafari){_12="<DIV style='overflow:hidden;width:100%;height:100%'>"+_12+"</DIV>"}
 var _13=_12.lastIndexOf(isc.dot);_9=this.$oa+_12.substring(0,_13);_10=_12.substring(_13)+"</TD>"}else{_9=" STYLE='background:url("+_6;_10=_5+")'></TD>"}
@@ -3313,7 +3540,7 @@ else{if(this.timer!=null)this.timer=isc.Timer.clear(this.timer);this.actionTarge
 ,isc.A.$zj=function(){if(this.action&&!this.actionTarget.destroyed){this.action.apply(this.actionTarget,this.actionArgs)}
 this.actionTarget=this.action=this.actionArgs=null;this.isActive=true}
 ,isc.A.clear=function(){this.hide();if(this.timer!=null)this.timer=isc.Timer.clear(this.timer);this.actionTarget=this.action=this.actionArgs=null;this.isActive=false}
-);isc.B._maxIndex=isc.C+9;if(!isc.Comm)isc.ClassFactory.defineClass("Comm");isc.A=isc.Comm;isc.A.$zk=/^[\$_a-zA-Z][\$\w]*$/;isc.A.BACKREF_PREFIX="$$BACKREF$$:";isc.A.indent="    ";isc.A=isc.Comm;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.serialize=function(_1,_2){var _3={strictQuoting:false,dateFormat:"dateConstructor"};if(_2)_3.prettyPrint=true;return isc.JSON.encode(_1,_3)}
+);isc.B._maxIndex=isc.C+9;if(!isc.Comm)isc.ClassFactory.defineClass("Comm");isc.A=isc.Comm;isc.A.$zk=/^[\$_a-zA-Z][\$\w]*$/;isc.A.BACKREF_PREFIX="$$BACKREF$$:";isc.A.indent="    ";isc.A=isc.Comm;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.serialize=function(_1,_2){var _3={strictQuoting:false,dateFormat:"dateConstructor"};if(_2!=null)_3.prettyPrint=_2;return isc.JSON.encode(_1,_3)}
 );isc.B._maxIndex=isc.C+1;isc.ClassFactory.defineClass("JSON",null,null,true);isc.A=isc.JSON;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.encode=function(_1,_2){return isc.JSONEncoder.create(_2).encode(_1)}
 ,isc.A.decode=function(_1){return eval("("+_1+")")}
 );isc.B._maxIndex=isc.C+2;isc.ClassFactory.defineClass("JSONEncoder");isc.A=isc.JSONEncoder;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.$zm=function(_1,_2,_3){_1.obj.add(_2);_1.path.add(_3)}
@@ -3321,95 +3548,190 @@ this.actionTarget=this.action=this.actionArgs=null;this.isActive=true}
 return _1}
 ,isc.A.$zl=function(_1,_2){var _3=_1.obj.indexOf(_2);if(_3==-1)return null;return _1.path[_3]}
 ,isc.A.$zp=function(_1,_2){if(isc.isA.Number(_2)){return _1+"["+_2+"]"}else if(!isc.Comm.$zk.test(_2)){return _1+'["'+_2+'"]'}else{return _1+"."+_2}}
-);isc.B._maxIndex=isc.C+4;isc.A=isc.JSONEncoder.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.dateFormat="xmlSchema";isc.A.strictQuoting=true;isc.A.circularReferenceMode="path";isc.A.circularReferenceMarker="$$BACKREF$$";isc.A.prettyPrint=true;isc.B.push(isc.A.encode=function(_1){this.objRefs={obj:[],path:[]};var _2=this.$eu(_1,this.prettyPrint?"":null,null);this.objRefs=null;return _2}
+);isc.B._maxIndex=isc.C+4;isc.A=isc.JSONEncoder.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.serializeInstances=true;isc.A.dateFormat="xmlSchema";isc.A.strictQuoting=true;isc.A.circularReferenceMode="path";isc.A.circularReferenceMarker="$$BACKREF$$";isc.A.prettyPrint=true;isc.B.push(isc.A.encode=function(_1){this.objRefs={obj:[],path:[]};var _2=this.$eu(_1,this.prettyPrint?"":null,null);this.objRefs=null;return _2}
 ,isc.A.encodeDate=function(_1){if(this.dateFormat=="dateConstructor"){return _1.$eu()}else{return'"'+_1.toSchemaDate()+'"'}}
 ,isc.A.$eu=function(_1,_2,_3){if(!_3){if(_1&&_1.getID)_3=_1.getID();else _3=""}
-if(_1==null)return null;if(isc.isA.String(_1))return(_1.asSource!=null?_1.asSource():String.asSource(_1));if(isc.isA.Function(_1))return null;if(isc.isA.Number(_1)||isc.isA.SpecialNumber(_1))return _1;if(isc.isA.Boolean(_1))return _1;if(isc.isA.Date(_1))return this.encodeDate(_1);var _4=isc.JSONEncoder.$zl(this.objRefs,_1);if(_4!=null&&_3.contains(_4)){var _5=_3.substring(_4.length,_4.length+1);if(_5=="."||_5=="["||_5=="]"){var _6=this.circularReferenceMode;if(_6=="marker"){return"'"+this.circularReferenceMarker+"'"}else if(_6=="path"){return"'"+this.circularReferenceMarker+":"+_4+"'"}else{return null}}}
+if(_1==null)return null;if(isc.isA.String(_1))return(_1.asSource!=null?_1.asSource():String.asSource(_1));if(isc.isA.Function(_1))return null;if(isc.isA.Number(_1)||isc.isA.SpecialNumber(_1))return _1;if(isc.isA.Boolean(_1))return _1;if(isc.isA.Date(_1))return this.encodeDate(_1);if(isc.isAn.Instance(_1)){if(this.serializeInstances=="skip")return null;else if(this.serializeInstances=="short")return isc.echoLeaf(_1)}
+var _4=isc.JSONEncoder.$zl(this.objRefs,_1);if(_4!=null&&_3.contains(_4)){var _5=_3.substring(_4.length,_4.length+1);if(_5=="."||_5=="["||_5=="]"){var _6=this.circularReferenceMode;if(_6=="marker"){return"'"+this.circularReferenceMarker+"'"}else if(_6=="path"){return"'"+this.circularReferenceMarker+":"+_4+"'"}else{return null}}}
 if(isc.isA.Class(_1)){this.logWarn("Attempt to serialize class of type: "+_1.getClassName()+" at path: "+_3+" - returning null for this slot.");return null}
 if(_1==window){this.logWarn("Serializer encountered the window object at path: "+_3+" - returning null for this slot.");return null}
 isc.JSONEncoder.$zm(this.objRefs,_1,_3);if(isc.isA.Function(_1.$eu))return _1.$eu(_2,this.objRefs,_3);if(isc.isAn.Array(_1))return this.$zn(_1,_3,this.objRefs,_2);var _7;if(_1.getSerializeableFields){_7=_1.getSerializeableFields([],[])}else{_7=_1}
 return this.$zo(_7,_3,this.objRefs,_2)}
 ,isc.A.$zn=function(_1,_2,_3,_4){var _5=isc.SB.create();_5.append("[");for(var i=0,_7=_1.length;i<_7;i++){var _8=_1[i];if(_4!=null)_5.append("\r",_4,isc.Comm.indent);var _2=isc.JSONEncoder.$zp(_2,i);var _9=this.$eu(_8,(_4!=null?_4+isc.Comm.indent:null),_2);_5.append(_9+",");if(_4!=null)_5.append(" ")}
 _5=_5.toString();var _10=_5.lastIndexOf(",");if(_10>-1)_5=_5.substring(0,_10);if(_4!=null)_5+="\r"+_4;_5+="]";return _5}
-,isc.A.$zo=function(_1,_2,_3,_4){var _5=isc.SB.create(),_6;_1=isc.JSONEncoder.$42b(_1);_5.append("{");for(var _7 in _1){if(_7==null)continue;var _8=_1[_7];if(isc.isA.Function(_8))continue;var _9=_7.toString();if(!isc.Comm.$zk.test(_9)||this.strictQuoting)_9='"'+_9+'"';var _2=isc.JSONEncoder.$zp(_2,_7);var _10=this.$eu(_8,(_4!=null?_4+isc.Comm.indent:null),_2);if(_4!=null)_5.append("\r",_4,isc.Comm.indent);_5.append(_9,":"+_10,",");if(_4!=null)_5.append(" ")}
-_5=_5.toString();var _11=_5.lastIndexOf(",");if(_11>-1)_5=_5.substring(0,_11);if(_4!=null)_5+="\r"+_4;_5+="}";return _5}
-);isc.B._maxIndex=isc.C+5;isc.defineClass("AutoTest");isc.A=isc.AutoTest;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.getLocator=function(_1){var _2;if(isc.isA.Canvas(_1))_2=_1;else{_2=isc.AutoTest.locateCanvasFromDOMElement(_1)}
+,isc.A.$zo=function(_1,_2,_3,_4){var _5=isc.SB.create(),_6;_1=isc.JSONEncoder.$42b(_1);try{for(var _7 in _1)break}catch(e){if(this.showDebugOutput){if(isc.isAn.XMLNode(_1))return isc.echoLeaf(_1);var _8;if(e.message){_8=(e.message.asSource!=null?e.message.asSource():String.asSource(e.message));return"{ cantEchoObject: "+_8+"}"}else{return"{ cantEchoObject: 'unspecified error' }"}}else return null}
+_5.append("{");for(var _7 in _1){if(_7==null)continue;if(this.skipInternalProperties&&(isc.startsWith(_7,isc.$ag)||isc.startsWith(_7,isc.$75g)))continue;var _9=_1[_7];if(isc.isA.Function(_9))continue;if(isc.isAn.Instance(_9)&&this.serializeInstances=="skip")continue;var _10=_7.toString();if(!isc.Comm.$zk.test(_10)||this.strictQuoting)_10='"'+_10+'"';var _2=isc.JSONEncoder.$zp(_2,_7);var _11;if(_7==isc.gwtRef){if(!this.showDebugOutput)continue;_11="{GWT Java Obj}"}else{_11=this.$eu(_9,(_4!=null?_4+isc.Comm.indent:null),_2)}
+if(_4!=null)_5.append("\r",_4,isc.Comm.indent);_5.append(_10,":"+_11,",");if(_4!=null)_5.append(" ")}
+_5=_5.toString();var _12=_5.lastIndexOf(",");if(_12>-1)_5=_5.substring(0,_12);if(_4!=null)_5+="\r"+_4;_5+="}";return _5}
+);isc.B._maxIndex=isc.C+5;isc.defineClass("AutoTest");isc.A=isc.AutoTest;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.fallback_valueOnlyField="$75w";isc.A.fallback_startMarker="[";isc.A.fallback_endMarker="]";isc.A.fallback_separator="||";isc.A.fallback_equalMarker="=";isc.A.robustLocatorWarning="If you are seeing unexpected results in recorded tests, it is likely"+" that the application has been modified since the test was recorded. We would recommend re-recording"+" your test script with the latest version of your application. Note that you may be able to"+" avoid seeing this message in future by using the AutoChild subsystem or providing explicit"+" global IDs to components whose function within the page is unlikely to change.";isc.B.push(isc.A.getLocator=function(_1){var _2;if(isc.isA.Canvas(_1))_2=_1;else{_2=isc.AutoTest.locateCanvasFromDOMElement(_1)}
 return _2?_2.getLocator(_1):""}
 ,isc.A.locateCanvasFromDOMElement=function(_1){return isc.EH.getEventTargetCanvas(null,_1)}
 ,isc.A.getElement=function(_1){if(!_1)return null;var _2=_1.split("/"),_3;var _4=_2[2];var _5=_2.length;for(var i=3;i<_5;i++){_2[i-3]=_2[i]}
 _2.length=_5-3;if(!_4)return null;var _7=this.getComponentFromLocatorSubstring(_4);return _7?_7.getElementFromSplitLocator(_2):null}
 ,isc.A.getComponentFromLocatorSubstring=function(_1){var _2=_1.match("(.*)\\[")[1],_3=_1.match('ID=\\"(.*)\\"')[1];var _4=window[_3];if(!_4)return null;if(_4&&(!isc.isA[_2]||!isc.isA[_2](_4))){this.logWarn("AutoTest.getElement(): Component:"+_4+" expected to be of class:"+_2)}
 return _4}
-);isc.B._maxIndex=isc.C+4;isc.ApplyAutoTestMethods=function(){isc.Canvas.addMethods({getLocator:function(_15){var _1,_2;if(this._generated||this.locatorParent||this.creator||this.$541){_2=this.getLocatorParent()}
+,isc.A.getLocatorCanvas=function(_1){if(_1==null||isc.isAn.emptyString(_1))return null;var _2=_1.split("/"),_3;var _4=_2[2];var _5=_2.length;for(var i=3;i<_5;i++){_2[i-3]=_2[i]}
+_2.length=_5-3;if(!_4)return null;var _7=this.getComponentFromLocatorSubstring(_4);if(_7){var i=0,_8=_7.getChildFromLocatorSubstring(_2[i]);while(_8!=null){i++;_7=_8;_8=_7.getChildFromLocatorSubstring(_2[i])}
+return _7}
+return null}
+,isc.A.getLocatorFormItem=function(_1){if(_1==null||isc.isAn.emptyString(_1))return null;var _2=_1.split("/"),_3;var _4=_2[2];var _5=_2.length;for(var i=3;i<_5;i++){_2[i-3]=_2[i]}
+_2.length=_5-3;if(!_4)return null;var _7=this.getComponentFromLocatorSubstring(_4);if(_7){var _8=_7.getChildFromLocatorSubstring(_2[0]);while(_8!=null){_2.removeAt(0);_7=_8;_8=_7.getChildFromLocatorSubstring(_2[0])}}
+if(isc.isA.DynamicForm(_7)){return _7.getItemFromSplitLocator(_2)}
+return null}
+,isc.A.createLocatorFallbackPath=function(_1,_2){var _3=[];for(var _4 in _2){if(_4==this.fallback_valueOnlyField){_3.add(_2[_4])}else{_3.add(_4+this.fallback_equalMarker+_2[_4])}}
+return _1+this.fallback_startMarker+_3.join(this.fallback_separator)+this.fallback_endMarker}
+,isc.A.parseLocatorFallbackPath=function(_1){var _2=_1.split(this.fallback_startMarker);if(_2==null||_2.length<2)return;var _3=_2[0],_1=_2[1].substring(0,_2[1].length-this.fallback_endMarker.length);var _4=_1.split(this.fallback_separator),_5={};for(var i=0;i<_4.length;i++){var _7=_4[i],_8=_7.indexOf(this.fallback_equalMarker);if(_8==-1){_5[this.fallback_valueOnlyField]=_7}else{_5[_7.substring(0,_8)]=_7.substring(_8+1)}}
+if(_2[2]!=null){var _7=_2[2].substring(0,_2[2].length-this.fallback_endMarker.length),_8=_7.indexOf(this.fallback_equalMarker),_9=_7.substring(0,_8),_10=_7.substring(_8+1);if(_10.startsWith('"'))_10=_10.substring(1,_10.length-1);_5[_9]=_10}
+return{name:_3,config:_5}}
+,isc.A.getObjectLocatorFallbackPath=function(_1,_2,_3,_4){if(_3==null)_3={};if(_4==null)_4={title:"title",Class:"ClassName"};if(isc.isAn.Array(_4)){for(var i=0;i<_4.length;i++){var _6=_2.getProperty?_2.getProperty(_4[i]):_2[_4[i]];if(_6!=null&&!isc.isAn.emptyString(_6))_3[_4[i]]=_6}}else{for(var _7 in _4){var _6=_2.getProperty?_2.getProperty(_4[_7]):_2[_4[_7]];if(_6!=null&&!isc.isAn.emptyString(_6))_3[_7]=_6}}
+return isc.AutoTest.createLocatorFallbackPath(_1,_3)}
+,isc.A.logRobustLocatorWarning=function(){if(this.$75z)return;this.logWarn(this.robustLocatorWarning,"AutoTest");this.$75z=true}
+);isc.B._maxIndex=isc.C+10;isc.ApplyAutoTestMethods=function(){isc.Canvas.addMethods({getLocator:function(_48){var _1,_2;if(this._generated||this.locatorParent||this.creator||this.$541){_2=this.getLocatorParent()}
 if(!_2){_1=this.getLocatorRoot()}else{_1=_2.getLocator()+"/"+_2.getChildLocator(this)}
-if(_15)return[_1,this.getInteriorLocator(_15)].join("/");return _1},$549:["//",,'[ID="',,'"]'],getLocatorRoot:function(){if(!this.locatorRoot){this.$549[1]=this.getClassName();this.$549[3]=this.getID();this.locatorRoot=this.$549.join(isc.emptyString)}
-return this.locatorRoot},containsLocatorChild:function(_53){return false},getLocatorParent:function(){if(this.locatorParent&&this.locatorParent.containsLocatorChild(this)){return this.locatorParent}
-if(this.creator&&isc.isA.Canvas(this.creator)){var _3=this.creator.getAutoChildLocator(this);if(_3==null){this.logWarn("Locator code failed to find relationship between parent:"+this.creator.getID()+" and autoChild:"+this.getID());return null}}
-return this.masterElement||this.parentElement},$55a:[,"[",,'][Class="',,'"]'],getChildLocator:function(_53){if(_53==this.hscrollbar){return"hscrollbar"}
-if(_53==this.vscrollbar){return"vscrollbar"}
-if(_53.creator==this){var _4=this.getAutoChildLocator(_53);if(_4)return _4}
-return this.getStandardChildLocator(_53)},getAutoChildLocator:function(_53){if(this.$542){for(var _5 in this.$542){if(_53==this[_5])return _5}}
-return null},getStandardChildLocator:function(_53){var _6=this.$55a;if(_53.masterElement==this){_6[0]="peer";_6[2]=this.peers.indexOf(_53)}else if(_53.parentElement==this){_6[0]="child";_6[2]=this.children.indexOf(_53)}else{this.logWarn("unexpected error - failed to find relationship between parent:"+this.getID()+" and child:"+_53.getID());return _53.getLocatorRoot()}
-_6[4]=_53.getClassName();return _6.join(isc.emptyString)},getInteriorLocator:function(_15){if(_15&&this.useEventParts){var _7=this.getElementPart(_15);if(_7!=null&&_7.part!=null){return(_7.partID&&_7.partID!=isc.emptyString)?_7.part+"_"+_7.partID:_7.part}}
-return isc.emptyString},getElementFromSplitLocator:function(_53){var _8=this.getChildFromLocatorSubstring(_53[0]);if(_8){_53.removeAt(0);return _8.getElementFromSplitLocator(_53)}
-return this.getInnerElementFromSplitLocator(_53)},getChildFromLocatorSubstring:function(_53){if(isc.isA.Canvas(this[_53]))return this[_53]
-var _8;for(var _9 in this.$558){_8=this.$559(_53,_9,this.$558[_9]);if(_8)break}
-return _8},$558:{peer:"peers",child:"children"},$559:function(_53,_9,_54){if(_53.startsWith(_9+"[")){var _10=_53.match(_9+"\\[(\\d+)\\]\\[Class=\"(.+)\"\\]"),_11=_10?_10[1]:null,_12=_10?_10[2]:null;_11=parseInt(_11);if(!isc.isA.Number(_11)){this.logWarn("AutoTest.getElement() - didn't understand locator substring:"+_53);return null}
-if(!this[_54]||!this[_54][_11]){this.logWarn("AutoTest.getElement(): unable to find "+_9+":"+_53);return null}
-if(!isc.isA[_12]||!isc.isA[_12](this[_54][_11])){this.logWarn("AutoTest.getElement(): locator substring:"+_53+" gave component of class:"+this[_54][_11].getClassName())}
-return this[_54][_11]}
-return null},getInnerElementFromSplitLocator:function(_53){if(_53){if(_53.length==1){var _13=_53[0].split("_");var _14={part:_13[0],partID:_13[1]};var _15=this.getPartElement(_14);if(_15)return _15}}
-return this.getHandle()}});if(isc.Layout){isc.Layout.addProperties({getStandardChildLocator:function(_53){var _16=this.members?this.members.indexOf(_53):-1;if(_16!=-1){var _6=this.$55a;_6[0]="member";_6[2]=_16;_6[4]=_53.getClassName();return _6.join(isc.emptyString)}
-return this.invokeSuper(isc.Layout,"getStandardChildLocator",_53)},$558:{member:"members",peer:"peers",child:"children"}})}
-if(isc.Window){isc.Window.addProperties({containsLocatorChild:function(_53){return(this.items&&this.items.contains(_53))},getStandardChildLocator:function(_53){if(this.items&&this.items.contains(_53)){var _6=this.$55a;_6[0]="item";_6[2]=this.items.indexOf(_53);_6[4]=_53.getClassName();return _6.join(isc.emptyString)}
-return this.invokeSuper(isc.Window,"getStandardChildLocator",_53)},$558:{item:"items",member:"members",peer:"peers",child:"children"}})}
-if(isc.SectionStack){$55b:["section[",,"]/item[",,'][Class="',,'"]'],isc.SectionStack.addProperties({getStandardChildLocator:function(_53){var _17=this.sections?this.sections.indexOf(_53):-1;if(_17!=-1){var _6=this.$55a;_6[0]="section";_6[2]=_17
-_6[4]=_53.getClassName();return _6.join(isc.emptyString)}
-var _18=this.sections||[];for(var i=0;i<_18.length;i++){var _20=_18[i].items,_21=_20?_20.indexOf(_53):-1;if(_21!=-1){var _6=this.$55b;_6[2]=i;_6[3]=_21;_6[5]=_53.getClassName();return _6.join(isc.emptyString)}}
-return this.invokeSuper(isc.Window,"getStandardChildLocator",_53)},$558:{section:"sections",member:"members",peer:"peers",child:"children"},getChildFromLocatorSubstring:function(_53){if(isc.isA.Canvas(this[_53]))return this[_53]
-var _10=_53.match("section\\[(\\d+)\\]/item\\[(\\d+)\\]\\[Class=\"(.+)\"\\]");if(_10){var _17=_10[1],_21=_10[2],_12=_10[3];_17=parseInt(_17);_21=parseInt(_21);if(!isc.isA.Number(_17)||!isc.isA.Number(_21)){this.logWarn("AutoTest.getElement() - didn't understand locator substring:"+_53);return null}
-if(!this.sections||!this.sections[_17]||!this.sections[_17].items||!this.sections[_17].items[_21])
-{this.logWarn("AutoTest.getElement(): unable to find section "+_17+", item:"+_21+" requested by locator:"+_53);return null}
-var _22=this.sections[_17].items[_21];if(!isc.isA[_12]||!isc.isA[_12](_22)){this.logWarn("AutoTest.getElement(): locator substring:"+_53+" gave component of class:"+_22.getClassName())}
-return _22}
-var _8;for(var _9 in this.$558){_8=this.$559(_53,_9,this.$558[_9]);if(_8)break}
-return _8}})}
-if(isc.StretchImg){isc.StretchImg.addProperties({getInteriorLocator:function(_15){var _23=_15,_24=this.getHandle(),_25=this.getCanvasName();while(_15&&_15!=_24&&_15.getAttribute){var _26=_15.getAttribute("name");if(_26&&_26.startsWith(_25)){return _26.substring(_25.length)}
-_15=_15.parentNode}
-return this.Super("getInteriorLocator",[_23])},getInnerElementFromSplitLocator:function(_53){if(_53&&_53.length==1){var _27=this.getImage(_53[0]);if(_27)return _27}
+if(_48)return[_1,this.getInteriorLocator(_48)].join("/");return _1},$549:["//",,'[ID="',,'"]'],getLocatorRoot:function(){if(!this.locatorRoot){this.$549[1]=this.getClassName();this.$549[3]=this.getID();this.locatorRoot=this.$549.join(isc.emptyString)}
+return this.locatorRoot},containsLocatorChild:function(_136){if(this.namedLocatorChildren!=null){for(var i=0;i<this.namedLocatorChildren.length;i++){var _4=this.namedLocatorChildren[i];if(_136==this[_4]){return true}}}
+return false},getLocatorParent:function(){if(this.locatorParent&&this.locatorParent.containsLocatorChild(this)){return this.locatorParent}
+if(this.creator&&isc.isA.Canvas(this.creator)){var _5=this.creator.getAutoChildLocator(this);if(_5==null){this.logInfo("Locator code failed to find relationship between parent:"+this.creator.getID()+" and autoChild:"+this.getID(),"AutoTest")}else{return this.creator}}
+return this.masterElement||this.parentElement},$55a:[,"[",,'][Class="',,'"]'],getChildLocator:function(_136){if(_136==this.hscrollbar){return"hscrollbar"}
+if(_136==this.vscrollbar){return"vscrollbar"}
+if(_136.creator==this){var _6=this.getAutoChildLocator(_136);if(_6)return _6}
+return this.getStandardChildLocator(_136)},getCanvasLocatorFallbackPath:function(_4,_136,_137,_138,_139){if(_138==null)_138={};if(_139==null)_139={};else if(isc.isAn.Array(_139)){var _7={};for(var i=0;i<_139.length;i++){_7[_139[i]]=_139[i]}
+_139=_7}
+if(_139.title==null)_139.title="title";if(_139.scRole==null)_139.scRole="waiRole";if(_139.name==null)_139.name="name";var _8=_136.getClassName(),_9=_136.getClass();_138.Class=_8;var _10;if(!_9.isFrameworkClass){_10=_9.$750}
+if(_10!=null)_138.scClass=_10;if(_137!=null){_138.index=_137.indexOf(_136);_138.length=_137.length;var _11=_137.findAll("Class",_8);_138.classIndex=_11.indexOf(_136);_138.classLength=_11.length;if(_10!=null){var _12=_137.findAll("$75y",_10);_138.scClassIndex=_12.indexOf(_136);_138.scClassLength=_12.length}
+if(_136.waiRole!=null){var _13=_137.findAll("waiRole",_136.waiRole);_138.roleIndex=_13.indexOf(_136);_138.roleLength=_13.length}}
+return isc.AutoTest.getObjectLocatorFallbackPath(_4,_136,_138,_139)},getAutoChildLocator:function(_136){if(this.$542){var _14=_136.getID();for(var _15 in this.$542){var _16=this.$542[_15];if(_16.contains(_14)){if(_136==this[_15])return _15;else{var _17=[];for(var i=0;i<_16.length;i++){_17[i]=window[_16[i]]}
+return this.getCanvasLocatorFallbackPath(_15,_136,_17)}}}}
+return null},getNamedLocatorChildString:function(_136){if(_136.locatorParent==this&&this.namedLocatorChildren){for(var i=0;i<this.namedLocatorChildren.length;i++){var _4=this.namedLocatorChildren[i];if(_136==this[_4]){return _4}}}},getStandardChildLocator:function(_136){var _18=this.getNamedLocatorChildString(_136);if(_18)return _18;if(_136.masterElement==this){return this.getCanvasLocatorFallbackPath("peer",_136,this.peers)}else if(_136.parentElement==this){return this.getCanvasLocatorFallbackPath("child",_136,this.children)}else{this.logWarn("unexpected error - failed to find relationship between parent:"+this.getID()+" and child:"+_136.getID());return _136.getLocatorRoot()}},getInteriorLocator:function(_48){if(_48&&this.useEventParts){var _19=this.getElementPart(_48);if(_19!=null&&_19.part!=null){return(_19.partID&&_19.partID!=isc.emptyString)?_19.part+"_"+_19.partID:_19.part}}
+return isc.emptyString},getElementFromSplitLocator:function(_136){var _20=this.getChildFromLocatorSubstring(_136[0]);if(_20){_136.removeAt(0);return _20.getElementFromSplitLocator(_136)}
+return this.getInnerElementFromSplitLocator(_136)},getChildFromLocatorSubstring:function(_136){if(_136==null||_136=="")return null;if(isc.isA.Canvas(this[_136])){return this[_136]}
+var _21=isc.AutoTest.parseLocatorFallbackPath(_136);if(_21!=null){return this.getChildFromFallbackLocator(_136,_21)}
+return null},getChildLocatorStrategy:function(_136){if(isc.AutoTest.locStrategyNames==null){isc.AutoTest.locStrategyNames={}}
+var _22=isc.AutoTest.locStrategyNames[_136];if(_22==null){var _23=_136;if(this.$558[_136])_23=this.$558[_136];_22=isc.AutoTest.locStrategyNames[_136]="locate"+_23.substring(0,1).toUpperCase()+_23.substring(1)+"By"}
+return this[_22]},getChildLocatorTypeStrategy:function(_136){if(isc.AutoTest.locStrategyTypes==null){isc.AutoTest.locStrategyTypes={}}
+var _22=isc.AutoTest.locStrategyTypes[_136];if(_22==null){var _23=_136;if(this.$558[_136])_23=this.$558[_136];_22=isc.AutoTest.locStrategyTypes[_136]="locate"+_23.substring(0,1).toUpperCase()+_23.substring(1)+"Type"}
+return this[_22]},getChildFromFallbackLocator:function(_136,_21){var _24=_21.name,_25=_21.config;var _26=this.getFallbackLocatorCandidates(_24);if(_26&&_26.length>0){var _4=_25.name;var _27=_25.Class,_10=_25.scClass||_25.Class,_28=_25.scRole;var _29=this.getChildLocatorStrategy(_24);if(_29==null)_29="name";var _30=this.getChildLocatorTypeStrategy(_24);if(_30==null)_30="Class";switch(_29){case"name":if(_4!=null){var _31=_26.find("name",_4);if(_31){switch(_30){case"Class":if(_27&&isc.isA[_27]&&isc.isA[_27](_31)){if(this.logIsDebugEnabled("AutoTest")){this.logDebug("Locator string:"+_136+" - returning widget with matching name and ClassName:"+_31,"AutoTest")}
+return _31}
+case"scClass":if(_10&&isc.isA[_10]&&isc.isA[_10](_31))
+{if(this.logIsDebugEnabled("AutoTest")){this.logDebug("Locator string:"+_136+" - returning widget with matching name and scClassName:"+_31,"AutoTest")}
+return _31}
+case"role":var _32=_25.scRole;if(_31.waiRole==_32){if(this.logIsDebugEnabled("AutoTest")){this.logDebug("Locator string:"+_136+" - returning widget with matching name and role:"+_31,"AutoTest")}
+return _31}
+default:if(_30!="none"){isc.AutoTest.logRobustLocatorWarning();this.logWarn("Locator string:"+_136+". Returning closest match:"+_31+". This has the same name "+"as the recorded component but does not match class or role. ","AutoTest")}else{if(this.logIsDebugEnabled("AutoTest")){this.logDebug("Locator string:"+_136+" - returning widget with matching name:"+_31,"AutoTest")}}
+return _31}}}
+case"title":var _33=_25.title;if(_33!=null){var _34=_26.findAll("title",_33);if(_34&&_34.length>0){var _35;switch(_30){case"Class":if(_27){var _36=_34.findAll("Class",_27);if(_36!=null){_35=_36[0];if(_36.length==1&&_35){if(this.logIsDebugEnabled("AutoTest")){this.logDebug("Locator string:"+_136+" - returning widget with matching title and ClassName:"+_35,"AutoTest")}
+return _35}}}
+case"scClass":if(_10){var _36=_34.findAll("$75y",_10);if(_36!=null){if(_36.length==1||_35==null)
+_35=_36[0];if(_36.length==1&&_35){if(this.logIsDebugEnabled("AutoTest")){this.logDebug("Locator string:"+_136+" - returning widget with matching name and scClassName:"+_35,"AutoTest")}
+return _35}}}
+case"role":if(_28){var _36=_34.findAll("waiRole",_28);if(_36!=null){if(_36.length==1||_35==null)
+_35=_36[0];if(_36.length==1&&_35){if(this.logIsDebugEnabled("AutoTest")){this.logDebug("Locator string:"+_136+" - returning widget with matching title and role:"+_35,"AutoTest")}
+return _35}}}
+default:if(_34.length==1){if(_30!="none"){isc.AutoTest.logRobustLocatorWarning();this.logWarn("Locator string:"+_136+". Returning closest match:"+_34[0]+". This has the same title "+"as the recorded component but does not match class or role.","AutoTest")}else{if(this.logIsDebugEnabled("AutoTest")){this.logDebug("Locator string:"+_136+" - returning widget with matching title:"+_35,"AutoTest")}}
+return _34[0]}else{this.logWarn("Locator string:"+_136+", attempt to match by title failed -- multiple candidate components have this "+"same title. Attempting to match by index instead.","AutoTest")}}}}
+default:var _37,_38,_39;switch(_30){case"Class":if(_27&&_25.classIndex){var _40=_26.findAll("Class",_27);if(_40&&_40.length>0){_37=_40[parseInt(_25.classIndex)];if(_40.length==parseInt(_25.classLength)){if(this.logIsInfoEnabled("AutoTest")){this.logInfo("Locator string:"+_136+" - returning widget with matching ClassName / index by ClassName:"+_37,"AutoTest")}
+return _37}}}
+case"scClass":if(_10&&_25.scClassIndex){var _41=_26.findAll("$75y",_10);if(_41&&_41.length>0){_38=_41[parseInt(_25.scClassIndex)];if(sClassMatches.length==parseInt(_25.scClassLength)){if(this.logIsInfoEnabled("AutoTest")){this.logInfo("Locator string:"+_136+" - returning widget with matching SmartClient superclass / index by ClassName:"+_38,"AutoTest")}
+return _38}}}
+case"role":if(_28&&_25.roleIndex){var _42=_26.findAll("waiRole",_28);if(_42&&_42.length>0){_39=_42[parseInt(_25.roleIndex)];if(_42.length==parseInt(_25.roleLength)){if(this.logIsInfoEnabled("AutoTest")){this.logInfo("Locator string:"+_136+" - returning widget with matching role / index by role:"+_39,"AutoTest")}
+return _39}}}
+default:if((_30!="none"&&(_27||_10||_28))||(_25.length!=null&&(parseInt(_25.length)!=_26.length)))
+{isc.AutoTest.logRobustLocatorWarning()}
+var _43=_37||_38||_39;if(_43==null){var _44=_25[isc.AutoTest.fallback_valueOnlyField];if(_44==null)_44=_25.index;_44=parseInt(_44);_43=_26[_44]}
+if(_43){this.logWarn("Locator string:"+_136+" matching by index gave "+_43+". Reliability cannot be guaranteed for matching by index if the underlying "+"application undergoes any changes.","AutoTest");return _43}}}}
+this.logDebug("AutoTest.getElement(): locator substring:"+_136+" parsed to fallback locator name:"+_4+", unable to find relevant child - may refer to inner element.","AutoTest")},$558:{peer:"peers",child:"children"},getFallbackLocatorCandidates:function(_4){var _26;if(this.$542!=null&&this.$542[_4]!=null){var _45=this.$542[_4];_26=[];for(var i=0;i<_45.length;i++){_26[i]=window[_45[i]]}}else if(this.$558[_4]!=null){_26=this[this.$558[_4]]}else if(this[_4]&&isc.isAn.Array(this[_4])){_26=this[_4]}
+return _26},emptyLocatorArray:function(_136){return _136==null||_136.length==0||(_136.length==1&&_136[0]=="")},getInnerElementFromSplitLocator:function(_136){if(!this.emptyLocatorArray(_136)){if(_136.length==1){var _46=_136[0].split("_");var _47={part:_46[0],partID:_46[1]};var _48=this.getPartElement(_47);if(_48)return _48}}
+return this.getHandle()}});if(isc.Layout){isc.Layout.addProperties({getStandardChildLocator:function(_136){var _18=this.getNamedLocatorChildString(_136);if(_18)return _18;if(this.members.contains(_136)){return this.getCanvasLocatorFallbackPath("member",_136,this.members)}
+return this.Super("getStandardChildLocator",arguments)},$558:{member:"members",peer:"peers",child:"children"}})}
+if(isc.Window){isc.Window.addProperties({containsLocatorChild:function(_136){if(this.items&&this.items.contains(_136))return true;return this.Super("containsLocatorChild",arguments)},getStandardChildLocator:function(_136){if(this.items&&this.items.contains(_136)){var _49=this.$55a;_49[0]="item";_49[2]=this.items.indexOf(_136);_49[4]=_136.getClassName();return _49.join(isc.emptyString)}
+return this.invokeSuper(isc.Window,"getStandardChildLocator",_136)},$558:{item:"items",member:"members",peer:"peers",child:"children"}})}
+if(isc.SectionStack){isc.ImgSectionHeader.changeDefaults("$558",{item:"items"});isc.SectionHeader.changeDefaults("$558",{item:"items"});isc.SectionStack.changeDefaults("$558",{section:"sections"});isc.SectionStack.addProperties({getStandardChildLocator:function(_136){var _50=this.sections||[],_51;for(var i=0;i<_50.length;i++){var _52=_50[i].items,_53,_54;if(_136==_50[i]){_53=_136}else if(_52&&_52.contains(_136)){_53=_50[i];_54=_136}
+if(_53!=null){_51=this.getCanvasLocatorFallbackPath("section",_53,this.sections)}
+if(_54!=null){_51+="/"+this.getCanvasLocatorFallbackPath("item",_54,_53.items)}
+if(_51!=null)return _51}
+return this.Super("getStandardChildLocator",arguments)}})}
+if(isc.StretchImg){isc.StretchImg.addProperties({getInteriorLocator:function(_48){var _55=_48,_56=this.getHandle(),_57=this.getCanvasName();while(_48&&_48!=_56&&_48.getAttribute){var _14=_48.getAttribute("name");if(_14&&_14.startsWith(_57)){return _14.substring(_57.length)}
+_48=_48.parentNode}
+return this.Super("getInteriorLocator",[_55])},getInnerElementFromSplitLocator:function(_136){if(!this.emptyLocatorArray(_136)&&_136.length==1){var _58=this.getImage(_136[0]);if(_58)return _58}
 return this.Super("getInnerElementFromSplitLocator",arguments)}})}
-if(isc.DynamicForm){isc.DynamicForm.addProperties({getInteriorLocator:function(_15){var _28=isc.DynamicForm.$mu(_15,this);if(!_28.item)return this.Super("getInteriorLocator",arguments);var _22=_28.item,_29=["item[",(_22.name?"name='"+_22.name+"'":"index='"+this.items.indexOf(_22)+"'"),'][Class="',_22.getClassName(),'"]/'];if(_28.overElement)_29[_29.length]="element";else if(_28.overTitle)_29[_29.length]="title";else if(_28.overTextBox)_29[_29.length]="textbox";else if(_28.overControlTable)_29[_29.length]="controltable";else if(_28.overIcon)_29[_29.length]="[icon='"+_28.overIcon+"']"
-return _29.join(isc.emptyString)},getChildLocator:function(_53){if(_53.canvasItem){var _22=_53.canvasItem;return["item[",(_22.name?"name='"+_22.name+"'":"index='"+this.items.indexOf(_22)+"'"),'][Class="',_22.getClassName(),'"]/',"canvas"].join(isc.emptyString)}
-if(isc.isA.PickListMenu(_53)){var _22=_53.formItem;return["item[",(_22.name?"name='"+_22.name+"'":"index='"+this.items.indexOf(_22)+"'"),'][Class="',_22.getClassName(),'"]/',"pickList"].join(isc.emptyString)}
-return this.Super("getChildLocator",arguments)},getInnerElementFromSplitLocator:function(_53){if(!_53||_53.length==0){return this.getHandle()}
-var _30=_53[0],_31=_30.contains("name="),_10=_30.match("item\\["+(_31?"name='":"index='")+"(.+)'\\]\\[Class=\"(.+)\"\\]");if(_10){var _32=_10[1],_33=_10[2];var _22=this.getItem(_32);if(!_22){this.logWarn("AutoTest.getElement(): Unable to find item with identifier"+_32+", from locator:"+_30);return this.getHandle()}
-if(!isc.isA[_33]||!isc.isA[_33](_22)){this.logWarn("AutoTest.getElement(): identifier:"+_30+" returned and item of class:"+_22.getClassName())}
-_53.removeAt(0);return _22.getInnerElementFromSplitLocator(_53)}
-return this.getHandle()}});isc.FormItem.addProperties({getInnerElementFromSplitLocator:function(_53){if(_53&&_53.length>0){var _14=_53[0];if(_14=="element")return this.getDataElement();if(_14=="title")return this.form.getTitleCell(this);if(_14=="textbox")return this.$15h();if(_14=="controltable")return this.$56a();if(_14=="canvas"){if(this.canvas){_53.removeAt(0);return this.canvas.getElementFromSplitLocator(_53)}}
-if(_14=="pickList"){if(!this.pickList)this.makePickList(false);_53.removeAt(0);return this.pickList.getElementFromSplitLocator(_53)}
-var _34=_14.match("\\[icon='(.+)'\\]"),_35=_14?_14[1]:null;if(_35){return this.$16v(_35)}}}});if(isc.PickListMenu){isc.PickListMenu.addProperties({getLocatorParent:function(){if(this.formItem)return this.formItem.form;return this.Super("getLocatorParent",arguments)}})}}
-if(isc.GridRenderer){isc.GridRenderer.addProperties({getInteriorLocator:function(_15){var _23=_15,_24=this.getHandle(),_36=this.getTableElement();if(!_36)return isc.emptyString;var _37=_36.rows,_38,_39,_40,_41="tr",_42="TR",_43="td",_44="TD";while(_15&&_15!=_36&&_15!=_24){_38=_15.tagName;if(_38==_43||_38==_44){_40=_15}
-if(_38==_41||_38==_42){_39=_15}
-_15=_15.parentNode}
-if(!_39||!_40)return this.Super("getInteriorLocator",[_23]);var _37=_36.rows,_45,_46;for(var i=0;i<_37.length;i++){if(_37[i]==_39){_45=i;break}}
-var _47=_39.cells,_48,_49;for(var i=0;i<_47.length;i++){if(_47[i]==_40){_48=i;break}}
-_46=_45+(this.$252||0)
-_49=_48+(this.$254||0);return"row"+_46+"/col"+_49},getInnerElementFromSplitLocator:function(_53){if(!_53||_53.length==0)return this.getHandle();if(_53.length==2){var _45=parseInt(_53[0].substring(3)),_48=parseInt(_53[1].substring(3));if(isc.isA.Number(_45)&&isc.isA.Number(_48)){if(this.$29p())return null;return this.getTableElement(_45,_48)}}
+if(isc.DynamicForm){isc.DynamicForm.addProperties({getInteriorLocator:function(_48){var _59=isc.DynamicForm.$mu(_48,this);if(!_59.item)return this.Super("getInteriorLocator",arguments);var _54=_59.item,_60=[this.getItemLocator(_54),'/'];if(_59.overElement)_60[_60.length]="element";else if(_59.overTitle)_60[_60.length]="title";else if(_59.overTextBox)_60[_60.length]="textbox";else if(_59.overControlTable)_60[_60.length]="controltable";else if(_59.overIcon)_60[_60.length]="[icon='"+_59.overIcon+"']"
+return _60.join(isc.emptyString)},getItemLocator:function(_54){var _61={};if(_54.name!=null)_61.name=_54.name;var _33=_54.getTitle();if(_33!=null)_61.title=_33;var _62=_54.getValue();if(_62!=null)_61.value=_62;_61.index=this.getItems().indexOf(_54);_61.Class=_54.getClassName();var _63=isc.AutoTest.createLocatorFallbackPath("item",_61);return _63},containsLocatorChild:function(_136){if(isc.isA.DateChooser(_136)&&_136.callingForm==this)return true;return this.Super("containsLocatorChild",arguments)},getChildLocator:function(_136){if(_136.canvasItem){var _54=_136.canvasItem;return this.getItemLocator(_54)+"/canvas"}
+if(isc.isA.PickListMenu(_136)){var _54=_136.formItem;return this.getItemLocator(_54)+"/pickList"}
+if(isc.isA.DateChooser(_136)){var _54=_136.callingFormItem;return this.getItemLocator(_54)+"/picker"}
+return this.Super("getChildLocator",arguments)},getItemFromSplitLocator:function(_136){var _64=_136[0],_27;if(_64.contains("[Class=")){var _65=_64.match("item\\[(.+)'\\]\\[Class=\"(.+)\"\\]");_27=_65[1].substring(6,_65[1].length-2);_64=_65[0]}
+var _66=isc.AutoTest.parseLocatorFallbackPath(_64);if(_66.name=="item"&&_66.config!=null){var _25=_66.config;var _54;if(_25.name!=null){_54=this.getItem(_25.name)}else{for(var i=0;i<this.items.length;i++){var _67=this.items[i],_68=_67.locateItemBy;if(_68==null)_68="title";if(_68=="title"&&_25.title!=null&&_67.title==_25.title)
+{_54=_67}else if(_68=="value"&&_25.value!=null&&_67.getValue()==_25.value)
+{_54=_67}}
+if(_54==null){var _44=_25.index;if(isc.isA.String(_44)){if(_44.startsWith("'")||_44.startsWith('"'))
+{_44=_44.substring(1)}
+_44=parseInt(_44)}
+_54=this.items[_44]}}
+if(!_54){this.logWarn("AutoTest.getElement(): Unable to find item from "+"locator string:"+_64);return null}
+if(!isc.isA[_27]||!isc.isA[_27](_54)){this.logWarn("AutoTest.getElement(): identifier:"+_64+" returned an item of class:"+_54.getClassName())}
+return _54}
+return null},getInnerElementFromSplitLocator:function(_136){if(this.emptyLocatorArray(_136)){return this.getHandle()}
+var _54=this.getItemFromSplitLocator(_136);if(_54!=null){_136.removeAt(0);return _54.getInnerElementFromSplitLocator(_136)}
+return this.getHandle()}});isc.FormItem.addProperties({getInnerElementFromSplitLocator:function(_136){if(!this.emptyLocatorArray(_136)){var _47=_136[0];if(_47=="element")return this.getDataElement();if(_47=="title")return this.form.getTitleCell(this);if(_47=="textbox")return this.$15h();if(_47=="controltable")return this.$56a();if(_47=="canvas"){if(this.canvas){_136.removeAt(0);return this.canvas.getElementFromSplitLocator(_136)}}
+if(_47=="picker"){if(this.picker){_136.removeAt(0);return this.picker.getElementFromSplitLocator(_136)}}
+if(_47=="pickList"){if(!this.pickList)this.makePickList(false);_136.removeAt(0);return this.pickList.getElementFromSplitLocator(_136)}
+var _69=_47.match("\\[icon='(.+)'\\]"),_70=_47?_47[1]:null;if(_70){return this.$16v(_70)}}},emptyLocatorArray:isc.Canvas.getPrototype().emptyLocatorArray});isc.HeaderItem.addProperties({locateItemBy:"value"});if(isc.PickListMenu){isc.PickListMenu.addProperties({getLocatorParent:function(){if(this.formItem)return this.formItem.form;return this.Super("getLocatorParent",arguments)}})}}
+if(isc.GridRenderer){isc.GridRenderer.addProperties({getInteriorLocator:function(_48){var _55=_48,_56=this.getHandle(),_71=this.getTableElement();if(!_71)return isc.emptyString;var _72=_71.rows,_73,_74,_75,_76="tr",_77="TR",_78="td",_79="TD";while(_48&&_48!=_71&&_48!=_56){_73=_48.tagName;if(_73==_78||_73==_79){_75=_48}
+if(_73==_76||_73==_77){_74=_48}
+_48=_48.parentNode}
+if(!_74||!_75)return this.Super("getInteriorLocator",[_55]);var _72=_71.rows,_80,_81;for(var i=0;i<_72.length;i++){if(_72[i]==_74){_80=i;break}}
+var _82=_74.cells,_83,_84;for(var i=0;i<_82.length;i++){if(_82[i]==_75){_83=i;break}}
+_81=_80+(this.$252||0);_84=_83+(this.$254||0);return this.getCellLocator(_81,_84)},getCellLocator:function(_80,_83){return"row["+_80+"]/col["+_83+"]"},getInnerElementFromSplitLocator:function(_136){if(this.emptyLocatorArray(_136))return this.getHandle();if(_136.length==2){var _75=this.getCellFromLocator(_136[0],_136[1]),_80=_75[0],_83=_75[1];if(isc.isA.Number(_80)&&isc.isA.Number(_83)){if(this.$29p())return null;return this.getTableElement(_80,_83)}}
+return this.Super("getInnerElementFromSplitLocator",arguments)},getCellFromLocator:function(_136,_137){var _85=_136.substring(4,_136.length-1),_86=_137.substring(4,_137.length-1);return[_80,_83]}})}
+if(isc.ListGrid){isc.ListGrid.addProperties({namedLocatorChildren:["header","frozenHeader","body","frozenBody","$286"]});isc.GridBody.addProperties({getCellLocator:function(_80,_83){var _87=this.grid;if(_87==null)return this.Super("getCellLocator",arguments);var _88={},_89=_87.getFieldNumFromLocal(_83,this),_90=_87.getCellRecord(_80,_89),_91=_87.getDataSource();if(_91!=null){var _92=_91.getPrimaryKeyFieldName();if(_92!=null&&_90[_92]!=null){_88[_92]=_90[_92]}}
+var _93=_87.getTitleField();if(_93!=null&&_90[_93]!=null){_88[_93]=_90[_93]}
+var _94=_87.getFieldName(_89);if(_90[_94]!=null){_88[_94]=_90[_94]}
+_88[isc.AutoTest.fallback_valueOnlyField]=_80;var _85=isc.AutoTest.createLocatorFallbackPath("row",_88);_88={};var _94=_87.getFieldName(_89);if(_94!=null)_88.fieldName=_94;_88[isc.AutoTest.fallback_valueOnlyField]=_83;var _86=isc.AutoTest.createLocatorFallbackPath("col",_88);return _85+"/"+_86},getCellFromLocator:function(_136,_137){var _87=this.grid;if(_87==null)return this.Super("getCellFromLocator",arguments);var _95=isc.AutoTest.parseLocatorFallbackPath(_136),_96=isc.AutoTest.parseLocatorFallbackPath(_137),_80=this.getRowNumFromLocatorConfig(_95.config),_83=this.getColNumFromLocatorConfig(_96.config);return[_80,_83]},getRowNumFromLocatorConfig:function(_95){var _87=this.grid,_97=_87.locateRowsBy;if(_97==null)_97="primaryKey";switch(_97){case"primaryKey":var _91=_87.getDataSource();if(_91!=null){var _98=_91.getPrimaryKeyFieldName();if(_91!=null&&_95[_98]!=null){return _87.findRowNum(_95)}}
+case"titleField":var _93=_87.getTitleField();if(_93!=null&&_95[_93]!=null){var _99=_87.data;return _99.findIndex(_93,_95[_93])}
+case"targetCellValue":for(var _94 in _95){if(_94==isc.AutoTest.fallback_valueOnlyField)continue;if(_95[_94]!=null){return _87.data.findIndex(_94,_95[_94])}}
+default:return parseInt(_95[isc.AutoTest.fallback_valueOnlyField])}},getColNumFromLocatorConfig:function(_96){var _87=this.grid;var _100=_87.locateColumnsBy;if(_100=="fieldName"||_100==null){var _94=_96.fieldName;if(_94!=null){return _87.getFieldNum(_94)}}
+return parseInt(_96[isc.AutoTest.fallback_valueOnlyField])}})}
+if(isc.TreeGrid){isc.TreeGridBody.addProperties({getInteriorLocator:function(_48){var _55=_48;var _56=this.getHandle(),_101=this.getTableElement();if(!_48||!_56||!_101)return isc.emptyString;var _102=this.grid.getCanvasName()+this.grid.$34l,_80,_83;while(_48!=this.tableElement&&_48!=_56&&_48.getAttribute){var _14=_48.getAttribute("name");if(_14&&_14.startsWith(_102)){_80=_14.substring(_102.length);_83=this.grid.getTreeFieldNum();return"row"+_80+"/col"+_83+"/open"}
+_48=_48.parentNode}
+return this.Super("getInteriorLocator",[_55])},getInnerElementFromSplitLocator:function(_136){if(this.emptyLocatorArray(_136))return this.getHandle();if(_136.length==3&&_136[2]=="open"){if(this.$29p())return null;var _80=parseInt(_136[0].substring(3)),_83=parseInt(_136[1].substring(3));var _103=this.grid.$34l+_80,_58=this.grid.getImage(_103);if(_58)return _58}
 return this.Super("getInnerElementFromSplitLocator",arguments)}})}
-if(isc.ListGrid){isc.ListGrid.addProperties({containsLocatorChild:function(_53){if(_53==this.body||_53==this.frozenBody||_53==this.$286)
-{return true}
-return this.Super("containsLocatorChild",arguments)},getStandardChildLocator:function(_53){if(_53==this.body)return"body";if(_53==this.frozenBody)return"frozenBody";if(_53==this.$286)return"$286";return this.Super("getStandardChildLocator",arguments)}})}
-if(isc.TreeGrid){isc.TreeGridBody.addProperties({getInteriorLocator:function(_15){var _23=_15;var _24=this.getHandle(),_50=this.getTableElement();if(!_15||!_24||!_50)return isc.emptyString;var _51=this.grid.getCanvasName()+this.grid.$34l,_45,_48;while(_15!=this.tableElement&&_15!=_24&&_15.getAttribute){var _26=_15.getAttribute("name");if(_26&&_26.startsWith(_51)){_45=_26.substring(_51.length);_48=this.grid.getTreeFieldNum();return"row"+_45+"/col"+_48+"/open"}
-_15=_15.parentNode}
-return this.Super("getInteriorLocator",[_23])},getInnerElementFromSplitLocator:function(_53){if(!_53||_53.length==0)return this.getHandle();if(_53.length==3&&_53[2]=="open"){if(this.$29p())return null;var _45=parseInt(_53[0].substring(3)),_48=parseInt(_53[1].substring(3));var _52=this.grid.$34l+_45,_27=this.grid.getImage(_52);if(_27)return _27}
+if(isc.TabSet){isc.TabSet.addProperties({containsLocatorChild:function(_136){if(this.Super("containsLocatorChild",arguments))return true;if(this.getTabNumber(_136)!=-1)return true;return false},getStandardChildLocator:function(_136){var _104=this.getTabNumber(_136);if(_104!=-1){var _105=this.getTabObject(_104);var _106={};if(_105.ID!=null)_106.ID=_105.ID;if(_105.title!=null)_106.title=_105.title;_106.index=_104;return isc.AutoTest.createLocatorFallbackPath("tab",_106)}
+return this.Super("getStandardChildLocator",arguments)},getChildFromLocatorSubstring:function(_136){if(_136&&_136.startsWith("tab[")){var _107=isc.AutoTest.parseLocatorFallbackPath(_136),_25=_107.config;if(_25.ID!=null){return this.getTab(_25.ID)}
+var _108=this.locateTabsBy;if(_108==null)_108="title";if(_25.title&&_108=="title"){var _104=this.tabs.findIndex("title",_25.title);return this.getTab(_104)}
+return this.getTab(parseInt(_25.index))}
+return this.Super("getChildFromLocatorSubstring",_136)}})}
+if(isc.StatefulCanvas){isc.StatefulCanvas.addProperties({getInnerElementFromSplitLocator:function(_136){if(!this.emptyLocatorArray(_136)&&this.label){return this.label.getInnerElementFromSplitLocator(_136)}
 return this.Super("getInnerElementFromSplitLocator",arguments)}})}
-if(isc.StatefulCanvas){isc.StatefulCanvas.addProperties({getInnerElementFromSplitLocator:function(_53){if(_53&&this.label){return this.label.getInnerElementFromSplitLocator(_53)}
-return this.Super("getInnerElementFromSplitLocator",arguments)}})}}
+if(isc.DateChooser){isc.DateChooser.addMethods({getInteriorLocator:function(_48){var _56=this.getHandle();if(!_56||!_48)return"";var _109=_48.$73l;if(_109!=null&&_109!="")return _109;return _48.$73l=this.$73m(_48,_56)},$73m:function(_48,_56){var _110=_48;while(_110&&_110!=null){if(_110==_56){_110=null;break}
+if(_110.tagName&&_110.tagName.toLowerCase()=="td"){break}
+_110=_110.parentElement}
+if(_110==null)return"";var _111=_56.childNodes,_112=[];for(var i=0;i<_111.length;i++){if(!_111[i].tagName||_111[i].tagName.toLowerCase()!="table"){continue}
+_112[_112.length]=_111[i]}
+var _113=_112.length==2?_112[0]:null,_114=_112.length==2?_112[1]:_112[0];if(_113!=null&&_110.offsetParent==_113){var _115=_110.onclick,_116=_115?_115.toString():null;if(!_116)return"";if(_116.contains("showPrevYear")){return"prevYearButton"}else if(_116.contains("showNextYear")){return"nextYearButton"}else if(_116.contains("showPrevMonth")){return"prevMonthButton"}else if(_116.contains("showNextMonth")){return"nextMonthButton"}else if(_116.contains("showMonthMenu")){return"monthMenuButton"}else if(_116.contains("showYearMenu")){return"yearMenuButton"}
+return""}else if(_114!=null&&_110.offsetParent==_114){var _115=_110.onclick,_116=_115?_115.toString():null;if(!_116)return"";if(_116.contains("cancelClick"))return"cancelButton";else if(_116.contains("todayClick"))return"todayButton";else{var _117=_116.match("dateClick\\(\(.*\)\\)");if(_117&&_117[1]){var _118=_117[1].split(",");for(var i=0;i<_118.length;i++){_118[i]=_118[i].trim()}
+return _118.join("/")}}}
+return""},getInnerElementFromSplitLocator:function(_136){if(this.emptyLocatorArray(_136))return this.getHandle();var _56=this.getHandle();if(_56==null)return;var _119=(_136.length==3);if(!_119){var _51=_136[0];if(_51=="")return _56;var _120=(_51=="todayButton"),_121=!_120?(_51=="cancelButton"):false;var _111=_56.childNodes;if(_120||_121){if(_120&&!this.showTodayButton){this.logWarn("DateChooser attempting to locate element for "+"'todayButton' but showTodayButton is false. Returning handle.","AutoTest");return _56}
+if(_121&&!this.showCancelButton){this.logWarn("DateChooser attempting to locate element for "+"'cancelButton' but showCancelButton is false. Returning handle.","AutoTest");return _56}
+var _114;for(var i=_111.length-1;i>=0;i--){if(_111[i].tagName&&_111[i].tagName.toLowerCase()=="table")
+{_114=_111[i];break}}
+var _122=_114.rows[_114.rows.length-1],_82=_122.cells;for(var i=0;i<_82.length;i++){if(this.getInteriorLocator(_82[i])==_51){return _82[i]}}}else{if(!this.showHeader){this.logWarn("DateChooser attempting to locate element for "+_136+" but this.showHeader is false so this element will not be present. "+"Returning handle.","AutoTest");return _56}
+var _113
+for(var i=0;i<_111.length;i++){if(_111[i].tagName&&_111[i].tagName.toLowerCase()=="table")
+{_113=_111[i];break}}
+var _74=_113.rows[0],_82=_74.cells;for(var i=0;i<_82.length;i++){if(this.getInteriorLocator(_82[i])==_51){return _82[i]}}}}else{var _123=_136[0],_124=_136[1],_125=_136[2];if((_123==this.year)&&(this.month==_124||this.month==_124+1||this.month==_124-1))
+{var _126=new Date(_123,_124,_125),_127=_126.getDay();if(this.showWeekends||!Date.getWeekendDays().contains(_127)){var _128=new Date(this.year,this.month,1);var _129=_128.getDay(),_130=_129+this.firstDayOfWeek-
+(_129<this.firstDayOfWeek?7:0);_128.setDate(_128.getDate()-_130);if(Date.compareDates(_126,_128)!=1){var _131=new Date(this.year,this.month+1,1);_131.setTime(_131.getTime()-86400000);var _132=_131.getDay(),_133=this.firstDayOfWeek+6;if(_133>6)_133-=7;var _134=_133>_132?_133-_132:_133+7-_132;if(_134!=0){_131.setTime(_131.getTime()+(86400000*_134))}
+if(Date.compareDates(_126,_131)!=-1){var _80=Math.floor(((parseInt(_125)+_130)/7))
+_80+=1;var _135=this.firstDayOfWeek;if(!this.showWeekends){while(Date.getWeekendDays().contains(_135)){_135+=1;if(_135==7)_135=0}}
+var _83=_126.getDay()-(_135+_130);if(_83<0)_83+=7;_83-=1;var _111=_56.childNodes,_114;for(var i=_111.length-1;i>=0;i--){if(_111[i].tagName&&_111[i].tagName.toLowerCase()=="table")
+{_114=_111[i];break}}
+if(_114)return _114.rows[_80].cells[_83]}else{this.logInfo("DateChooser Passed ID for a date after end. "+"end date:"+[_131.getFullYear(),_131.getMonth(),_131.getDay()]+" vs:"+[_123,_124,_125],"AutoTest")}}else{this.logInfo("DateChooser Passed ID for a date before start date. "+"startDate:"+[_128.getFullYear(),_128.getMonth(),_128.getDay()]+" vs:"+[_123,_124,_125],"AutoTest")}}else{this.logInfo("DateChooser Passed ID for a weekend - not showing weekends","AutoTest")}}else{this.logInfo("DateChooser passed ID for the wrong year or month - passed:"+_136+", showing:"+[this.year,this.month],"AutoTest")}
+this.logWarn("DateChooser - passed inner locator for date ("+_136.join("/")+") -- not currently showing this date.","AutoTest")}
+this.logWarn("DateChooser, unable to find element for inner locator:"+_136+" returning handle");return _56}})}}
 isc.Page.setEvent("load","isc.ApplyAutoTestMethods()");isc.Page.logInfo("SmartClient Core ("+isc.version+" "+isc.buildDate+") initialized: "+(isc.timeStamp()-isc.$d)+"ms");isc.Page.logInfo("document.compatMode: "+document.compatMode);if(isc.Log.hasFireBug()){isc.Log.logWarn("NOTE: Firebug is enabled. Firebug greatly slows the performance of "+"applications that make heavy use of JavaScript. Isomorphic highly recommends Firebug "+"for troubleshooting, but Firebug and other development tools should be disabled when "+"assessing the real-world performance of SmartClient applications.")}
-isc._moduleEnd=isc._Core_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Core module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Core'.");}
+isc._moduleEnd=isc._Core_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Core module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Core'.");}
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *

@@ -78,6 +78,11 @@
     background-color:#FFFFD0; border:1px solid #808080; padding:5px;
 }
 
+/* group label */
+.groupLabel {
+    font-family:Bitstream Vera Sans,Helvetica,Verdana,sans-serif; font-size:11px;
+    padding-left:5px; padding-right:5px;
+}
 /*============================================================
     2) Button
 		button.baseStyle
@@ -664,7 +669,11 @@
 		listGrid.baseStyle
 ------------------------------------------------------------*/
 .cell,
-.cellDark {
+.cellDark,
+.gridSummaryCell,
+.specialCol,
+.recordSummaryCell,
+.recordSummaryCellDark {
     font-family:Bitstream Vera Sans,Helvetica,Verdana,sans-serif; font-size:11px; color:black; background-color:#EFEFEF;
     text-overflow:ellipsis;
     border-left:1px solid #EFEFEF;
@@ -672,8 +681,16 @@
     border-right:1px solid white;
     border-bottom:1px solid white;
 }
+
+.specialCol {
+    background-color:#CCCCCC;
+}
+
 .cellOver,
-.cellOverDark {
+.cellOverDark,
+.recordSummaryCellOver,
+.specialColOver,
+.recordSummaryCellOverDark {
     font-family:Bitstream Vera Sans,Helvetica,Verdana,sans-serif; font-size:11px; color:black; background-color:#98A1DA;
     text-overflow:ellipsis;
     border-left:1px solid #98A1DA;
@@ -682,7 +699,10 @@
     border-bottom:1px solid #98A1DA;
 }						
 .cellSelected,
-.cellSelectedDark {
+.cellSelectedDark,
+.specialColSelected,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark {
     font-family:Bitstream Vera Sans,Helvetica,Verdana,sans-serif; font-size:11px; color:#FFFFFF;
     background-color:#000000; text-overflow:ellipsis;
     border-left:1px solid #000000;
@@ -691,7 +711,10 @@
     border-bottom:1px solid #000000;
 }
 .cellSelectedOver,
-.cellSelectedOverDark {
+.cellSelectedOverDark,
+.specialColSelectedOver,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark {
     font-family:Bitstream Vera Sans,Helvetica,Verdana,sans-serif; font-size:11px; color:#FFFFFF;
     background-color:#4C516D; text-overflow:ellipsis;
     border-left:1px solid #4C516D;
@@ -700,7 +723,11 @@
     border-bottom:1px solid #4C516D;
 }
 .cellDisabled,
-.cellDisabledDark {
+.cellDisabledDark,
+.specialColDisabled,
+.gridSummaryCellDisabled,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
     font-family:Bitstream Vera Sans,Helvetica,Verdana,sans-serif; font-size:11px; color:#666666;
     background-color:#EFEFEF; text-overflow:ellipsis;
     border-left:1 px solid #EFEFEF; 
@@ -708,6 +735,21 @@
     border-right:1px solid white;
     border-bottom:1px solid white;
 }
+.gridSummaryCell,
+.gridSummaryCellDisabled,
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
+    font-weight:bold;
+}
+
 
 /* for grouping */
 .groupNode {
@@ -722,6 +764,10 @@
     padding: 3px; 
 }
 
+/* Multi-sort - sort-index appearing next to sort-arrows in field headers */
+.sortNumeral {
+    font-size:7px
+}
 
 /*============================================================
 	12) ToolStrip
@@ -1377,6 +1423,7 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 .calMonthOtherDayBlankOverDark {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
     color:#444444;
+    border-bottom:1px solid #a0a0a0; border-right:1px solid #a0a0a0;
     background-color: #E6E6E6;
 }
 

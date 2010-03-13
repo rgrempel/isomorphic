@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -22,7 +22,7 @@
 // @treeLocation Client Reference/Grids
 // @visibility external
 //<
-isc.ClassFactory.defineClass("TileGrid", "TileLayout");
+isc.ClassFactory.defineClass("TileGrid", "TileLayout", "DataBoundComponent");
 
 isc.TileGrid.addProperties({
 
@@ -99,6 +99,9 @@ tileLabelStyle:"tileLabel",
 //<
 wrapValues: false,
 
+// allows sorting via panelHeader by default
+canSortFields: true,
+
 //>	@attr TileGrid.data		(List of TileRecord : null : IRW)
 // A List of TileRecord objects, specifying the data to be used to create the
 // tiles.  
@@ -137,6 +140,12 @@ wrapValues: false,
 // @group databinding
 // @visibility external
 // @example fetchOperation
+//<
+
+//> @method TileGrid.invalidateCache()
+// @include dataBoundComponent.invalidateCache()
+// @group dataBoundComponentMethods
+// @visibility external
 //<
 
 //> @method TileGrid.removeSelectedData()
@@ -189,11 +198,12 @@ wrapValues: false,
 // @include dataBoundComponent.anySelected()
 //<
 
-//>	@attr TileGrid.autoFetchAsFilter       (boolean : false : IR)
-// @include dataBoundComponent.autoFetchAsFilter
+//>	@attr TileGrid.autoFetchTextMatchStyle       (TextMatchStyle : "substring" : IR)
+// @include dataBoundComponent.autoFetchTextMatchStyle
 // @group databinding
 // @visibility external
 //<
+autoFetchTextMatchStyle:"substring",
 
 //> @attr TileGrid.initialCriteria   (Criteria : null :IR)
 // @include dataBoundComponent.initialCriteria
@@ -208,7 +218,8 @@ wrapValues: false,
 // @visibility external
 // @example tilingEditing
 //<
-    
+selectionType: isc.Selection.MULTIPLE,    
+
 //autoChildren 
 
 //> @attr tileGrid.tile (AutoChild : null : IR)
@@ -302,28 +313,24 @@ _enableUserHiding: false,
 // @visibility external
 //<
 
-//> @attr tileRecord.tileProperties (Object : null : IRW)
+//> @attr tileRecord.tileProperties (Canvas Properties : null : IRW)
 // Additional properties to be passed when creating a tile for this record.
 //
 // @visibility external
 //<
 
 initWidget : function () {
-    // disable canAddFormulaField if the required component isn't present
-    if (this.canAddFormulaFields && isc.FormulaBuilder == null) {
-        this.logInfo("Required modules for adding formula fields not present - setting " +
-                    "canAddFormulaFields to false.");
-        this.canAddFormulaFields = false;
-    }
-    if (this.canAddSummaryFields && isc.SummaryBuilder == null) {
-        this.logInfo("Required modules for adding summary fields not present - setting " +
-                    "canAddSummaryFields to false.");
-        this.canAddSummaryFields = false;
-    }
+    this._enforceLegalLayoutPolicy();
+
+    // disable summary and formula fields if the required components aren't present
+    if (isc.FormulaBuilder == null) this.canAddFormulaFields = false;
+    if (isc.SummaryBuilder == null) this.canAddSummaryFields = false;
+
     if (this.layoutPolicy == "flow") {
         isc.logWarn("TileGrid does not support layoutPolicy 'flow'; there may by unexpected behavior." + 
-            "Use a TileLayout instead for flow layout.");    
+                    "Use a TileLayout instead for flow layout.");    
     }
+
     // skip tileLayout init; we want to completely replace that here
     this.invokeSuper(isc.TileLayout, "initWidget");
     if (!this.tiles) this.tiles = [];
@@ -351,13 +358,14 @@ initWidget : function () {
             cellPadding: 0,
             valueAlign: this.tileValueAlign,
             // to force detailViewer table width to be 100%
-            // NOTE 5/25/09 change this to true because of breakage in safari in strict mode,
-            // seems to be working fine this way.
-            useInnerWidth: true,
+            // NOTE 6/29/09 this needs to be false for the tiles to have their
+            // content centered properly. Seems to not break the strict example.
+            useInnerWidth: false,
             clipValues: true,
             // width and height should be set in makeTile
             width: 10,
             height: 10,
+            data: [],
             dataSource: this.getDataSource(),
             getCellStyle: function (value, field, record, viewer) {
                 var base = (field.cellStyle || this.cellStyle);
@@ -395,17 +403,37 @@ setDataSource : function (dataSource, fields) {
     
 },
 
+
+// return whether this component wants to use the field when binding to a DataSource.  
+// TileGrid-specific override of the DBC method to account for the fact that a TileGrid
+// always wants the icon field if there is one
+shouldUseField : function (field, ds) { 
+
+    if (this.Super("shouldUseField", arguments)) return true;
+    
+    if (ds) {
+        var iconField = isc.DS.get(ds).getIconField();
+        if (field == iconField || field.name == iconField || 
+            (iconField && field.name == iconField.name)) 
+        {
+            return true;
+        }
+    }
+
+    return false;
+},
+
+
 setFields : function (newFields, cancelLayout) {
     if (!newFields && this.getDataSource()) {
         // if the DataSource has an icon field, show just the icon and the title
         var iconField = this.getDataSource().getIconField();
         if (iconField) {
             newFields = [];
-            newFields.add({name:iconField, type:"image"});
+            newFields.add({name:iconField, type: iconField.type});
             newFields.add({name:this.getDataSource().getTitleField()});
         }
     }
-//    this.invokeSuper(isc.TileGrid, "setFields", newFields);
 
     if (this.completeFields == null) this.fields = [];
 
@@ -415,11 +443,14 @@ setFields : function (newFields, cancelLayout) {
     if (this.completeFields == null) this.completeFields = [];
     // tilegrid was crashing without this line:
     if (!this.completeFields) return;
-	
+
 	this.deriveVisibleFields();
 
     this.detailViewer.fields = this.completeFields.duplicate();
-    if (!cancelLayout) this.layoutTiles();
+    if (!cancelLayout) {
+        this.logDebug('calling layoutTiles from setFields', "TileGrid");
+        this.layoutTiles();
+    }
 },
 
 deriveVisibleFields : function () {
@@ -510,6 +541,10 @@ getTileRecord : function (tile) {
     var list = this;
     var data = list.data;
     var start, end;
+
+    // new dataset load in progress, don't try to access data or fetches will be triggered
+    if (isc.isA.ResultSet(this.data) && !this.data.lengthIsKnown()) return null;
+
     // may want to optimize this
     if (this.showAllRecords || !list.getDrawnStartIndex() || !list.getDrawnEndIndex()) {
         start = 0;
@@ -557,7 +592,8 @@ setData : function (newData) {
     //isc.logEchoAll(this.data);
     if (this.data) {
         if (isc.ResultSet && isc.isA.ResultSet(this.data)) {
-            this.observe(this.data, "dataArrived", "observer.dataArrived()");
+            this.observe(this.data, "dataArrived",
+                            "observer.dataArrived(arguments[0],arguments[1])");
             this.observe(this.data, "dataChanged", 
                  "observer.dataChanged(operationType, originalRecord, rowNum, updateData)");
         } else {
@@ -579,8 +615,54 @@ getData : function () {
     return this.data;    
 },
 
-// no-op function to be overriden
-dataArrived : function () {},
+// getPrimaryKeys() - Returns unique primary keys for a record.
+// Use 'comparePrimaryKeys()' to compare against some record.
+
+getPrimaryKeys : function (record) {
+    var data = this.data;
+    if (!isc.ResultSet || !isc.isA.ResultSet(data)) return record;
+    
+    var ds = this.getDataSource(),
+        pkArray = ds.getPrimaryKeyFieldNames(),
+        keys = {};
+
+    if (!isc.isAn.Array(pkArray)) pkArray = [pkArray];
+            
+    for (var i = 0; i < pkArray.length; i++) {
+        keys[pkArray[i]] = record[pkArray[i]]
+    }
+    return keys;
+},
+
+
+// setRecordValues()
+// Method to update client-side data in place
+// This is called directly by DynamicForms when saving valuess if this is acting as the selection
+// component for a form.
+setRecordValues : function (pks, values) {
+   
+    if (!this.data) return;
+    
+    var rowNum = this.data.indexOf(pks);
+    if (rowNum == -1) return;
+    var record = this.data.get(rowNum);
+    isc.combineObjects(record, values);
+    
+    // if we have a valuesManager, explicitly notify it about the change
+    if (this.valuesManager != null) {
+        this.valuesManager._updateMultipleMemberValue(rowNum, null, record, this);
+    }
+    
+    // refresh display.
+    this.logDebug('calling layoutTiles from setRecordValues', "TileGrid");
+    this.layoutTiles();
+},
+
+
+
+// no-op function to be overridden
+dataArrived : function (startRecord, endRecord) {
+},
 
 dataChanged : function (operationType, originalRecord, rowNum, updateData) {
     if (!this.data || 
@@ -708,6 +790,7 @@ _layoutAfterDataChange : function () {
         }
         this.fireOnPause("tileGridAnimate", this._animateChange);    
     } else {
+        this.logDebug('calling layoutTiles from layoutAfterDataChange', "TileGrid");
         this.layoutTiles();    
     }
 },
@@ -747,7 +830,7 @@ getLength : function () {
 },
 
 makeTile : function (record, tileNum) {
-   
+    
     var props = {
         ID: this._getTileID(tileNum),
         tileNum: tileNum,
@@ -758,8 +841,16 @@ makeTile : function (record, tileNum) {
         
         mouseDown : function () {
             
-            this.creator._tileClick(this);
+            this.creator._tileMouseDown(this);
             this.creator.focus();
+        },
+        
+        mouseUp : function () {
+            this.creator._tileMouseUp(this);    
+        },
+        doubleClick : function () {
+            var tileRecord = this.creator.getTileRecord(this);
+            return this.creator.recordDoubleClick(this.creator, this, tileRecord);
         }
         
     };
@@ -767,6 +858,8 @@ makeTile : function (record, tileNum) {
     var theConstructor = record.tileConstructor ? record.tileConstructor : this.tileConstructor;
     // store new tile in a local var for debug purposes
     var newTile = this.createAutoChild("tile", props, theConstructor);
+    //newTile.setWidth(this.getTileWidth());
+    //newTile.setHeight(this.getTileHeight());
     // HACK this is neccessary to avoid the tile being sized by its content. Otherwise, 
     // the tile will grow past its set width when css borders are used. 
     this.detailViewer.setWidth(newTile.getInnerWidth());
@@ -823,7 +916,7 @@ getTile : function (tile) {
     if (!tileID) tileID = this._getTileID(tileIndex);
     
     if (this.canReclaimTile(tileIndex) && !record.tileConstructor) {
-        //isc.logWarn('recycling tile:' + [tileIndex, record.commonName]);
+        //this._limitLog('recycling tile:' + [tileIndex, record.commonName], "a");
         var recTile = this._reclaimTile(tileIndex);
         
         recTile.redraw();
@@ -837,7 +930,7 @@ getTile : function (tile) {
         return recTile;
     // if there is a tileID, return the tile. Otherwise, make the new tile
     } else if (tileID && window[tileID]) {
-        //isc.logWarn('reclaiming existing tile:' + [tileIndex, tileID, record.commonName]);
+        //this._limitLog('reclaiming existing tile:' + [tileIndex, tileID, record.commonName], "b");
         // pass the actual tile into _reclaimTile, to handle the bookeeping stuff
         var recTile = this._reclaimTile(tileIndex, window[tileID]);
         // same conditions apply as detailed in comments above regarding the need to redraw and
@@ -851,7 +944,7 @@ getTile : function (tile) {
         
         return recTile;
     } else { // create a new tile
-        //isc.logWarn('creating new tile:' + [tileIndex,record.commonName]);
+        //this._limitLog('creating new tile:' + [tileIndex,record.commonName], "c");
         var tId = this._getTileID(tileIndex), nTile;
         this.setTileID(record, tId);
         nTile =  this.makeTile(record, tileIndex);
@@ -864,8 +957,23 @@ getTile : function (tile) {
     
 },
 
+// debug functions to limit the number of logwarns produced in long loops
+_logs: [],
+_logLimit: 10,
+_clearLogs : function () {this._logs = [];},
+_limitLog : function (message, key) {
+    if (!this._logs.find("key", key)) {
+        this._logs.add({key:key, logs:this._logLimit});    
+    }
+    if (this._logs.find("key", key).logs > 0) {
+        isc.logWarn(message);
+        this._logs.find("key", key).logs -= 1;
+    }        
+},
+
 layoutTiles : function () {   
     this.computeTileDimensions();
+    //this._clearLogs();
     this.invokeSuper(isc.TileGrid, "layoutTiles");
     // in the case of scrolling to the end of the list when recycling tiles, its possible that
     // there will be leftover tiles from a previous call to layoutTiles(). These need to be hidden
@@ -884,6 +992,7 @@ layoutTiles : function () {
 // of the record it represents is mapped to this.tiles, and that tile is returned.
 _reclaimTile : function (tileIndex, tile) {
     var record = this.data.get(tileIndex), reclaimedTile;
+    //this._limitLog('_reclaimTile:' + [tileIndex, tile, this.getDrawnStartIndex()], "e");
     if (!tile) {
         // we're guaranteed to have some tiles by the call to canReclaimTile()
         // this.tiles stores only enough tiles to fill the viewport, so we need to map the passed
@@ -908,15 +1017,22 @@ _reclaimTile : function (tileIndex, tile) {
 },
 
 canReclaimTile : function (index) {
-    if (this.recycleTiles && this.tiles && this.tiles.length > index - this.getDrawnStartIndex()) return true;
-    else return false
+    var startIndex = this.getDrawnStartIndex() || 0;
+    if (this.recycleTiles && this.tiles && this.tiles.length > index - startIndex) {
+        //this._limitLog('canReclaimTile:' + [this.tiles.length, index, startIndex], "d");
+        return true;
+    } else {
+        return false;
+    }
 },
 
-_tileClick : function (tile) {
-    if (this.recordClick(this, tile, this.getTileRecord(tile)) != false) {
-        this.selection.selectOnMouseDown(this, tile.tileNum);
-        this.selection.selectOnMouseUp(this, tile.tileNum);
-    }
+_tileMouseDown : function (tile) {
+    var tileRecord = this.getTileRecord(tile);
+
+    if (tileRecord) this.selection.selectOnMouseDown(this, tile.tileNum);   
+    
+    this.recordClick(this, tile, tileRecord);
+    
     // check that the tile is scrolled into view
     // scrolled off the top edge
     var xPos, yPos;
@@ -940,6 +1056,10 @@ _tileClick : function (tile) {
     }
 },
 
+_tileMouseUp : function (tile) {
+    this.selection.selectOnMouseUp(this, tile.tileNum);        
+},
+
 //>	@method	tileGrid.recordClick()    
 // Executed when the tileGrid receives a 'click' event on a
 // tile. The default implementation does nothing -- override to perform some action
@@ -961,6 +1081,30 @@ _tileClick : function (tile) {
 // @visibility external
 //<
 recordClick : function () {
+    return true;    
+},
+
+//>	@method	tileGrid.recordDoubleClick()    
+// Executed when the tileGrid receives a 'doubleclick' event on a
+// tile. The default implementation does nothing -- override to perform some action
+// when any record is doubleclicked.<br>
+// A record event handler can be specified either as
+// a function to execute, or as a string of script to evaluate. If the handler is defined
+// as a string of script, all the parameters below will be available as variables for use
+// in the script.<br>
+// If you want to cancel the doubleclick based on the parameters, return false. Otherwise, return 
+// true so that the doubleclick event be registered with the tile.
+//
+// @group	events
+//
+// @param viewer (TileGrid) the TileGrid itself
+// @param tile (Canvas) the tile that was doubleclicked on
+// @param record (TileRecord) the record that was doubleclicked on
+//
+// @example tilingEditing
+// @visibility external
+//<
+recordDoubleClick : function () {
     return true;    
 },
 
@@ -989,7 +1133,7 @@ selectionChange : function (record, state) {
     // refresh the affected records to visually indicate selection
     var selection = this.selection,
         lastItem = selection.lastSelectionItem;
-        
+
     var selTile = window[this.getTileID(lastItem)];
     if (selTile && selTile.setSelected) {
         selTile.setSelected(state);
@@ -1034,7 +1178,8 @@ keyPress : function (event, eventInfo) {
     var newRec = this.selection.data.get(newIndex),
         newTile = window[this.getTileID(newRec)];
     if (newTile) {
-        this._tileClick(newTile);
+        this._tileMouseDown(newTile);
+        
     }
     
     return false;
@@ -1167,12 +1312,19 @@ childVisibilityChanged : function (child, newVisibility) {
 //<
 hasAllVisibleTiles : function (range, fetch) {
     if (isc.isA.ResultSet(this.data)) {
+
+        // new dataset load in progress
+        if (!this.data.lengthIsKnown()) return false;
+
         var rangeEnd = range[1] + 1;
         if (rangeEnd > this.data.getLength()) rangeEnd = this.data.getLength();
         if (this.data.rangeIsLoaded(range[0], rangeEnd)) {
             return true;    
         } else {
-            if (fetch) {    
+            if (fetch) {
+                this.logDebug("in hasAllVisibleTiles, fetching range: " + range[0] + 
+                              " to " + rangeEnd + ", total length: " + this.data.getLength(), 
+                             "TileGrid");
                 this.data.getRange(range[0], rangeEnd);
             }
             //isc.logWarn('data loading, returning:' + [range[0], range[1]]);  
@@ -1235,6 +1387,11 @@ getDragTrackerTitle : function (record) {
 //<
 drop : function () {
     var index = this._lastDropIndex || 0;
+    // the check below fixes an issue that occurs when dropping multiple tiles by dragging from 
+    // an empty area of the grid. _lastDropIndex would get set to current data length
+    // (see tileLayout.showDragLineForRecord()), but when the tiles were dropped and removed, 
+    // this index is no longer valid.
+    if (index > this.data.getLength()) index = 0;
     var source = this.ns.EH.dragTarget;
     var dragStartIndex = this._dragStartIndex;
     // reset _dragStartIndex so the next drag will start over
@@ -1242,23 +1399,17 @@ drop : function () {
     // don't check willAcceptDrop() this is essentially a parallel mechanism, so the developer 
     // shouldn't have to set that property directly.
    
-    // Call transferDragData to pull the records out of our dataset
-    
-
-    var dataSource = this.getDataSource(),
-        sourceDS = source.getDataSource(),
-        dropRecords = source.getDragData();
-
-    // for self-drop, subtract the length of the dropped records from the dropLine index when 
-    // records are dropped above the drag start index
-    if (source === this && index > dragStartIndex) {
-        index -= dropRecords.getLength();
-    }
-    
+    var sourceDS = source.getDataSource(),
+        dropRecords = source.cloneDragData();
+            
     var targetRecord = this.data.get(index);
-    
     this.transferRecords(dropRecords, targetRecord, index, source);
-    //this.layoutTiles();
+    // relayout tiles when dragDataAction of source is copy. Otherwise, the tile
+    // will have an invalid selected state.
+    //if (source.dragDataAction == "copy") {
+        // use a timer, or re-layout may not catch 
+        //isc.Timer.setTimeout(source.ID + ".layoutTiles()", 1000);
+    //}
 },
 
 //>	@method	tileGrid.transferDragData()
@@ -1313,15 +1464,9 @@ showField : function (fieldName) {
 //
 //		@return	(DetailViewerField) requested field or null
 //<
-getField : function (fieldName) { 
-    var fields = this.getFields();
-
-    for (var i = 0; i < fields.length; i++) {
-        var item = fields[i];
-        if (item[this.fieldIdProperty] == fieldName) return item;
-    }
-
-    return null; 
+getField : function (fieldId) { 
+    if (!this.fields) return null;
+    return isc.Class.getArrayItem(fieldId, this.fields, this.fieldIdProperty);
 },
 getFields : function () {
     return this.fields;
@@ -1352,7 +1497,7 @@ setFieldState : function (fieldState) {
         this.markForRedraw();
         this.fieldStateChanged();
     }
-}
+},
 
 //>	@method	tileGrid.getFieldState() 
 // Returns a snapshot of the current presentation of this grid's fields as 
@@ -1370,8 +1515,19 @@ setFieldState : function (fieldState) {
 // @visibility external
 //<
 
-// ---------------------------------------------------------------------------------------
 
+// ----------------------------------------------------------------------------
+// panelHeader related methods
+// ----------------------------------------------------------------------------
+// panelHeader related methods
+
+showActionInPanel : function (action) {
+    // specifically add the "sort" action, which is not added by default
+    if (action.name == "sort") return true;
+    return this.Super("showActionInPanel", arguments);
+}
+
+// ---------------------------------------------------------------------------------------
 
 });
 
@@ -1440,9 +1596,27 @@ isc.SimpleTile.addProperties({
 });
 
 isc.TileGrid.registerStringMethods({
+
+    //> @method tileGrid.dataArrived() (A)
+    // Notification method fired when new data arrives from the server to be displayed in this
+    // tileGrid, (for example in response to the user scrolling a new set of tiles into view).
+    // Only applies to databound tileGrid where the +link{tileGrid.data,data} attribute is a
+    // +link{ResultSet}.
+    // This method is fired directly in
+    // response to +link{ResultSet.dataArrived(),dataArrived()} firing on the data object.
+    // @param startRecord (integer) starting index of the newly loaded set of records
+    // @param endRecord (integer) ending index of the newly loaded set of records (non inclusive).
+    // @visibility external
+    //<
+    
+    dataArrived:"startRecord,endRecord",
+    
+    selectionChanged:"record,state",
+    
     itemHover : "item",
     itemClick : "item",
     recordClick : "viewer,tile,record",
+    recordDoubleClick : "viewer,tile,record",
 	fieldStateChanged : ""
 });
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -24,42 +24,49 @@
 //<
 
 
-// define us as a subclass of the Button
-isc.ClassFactory.defineClass("MenuButton", "Button");
+//>	@class	IMenuButton
+//
+//  StretchImgButton based version of the +link{MenuButton} class.
+//
+// @visibility external
+// @treeLocation Client Reference/Control
+//<
 
 
-// add contants
-isc.MenuButton.addProperties({
+
+
+isc._commonMenuButtonProperties = {
+    
     //>	@attr	menuButton.title		(string : "Show Menu" : IRW)
 	//			Default title for the button.
     //  @visibility external
     // @group i18nMessages
 	//<
-    title:"Show Menu",
-    
-    //>	@attr	menuButton.baseStyle		(CSSStyleName : "menuButtonText" : IRW)
-	//			CSS baseStyle for the button
+	
+	//> @attr iMenuButton.title (string : "Show Menu" : IRW)
+	// @include menuButton.title
 	//<
-    baseStyle:"menuButton",        
+    title:"Show Menu",
 
     //>	@attr	menuButton.height		(Number or String : 22 : IRW)
 	//			Default height of the button.
     // @visibility external
 	//<
+	
+	//> @attr iMenuButton.height (Number or String : 22 : IRW)
+	// @include menuButton.height
+	//<
 	height:22,
-
+	
     //>	@attr	menuButton.showMenuButtonImage		(boolean : true : IR)
     //			show menu button image (up / down arrowhead) for this menu button
     // @visibility external
     //<
-    showMenuButtonImage:true,
     
-    //>	@attr	menuBar.skinImgDir		(URL : "images/Menu/" : IRA)
-    //		Where do 'skin' images (those provided with the class) live?
-    //		This is local to the Page.skinDir
-    //		@group	appearance, images
+    //> @attr iMenuButton.showMenuButtonImage (boolean : true : IR)
+    // @include menuBtton.showMenuButtonImage
     //<
-	skinImgDir:"images/Menu/",				    
+    showMenuButtonImage:true,
     
     // We use the standard button icon handling to write out the menu button image
     // We need both standard (down) and "up" variations because of the menu showing above 
@@ -73,6 +80,10 @@ isc.MenuButton.addProperties({
     // @see menuButton.menuButtonImageUp
     // @visibility external
     //<
+    
+    //> @attr iMenuButton.menuButtonImage (SCImgURL : "[SKIN]menu_button.gif" : IRA)
+    // @include menuButton.menuButtonImage
+    //<
 	menuButtonImage:"[SKIN]menu_button.gif",
 
     //>	@attr	menuButton.menuButtonImageUp		(SCImgURL : "[SKIN]menu_button_up.gif" : IRA)
@@ -83,12 +94,20 @@ isc.MenuButton.addProperties({
     // @see menuButton.menuButtonImage
     // @visibility external
     //<											
+
+    //> @attr iMenuButton.menuButtonImageUp (SCImgURL : "[SKIN]menu_button_up.gif" : IRA)
+    // @include menuButton.menuButtonImageUp
+    //<
 	menuButtonImageUp:"[SKIN]menu_button_up.gif",
     
     //> @attr   menuButton.hiliteAccessKey  (boolean : true : IR)
     // If this MenuButton has a specified +link{canvas.accessKey, accessKey}, underline it
     // in the title of the button by default
     // @visibility external
+    //<
+    
+    //> @attr iMenuButton.hiliteAccessKey (boolean : true : IR)
+    // @include menuButton.hiliteAccessKey
     //<
     hiliteAccessKey:true,
     
@@ -107,19 +126,32 @@ isc.MenuButton.addProperties({
     //			The menu drops down below the menu button.
     //			Set to false if the menu should appear above the menu button.
     // @visibility external
-    //<				
+    //<
+    
+    //> @attr iMenuButton.showMenuBelow (boolean : true : IRW)
+    // @include menuButton.showMenuBelow
+    //<
 	showMenuBelow:true,
-    //>	@attr	menuButton.alignMenuLeft		(boolean : true : IRW)
+    
+	//>	@attr	menuButton.alignMenuLeft		(boolean : true : IRW)
     //			If true align the menu with the left edge of the menu button. Otherwise align
     //          with the right edge of the menu button
     //<	
+    //> @attr iMenuButton.alignMenuLeft (boolean : true : IRW)
+    // @include menuButton.alignMenuLeft
+    //<
     
     alignMenuLeft: true,
+    
+    
     //>	@attr	menuButton.menu		(Menu : null : IRW)
     //			The menu to show.
     // @visibility external
     //<
-    menu:null
+    //> @attr iMenuButton.menu (Menu : null : IRW)
+    // @include menuButton.menu
+    //<
+    menu:null,
     
     //>Animation
     //> @attr menuButton.menuAnimationEffect (string : null : IRWA)
@@ -128,10 +160,12 @@ isc.MenuButton.addProperties({
     // If unspecified falls through to <code>menu.showAnimationEffect</code>
     // @visibility animation
     //<
+    
+    //> @attr iMenuButton.menuAnimationEffect (string : null : IRWA)
+    // @include menuButton.menuAnimationEffect
+    //<
+    
     //<Animation
-});                                    
-
-isc.MenuButton.addMethods({
 
     // Choose the appropriate icon depending on whether the menu will be shown above or
     // below this menubutton.
@@ -148,6 +182,10 @@ isc.MenuButton.addMethods({
     // @param show (boolean) Should the image be shown
     // @visibility external
     //<
+    
+    //>@method iMenuButton.setShowMenuButtonImage()
+    // @include menuButton.setShowMenuButtonImage()
+    //<
     setShowMenuButtonImage : function (show) {
         if (show == this.showMenuButtonImage) return;
         this.showMenuButtonImage = show;
@@ -161,6 +199,10 @@ isc.MenuButton.addMethods({
     // shown above or below the menubutton.
     // @param below (boolean) True if the menu should be shown below the menubutton.
     // @visibility external
+    //<
+    
+    //>@method iMenuButton.setShowMenuBelow()
+    // @include menuButton.setShowMenuBelow()
     //<
     setShowMenuBelow : function (below) {
         if (below != this.showMenuBelow) {
@@ -190,7 +232,9 @@ isc.MenuButton.addMethods({
     // If this click didn't come from dismissing a menu shown by this button, 
     // show our menu on click
     
-    click : function () {   
+    handleClick : function () {
+        if (this.Super("handleClick", arguments) == false) return;
+        
         if (this._hidingMenuClick) return;
         this.showMenu();
     },
@@ -268,6 +312,64 @@ isc.MenuButton.addMethods({
     }
 
     
-});
+};
+
+
+
+// define us as a subclass of the Button
+isc.ClassFactory.defineClass("MenuButton", "Button");
+
+isc.MenuButton.addProperties(isc._commonMenuButtonProperties);
+
+isc.MenuButton.addProperties({
+    //>	@attr	menuButton.skinImgDir		(URL : "images/Menu/" : IRA)
+    //		Where do 'skin' images (those provided with the class) live?
+    //		This is local to the Page.skinDir
+    //		@group	appearance, images
+    //<
+    skinImgDir:"images/Menu/",
+             
+    //>	@attr	menuButton.baseStyle		(CSSStyleName : "menuButton" : IRW)
+	//			CSS baseStyle for the button
+	//<
+    baseStyle:"menuButton"
     
+});
+
+
+// IMenuButton is a subclass of IButton.
+// 
+isc.ClassFactory.defineClass("IMenuButton", "StretchImgButton");
+
+isc.IMenuButton.addProperties(isc._commonMenuButtonProperties);
+
+isc.IMenuButton.addProperties({
+    //>	@attr	iMenuButton.labelSkinImgDir		(URL : "images/Menu/" : IRA)
+    // skinImgDir to apply to the title label for this button only.
+    // This is typically where the icon media for the menu will live.
+    // This is local to the Page.skinDir
+    // @group	appearance, images
+    //<
+    labelSkinImgDir:"images/Menu/"
+    
+});
+
+
+//> @class ToolStripMenuButton
+// Simple subclass of IMenuButton with appearance appropriate for a ToolStrip menu button.
+// Can be used to create an icon-only menu button, and icon with text, or a text only button by setting the 
+// icon and title attibutes as required.
+// @treeLocation Client Reference/Layout/ToolStrip
+//<
+isc.defineClass("ToolStripMenuButton", "IMenuButton").addProperties({
+   showTitle:true,
+   showRollOver:true,
+   showDown:true,
+   labelVPad:0,
+   labelHPad:7,
+   autoFit:true,
+   src:"[SKIN]/ToolStrip/button/button.png",
+   capSize:3,
+   height:22
+});
 

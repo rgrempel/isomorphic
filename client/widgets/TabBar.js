@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -172,16 +172,21 @@ initWidget : function () {
     // .. and allow them to expand to fit content
     tabDefaults.overflow = isc.Canvas.VISIBLE;
 
-    // set the 'position' property on tabs to match this.tabBarPosition, so they can style
-    // correctly
-    tabDefaults.tabBarPosition = this.tabBarPosition;
+    // set tab style information directly on the (presumed) ImgTab, so that it may be
+    // overridden by the user in tabProperties.
+    tabDefaults.vertical =
+        (this.tabBarPosition == isc.Canvas.LEFT || this.tabBarPosition == isc.Canvas.RIGHT);
+    tabDefaults.skinImgDir = this.buttonConstructor.getInstanceProperty("skinImgDir") +
+        this.tabBarPosition + "/";
     
     // have iconClick close the tabs if appropriate
     tabDefaults.iconClick = this._tabIconClickHandler;
 
-
     tabDefaults._generated = true;
     
+    var perSideStyleProperty = this.tabBarPosition + "StyleName";
+    if (this[perSideStyleProperty]) this.setStyleName(this[perSideStyleProperty]);
+
 	this.Super(this._$initWidget);
 
 	if (this._baseLine == null) this.makeBaseLine();
@@ -200,18 +205,34 @@ tabIconClick : function (tab) {
 },
 
 // override makeButton to show the icon for the button
+// Also set up locator parent for autoTest APIs
 makeButton : function (properties, a,b,c,d) {
     var canClose = this.parentElement.canCloseTab(properties);
-    if (canClose) {
-        properties.icon = (properties.closeIcon || this.parentElement.closeTabIcon);
-        properties.iconSize = (properties.closeIconSize || this.parentElement.closeTabIconSize);
-        // close icon should appear at the end of the tab
-        properties.iconOrientation = isc.Page.isRTL() ? "left" : "right";
-        properties.iconAlign = properties.iconOrientation;
-        
-    }                                                
+    isc.addProperties(properties, this.getCloseIconProperties(properties));
+    properties.locatorParent = this.parentElement;
     
     return this.invokeSuper("TabBar", "makeButton", properties, a,b,c,d);
+},
+
+getCloseIconProperties : function(properties) {
+    var override = {};
+    if (!properties.canClose) {
+        // Explicitly override icon-related properties to the tab properties passed in.
+        // This is so we can use TabSet.setCanCloseTab() to toggle the canClose state of a 
+        // live Tab without touching any other properties on the live object.
+        override.icon = (properties.icon);
+        override.iconSize = (properties.iconSize);
+        override.iconOrientation = properties.iconOrientation;
+        override.iconAlign = properties.iconAlign;
+    } else {
+        override.icon = (properties.closeIcon || this.parentElement.closeTabIcon);
+        override.iconSize = (properties.closeIconSize || this.parentElement.closeTabIconSize);
+        // close icon should appear at the end of the tab
+        override.iconOrientation = isc.Page.isRTL() ? "left" : "right";
+        override.iconAlign = override.iconOrientation;
+        
+    }
+    return override;
 },
 
 addTabs : function (tabs, position) {
@@ -271,6 +292,7 @@ draw : function (a,b,c,d) {
 //  occluding the pane's actual border but matching it exactly.  The selected tab is in front
 //  of the baseline, and the rest are behind it.
 //<
+
 
 makeBaseLine : function () {
 	// create the baseline stretchImg and add as child.
@@ -404,7 +426,7 @@ setupButtonFocusProperties : function () {
 
 },
 
-// override the internal _updateFocusButton method to always ensure the focussed tab is selected
+// override the internal _updateFocusButton method to always ensure the focused tab is selected
 _updateFocusButton : function (buttonNum) {
     
     
@@ -502,6 +524,13 @@ scrollTabIntoView : function (tab, start, animated, callback) {
     }
     if (!tab) return;
     
+    // if _layoutIsDirty or _layoutInProgress, we can't guarantee that the tab is in the right place
+    // (EG the tab may be currently drawn offscreen).
+    // In this case wait for the layout to complete
+    if (this._layoutIsDirty || this._layoutInProgress) {
+        this._scrollOnLayoutComplete = [tab,start,animated,callback];
+        return;
+    }
     var rect = tab.getRect(),
         xPos, yPos;
 
@@ -536,8 +565,17 @@ scrollTabIntoView : function (tab, start, animated, callback) {
     // When scrolling to the first tab, actually scroll to 0,0, rather than the edge of the
     // tab.
     if (tabNum == 0) rect[0] = rect[1] = 0;
-
     this.scrollIntoView(rect[0], rect[1], rect[2], rect[3], xPos, yPos, animated, callback);
+},
+
+// Override _layoutChildrenDone -- if we have a pending scrollTabIntoView, allow it to proceed
+_layoutChildrenDone : function (reason, a,b,c,d) {
+    this.invokeSuper(isc.TabBar, "_layoutChildrenDone", reason, a,b,c,d);
+    if (this._scrollOnLayoutComplete != null) {
+        var args = this._scrollOnLayoutComplete;
+        this.scrollTabIntoView(args[0],args[1],args[2],args[3]);
+        delete this._scrollOnLayoutComplete;
+    }
 },
 
 scrollForward : function (animated) {

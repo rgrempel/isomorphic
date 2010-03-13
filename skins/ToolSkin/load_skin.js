@@ -393,7 +393,7 @@ if (isc.ListGrid) {
         manyItemsImage:"[ISOMORPHIC]/skins/ToolSkin/images/tTreeGrid/folder_file.png"
     };
     
-    isc.defineClass("TTreeGrid", "ListGrid");
+    isc.defineClass("TTreeGrid", "TreeGrid");
     isc.TTreeGrid.addProperties(isc.tListGridProps);
     
     for (var prop in isc.tListGridDefaultsBlocks) {
@@ -460,6 +460,12 @@ isc.TSelectItem.addProperties({
     controlStyle:"tSelectItemControl",
     pickerIconStyle:"tSelectItemPickerIcon",
     textBoxStyle:"tSelectItemText"
+})
+
+isc.defineClass("TRadioGroupItem", "RadioGroupItem");
+isc.TRadioGroupItem.addProperties({
+    titleStyle:"tLabelAnchor",
+    textBoxStyle:"tLabelAnchor"
 })
 
 isc.defineClass("TCheckboxItem", "CheckboxItem");

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -14,7 +14,7 @@
 // Examples of tree et al that run in Moz
 //   http://developer.mozilla.org/en/docs/Accessible_DHTML
 // WAI roles
-//   http://www.w3.org/WAI/PF/GUI/roleTaxonomy-20060508.html
+//   http://www.w3.org/WAI/PF/aria/roles#role_definitions
 
 // Set isc.screenReader = true after SmartClient loads and before any components are drawn to
 // enable screenReader support.  
@@ -150,7 +150,8 @@ isc.ListGrid.addMethods({
     },
     getRowWAIState : function (rowNum) {
         var record = this.getRecord(rowNum);
-        if (this.selection && this.selection.isSelected(rowNum)) {
+        
+        if (this.selection && this.selection.isSelected && this.selection.isSelected(rowNum)) {
             return {selected : true };
         }
     }
@@ -177,7 +178,8 @@ isc.TreeGrid.addMethods({
     getRowWAIState : function (rowNum) {
         var node = this.getRecord(rowNum),
             theTree = this.data,
-            selected = !!(this.selection && this.selection.isSelected(node));
+            selected = !!(this.selection && this.selection.isSelected && 
+                            this.selection.isSelected(node));
     
         if (!selected && !theTree.isFolder(node)) return;
     
@@ -251,7 +253,7 @@ isc.MenuBar.addProperties({
 
         // NOTE: drop-downs handled via settings on PickListMenu
         ComboBoxItem : "combobox", 
-        SelectItem : "list", 
+        SelectItem : "listbox", 
 
         Window : "dialog",
         Toolbar : "toolbar",

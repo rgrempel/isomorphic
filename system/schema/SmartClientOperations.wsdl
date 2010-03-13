@@ -2,7 +2,7 @@
 <!--
 SmartClientOperations Web Services API Version 1.0
 
-Copyright 2005 Isomorphic Softare, Inc.
+Copyright 2005 Isomorphic Software, Inc.
 -->
 
 <definitions name="SmartClientOperations" 
@@ -67,7 +67,13 @@ Copyright 2005 Isomorphic Softare, Inc.
 
                     <!-- For operationType "fetch" and "remove" this is the criteria.  For
                          "add" and "update" these are the new values. -->
-                    <xsd:any name="data" minOccurs="0" maxOccurs="1" processContents="lax"/>
+                    <xsd:element name="data" minOccurs="0" maxOccurs="1">
+                       <xsd:complexType>
+                          <xsd:sequence>
+                             <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+                          </xsd:sequence>
+                       </xsd:complexType>
+                    </xsd:element>
                 </xsd:sequence>
             </xsd:complexType>
 
@@ -86,7 +92,13 @@ Copyright 2005 Isomorphic Softare, Inc.
 
                     <!-- List of records as saved in the persistence store (if any).  So,
                          for operationType "update" this should return the values as saved. -->
-                    <xsd:any name="data" minOccurs="0" maxOccurs="1" processContents="lax"/>
+                    <xsd:element name="data" minOccurs="0" maxOccurs="1">
+                       <xsd:complexType>
+                          <xsd:sequence>
+                             <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+                          </xsd:sequence>
+                       </xsd:complexType>
+                    </xsd:element>
 
                     <!-- startRow/endRow apply to the "fetch" operationType only.  If the
                          DSRequest specified startRow/endRow, then the DSResponse must set them
@@ -108,7 +120,13 @@ Copyright 2005 Isomorphic Softare, Inc.
                     <!-- if the DSResponse status is STATUS_VALIDATION_FAILURE then then errors
                          in an array of of validation errors.  Each entry is a map from the
                          fieldName to a list of errors for that field.  -->
-                    <xsd:any        name="errors" minOccurs="0" maxOccurs="1" processContents="lax"/>
+                    <xsd:element name="errors" minOccurs="0" maxOccurs="1">
+                       <xsd:complexType>
+                          <xsd:sequence>
+                             <xsd:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+                          </xsd:sequence>
+                       </xsd:complexType>
+                    </xsd:element>
                 </xsd:sequence>
             </xsd:complexType>
 

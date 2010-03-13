@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -409,6 +409,8 @@ isc.RichTextEditor.addProperties({
         // Picks up HLayout constructor from this.toolbarConstructor
         this.addAutoChild("toolbar", {
             top:0, left:0,
+            // explicitly suppress printing the toolbar by default
+            shouldPrint:false,
             width:"100%", height:this.toolbarHeight,
             // Make the toolbar overflow:"visible" - if it exceeds the availableSpace we'll allow
             // the editor itself to decide whether it should be clipped

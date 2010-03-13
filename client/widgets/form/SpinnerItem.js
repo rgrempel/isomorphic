@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -34,8 +34,8 @@ isc.SpinnerItem.addClassProperties({
                         hspace:0
                     },
 
-	//>	@const	SpinnerItem.DECREASE_ICON   (FormItemIconProperties : {...} : IRW)
-	// Icon to decrease the spinner's value (a down-arrow by default)
+    //> @const  SpinnerItem.DECREASE_ICON   (FormItemIconProperties : {...} : IRW)
+    // Icon to decrease the spinner's value (a down-arrow by default)
     // @visibility external
     //<
     DECREASE_ICON:  {width:16, height:9, src:"[SKIN]/DynamicForm/Spinner_decrease_icon.png",
@@ -43,6 +43,28 @@ isc.SpinnerItem.addClassProperties({
                         imgOnly:true,
                         hspace:0
                     }
+
+    //> @attr   spinnerItem.mask
+    // Not applicable to a SpinnerItem.
+    // @visibility  external
+    //<    
+    //> @attr   spinnerItem.maskSaveLiterals
+    // Not applicable to a SpinnerItem.
+    // @visibility  external
+    //<    
+    //> @attr   spinnerItem.maskPadChar
+    // Not applicable to a SpinnerItem.
+    // @visibility  external
+    //<    
+    //> @attr   spinnerItem.maskPromptChar
+    // Not applicable to a SpinnerItem.
+    // @visibility  external
+    //<    
+    //> @attr   spinnerItem.maskOverwriteMode
+    // Not applicable to a SpinnerItem.
+    // @visibility  external
+    //<    
+    
 });
 
 isc.SpinnerItem.addProperties({
@@ -111,6 +133,8 @@ isc.SpinnerItem.addMethods({
 
     // Override getIconsHTML to write the increase / decrease icons out, one above the other
     
+    
+//icon, over,disabled,focused
     getIconsHTML : function () {
     
         if (!this.showIcons) return "";
@@ -130,16 +154,24 @@ isc.SpinnerItem.addMethods({
                 // The table has to be display:inline otherwise subsequent icons get rendered
                 // on a new line.
                 
-                "<TABLE STYLE='vertical-align:",vAlign,
-                    ";margin-top:", vMargin, ";margin-bottom:", vMargin, 
-                    ";display:inline;' BORDER=0 CELLPADDING=0 CELLSPACING=0><TR>",
-                  cellStart, this.getIconHTML(this.icons[0]),
-                "</TD></TR><TR>",
-                  cellStart, this.getIconHTML(this.icons[1]),
-                "</TD></TR></TABLE>"
+                "<TABLE STYLE='vertical-align:",    // [0]
+                vAlign,                             // [1]
+                ";margin-top:",                     // [2]
+                vMargin,                            // [3]
+                ";margin-bottom:",                  // [4]
+                vMargin,                            // [5]
+                ";display:inline;' BORDER=0 CELLPADDING=0 CELLSPACING=0><TR>",  // [6]
+                cellStart,                          // [7]
+                this.getIconHTML(this.icons[0]),        // [8]
+                "<TD></TR><TR>",                    // [9]
+                cellStart,                          // [10]
+                this.getIconHTML(this.icons[1]),        // [11]
+                "</TD></TR></TABLE>"                // [12]
             ];
+        } else {
+            this._spinnerTableTemplate[8] = this.getIconHTML(this.icons[0]);
+            this._spinnerTableTemplate[11] = this.getIconHTML(this.icons[1]);
         }
-        
         output.append(this._spinnerTableTemplate);
         
         for (var i = 2; i < this.icons.length; i++) {
@@ -178,13 +210,14 @@ isc.SpinnerItem.addMethods({
     // icons
     mouseStillDown : function (form, item, event) {
         if (this.isDisabled()) return;
-
+        
         // increment counter for simple value ramp
         this._mouseStillDownCounter++;
         
         if (this._valueIsDirty) this.updateValue();
         
         var nativeTarget = event.nativeTarget;
+
         if (nativeTarget == this._getIconImgElement(this.icons[0])) {
             this.increaseValue();
         } else if (nativeTarget == this._getIconImgElement(this.icons[1])) {

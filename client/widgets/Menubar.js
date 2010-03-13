@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -38,7 +38,15 @@ isc.MenuBar.addProperties( {
     //  @see class:Menu
     //<
 	//menus:null,	
-	
+
+    //> @attr menu.menuButtonWidth (int : null : IR)
+    // For a menu that has a +link{MenuButton} generated for it automatically (for example when
+    // included in a +link{MenuBar}, the width that the MenuButton should have.  If unset, the
+    // MenuButton will be as wide as <code>menu.width</code>.
+    //
+    // @visibility external
+    //<
+
 	overflow:isc.Canvas.VISIBLE,
 
     //>	@attr	menuBar.defaultHeight		(number : 22 : IRW)
@@ -193,7 +201,7 @@ addMenus : function (newMenus, position) {
     if (position == null) position = this.menus.length;
 
     // If we have not yet initialized the buttons, we simply need to add the menus
-    // the new buttons will be init'd along with the ones for pre-existant menus
+    // the new buttons will be init'd along with the ones for pre-existent menus
     if (!this._buttonsInitialized) {
         this.menus.addListAt(newMenus, position);
     } else {
@@ -298,7 +306,7 @@ showMenu : function (menuNum) {
     }
     
     
-    menu.eventParent = this;
+    menu.keyEventParent = this;
     
 	// move the menu into place and show it	(automatically will be moved above clickmask)
     menu.moveTo(button.getPageLeft(), button.getPageBottom());
@@ -369,12 +377,8 @@ getFocusButtonIndex : function () {
     if (this.activeMenu != null) return this.activeMenu;
     return this.Super("getFocusButtonIndex",arguments);
 
-},
+}
 
-// Avoid bubbling mouse events.
-mouseDown:function () { return false; },
-mouseUp:function () { return false; },
-click:function () { return false; }
 });
 
 
@@ -463,6 +467,12 @@ isc.MenuBarButton.addMethods({
     	if (this.parentElement.activeMenu == this.menuNum) {
     		this.parentElement.activeMenu = null;
     	}
+        // clear the eventParent setting we set up on show - if the menu is shown elsewhere
+        // we don't want to recieve bubbled events!
+        delete menu.eventParent;
+        // clear the observation - we'll re-observe when we re-show!
+        this.ignore(menu, "hide");
+        
     }
 });
 

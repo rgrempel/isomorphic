@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -78,6 +78,14 @@ isc.SearchForm.addMethods({
         if (this.search != null) {
             return this.search(this.getValuesAsCriteria(), this);
         }
+    },
+
+    validate : function (a, b, c) {
+        if (this.validateTypeOnly) {
+            return this.invokeSuper(isc.SearchForm, "validate", a, b, true);
+        } else {
+            return this.invokeSuper(isc.SearchForm, "validate", a, b, c);
+        }
     }
     
 });
@@ -87,7 +95,17 @@ isc.SearchForm.addProperties({
     // @include dataBoundComponent.showFilterFieldsOnly
     // @visibility external
     //<
-    showFilterFieldsOnly:true
+    showFilterFieldsOnly:true,
+    
+    //> @attr searchForm.validateTypeOnly (boolean : true : IRWA)
+    // If true (the default), calls to the <code>SearchForm</code>'s <code>validate()</code> 
+    // method will validate only field types (ie, is the value a valid string, a valid number,
+    // or whatever); any other validations are skipped.
+    //
+    // @visibility internal
+    //<
+    //> IDocument Leaving unexposed for now //< IDocument
+    validateTypeOnly:true
 });
 
 isc.SearchForm.registerStringMethods ({

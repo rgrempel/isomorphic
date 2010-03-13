@@ -41,7 +41,14 @@ with (theWindow) {
     // define IButton so examples that support the new SmartClient skin image-based
     // button will fall back on the CSS-based Button with this skin
 	isc.ClassFactory.defineClass("IButton", "Button");
+	isc.IButton.markAsFrameworkClass();
+	
 	isc.ClassFactory.defineClass("IAutoFitButton", "AutoFitButton");
+	isc.IAutoFitButton.markAsFrameworkClass();
+	
+	// Have IMenuButton duplicate MenuButton
+	isc.ClassFactory.defineClass("IMenuButton", "MenuButton");
+	isc.IMenuButton.markAsFrameworkClass();
     
 	// ListGrid skinning	
 	if (isc.ListGrid) {										  
@@ -106,7 +113,14 @@ with (theWindow) {
             edgeImage:"[SKIN]/rounded/frame/A3B2CC/4.png"
         })
     }
-
+    
+    // Native FILE INPUT items are rendered differently in Safari from other browsers
+    // Don't show standard textbox styling around them as it looks odd
+    if (isc.UploadItem && isc.Browser.isSafari) {
+        isc.UploadItem.addProperties({
+            textBoxStyle:"normal"
+        });
+    }
     
 	//
 	//  Step 4: Specify where the browser should redirect if the browser is

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -9,9 +9,12 @@
  * http://smartclient.com/license
  */
 
- 
 
 
+
+
+
+isc.ClassFactory.defineInterface("DataBoundComponent");
 
 //> @interface DataBoundComponent
 // A DataBoundComponent is a widget that can configure itself for viewing or editing objects which
@@ -60,6 +63,176 @@ isc.Canvas.addClassProperties({
     // Backcompat only: deprecated for 5.5 release in favor of "copy"
 	CLONE:"clone"		//	@value	isc.Canvas.CLONE		Clone the data (so there is another copy), leaving the original in our list.
         
+});
+
+isc.Canvas.addClassMethods({
+
+getFieldImageDimensions : function (field, record) {
+    var width, height;
+
+    // if any of field.imageWidth/Height/Size are set as strings, assume they are property
+    // names on the record
+    var imageWidthProperty, imageHeightProperty, imageSizeProperty;
+    if (isc.isA.String(field.imageWidth)) {
+        imageWidthProperty = field.imageWidth;
+    } else {
+        width = field.imageWidth;
+    }
+    if (isc.isA.String(field.imageHeight)) {
+        imageHeightProperty = field.imageHeight;
+    } else {
+        height = field.imageHeight;
+    }
+    if (isc.isA.String(field.imageSize)) {
+        imageSizeProperty = field.imageSize;
+    } else {
+        width = width || field.imageSize;
+        height = height || field.imageSize;
+    }
+
+    if (record != null) {
+        width = width || record[imageWidthProperty] || record[imageSizeProperty];
+        height = height || record[imageHeightProperty] || record[imageSizeProperty];
+    }
+
+    return { width: width, height: height };
+},
+
+// Generic values management for mapping fieldNames or dataPaths to values within a values object.
+// Implemented at the DBC level as static methods as this is used across dataBoundComponents,
+// and also by ValuesManager
+
+// _clearValue
+// Clears the value for some field from a values object
+// Handles datapath / nested values
+_$slash:"/",
+_clearFieldValue : function (fieldName, values) {
+    if (!values || fieldName == null || isc.isAn.emptyString(fieldName)) return;
+    
+    var isDataPath = fieldName.contains(this._$slash);
+    if (isDataPath) {
+        var segments = fieldName.split(this._$slash),
+            nestedVals = [];
+        if (isc.isAn.emptyString(segments.last())) segments.length-=1;
+        for (var i = 0; i < segments.length; i++) {
+            if (isc.isAn.emptyString(segments[i])) continue; 
+            // handle the case where we dont have a nested value for this path
+            if (values == null) {
+                nestedVals.length = 0;
+                break;
+            }
+            nestedVals.add(values);
+            if (i == segments.length-1) {
+                delete values[segments[i]];
+            } else {
+                values = values[segments[i]];
+            }
+        }
+        // If we have a nested values object like this:
+        //  {foo:{ moo: {zoo:"a"} } }
+        // in addition to deleting the zoo attribute from the moo object we may as well clear up
+        // the empty object stored under foo.moo
+        for (var i = nestedVals.length-1; i > 0; i--) {            
+            if (isc.isAn.emptyObject(nestedVals[i])) {
+                delete nestedVals[i-1][segments[i-1]];
+            }
+        }
+    } else {
+        delete values[fieldName];
+    }
+    
+},
+
+// _saveValue
+// Updates some values object with a new field value.
+// Handles dataPath in the field ID
+_saveFieldValue : function (field, value, values) {
+    if (values == null) return;
+    var isDataPath = field.contains(this._$slash);
+    
+    if (isDataPath) {
+        
+        field.trim(isc.Canvas._$slash);
+        var segments = field.split(this._$slash);
+        for (var i = 0; i < segments.length; i++) {           
+            if (isc.isAn.emptyString(segments[i])) continue;
+            if (i == segments.length-1) {
+                values[segments[i]] = value;
+            } else {
+                var segmentValue = values[segments[i]]
+                if (!isc.isAn.Object(segmentValue) || 
+                     isc.isA.Date(segmentValue))
+                {
+                    values[segments[i]] = {};
+                    
+                } else if (isc.isAn.Array(segmentValue)) {
+                    var nextIsIndex = (parseInt(segments[i+1]) == segments[i+1])
+                    // If the next identifier is not an index, we don't want to set an attribute
+                    // on the array object!
+                    // Options are to clobber the array with a simple JS object
+                    // or reach inside the array and look for the property on the first item
+                    // Currently we clobber the array, with a warning
+                    if (!nextIsIndex) {
+                        this.logInfo("saving a field value in a nested data object: overwriting " +
+                        "an array" + this.echo(values[segments[i]]) + 
+                        " with an object with nested values.");
+                        values[segments[i]] = {};
+                    }
+                }
+                values = values[segments[i]];
+            }
+        }
+    } else {
+        values[field] = value;
+    }
+    return values;
+},
+
+
+// _getValue() retrives a field value from some values object
+// handles being passed a datapath to navigate nested values objects
+_getFieldValue : function (fieldName, values) {
+    if (values == null) return;
+    if (fieldName == null) return;
+
+    var isDataPath = fieldName.contains(this._$slash);
+    
+    if (isDataPath) {
+        var segments = fieldName.split(this._$slash);
+        if (isc.isAn.emptyString(segments.last())) segments.length -=1;
+        for (var i = 0; i < segments.length; i++) {
+            if (isc.isAn.emptyString(segments[i])) continue;
+            if (i == segments.length-1) {
+                return values[segments[i]];
+            } else {
+                if (values[segments[i]] == null) return;
+                values = values[segments[i]];
+            }
+        }
+    } else {
+        return values[fieldName]
+    }
+},
+
+_combineDataPaths : function (baseDP, dp) {
+    
+    // if either param is empty just typecast the other to a string (may be required for
+    // index within an array) and return!
+    if (baseDP == null) return "" + dp;
+    if (dp == null) return baseDP + "";
+    
+    // trim slashes off the beginning of both strings, if present.
+    // this is required to handle the legitimate case of the developer using dataPath:"/"
+    // to edit top level fields in a valuesManager defined in a parent component
+    if (isc.isA.String(dp) && dp.startsWith(this._$slash)) dp = dp.substring(1);
+    //if (baseDP.startsWith(this._$slash)) baseDP = baseDP.substring(1);
+    if (isc.isA.String(baseDP) && baseDP.endsWith(this._$slash)) {
+        return baseDP + dp;
+    } else {
+        return baseDP + this._$slash + dp;
+    }
+}
+
 });
 
 isc.Canvas.addProperties({
@@ -225,7 +398,7 @@ showComplexFields:true,
 // @visibility external
 //<
 
-//> @attr databoundComponent.exportFields (Array : null : IRW)
+//> @attr databoundComponent.exportFields (Array of String : null : IRW)
 // The list of field-names to export.  If provided, the field-list in the exported output is 
 // limited and sorted as per the list.
 // <P>
@@ -326,6 +499,436 @@ addDropValues: true,
 fieldIdProperty:"name",
 
 
+//> @method databoundComponent.dragComplete()
+// This method is invoked on the source component whenever a drag operation or 
+// +link{transferSelectedData()} completes.  This method is called when the entire chain of 
+// operations - including, for databound components, server-side updates and subsequent 
+// integration of the changes into the client-side cache - has completed.<p>
+// There is no default implementation of this method; you are intended to override it if you 
+// are interested in being notified when drag operations complete.
+//
+// @see dropComplete()
+// @group  dragging
+// @visibility external
+//<
+
+//> @method databoundComponent.dropComplete()
+// This method is invoked whenever a drop operation or +link{transferSelectedData()} 
+// targeting this component completes.  A drop is considered to be complete when all the client-
+// side transfer operations have finished.  This includes any server turnarounds SmartClient 
+// needs to make to check for duplicate records in the target component; it specifically does 
+// not include any add or update operations sent to the server for databound components.  If 
+// you want to be notified when the entire drag operation - including server updates and cache
+// synchronization - has completed, override +link{databoundComponent.dragComplete,dragComplete}
+// on the source component.<p>
+// There is no default implementation of this method; you are intended to override it if you 
+// are interested in being notified when drop operations complete.
+//
+// @param transferredRecords (List of Records) The list of records actually transferred to
+//                    this component (note that this is not necessarily the same thing as the
+//                    list of records dragged out of the source component because it doesn't
+//                    include records that were excluded because of collisions with existing
+//                    records)
+// @see dragComplete()
+// @group  dragging
+// @visibility external
+//<
+
+
+//> @type dataPath
+// String specifying a nested data field structure.
+// <P>
+// Each dataPath string is a slash-delimited set of field identifiers, for example
+// <code>"id1/id2/id3"</code>. DataPaths may be applied directly to a
+// +link{canvas.dataPath,component}, and/or to a databound component field specification.
+// A datapath denotes a path to a nested field value in a hierarchical structure, giving
+// developers the opportunity to easily view or edit nested data structures.
+// Specifically:
+// <ul><li>if the component is viewing or editing a record, the value for fields 
+//         will be derived from a nested structure of records</li>
+//     <li>if the component is bound to a dataSource, field attributes may be picked up by
+//         following the dataPath to a field definition on another dataSource</li></ul>
+// <b>Examples:</b><br>
+// If a dynamicForm is defined with the following fields:
+// <pre>
+//    [
+//      { name:"name" },
+//      { name:"street", dataPath:"address/street" }
+//    ]
+// </pre>
+// If the <code>"name"</code> field is set to <i>"Joe Smith"</i> and the <code>"street"</code> field
+// is set to <i>"1221 High Street"</i>, when the values for this form are retrieved via a
+// <code>getValues()</code> call they will return an object in the following format:
+// <pre>
+//    {name:"Joe Smith", address:{street:"1221 High Street"}}
+// </pre>
+// <P>
+// For databound components, dataPath also provides a way to pick up field attributes from nested
+// dataSources. Given the following dataSource definitions:
+// <pre>
+//  isc.DataSource.create({
+//      ID:"contacts",
+//      fields:[
+//          {name:"name"},
+//          {name:"email"},
+//          {name:"organization"},
+//          {name:"phone"},
+//          {name:"address", type:"Address"}
+//      ]
+//  });
+// 
+//  isc.DataSource.create({
+//      ID:"Address",
+//      fields:[
+//          {name:"street"},
+//          {name:"city"},
+//          {name:"state"},
+//          {name:"zip"}
+//      ]
+//  });
+//  </pre>
+// and a databound component bound to the 'contacts' dataSource, specifying a field with a dataPath
+// of <code>"address/street"</code> would ensure the field attributes were derived from the 
+// "street" field of the 'Address' dataSource.
+// <P>
+// dataPaths are also cumulative. In other words if a component has a specified dataPath, 
+// the dataPath of any fields it contains will be appended to that component level path when
+// accessing data. For example the following form:
+// <pre>
+//      isc.Dynamicform.create({
+//          dataPath:"contact",
+//          fields:[
+//              {dataPath:"address/email"}
+//          ]
+// </pre>
+// Might be used to edit a data structure similar to this:
+// <pre>{contact:{name:'Ed Jones', address:{state:"CA", email:"ed@ed.jones.com"}}}</pre>
+// Nested canvases can also have dataPaths specified, which will similarly be combined. See
+// the +link{canvas.dataPath} attribute for more information and examples of this.
+// @visibility external
+//<
+
+//> @attr   DataBoundComponent.dataArity    (string : "multiple" : IRWA)
+// Does this component represent singular or multiple "records" objects?
+// Options are "multiple" or "single", or "either"
+// @visibility internal
+//<
+dataArity:"multiple",
+
+//> @attr   DataBoundComponent.autoTrackSelection (boolean : true : IRWA)
+// If set, for dataArity:"single" components bound to a multiple:true field in this ValuesManager
+// automatically check for the presence of a dataArity:"multiple" component bound to the same path
+// and set this up as the +link{dynamicForm.selectionComponent}
+// @visibility internal
+//<
+autoTrackSelection:true,
+
+
+//> @attr canvas.valuesManager (ValuesManager : null : IRWA)
+// +link{ValuesManager} for managing values displayed in this component.
+// If specified at initialization time, this component will be added to the valuesManager via
+// +link{valuesManager.addMember()}.
+// <P>
+// ValuesManagers allow different fields of a single object to be displayed or edited
+// across multiple UI components. Given a single values object, a valuesManager will handle
+// determining the appropriate field values for its member components and displaying them / 
+// responding to edits if the components support this.
+// <P>
+// Data may be derived simply from the specified fieldNames within the member components, or for
+// complex nested data structures can be specified by both component and field-level
+// +link{dataPath}.
+// <P>
+// Note that components may be automatically bound to an existing valuesManager attached to a 
+// parent component if dataPath is specified. See +link{canvas.dataPath} for more information.
+// Also note that if a databound component has a specified dataSource and dataPath but no specified
+// valuesManager object one will be automatically generated as part of the databinding process
+// @visibility external
+//<
+
+// This method is fired as part of setDataPath - it generates an automatic valuesManager if
+// necessary based on this.dataSource
+initializeValuesManager : function () {
+    var vM = this.valuesManager;
+    delete this.valuesManager;
+    
+   if (vM != null) {
+        if (isc.ValuesManager == null) {
+            this.logWarn("Widget initialized with specified 'valuesManager' proprety but " +
+                "ValuesManager class is not loaded. This functionality requires the " +
+                "Forms module.");
+            return;
+        }
+        
+        if (isc.isA.ValuesManager(vM)) {
+            vM.addMember(this);
+        } else if (isc.isA.ValuesManager(window[vM])) {
+            window[vM].addMember(this);
+            
+        // If it's a string, create a new VM with that ID;
+        } else if (isc.isA.String(vM)) {
+            isc.ValuesManager.create({
+                ID:vM,
+                dataSource:this.dataSource,
+                members:[this]
+            });
+        } else {
+            this.logWarn("Widget initialized with invalid 'valuesManager' property:"
+                         + isc.Log.echo(vM) + ", clearing this property out");
+        }
+    }
+},
+
+
+//> @attr canvas.dataPath (dataPath : null : IRWA)
+// A dataPath may be specified on any canvas. This provides a straightforward way to display or
+// edit complex nested data.
+// <P>
+// For components which support displaying or editing data values, (such as +link{DynamicForm} or
+// +link{ListGrid} components), the dataPath may be set to specify how the components data is
+// accessed. In this case the dataPath essentially specifies a nested object to edit - typically
+// a path to a field value within a dataSource record. Note that a ValuesManager will be required
+// to handle connecting the dataBoundcomponent to the appropriate sub object. This may be explicitly
+// specified on the component, or a parent of the component, or automatically generated
+// if a DataSource is specified on either the component or a parent thereof.
+// <P>
+// To provide a simple example - if a complex object existed with the following format:
+// <pre>
+// { companyName:"Some Company",
+//   address:{    street:"123 Main Street", city:"New York", state:"NY"  }
+// }
+// </pre>
+// a developer could specify a DynamicForm instance with 'dataPath' set to "address" to edit
+// the nested address object:
+// <pre>
+// isc.ValuesManager.create({
+//      ID:'vm',
+//      values: { companyName:"Some Company",
+//              address:{    street:"123 Main Street", city:"New York", state:"NY"  }
+//      }
+// });
+//
+// isc.DynamicForm.create({
+//      valuesManager:"vm",
+//      dataPath:"address",
+//      items:[{name:"street"}, {name:"city"}, {name:"state"}]
+// });
+// </pre>
+// If a component is specified with a <code>dataPath</code> attribute but does not have an
+// explicitly specified valuesManager, it will check its parent element chain for a specified
+// valuesManager and automatically bind to that. This simplifies binding multiple components used
+// to view or edit a nested data structure as the valuesManager needs only be defined once at a
+// reasonably high level component. Here's an example of this approach:
+// <pre>
+// isc.ValuesManager.create({
+//      ID:'vm',
+//      values: { companyName:"Some Company",
+//              address:{    street:"123 Main Street", city:"New York", state:"NY"  }
+//      }
+// });
+//
+// isc.Layout.create({
+//      valuesManager:"vm",
+//      members:[
+//          isc.DynamicForm.create({
+//              dataPath:"/",
+//              items:[{name:"companyName"}]
+//          }),
+//          isc.DynamicForm.create({
+//              dataPath:"address",
+//              items:[{name:"street"}, {name:"city"}, {name:"state"}]
+//          })
+//      ]
+// });
+// </pre>
+// Note that in this case the valuesManager is specified on a Layout, which has no 'values'
+// management behavior of its own, but contains items with a specified dataPath which do. In this
+// example you'd see 2 forms allowing editing of the nested data structure.
+// <P>
+// dataPaths from multiple nested components may also be combined. For example:
+// <pre>
+// isc.ValuesManager.create({
+//      ID:'vm',
+//      values: { companyName:"Some Company",
+//              address:{    street:"123 Main Street", city:"New York", state:"NY"  }
+//              parentCompany:{
+//                  companyName:"Some Corporation",
+//                  address:{   street:"1 High Street", city:"New York", state:"NY" }
+//              }
+//      }
+// });
+//
+// isc.Layout.create({
+//      valuesManager:"vm",
+//      members:[
+//          isc.DynamicForm.create({
+//              dataPath:"/",
+//              items:[{name:"companyName"}]
+//          }),
+//          isc.DynamicForm.create({
+//              dataPath:"address",
+//              items:[{name:"street"}, {name:"city"}, {name:"state"}]
+//          }),
+//          isc.Layout.create({
+//              dataPath:"parentCompany",
+//              members:[
+//                  isc.DynamicForm.create({
+//                      dataPath:"/",
+//                      items:[{name:"companyName", type:"staticText"}]
+//                  }),
+//                  isc.DetailViewer.create({
+//                      dataPath:"address",
+//                      fields:[{name:"street", name:"city", name:"state"}]
+//                  })
+//              ]
+//          })
+//      ]
+// });
+// </pre>
+// In this example the detailViewer will display data from the <code>parentCompany.address</code>
+// object within the base record.
+// <P>
+// Note that if a component has a specified  dataSource and shows child components with a
+// specified dataPath, there is no need to explicitly declare a valuesManager at all. If a component
+// with a dataPath has a dataSource, or an ancestor with a dataSource specified, it will, a
+// valuesManager will automatically be generated on the higher level component (and be available as
+// <code>component.valuesManager</code>).
+// @visibility external
+//<
+
+//> @method  canvas.setDataPath()
+// Setter for the +link{canvas.dataPath} attribute. This method may be called directly at runtime
+// to set the dataPath on a component, and will also be re-run automatically whenever a canvas'
+// parentElement changes due to a call to addChild(). This method handles automatically binding
+// the component to the appropriate valuesManager if necessary.
+// @param dataPath (dataPath) new dataPath
+// @visibility external
+//<
+setDataPath : function (dataPath) {
+    this.dataPath = dataPath;
+    
+    // we run this on every change of widget hierarchy (addChild etc), allowing us to
+    // pick up a valuesManager based on a values manager applied at some ancestor widget level.
+    // detect true "databound" components by the presence of fields - if we have no fields
+    // just bail here
+    
+    if (this.getFields == null || this.getFields() == null) return;
+    
+    // clearing dataPath? Disconnect from any dataPath-derived valuesManager, and bail
+    if (dataPath == null) {
+        delete this._fullDataPath;
+        if (this.valuesManager && this._valuesManagerFromDataPath) {
+            this.valuesManager.removeMember(this);
+            delete this._valuesManagerFromDataPath;
+        }
+        return;
+    }
+    
+    // If we have a dataSource applied directly to us we don't need to attach ourselves to another
+    // valuesManager, etc
+    // Note:
+    // We support 'cumulative' dataPaths
+    // In other words a valuesManager may be defined on a Layout
+    // This can contain another layout with a specified dataPath, which in turn contains a form
+    // with a specified dataPath.
+    // In this case the forms data would be derived from the valuesManager on the top level layout
+    // using a full dataPath combined from both the DynamicForm and the Layout's dataPath 
+    // Set up this 'fullDataPath' here - retrieved from 'getFullDataPath'
+    var fullDataPath;
+    var dataPathComponent = this;
+    while (dataPathComponent && 
+            (!dataPathComponent.valuesManager || dataPathComponent._valuesManagerFromDataPath) &&
+            !dataPathComponent.dataSource)
+    {
+        if (dataPathComponent.dataPath) {
+            if (fullDataPath) {
+                fullDataPath = isc.Canvas._combineDataPaths(dataPathComponent.dataPath,
+                                                            fullDataPath);
+            } else {
+                fullDataPath = dataPathComponent.dataPath;
+            }
+        }
+        dataPathComponent = dataPathComponent.parentElement;
+    }
+    this._fullDataPath = fullDataPath;
+    // If we have a valuesManager and/or dataSource specified directly on this component
+    // no need to attach to another one!
+    
+    if (dataPathComponent) {
+        if (dataPathComponent != this) {
+            // assertion - the datapathComponent has a valuesManager already, or a dataSource
+            // (in which case we can create a new valuesManager automatically)
+            if (dataPathComponent.valuesManager == null) {
+                dataPathComponent.createDefaultValuesManager();
+            }
+            // second param ensures the _valuesManagerFromDataPath attr gets set.
+            dataPathComponent.valuesManager.addMember(this, true);
+        }
+    }
+},
+
+//> @method canvas.getFullDataPath()
+// Returns a fully qualified +link{type:dataPath} for this canvas. This is calculated by combining
+// the canvas' specified +link{canvas.dataPath} with the <code>dataPath</code> of any parent 
+// canvases up to whichever canvas has a specified +link{canvas.valuesManager} specified to actually
+// manage values from this component.
+// @return (dataPath) fully qualified dataPath for this component
+// @visibility external
+//<
+getFullDataPath : function () {
+    return this._fullDataPath || this.dataPath;
+},
+
+createDefaultValuesManager : function (defaultMembers) {
+    if (!defaultMembers) defaultMembers = [];
+    defaultMembers.add(this);
+    
+    isc.ValuesManager.create({
+        members:defaultMembers,
+        ID:this.getID() + "_valuesManager",
+        dataSource:this.dataSource
+    });
+},
+
+//> @method databoundComponent.getDataPathField()
+// For a component with a specified +link{DataSource}, find the associated dataSource field object
+// from a specified +link{type:dataPath,dataPath}.
+// @param dataPath (dataPath) dataPath for which the field definition should be returned.
+//<
+getDataPathField : function (dataPath) {
+    var dataSource = this.getDataSource(),
+        segments = dataPath.split(isc.slash),
+        field;
+    if (!dataSource) return;
+    for (var i = 0; i < segments.length; i++) {
+        var fieldId = segments[i];
+        
+        field = dataSource.getField(fieldId);
+        dataSource = field ? dataSource.getSchema(field.type) : dataSource;
+        
+        if (field == null) {
+            this.logWarn("Unable to find dataSource field matching specified dataPath: '" +
+                         dataPath + "'");
+            return;
+        }
+    }
+    return field;
+},
+
+registerWithDataView : function (dataView) {
+    if (!this.inputDataPath) return;
+    
+    dataView = this.parentElement;
+    while (dataView && !isc.isA.DataView(dataView)) dataView = dataView.parentElement;
+    
+    if (!dataView) {
+        this.logWarn("Component initialized with an inputDataPath property, but no DataView " +
+                     "was found in the parent hierarchy. inputDataPath is only applicable to " +
+                     "DataBoundComponents and FormItems being managed by a DataView");
+        return;
+    }
+    
+    dataView.registerItem(this);
+},
 
 
 //>	@method	dataBoundComponent.bindToDataSource()
@@ -338,7 +941,11 @@ fieldIdProperty:"name",
 //   calls setFields() when finished
 //		@group	data
 //<
-bindToDataSource : function (fields, componentIsDetail) {
+bindToDataSource : function (fields) {
+    //this.logWarn("bindToDataSource called with fields " + this.echoLeaf(fields));
+    // call 'setDataPath' to ensure if we have a dataPath specified we bind to the correct
+    // valuesManager
+    if (this.dataPath) this.setDataPath(this.dataPath);
 	// Most components operate on a datasource, displaying or otherwise manipulating fields from
 	// that datasource.  We don't want to duplicate all the information about a field that is
 	// specified in the datasource (type, title, etc) in each component that needs to display
@@ -349,10 +956,13 @@ bindToDataSource : function (fields, componentIsDetail) {
     // pick up the dataSource of our dataset if it has one and we weren't given one
     if (this.dataSource == null && this.data != null) this.dataSource = this.data.dataSource;
 
+    
+    var origFields = this.fields || this.items;
+    if (isc.isAn.Array(origFields)) this.originalFields = origFields.duplicate();
+
 	// get the datasource versions of the field specifications.  NOTE: this method may be
     // called in a build that does not include DataSource
 	var	ds = this.getDataSource();
-
     if (ds != null && isc.isA.String(ds)) {
         this.logWarn("unable to look up DataSource: " + ds + ", databinding will not be used");
         return fields;
@@ -370,10 +980,10 @@ bindToDataSource : function (fields, componentIsDetail) {
         dsFields = flatten ? ds.getFlattenedFields() : ds.getFields();
     }
 
-	// Case 1: no dataSource specified
-	// This widget isn't associated with a datasource - all fields are full specifications
-	// intended for the underlying widget.  The fields property is thus left untouched.
-	if (ds == null || dsFields == null) {
+    // Case 1: no dataSource specified
+    // This widget isn't associated with a datasource - all fields are full specifications
+    // intended for the underlying widget.  The fields property is thus left untouched.
+    if (ds == null || dsFields == null) {
         if (fields != null && isc.SimpleType) {
             // type defaults are auto-applied to DS fields and combined fields, but we need to
             // do it here for any field that doesn't apear in the DataSource
@@ -381,12 +991,14 @@ bindToDataSource : function (fields, componentIsDetail) {
                 isc.SimpleType.addTypeDefaults(fields[i]);
             }
         }
-		return fields;
+        this.addFieldValidators(fields);
+        return fields;
     }
 
-	// Case 2: dataSource specified, but no fields specified
-	// The widget will show all DataSource fields, applying reasonable defaults.
-	if (ds != null && noSpecifiedFields) {
+    // Case 2: dataSource specified, but no fields specified
+    if (this.doNotUseDefaultBinding) return [];
+    // The widget will show all DataSource fields, applying reasonable defaults.
+    if (ds != null && noSpecifiedFields) {
         // NOTE we generally have to create a copy of the DataSource fields rather than having
         // everyone use the same objects, because widgets tend to scribble things into this.fields,
         // such as widths derived by a sizing policy.
@@ -395,20 +1007,24 @@ bindToDataSource : function (fields, componentIsDetail) {
             var field = dsFields[fieldName];
             
             if (!this.shouldUseField(field, ds)) continue;
-
+            
+            
             fields.add(isc.addProperties({}, field));
         }
-        return fields;
+        this.addFieldValidators(fields);
+        return fields;                                               
     }
 
 	// Case 3: dataSource and fields specified
     // fields provided to this instance act as an overlay on DataSource fields
-	if (ds != null && !noSpecifiedFields) {
+    if (ds != null && !noSpecifiedFields) {
         if (this.useAllDataSourceFields) {
             var canvas = this;
-            return ds.combineFieldOrders(
-                    dsFields, fields, 
-                    function (field, ds) { return canvas.shouldUseField(field, ds) });
+            var bothFields = ds.combineFieldOrders(
+                        dsFields, fields, 
+                        function (field, ds) { return canvas.shouldUseField(field, ds) });
+            this.addFieldValidators(bothFields);
+            return bothFields;
         } else {
             // only the fields declared on the component will be shown, in the order specified on
             // the component
@@ -423,17 +1039,35 @@ bindToDataSource : function (fields, componentIsDetail) {
                 // always addTypeDefaults b/c local field spec may override field type
                 // addTypeDefaults will bail immediately if it's already been applied
                 isc.SimpleType.addTypeDefaults(field);
-                if (!ds.getField(fieldName)) continue;
 
-                // combine the component field specification with the datasource field
-                // specification - component fields override so that you can eg, retitle a field
-                // within a summary
-                field = ds.combineFieldData(field);
-			}
+                field = this.combineFieldData(field);
+            }
+            this.addFieldValidators(fields);
             // return the original fields array, with properties added to the field objects
             return fields;
-		}
-	}
+        }
+    }
+},
+
+combineFieldData : function (field) {
+    var ds = this.getDataSource();
+
+
+    // specified dataPath -- will pick up defaults from another (nested) ds field 
+    if (field.dataPath) {
+        isc.DataSource.combineFieldData(
+            field, this.getDataPathField(field.dataPath)
+        );
+        return field;
+    // specified ds field -- will pick up defaults from field in this dataSource
+    } else if (ds.getField(field.name)) {
+                        
+        // combine the component field specification with the datasource field
+        // specification - component fields override so that you can eg, retitle a field
+        // within a summary
+        return ds.combineFieldData(field);
+    }
+    return field;
 },
 
 // return whether this component wants to use the field when binding to a DataSource
@@ -454,6 +1088,55 @@ shouldUseField : function (field, ds) {
     return true;
 },
 
+// Add validators that replace basic field properties (ex. required)
+addFieldValidators : function (fields) {
+    if (fields == null) return;
+
+    var requiredValidator = {type: "required"};
+
+    for (var i = 0; i < fields.length; i++) {
+        var field = fields[i];
+        if (field.required) {
+            var validator = isc.addProperties({}, requiredValidator),
+                message = field.requiredMessage || this.requiredMessage
+            ;
+            if (message != null) validator.errorMessage = message;
+
+            // Add validator to field
+            if (!field.validators) {
+                field.validators = [validator];
+            } else {
+                if (!isc.isAn.Array(field.validators)) {
+                    field.validators = [field.validators];
+                }
+                if (!isc.isAn.Array(field.validators)) {
+                    field.validators = [field.validators];
+                }
+                // See if we already have a required validator.
+                // If so, we need to make sure the errorMessage is correct.
+                // If not, add a new required validator.
+                if (!field.validators.containsProperty("type", validator.type)) {
+                    // if the field is using the shared, default validators for the type, 
+                    // make a copy before modifying
+                    if (field.validators._typeValidators) {
+                        field.validators = field.validators.duplicate();
+                    }
+                    field.validators.add(validator);
+                } else if (message != null) {
+                    var ds = this.getDataSource(),
+                        v = field.validators.find("type", validator.type)
+                    ;
+                    // See if our error message should override current one
+                    // created on the DataSource.
+                    if (v.errorMessage == null || (ds && v.errorMessage == ds.requiredMessage)) {
+                        v.errorMessage = message;
+                    }
+                }
+            }
+        }
+    }
+},
+
 
 //>	@method	dataBoundComponent.getField()	
 // Return a field by a field index or field name.
@@ -468,6 +1151,15 @@ getField : function (fieldId) {
     return isc.Class.getArrayItem(fieldId, this.fields, this.fieldIdProperty);
 },
 
+
+//> @method dataBoundComponent.getFieldNum()	
+// Find the index of a currently visible field.
+//
+// @param fieldID (String || Field) field name or field
+//
+// @return (int) index of field within currently visible fields
+// @visibility external
+//<
 getFieldNum : function (fieldId) {
     if (!this.fields) return -1;
     // handle being passed a field object (or a clone of a field object)
@@ -475,6 +1167,62 @@ getFieldNum : function (fieldId) {
         fieldId = fieldId[this.fieldIdProperty];
     }
     return isc.Class.getArrayItemIndex(fieldId, this.fields, this.fieldIdProperty);
+},
+
+// Whether a field derived from XML Schema is considered structurally required.
+// <P>
+// A field is considered required if the field itself must be present within it's complexType
+// *and* the complexType and all parent complexTypes are required.
+// <P>
+// Note that this is relative to how much of a given structure this component edits.  If you
+// bind a component to a DataSource representing an entire WSDLMessage, a field may not be
+// considered required because it has an optional parent, whereas if you instead bind to a
+// particular sub-part of the message the field could be considered required since no optional
+// parent elements are in play.  This is the correct behavior but it does mean that to get
+// correct "required" behavior you want to coordinate all of your components to use a
+// ValuesManager that actually represents the *whole* structure they are meant to be editing.
+// <P>
+// NOTE that a more complete implementation might dynamically check the current values to check
+// whether at least one entry had been added to a structure that is otherwise optional; at that
+// point the rest of the values should be considered required as well
+isXMLRequired : function (field) {
+
+    if (!field || !this.useXMLRequired || !field.xmlRequired) return false;
+
+    if (!field.dataPath) return true;
+
+    var dataSource = this.getDataSource();
+    if (!dataSource) return true;
+
+    //this.logWarn("field: " + this.echoLeaf(field) + " has path: " + field.dataPath);
+
+    var segments = field.dataPath.split(isc.slash),
+        field;
+    for (var i = 0; i < segments.length; i++) {
+        var fieldId = segments[i];
+
+        //this.logWarn("checking segment: " + fieldId + " against DataSource: " + dataSource);
+
+        // invalid dataPath, but will be warned about elsewhere.  The field's individual
+        // xmlRequired status should be considered authoritative
+        if (!dataSource) return true;
+
+        field = dataSource.getField(fieldId);
+
+        // invalid dataPath again
+        if (!field) return true;
+
+        // a parent XML structure is not required, so the field should not be
+        if (field.xmlMinOccurs != null && field.xmlMinOccurs < 1) {
+            //this.logWarn("optional field found: " + fieldId);
+            return false;
+        }
+
+        dataSource = dataSource.getSchema(field.type);
+        
+    }
+    return true;
+    
 },
 
 // Field State management
@@ -508,7 +1256,7 @@ getFieldState : function (includeTitle) {
         for (var i = 0; i < allFields.length; i++) {
             var field = allFields[i],
                 fieldName = field[this.fieldIdProperty],
-                fieldState = this.getStateForField(fieldName)
+                fieldState = this.getStateForField(fieldName, includeTitle)
             ;
             fieldStates.add(fieldState);
         }
@@ -710,15 +1458,45 @@ bind : function (dataSource, fields) {
 
 getDataSource : function () {
     if (isc.isA.String(this.dataSource)) {
-        var ds = isc.DS.get(this.dataSource);
-        if (ds != null) return ds;
-
-        // support "dataSource" being specified as the name of a global, and if so, assign
-        // that to this.dataSource
-        ds = this.getWindow()[this.dataSource];
-        if (ds && isc.isA.DataSource(ds)) return (this.dataSource = ds);
+        if (this.serviceNamespace || this.serviceName) {
+            this.dataSource = this.lookupSchema();
+        } else {
+            var ds = isc.DS.get(this.dataSource);
+            if (ds != null) return ds;
+    
+            // support "dataSource" being specified as the name of a global, and if so, assign
+            // that to this.dataSource
+            ds = this.getWindow()[this.dataSource];
+            if (ds && isc.isA.DataSource(ds)) return (this.dataSource = ds);
+        }
     }
     return this.dataSource;
+},
+
+lookupSchema : function () {
+    // see if we have a WebService instance with this serviceName / serviceNamespace
+    var service;
+    if (this.serviceName) service = isc.WebService.getByName(this.serviceName, this.serviceNamespace);
+    else service = isc.WebService.get(this.serviceNamespace);
+
+    if ((this.serviceNamespace || this.serviceName) && service == null) {
+        this.logWarn("Could not find WebService definition: " +
+                     (this.serviceName ? "serviceName: " + this.serviceName : "") +
+                     (this.serviceNamespace ? "   serviceNamespace: " + this.serviceNamespace : ""));
+    }
+    
+    // If this.dataSource is not a String, we shouldn't have ended up here
+    if (!isc.isA.String(this.dataSource)) {
+        this.logWarn("this.dataSource was not a String in lookupSchema");
+        return;
+    }
+ 
+    var ds; 
+    if (service) ds = service.getSchema(this.dataSource);
+    // note return this.dataSource if the lookup failed so that this.dataSource is still set to
+    // the String value, even if we failed to look up the DataSource, since the service may
+    // load later
+    return ds || this.dataSource; 
 },
 
 
@@ -776,7 +1554,7 @@ fieldValuesAreEqual : function (field, value1, value2) {
 // <P>
 // <code>useFlatFields</code> is typically used with imported metadata, such as 
 // +link{XMLTools.loadXMLSchema,XML Schema} from a 
-// +link{XMLTools.loadWSDL,WSDL-described web servce}, as a means of eliminating levels of XML
+// +link{XMLTools.loadWSDL,WSDL-described web service}, as a means of eliminating levels of XML
 // nesting that aren't meaningful in a user interface, without the cumbersome and fragile
 // process of mapping form fields to XML structures.
 // <P>
@@ -870,14 +1648,31 @@ getSerializeableFields : function (removeFields, keepFields) {
 },
 
 addField : function (field, index) {
+    if (field == null) return;
+
     var fields = (this.fields || this.items || isc._emptyArray).duplicate();
+ 
+    // if this field already exists, replace it
+    var existingField = this.getField(field.name);
+    if (existingField) fields.remove(existingField);
+   
+    // If index wasn't passed, add at the end (Array.addAt() defaults to the beginning)
+    // Also, if the requested index is greater than the size of the array, just add to
+    // the end.  This is a corner case that can happen in VB, where the same index is 
+    // being used for two different things (index into the list of a DBC's fields and 
+    // index into the list of a DBC's children in the componentTree - sometimes the same 
+    // thing, but not necessarily so)
+    if (index == null || index > fields.length) index = fields.length;
     fields.addAt(field, index);
     this.setFields(fields);
 },
 
 removeField : function (fieldName) {
     var fields = (this.fields || this.items || isc._emptyArray).duplicate();
-    fields.remove(fields.find("name", fieldName));
+    
+    // Cope with being passed an object rather than a name
+    var name = fieldName.name ? fieldName.name : fieldName;
+    fields.remove(fields.find("name", name));
     this.setFields(fields);
 },
 
@@ -924,7 +1719,7 @@ removeField : function (fieldName) {
 // @example fetchOperation
 //<
 
-// Note: listGrid.autoFetchAsFilter overridden and documented in ListGrid.js
+// Note: listGrid.autoFetchTextMatchStyle overridden and documented in ListGrid.js
 
 //> @attr listGrid.initialCriteria   (Criteria : null :IR)
 // @include dataBoundComponent.initialCriteria
@@ -1096,8 +1891,8 @@ removeField : function (fieldName) {
 // @visibility external
 //<
 
-//>	@attr dynamicForm.autoFetchAsFilter       (boolean : false : IR)
-// @include dataBoundComponent.autoFetchAsFilter
+//>	@attr dynamicForm.autoFetchTextMatchStyle       (TextMatchStyle : null : IR)
+// @include dataBoundComponent.autoFetchTextMatchStyle
 // @group databinding
 // @visibility external
 //<
@@ -1112,7 +1907,10 @@ removeField : function (fieldName) {
 // Filtering
 // -----------------------------------------------------------------------------
 
-
+// whether this control should show end-user editing controls (if it is capable of doing so).
+setCanEdit : function (newValue) {
+    this.canEdit = newValue;
+},
 
 //>	@method dataBoundComponent.filterData()
 // Retrieves data that matches the provided criteria and displays the matching data in this
@@ -1166,7 +1964,7 @@ filterData : function (criteria, callback, requestProperties) {
 // the fetch completes. Note that this callback will not fire if no server fetch is performed.
 // In this case the data is updated synchronously, so as soon as this method completes you
 // can interact with the new data. If necessary, you can use
-// {dataBoundComponent.willFetchData,willFetchData()} to determine whether or not a server
+// +link{dataBoundComponent.willFetchData,willFetchData()} to determine whether or not a server
 // fetch will occur when <code>fetchData()</code> is called with new criteria.
 // <P>
 // In addition to the callback parameter for this method, developers can use 
@@ -1190,10 +1988,27 @@ fetchData : function (criteria, callback, requestProperties) {
     this._filter("fetch", criteria, callback, requestProperties);
 },
 
+_canExportField : function (field) {
+    return (this.canExport != false && field.canExport != false &&
+            !field.userFormula && !field.userSummary &&
+            !field.hidden)
+    ;
+},
+
 //>	@method dataBoundComponent.exportData()
 // Uses a "fetch" operation on the current +link{databoundComponent.dataSource,DataSource} to 
 // retrieve data that matches the current filter and sort criteria for this component, then 
 // exports the resulting data to a file or window in the requested format.
+// <P>
+// A variety of DSRequest settings, such as 
+// +link{dsRequest.exportAs, exportAs} and +link{dsRequest.exportFilename}, affect the 
+// exporting process: see +link{dsRequest.exportResults, exportResults} for further detail.
+// <P>
+// Note that data exported via this method does not include any client-side formatting and
+// relies on both the SmartClient server and server-side DataSources.  To export client-data 
+// with formatters applied, 
+// see +link{dataBoundComponent.exportClientData, exportClientData}, which still requires the
+// SmartClient server but does not rely on server-side DataSources.
 // <P>
 // For more information on exporting data, see +link{dataSource.exportData()}.
 //
@@ -1201,7 +2016,7 @@ fetchData : function (criteria, callback, requestProperties) {
 //                                            that will be issued
 //
 // @group dataBoundComponentMethods
-// @visibility internal
+// @visibility external
 //<
 exportData : function (requestProperties) {
     if (!requestProperties) requestProperties = {};
@@ -1214,16 +2029,16 @@ exportData : function (requestProperties) {
         if (context && context.textMatchStyle) requestProperties.textMatchStyle = context.textMatchStyle;
     }
 
-    if (!this.exportAll) {
+    if (!this.exportAll && !requestProperties.exportFields) {
         // pass up only visible fields
         var vFields = this.exportFields;
         if (!vFields) {
             vFields = [];
             for (var i = 0; i < this.fields.length; i++) {
                 var field = this.fields.get(i);
-                if (!field.hidden && !field.userFormula && !field.userSummary) {
+                if (this._canExportField(field)) {
                     vFields.add(field.name);
-                    if (field.displayField) vFields.add(field.displayField);
+                    if (field.displayField && !field.optionDataSource) vFields.add(field.displayField);
                 }
             }
         }
@@ -1239,31 +2054,77 @@ exportData : function (requestProperties) {
 //<
 setCriteria : function (criteria) {
     if (this.data && this.data.setCriteria) this.data.setCriteria(criteria);
+    // if there is no data yet, set initial criteria to parameter criteria
+    else this.initialCriteria = criteria;
 },
 
 //> @method databoundComponent.getCriteria()
-// Retrieves the current criteria for this component (may be null)
+// Retrieves a copy of the current criteria for this component (may be null)
 // @return (Criteria) current filter criteria
 //<
 // Overridden for CubeGrids
 getCriteria : function () {
-    return this.data && this.data.getCriteria ? this.data.getCriteria() : null;
+    if (!this.isDrawn() && (!this.data || this.data.getLength() == 0)) {
+        return isc.shallowClone(this.initialCriteria);
+    }
+    else if (this.data && this.data.getCriteria) return isc.shallowClone(this.data.getCriteria());
+    else return null;
 },
 
 //>	@attr dataBoundComponent.autoFetchData       (boolean : false : IR)
-// If true, when this component is first drawn, automatically call <code>this.fetchData()</code>
-// or <code>this.filterData()</code> depending on +link{autoFetchAsFilter}.
-// Criteria for this fetch may be picked up from +link{initialCriteria}.
+// If true, when this component is first drawn, automatically call <code>this.fetchData()</code>.
+// Criteria for this fetch may be picked up from +link{initialCriteria}, and textMatchStyle may
+// be specified via +link{autoFetchTextMatchStyle}.
+// <P>
+// <span style='color:red'>NOTE:</span> if <code>autoFetchData</code> is set, calling
+// +link{fetchData()} before draw will cause two requests to be issued, one from the manual
+// call to fetchData() and one from the autoFetchData setting.  The second request will use
+// only +link{initialCriteria} and not any other criteria or settings from the first request.
+// Generally, turn off autoFetchData if you are going to manually call fetchData() at any time.
 //
 // @group dataBoundComponentMethods
 // @visibility internal
 // @see fetchData()
 //<
 
-//> @attr dataBoundComponent.autoFetchAsFilter (boolean : false : IR)
-// If +link{autoFetchData} is <code>true</code>, this attribute determines
-// whether the initial fetch operation should be performed via +link{fetchData()} or
-// +link{filterData()}
+// Called at draw() - if we are databound, and autoFetchData is true, do a one time fetch on initial draw.
+doInitialFetch : function () {
+    var fetchQueued = false;
+    if (this.autoFetchData && !this._initialFetchFired && this.fetchData) {
+ 
+        if (!this.dataSource) {
+            this.logWarn("autoFetchData is set, but no dataSource is specified, can't fetch");
+        } else {
+            // Queue the fetch - this means we can batch up any requests our children make on draw
+            // and send them all off together
+            // Specific use case: this means if a ListGrid is autoFetchData:true and has a field
+            // with an optionDataSource we can use the same transaction to fetch the valid options
+            // as to fetch the LG data
+            fetchQueued = !isc.RPCManager.startQueue();
+            // getInitialCriteria() picks up this.initialCriteria
+            // getInitialFetchContext() picks up this.autoFetchTextMatchStyle            
+            this.fetchData(this.getInitialCriteria(), null, this.getInitialFetchContext());
+            
+            this._initialFetchFired = true;
+        }        
+    }
+    return fetchQueued;
+},
+
+// getInitialCriteria() - used to retrieve the initialCriteria when performing auto-fetch of data
+getInitialCriteria : function () {
+    return this.initialCriteria;
+},
+
+getInitialFetchContext : function () {
+    var context = {};
+    context.textMatchStyle = this.autoFetchTextMatchStyle;
+    return context;
+},
+
+//> @attr dataBoundComponent.autoFetchTextMatchStyle (TextMatchStyle : null : IR)
+// If +link{autoFetchData} is <code>true</code>, this attribute allows the developer to
+// specify a textMatchStyle for the initial +link{fetchData()} call.
 // @group dataBoundComponentMethods
 // @visibility internal
 //<
@@ -1282,7 +2143,7 @@ getCriteria : function () {
 // <P>
 // For example, given a DataSource "orders" and another DataSource "orderItems", where
 // "orderItems" declared a field "orderId" pointing to the primary key field of the "orders"
-// DataSource", there is a set of records from the "orderItems" DataSource related to any given
+// DataSource, there is a set of records from the "orderItems" DataSource related to any given
 // record from the "order" DataSource.  If this component were bound to "orderItems" and a
 // record from the "orders".
 //
@@ -1332,6 +2193,7 @@ _filter : function (type, criteria, callback, requestProperties) {
     if (isc._traceMarkers) arguments.__this = this;
 
     //>!BackCompat 2005.3.21 old signature: criteria, context
+    
     if (requestProperties == null && isc.isAn.Object(callback) && 
         callback.methodName == null) 
     {
@@ -1339,6 +2201,7 @@ _filter : function (type, criteria, callback, requestProperties) {
         requestProperties = callback;
         callback = null;
     } //<!BackCompat
+
     requestProperties = this.buildRequest(requestProperties, type, callback);
 
     // handle being passed a criteria object (map of keys to values), or a filter-component
@@ -1400,7 +2263,7 @@ createDataModel : function (filterCriteria, operation, context) {
     //>DEBUG
     if (this.logIsInfoEnabled("ResultSet")) {
         this.logInfo("Creating new isc.ResultSet for operation '" + operation.ID + 
-                      "' with filterValues: " + isc.Comm.serialize(filterCriteria), "ResultSet");
+                      "' with filterValues: " + this.echoFull(filterCriteria), "ResultSet");
     }
     //<DEBUG
     var dataSource = this.getDataSource();
@@ -1423,7 +2286,7 @@ updateDataModel : function (filterCriteria, operation, context) {
     
     // tell the ResultSet the filter changed
     //>DEBUG
-    this.logDebug("Setting filter to: " + isc.Comm.serialize(filterCriteria));
+    this.logDebug("Setting filter to: " + this.echoFull(filterCriteria));
     //<DEBUG
       
     // update the context - this allows requestProperties like "showPrompt" / textMatchStyle
@@ -1444,16 +2307,23 @@ requestVisibleRows : function () {
 // <code>this.data.invalidateCache()</code>. If necessary, this will cause a new fetch to 
 // be performed with the current set of criteria for this component.
 // <P>
-// Has no effect if this component is not showing a set of filtered data.
+// Only has an effect is this components dataset is a data manager class that manages a cache
+// (eg ResultSet or ResultTree).  If data was provided as a simple Array, invalidateCache()
+// does nothing.
 // 
 // @group dataBoundComponentMethods
 // @visibility internal
 //<
 invalidateCache : function () {
     if (this.data && this.data.invalidateCache != null) return this.data.invalidateCache();
-    // currently only valid for ListGrid: make sure when invalideCache() is called we re-fetch 
-    // (and regroup) the data if grouped. 
-    else if (this.isGrouped) this.fetchData();
+    else if (this.isGrouped && isc.isA.ResultSet(this.originalData)) {
+        // currently only valid for ListGrid: data is currently a Tree and has no
+        // invalidateCache() - in order to preserve criteria, textMatchStyle, sort, etc, we
+        // need to have the ResultSet from which this tree refetch.  Calling regroup right
+        // after the cache is cleared sets us up to regroup when the data arrives
+        this.originalData.invalidateCache();
+        this.regroup();
+    }
 },
 
 
@@ -1466,7 +2336,7 @@ invalidateCache : function () {
 // Always returns true if this component is not showing a set of data from the dataSource. 
 // 
 // @param newCriteria (Criteria) new criteria to test.
-// @param [textMatchStyle] (String) New text match style. If not passed assumes 
+// @param [textMatchStyle] (TextMatchStyle) New text match style. If not passed assumes 
 //      textMatchStyle will not be modified.
 // @return (boolean) true if server fetch would be required to satisfy new criteria.
 //
@@ -1478,6 +2348,13 @@ willFetchData : function (newCriteria, textMatchStyle) {
         return this.data.willFetchData(newCriteria, textMatchStyle);
     }
     return true;
+},
+
+//> @method dataBoundComponent.findByKey()
+// @include resultSet.findByKey()
+//<
+findByKey : function(keyValue) {
+    return this.data.findByKey(keyValue);    
 },
 
 // Persistence
@@ -1689,6 +2566,10 @@ createSelectionModel : function () {
     // Copy our "enabled" property across if we have one.
     if (this.recordEnabledProperty != null) params.enabledProperty = this.recordEnabledProperty;
     
+    // Copy our selection properties
+    if (this.recordCanSelectProperty != null) params.canSelectProperty = this.recordCanSelectProperty;
+    if (this.cascadeSelection != null) params.cascadeSelection = this.cascadeSelection;
+
 	// if the data object supports a special selection class, use it
 	if (this.data.getNewSelection) {
         selection = this.data.getNewSelection(params);
@@ -1712,6 +2593,17 @@ destroySelectionModel : function () {
     if (this.selection.destroy) this.selection.destroy();
     delete this.selection;
 }, 
+
+// undoc'd utility method to remove the selection-property applied to selected-rows
+removeSelectionMarkers : function (data) {
+    var returnArray = true;
+    if (!isc.isAn.Array(data)) {
+        data = [data];
+        returnArray = false;
+    }
+    data.clearProperty(this.selectionProperty || this.selection ? this.selection.selectionProperty : null);
+    return returnArray ? data : data[0];
+},
 
 //> @method dataBoundComponent.getSelection()
 // Returns all selected records, as an Array.
@@ -1823,12 +2715,21 @@ deselectRecord : function (record, colNum) {
 selectRecords : function (records, state, colNum) {
     if (state == null) state = true;
     if (!isc.isAn.Array(records)) records = [records];
+
+    if (isc.isA.ResultSet(this.data) && !this.data.lengthIsKnown()) {
+        this.logWarn("ignoring attempt to select records while data is loading");
+        return;
+    }
     
     for (var i = 0; i < records.length; i++) {
         
         if (records[i] == null) continue;
-        // assume any number passed is a row-num
-        if (isc.isA.Number(records[i])) records[i] = this.getRecord(records[i], colNum);
+
+        // assume any number passed is a rownum
+        if (isc.isA.Number(records[i])) {
+            var index = records[i];
+            records[i] = this.getRecord(index, colNum);
+        }
     }
     
     var selObj = this.getSelectionObject(colNum);
@@ -2054,7 +2955,7 @@ _setupHilites : function (hilites, dontApply) {
     for (var i = 0; i < hilites.length; i++) {
         if (hilites[i].id == null) {
             this._lastHiliteId = this._lastHiliteId || 0;
-            hilites[i].id = this._lastHiliteId;
+            hilites[i].id = this._lastHiliteId++;
         }
     }
     
@@ -2073,7 +2974,8 @@ applyHilites : function () {
     if (hilites && !this._hiliteIndex) this._setupHilites(hilites, true);
 
     // wipe all existing hilite markers  
-    if (isc.isA.ResultSet(data)) data = data.getAllLoadedRows()
+    if (isc.isA.ResultSet(data)) data = data.getAllLoadedRows();
+    if (isc.isA.Tree(data)) data = data.getAllItems();
     data.setProperty(this.hiliteMarker, null);
 
     // apply each hilite in order
@@ -2114,12 +3016,20 @@ applyHilite : function (hilite, data, fieldName) {
     // hilite all fields if no field is specified
     if (fieldName == null) fieldName = this.fields.getProperty("name");
 
-    var matches = this.getDataSource().applyFilter(data, hilite.criteria);
+    var matches = [];
+
+    if (this.getDataSource()) {
+        matches = this.getDataSource().applyFilter(data, hilite.criteria);
+    } else {
+        // Call a local DBC version of DS.applyFilter which provides the same facilities but
+        // against array data
+        matches = this.unboundApplyFilter(data, hilite.criteria);
+    }
 
     var fieldNames = isc.isAn.Array(fieldName) ? fieldName : [fieldName];
 
     if (this.logIsDebugEnabled("hiliting")) {
-        this.logDebug("applying filter: " + isc.Comm.serialize(hilite.criteria) + 
+        this.logDebug("applying filter: " + this.echoFull(hilite.criteria) + 
                       ", produced matches: " + isc.echoLeaf(matches) +
                       ", on fields: " + fieldNames, "hiliting");
     }
@@ -2132,6 +3042,37 @@ applyHilite : function (hilite, data, fieldName) {
             this.hiliteRecord(record, field, hilite);
         }
     }   
+},
+
+// Utility method to provide searching by criteria/AdvancedCriteria in the absence of a DS
+unboundApplyFilter : function (data, criteria) {
+    var matches = [];
+
+    if (data) {
+        if (criteria) {
+            for (var idx = 0; idx < data.length; idx++) {
+                // The AdvancedCriteria system makes this very easy - just call evaluateCriterion
+                // on the top-level criterion, and it handles all the recursion and evaluation of
+                // sub-criteria that it needs to do automatically.
+                if (this.evaluateCriterion(data[idx], criteria)) {
+                    matches.add(data[idx]);
+                }
+            }
+        } else {
+            matches = data;
+        }
+    }
+
+    return matches;
+},
+evaluateCriterion : function (record, criterion) {
+
+    var op = isc.DataSource._operators.find("ID", criterion.operator);
+    if (op == null) {
+        isc.logWarn("Attempted to use unknown operator " + criterion.operator);
+        return false;
+    }
+    return op.condition(criterion.value, record, criterion.fieldName, criterion, op, this);
 },
 
 // TODO: make external version that checks params
@@ -2161,10 +3102,10 @@ addHiliteCSSText : function (record, colNum, cssText) {
     var hiliteCount = record[this.hiliteMarker],
         field = this.getField(colNum);
 
-    if (!field._hilites) return;
+    if (!field || !field._hilites) return cssText;
 
     var hiliteIds = field._hilites[hiliteCount];
-    if (hiliteIds == null) return;
+    if (hiliteIds == null) return cssText;
 
     //this.logWarn("add hiliteCSS: hiliteCount: " + hiliteCount + 
     //             " on field:" + field.name + ", hiliteIds: " + hiliteIds);
@@ -2206,11 +3147,11 @@ addObjectHilites : function (object, cellCSSText, field) {
             hiliteCSSText = hilite.cssText || hilite.style;
             // make sure that hilites that spec a fieldName are respected
             var matchesField = (!hilite.fieldName || !field || hilite.fieldName == field.name);
-            if (hiliteCSSText != null && hiliteCSSText != isc.emptyString && matchesField) { 
+            if (hiliteCSSText != null && hiliteCSSText != isc.emptyString && matchesField) {
                 // we have a hilite style
                 if (cellCSSText == null) cellCSSText = hiliteCSSText;
                 // NOTE: add a semicolon, even though it may be redundant
-                else cellCSSText += this._semicolon + hiliteCSSText;
+                else cellCSSText += isc.semi + hiliteCSSText;
             }
         }
     }
@@ -2218,11 +3159,11 @@ addObjectHilites : function (object, cellCSSText, field) {
 },
 
 getFieldHilites : function (record, field) {
-    if (!record) return null;
+    if (!record || !field) return null;
 
     if (record[this.hiliteProperty] != null) {
         var hilite = this.getHilite(record[this.hiliteProperty]);
-        if (hilite.fieldName == field.name) return [hilite];
+        if (hilite && hilite.fieldName == field.name) return [hilite];
         else return null;
     }
     
@@ -2241,38 +3182,40 @@ applyHiliteHTML : function (hiliteIDs, valueHTML) {
         this._hiliteIterator[0] = hiliteIDs;
         hiliteIDs = this._hiliteIterator;
     }
-   
+
     for (var i = 0; i< hiliteIDs.length; i++) {
         hiliteID = hiliteIDs[i];
         // get the hilite object
         
         hilite = this.getHilite(hiliteID);
-        if (hilite.htmlValue != null) valueHTML = hilite.htmlValue;
-        if (hilite != null && !hilite.disabled) { // we have a hilite object, not disabled
-            hiliteHTML = hilite.htmlBefore;
-            if (hiliteHTML != null && hiliteHTML.length > 0) { // we have hilite htmlBefore, so prepend it
-                valueHTML = hiliteHTML + valueHTML;
-            }
-            hiliteHTML = hilite.htmlAfter;
-            if (hiliteHTML != null && hiliteHTML.length > 0) { // we have hilite htmlAfter, so append it
-                valueHTML = valueHTML + hiliteHTML;
-            }
+        if (hilite != null) {
+            if (hilite.htmlValue != null) valueHTML = hilite.htmlValue;
+            if (!hilite.disabled) { // we have a hilite object, not disabled
+                hiliteHTML = hilite.htmlBefore;
+                if (hiliteHTML != null && hiliteHTML.length > 0) { // we have hilite htmlBefore, so prepend it
+                    valueHTML = hiliteHTML + valueHTML;
+                }
+                hiliteHTML = hilite.htmlAfter;
+                if (hiliteHTML != null && hiliteHTML.length > 0) { // we have hilite htmlAfter, so append it
+                    valueHTML = valueHTML + hiliteHTML;
+                }
         
-            // position a special glyph of some sort (eg an image or small text code) opposite the
-            // cell value.  NOTE name "htmlOpposite" reflects future support for automatically
-            // flipping direction column align and/or RTL.
-            var oppositeContent = hilite.htmlOpposite,
-                style = hilite.styleOpposite || this.styleOpposite;
-            if (oppositeContent) {
-                if (!isc.Browser.isIE) {
-                    // in browsers other than IE, <nobr> works even when surrounding a mixture of
-                    // floating and non-floating content
-                    valueHTML = "<nobr><div class='" + style + "' style='float:left'>&nbsp;" +
-                             oppositeContent + "&nbsp;</div>" + valueHTML + "</nobr>";
-                } else {
-                    
-                    valueHTML = "<nobr><table align=left><tr><td class='" + style + "'>" +
-                             oppositeContent + "</td></tr></table>" + valueHTML + "</nobr>";
+                // position a special glyph of some sort (eg an image or small text code) opposite the
+                // cell value.  NOTE name "htmlOpposite" reflects future support for automatically
+                // flipping direction column align and/or RTL.
+                var oppositeContent = hilite.htmlOpposite,
+                    style = hilite.styleOpposite || this.styleOpposite;
+                if (oppositeContent) {
+                    if (!isc.Browser.isIE) {
+                        // in browsers other than IE, <nobr> works even when surrounding a mixture of
+                        // floating and non-floating content
+                        valueHTML = "<nobr><div class='" + style + "' style='float:left'>&nbsp;" +
+                                 oppositeContent + "&nbsp;</div>" + valueHTML + "</nobr>";
+                    } else {
+                        
+                        valueHTML = "<nobr><table align=left><tr><td class='" + style + "'>" +
+                                 oppositeContent + "</td></tr></table>" + valueHTML + "</nobr>";
+                    }
                 }
             }
         }
@@ -2337,6 +3280,7 @@ redrawHilites : function () {
 
 editHilites : function () {
     if (this.hiliteWindow) {
+        this.hiliteEditor.clearHilites();
         this.hiliteEditor.setHilites(this.getHilites());
         this.hiliteWindow.show();
         return;
@@ -2347,7 +3291,7 @@ editHilites : function () {
             dataSource:this.getDataSource(),
             hilites:this.getHilites(),
             callback:function (hilites) {
-                grid.setHilites(hilites);
+                if (hilites != null) grid.setHilites(hilites);
                 grid.hiliteWindow.hide();
             }
         }),
@@ -2385,6 +3329,11 @@ editHilites : function () {
 // +link{ListGrid}, and calling it is equivalent to completing a drag and drop of the
 // <code>dropRecords</code>.
 // <P>
+// Note that this method is asynchronous - it may need to perform server turnarounds to prevent
+// duplicates in the target component's data.  If you wish to be notified when the transfer 
+// process has completed, you can either pass the optional callback to this method or implement
+// the +link{dropComplete()} method on this component.
+// <P>
 // See also +link{transferSelectedData}.
 //
 // @param dropRecords (Array of Record) Records to transfer to this component
@@ -2392,29 +3341,20 @@ editHilites : function () {
 // @param index (integer) Insert point in this component's data for the transferred records
 // @param sourceWidget (Canvas) The databound or non-databound component from which the records
 //                            are to be transferred. 
+// @param [callback] (Callback) optional callback to be fired when the transfer process has completed
 //
 // @group dragdrop
 // @visibility external
 //<
-transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
+transferRecords : function (dropRecords, targetRecord, index, sourceWidget, callback) {
 
-    if (!isc.isAn.Array(this._dropRecords)) this._dropRecords = [];
-    this._dropRecords.add({
-        dropRecords: dropRecords,
-        targetRecord: targetRecord,
-        index: index,
-        sourceWidget: sourceWidget
-    });
-
-    if (this._transferDuplicateQuery && this._transferDuplicateQuery != 0) {
-        isc.logWarn("transferRecords was invoked but the prior transfer is not yet complete - \
-                     the transfer will be queued up to run after the current transfer");
+    // storeTransferState returns false if a prior transfer is still running, in which case
+    // we just bail out (transferRecords() will be called again when the first transfer 
+    // completes, so we aren't abandoning this transfer, just postponing it) 
+    if (!this._storeTransferState("transferRecords", dropRecords, targetRecord, index, 
+                                  sourceWidget, callback)) {
         return;
     }
-
-    this._transferringRecords = true;
-    this._transferExceptionList = [];
-    this._transferDuplicateQuery = 0;
 
     // If this component is databound but has not yet issued a fetchData(), we need to 
     // initialize the ResultSet before adding records, otherwise cache sync will not be in
@@ -2445,10 +3385,14 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
         if (dataSource && dataSource == sourceDS && sourceWidget.dragDataAction == isc.Canvas.MOVE) {
             var wasAlreadyQueuing = isc.rpc.startQueue();
             for (var i = 0; i < dropRecords.length; i++) {
-                var record = dropRecords[i];
+                var record = {};
+                var pks = dataSource.getPrimaryKeyFieldNames();
+                for (var j = 0; j < pks.length; j++) {
+                    record[pks[j]] = dropRecords[i][pks[j]];
+                }
                 isc.addProperties(record, this.getDropValues(record, sourceDS, 
                                           targetRecord, index, sourceWidget));
-                this._updateDataViaDataSource(record, sourceDS);                          
+                this._updateDataViaDataSource(record, sourceDS, null, sourceWidget);                          
             }
             if (!wasAlreadyQueuing) isc.rpc.sendQueue();
         } else {
@@ -2456,6 +3400,7 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
 
     		// select the stuff that's being dropped
     		// (note: if selectionType == SINGLE we only select the first record)
+            
             
             if (this.selectionType == isc.Selection.MULTIPLE || 
                 this.selectionType == isc.Selection.SIMPLE) 
@@ -2472,7 +3417,8 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
                 for (var i = 0; i < dropRecords.length; i++) {
                     // groups contain circular references which will hang at clone - skip
                     if (dropRecords[i]._isGroup) continue;
-                    var record = isc.clone(dropRecords[i]);
+                    var record = {};
+                    isc.addProperties(record, dropRecords[i]);
                     isc.addProperties(record, this.getDropValues(record, sourceDS, 
                                             targetRecord, index, sourceWidget));
                     if (dataSource != sourceDS) {
@@ -2521,7 +3467,7 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
                                             
                     this._addIfNotDuplicate(record, sourceDS, sourceWidget, fks);
                 }
-            } else {
+            } else { // target grid does not have a DataSource
                 // handle grouping
                 if (this.isGrouped) {
                     // add to tree
@@ -2573,12 +3519,12 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
 		this.unsort();
 	}
 
-    // If this._transferDuplicateQuery is undefined or 0,we didn't need to fire any server 
+    // If this._transferDuplicateQuery is undefined or 0, we didn't need to fire any server 
     // queries, so we can call transferDragData to complete the transfer and send the queue 
     // of updates to the server 
     if (!this._transferDuplicateQuery) {
-        isc.Log.logDebug("Invoking transferDragData from inside transferRecords - no server \
-                         queries needed?", "dragDrop");
+        isc.Log.logDebug("Invoking transferDragData from inside transferRecords - no server " +
+                         "queries needed?", "dragDrop");
         sourceWidget.transferDragData(this._transferExceptionList, this);
         if (dataSource) {
             // send the queue unless we didn't initiate queuing
@@ -2590,33 +3536,107 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget) {
     
 },
 
+// Store the details of a transfer in the _dropRecords queue on this component.  We work via
+// a queue so that, if we get a transfer request when one is already running (this can happen
+// because server-side duplicate checking makes the process asynchronous), we can postpone it
+// and run it later as part of the first transfer's cleanup.
+_storeTransferState : function (impl, dropRecords, targetRecord, index, sourceWidget, callback) {
+    if (!isc.isAn.Array(this._dropRecords)) this._dropRecords = [];
 
-_updateDataViaDataSource : function(record, ds, updateProperties) {
+    // If the transfer must wait its turn, add it to the end of the queue.  transferDragData()
+    // will re-invoke anything put on the queue when it is its turn
+    if (this._transferDuplicateQuery && this._transferDuplicateQuery != 0) {
+        isc.logWarn("transferRecords was invoked but the prior transfer is not yet complete - \
+                     the transfer will be queued up to run after the current transfer");
+        this._dropRecords.add({
+            implementation: impl,
+            dropRecords: dropRecords,
+            targetRecord: targetRecord,
+            index: index,
+            sourceWidget: sourceWidget,
+            callback: callback
+        });
+        return false;
+    }
+
+    // If there's nothing in the way, it's this transfer's turn, so add it to the front of the
+    // queue for later reading in transferDragData()
+    this._dropRecords.addAt({
+        implementation: impl,
+        dropRecords: dropRecords,
+        targetRecord: targetRecord,
+        index: index,
+        sourceWidget: sourceWidget,
+        callback: callback
+    }, 0);
+
+    this._transferringRecords = true;
+    this._transferExceptionList = [];
+    this._transferDuplicateQuery = 0;
+    
+    return true;
+},
+
+
+_updateDataViaDataSource : function(record, ds, updateProperties, sourceWidget) {
+
+    var _listGrid = this;
     
     if (!this.preventDuplicates) {
-        ds.updateData(record, null, updateProperties); 
+        if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
+        sourceWidget._updatesSent++;
+        ds.updateData(record, function () {sourceWidget._updateComplete();}, updateProperties); 
         return;
     }
     
     var criteria = this.getCleanRecordData(record);
     
     if (this.data.find(criteria, null, Array.DATETIME_VALUES)) {
-        // WXX - position to the duplicate record here
+        
+        isc.Log.logDebug("Found client-side duplicate, skipping update for '" + 
+                     record[isc.firstKey(record)] + "'", "dragDrop"); 
+        this._transferExceptionList.add(this.getCleanRecordData(record));
     } else {
         // If we have a full cache, we can go ahead and update now
         if (this.data.allMatchingRowsCached()) {
-            ds.updateData(record, null, updateProperties);
-            } else { 
+        if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
+            sourceWidget._updatesSent++;
+            ds.updateData(record, function () {sourceWidget._updateComplete();}, updateProperties); 
+        } else { 
             // Cache is incomplete, we'll have to ask the server
+            isc.Log.logDebug("Incrementing dup query count: was " + 
+                             _listGrid._transferDuplicateQuery, "dragDrop");
+            this._transferDuplicateQuery++;
             ds.fetchData(criteria, 
-                         function (dsResponse, data, dsRequest) {
-                            if (data && data.length > 0) {
-                                
-                            } else {
-                                ds.updateData(record, null, updateProperties);
-                            }
-                        },
-                        {sendNoQueue: true});
+                function (dsResponse, data, dsRequest) {
+                    if (data && data.length > 0) {
+                        
+                        isc.Log.logDebug("Found server-side duplicate, skipping update for '" + 
+                                     record[isc.firstKey(record)] + "'", "dragDrop"); 
+                        _listGrid._transferExceptionList.add(_listGrid.getCleanRecordData(data[0]));
+                    } else {
+                        if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
+                        sourceWidget._updatesSent++;
+                        ds.updateData(record, function () {
+                            sourceWidget._updateComplete();
+                        }, updateProperties); 
+                    }
+                    // If there are no further duplicate queries pending, we can finish up this
+                    // transfer and send the queue of updates to the server
+                    isc.Log.logDebug("Decrementing dup query count: was " + 
+                                     _listGrid._transferDuplicateQuery, "dragDrop");
+                    if (--_listGrid._transferDuplicateQuery == 0 && 
+                        !_listGrid._transferringRecords) {
+                        if (sourceWidget.dragDataAction == isc.Canvas.MOVE) {
+                            isc.Log.logDebug("Invoking transferDragData from inside callback", "dragDrop");
+                            sourceWidget.transferDragData(_listGrid._transferExceptionList, _listGrid);
+                            delete _listGrid._transferExceptionList;
+                            // send the queue unless we didn't initiate queuing
+                            if (!_listGrid._wasAlreadyQueuing) isc.rpc.sendQueue();
+                        }
+                    }
+                },
+                {sendNoQueue: true});
         }
     }
 
@@ -2653,7 +3673,8 @@ _updateDataViaDataSource : function(record, ds, updateProperties) {
 //< IDocument
 _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, index, folder) {
     var ds = this.getDataSource(), 
-        pks;
+        pks,
+        _listGrid = this;
         
     if (ds) pks = ds.getPrimaryKeyFields();
 
@@ -2685,14 +3706,19 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
             for (var field in pks) {
                 record[field] = undef;
             }
-            ds.addData(record);
+            
+            if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
+            sourceWidget._updatesSent++;
+            ds.addData(record, function () { sourceWidget._updateComplete(); });
             return true;
         }
     }
     
     if (!this.preventDuplicates) {
         if (ds) {
-            ds.addData(record); 
+            if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
+            sourceWidget._updatesSent++;
+            ds.addData(record, function () { sourceWidget._updateComplete(); });
         } else {
             if (isc.Tree && isc.isA.Tree(this.data)) {
                 this.data.add(record, folder, index);
@@ -2726,7 +3752,9 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
         } else { 
             if (!isc.ResultSet || !isc.isA.ResultSet(this.data)) {
                 
-                ds.addData(record);
+                if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
+                sourceWidget._updatesSent++;
+                ds.addData(record, function () { sourceWidget._updateComplete(); });
                 return true
             } else {
                 // If we're dropping in a grid bound to a DS different from the source DS
@@ -2738,7 +3766,9 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
                 // cache to avoid the server query.
                 if (this.data.allRowsCached() || 
                     (foreignKeys && isc.firstKey(foreignKeys) && this.data.allMatchingRowsCached())) {
-                    ds.addData(record);
+                    if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
+                    sourceWidget._updatesSent++;
+                    ds.addData(record, function () { sourceWidget._updateComplete(); });
                     return true;
                 }
                 // We have a dataSource and client-side search failed to find a duplicate.  We need a 
@@ -2759,7 +3789,6 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
                     // Source DS and target DS are different and unrelated
                     criteria = this.getCleanRecordData(record);
                 }
-                var _listGrid = this;
                 isc.Log.logDebug("Incrementing dup query count: was " + 
                                  _listGrid._transferDuplicateQuery, "dragDrop");
                 this._transferDuplicateQuery++;
@@ -2772,7 +3801,9 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
                                      "' to exception list", "dragDrop");
                         _listGrid._transferExceptionList.add(_listGrid.getCleanRecordData(record));
                     } else {
-                        ds.addData(record, null, {sendNoQueue: false});
+                        if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
+                        sourceWidget._updatesSent++;
+                        ds.addData(record, function () { sourceWidget._updateComplete(); });
                     }
                     // If there are no further duplicate queries pending, we know exactly which
                     // attempted transfers were duplicates (if any), so we're in a position to 
@@ -2874,12 +3905,23 @@ getCleanRecordData : function (record) {
     return clean;
 },
 
+_updateComplete : function (dsResponse, data, dsRequest) {
+    if (this._updatesSent) {
+        isc.Log.logDebug("Decrementing update count - was " + this._updatesSent, "dragDrop");
+        this._updatesSent -= 1;
+    }
+    if (!this._updatesSent) {
+        isc.Log.logDebug("All updates complete, calling dragComplete()", "dragDrop");
+        if (isc.isA.Function(this.dragComplete)) this.dragComplete();
+    }
+},
+
 //> @method dataBoundComponent.getDropValues()
 // Returns the "drop values" to apply to a record dropped on this component prior to update.  Only
 // applicable to databound components - see +link{dropValues} for more details.  If multiple records 
 // are being dropped, this method is called for each of them in turn.
 // <P>
-// This method returns the following:
+// The default implementation of this method returns the following:
 // <UL>
 // <LI>Nothing, if +link{addDropValues} is false</LI>
 // <LI>dropValues, if that property is set.  If the component's criteria object is applicable (as explained
@@ -2958,32 +4000,33 @@ getDropValues : function (record, sourceDS, targetRecord, index, sourceWidget, d
 //<
 
 transferDragData : function (transferExceptionList, targetWidget) {
-    var selection;
+    var selection = [], 
+        workSelection,
+        callback,
+        data;
 
     if (targetWidget && targetWidget._dropRecords) {
-        selection = targetWidget._dropRecords.shift().dropRecords;
+        data = targetWidget._dropRecords.shift();
+        workSelection = data.dropRecords;
+        callback = data.callback;
     } else {
-        selection = this.getDragData();
+        workSelection = this.getDragData();
+        data = {};
     }
     
-    var copyData = this.dragDataAction == isc.Canvas.COPY || 
-                   this.dragDataAction == isc.Canvas.CLONE;
-	if (copyData) {
-        // clear any embedded components before cloning!
-        for (var i = 0; i < selection.length; i++) {
-            var record = selection[i];
-            if (record._embeddedComponents != null) {
-                for (var ii = 0; ii <record._embeddedComponents.length; ii++) {
-                    this.removeEmbeddedComponent(record, record._embeddedComponents[ii]);
-                } 
-            }
-            delete record._embeddedComponents;
+    // Filter the entries in the exception list out of the selection - we're not going to do
+    // anything with them whatever the circumstances
+    for (var i = 0; i < workSelection.length; i++) {
+        var clean = this.getCleanRecordData(workSelection[i]);
+        if (!transferExceptionList || !transferExceptionList.find(clean, null, Array.DATETIME_VALUES)) {
+            // Include the dirty version of the record - it will likely have _selection_
+            // scribbles on it that are required for an exact match lookup in the underlying
+            // dataset
+            selection.add(workSelection[i]);
         }
-		selection = isc.clone(selection);
-	} else if (this.dragDataAction == isc.Canvas.MOVE) {
-    	// de-select the selection in the context of this list
-		// so if it is dragged *back* into the list, it won't already be selected!
-		if (this.selection && this.selection.deselectList) this.selection.deselectList(selection);
+    }
+    
+	if (this.dragDataAction == isc.Canvas.MOVE && targetWidget != this && !data.noRemove) {
         
         if (this.dataSource) {
         
@@ -2991,44 +4034,54 @@ transferDragData : function (transferExceptionList, targetWidget) {
             // transferRecords() handles the transfer with update operations rather than removing
             // and adding. So in that case, we don't want to remove anything from the source 
             // component (since it's databound, it will be sync'd automatically)
-            var targetDS = targetWidget ? targetWidget.getDataSource() : null;
+            var targetDS = targetWidget.getDataSource();
             if (targetDS != this.getDataSource()) {
                 var wasAlreadyQueuing = isc.rpc.startQueue();
-
                 for (var i = 0; i < selection.length; i++) {
-                    // If the record exists in transferExceptionList, don't remove it
-                    var clean = this.getCleanRecordData(selection[i]);
-                    if (!transferExceptionList || !transferExceptionList.find(clean, null, Array.DATETIME_VALUES)) {
-                        this.getDataSource().removeData(selection[i]);
-                    }
+                    this.getDataSource().removeData(selection[i]);
                 }
                 // send the queue unless we didn't initiate queuing
                 if (!wasAlreadyQueuing) isc.rpc.sendQueue();
             }
         } else if (this.data) {
             for (var i = 0; i < selection.length; i++) {
-                // If the record exists in transferExceptionList, don't remove it
-                var clean = this.getCleanRecordData(selection[i]);
-                if (!transferExceptionList || !transferExceptionList.find(clean, null, Array.DATETIME_VALUES)) {
-                    this.data.remove(selection[i]);
-                    this.data.remove(selection[i]);
-                    if (this.isGrouped) {
-                        this.originalData.remove(selection[i]);
-                    }
+                this.data.remove(selection[i]);
+                if (this.isGrouped) {
+                    this.originalData.remove(selection[i]);
                 }
             }
         }
-	}
-    
-    // If the target widget's _dropRecords member still has entries, we've got drag and drop
-    // transactions queuing up for it, so schedule the next one before ending.
-    if (targetWidget && targetWidget._dropRecords && targetWidget._dropRecords.length > 0) {
-        var next = targetWidget._dropRecords.shift();
-        isc.Timer.setTimeout(function () {
-            targetWidget.transferRecords(next.dropRecords, next.targetRecord, 
-                                         next.index, next.sourceWidget);
-        }, 0);
+        // de-select the selection in the context of this list
+        // so if it is dragged *back* into the list, it won't already be selected!
+        if (this.selection && this.selection.deselectList) {
+            this.selection.deselectList(workSelection);
+        }
     }
+    
+    if (targetWidget) {
+        // Invoke the user event, if one is implemented
+        if (isc.isA.Function(targetWidget.dropComplete)) targetWidget.dropComplete(selection);
+        
+        // Fire the callback, if one was provided
+        if (callback) {
+            this.fireCallback(callback, "records", [selection]);
+        }
+        
+        // If the target widget's _dropRecords member still has entries, we've got drag and drop
+        // transactions queuing up for it, so schedule the next one before ending.
+        if (targetWidget._dropRecords && targetWidget._dropRecords.length > 0) {
+            var next = targetWidget._dropRecords.shift();
+            isc.Timer.setTimeout(function () {
+                if (next.implementation == "transferNodes") {
+                    targetWidget.transferNodes(next.dropRecords, next.targetRecord, next.index, 
+                                               next.sourceWidget, next.callback);
+                } else {
+                    targetWidget.transferRecords(next.dropRecords, next.targetRecord, next.index, 
+                                                 next.sourceWidget, next.callback);
+                }
+            }, 0);
+        }
+    }    
     
     
 	return selection;
@@ -3040,19 +4093,76 @@ transferDragData : function (transferExceptionList, targetWidget) {
 // of the component.  In the default implementation, this is the list of currently selected
 // records.<p>
 // 
-// This method is generally called by +link{dataBoundComponent.transferDragData()} and is consulted by
-// +link{ListGrid.willAcceptDrop()}.
+// This method is consulted by +link{ListGrid.willAcceptDrop()}.
+
+// @param source (DataBoundComponent) source component from which the records will be transferred
 // 
 // @group	dragging, data
 //
 // @return	(Array of Record)		Array of +link{Record}s that are currently selected.
 // 
-// @see DataBoundComponent.transferDragData
 // @visibility external
 //<
 getDragData : function () {
     var selection = (this.selection && this.selection.getSelection) ?
                                         this.selection.getSelection() : null;
+    
+    return selection;
+},
+
+//>	@method	dataBoundComponent.cloneDragData()	(A)
+//
+// During a drag-and-drop interaction, this method returns the set of records being dragged out
+// of the component.  It differs from +link{dataBoundComponent.getDragData()} in that some extra
+// preparation is done to the set of records, making them suitable for passing to the method 
+// that actually carries out the transfer (+link{dataBoundComponent.transferRecords()}.  Note that,
+// despite the name, records are not always cloned - sometimes they new, cleaned versions of the
+// selected records and sometimes (if we're doing a move rather than a copy) we return the 
+// selected records themselves.
+// 
+// This method is called by functions that commence the actual record transfer process:  
+// +link{dataBoundComponent.transferSelectedData() and the drop() methods of record-based,
+// databound classes like +link{class:ListGrid}
+
+// @param source (DataBoundComponent) source component from which the records will be transferred
+// 
+// @group	dragging, data
+//
+// @return	(Array of Record)		Array of +link{Record}s that are currently selected.
+// 
+// @see DataBoundComponent.getDragData
+// @visibility internal
+//<
+cloneDragData : function () {
+    var selection = (this.selection && this.selection.getSelection) ?
+                                        this.selection.getSelection() : null;
+    
+    var copyData = this.dragDataAction == isc.Canvas.COPY || 
+                   this.dragDataAction == isc.Canvas.CLONE;
+
+	if (copyData && selection) {
+        // clear any embedded components before cloning
+        for (var i = 0; i < selection.length; i++) {
+            var record = selection[i];
+            if (record._embeddedComponents != null) {
+                for (var ii = 0; ii <record._embeddedComponents.length; ii++) {
+                    this.removeEmbeddedComponent(record, record._embeddedComponents[ii]);
+                } 
+            }
+            delete record._embeddedComponents;
+        }
+        
+        if (isc.isA.ResultTree(this.data) || isc.isA.Tree(this.data)) {
+            selection = this.data.getCleanNodeData(selection);
+        } else {
+            if (isc.isAn.Array(selection)) {
+                selection = isc.shallowClone(selection);
+            } else {
+                selection = isc.addProperties({}, selection);
+            }
+        }
+    }
+    
     return selection;
 },
 
@@ -3076,33 +4186,48 @@ dragDataAction: isc.Canvas.MOVE,
 // <P>
 // To transfer <b>all</b> data in, for example, a +link{ListGrid}, call grid.selection.selectAll() first.
 // <P>
+// Note that drag/drop type transfers of records between components are asynchronous operations:
+// SmartClient may need to perform server turnarounds to establish whether dropped records 
+// already exist in the target component.  Therefore, it is possible to issue a call to 
+// transferSelectedData() and/or the +link{listGrid.drop(),drop()} method of a databound 
+// component whilst a transfer is still active.  When this happens, SmartClient adds the 
+// second and subsequent transfer requests to a queue and runs them one after the other.  If 
+// you want to be notified when a transfer process has actually completed, either provide a 
+// callback to this method or implement +link{dataBoundComponent.dropComplete()}.
+// <P>
 // See the +link{group:dragging} documentation for an overview of list grid drag/drop data
 // transfer.
 // 
-// @param source (DataBoundComponent) source component from which the records will be tranferred
+// @param source (DataBoundComponent) source component from which the records will be transferred
 // @param [index] (integer) target index (drop position) of the rows within this grid.
-// @group dragging
+// @param [callback] (Callback) optional callback to be fired when the transfer process has 
+//                       completed.  The callback will be passed a single parameter "records",
+//                       the list of records actually transferred to this component.
+// @group dragdrop
 // @example dragListMove
 // @visibility external
 //<
-transferSelectedData : function (source, index) {
+transferSelectedData : function (source, index, callback) {
     
-    if (!this.isValidTransferSource(source)) return;
+    if (!this.isValidTransferSource(source)) {
+        if (callback) this.fireCallback(callback);
+        return;
+    }
             
     // don't check willAcceptDrop() this is essentially a parallel mechanism, so the developer 
     // shouldn't have to set that property directly.
     if (index == null) index = this.data.getLength()
     else index = Math.min(index, this.data.getLength());
         
-    // Call getDragData to pull the records out of our dataset
+    // Call cloneDragData to pull the records out of our dataset
     
     
     
 
-    var dropRecords = source.getDragData();
+    var dropRecords = source.cloneDragData();
     var targetRecord = this.data.get(index);
     
-    this.transferRecords(dropRecords, targetRecord, index, source);
+    this.transferRecords(dropRecords, targetRecord, index, source, callback);
 },
 
 // helper for transferSelectedData()
@@ -3229,8 +4354,53 @@ hideDragLine : function () {
 	if (this._dragLine) this._dragLine.hide();
 },
 
+// Properties related to panelHeader Actions
+canExport: true,
+canPrint: true,
+
+panelControls: ["action:edit", "action:editNew", "action:sort", "action:export", "action:print"],
+
+dbcProperties: ["autoFetchData", "autoFetchTextMatchStyle", "autoFetchAsFilter", "dataSource"],
+
+// Core facility to configure one DBC from another (initially for use in MultiView)
+configureFrom : function (existingDBC) {
+    var props = this.dbcProperties;
+
+    for (var i=0; i<props.length;i++) {
+        this[props[i]] = existingDBC[props[i]];
+        if (props[i] == "dataSource") {
+            var fetchData = this.autoFetchData;
+            this.autoFetchData = false;
+            this.setDataSource(isc.DS.getDataSource(this.dataSource));
+            this.autoFetchData = fetchData;
+        }
+    }
+
+    
+    this.setCriteria(existingDBC.getCriteria());
+    this.setData(existingDBC.getData());
+},
+
 // Formula/Summary Builders
 // -----------------------------------------------------------------------------------
+
+//>	@attr dataBoundComponent.badFormulaResultValue		(String : "." : IRW)
+// If the result of a formula evaluation is invalid (specifically, if isNaN(result)==true),
+// badFormulaResultValue is displayed instead.  The default value is ".".
+//
+// @group formulaFields
+// @visibility external
+//<
+badFormulaResultValue: ".",
+
+//>	@attr dataBoundComponent.missingSummaryFieldValue		(String : "-" : IRW)
+// If a summary format string contains an invalid field reference, replace the reference
+// with the missingSummaryFieldValue. The default value is "-".
+//
+// @group summaryFields
+// @visibility external
+//<
+missingSummaryFieldValue: "-",
 
 //> @attr databoundComponent.canAddFormulaFields (boolean : false : IRW)
 // Adds an item to the header context menu allowing users to launch a dialog to define a new
@@ -3255,7 +4425,7 @@ addFormulaFieldText: "Add formula column...",
 //> @method databoundComponent.addFormulaField
 // Convenience method to display a +link{FormulaBuilder} to create a new Formula Field.  This 
 // is equivalent to calling +link{databoundComponent.editFormulaField, editFormulaField()} with 
-// no paramater.
+// no parameter.
 //
 // @group formulaFields
 // @visibility external
@@ -3272,9 +4442,17 @@ addFormulaField : function () {
 //<
 editFormulaFieldText: "Edit formula...",
 
+//> @attr databoundComponent.removeFormulaFieldText (String: "Remove formula..." : IRW)
+// Text for a menu item allowing users to remove a formula field
+//
+// @group i18nMessages
+// @visibility external
+//<
+removeFormulaFieldText: "Remove formula...",
+
 //> @method databoundComponent.editFormulaField
 // Method to display a +link{FormulaBuilder} to edit a formula Field.  If the function is called
-// without a paramater, a new field will be created when the formula is saved.
+// without a parameter, a new field will be created when the formula is saved.
 //
 // @param	field	   (Field)	Field to edit or null to add a new formula field
 // @group formulaFields
@@ -3290,7 +4468,7 @@ editFormulaField : function (field) {
     if (!editMode) {
         // new field - gen a unique field-name in the format formulaFieldxxx
         field = { name: component.getUniqueFieldName("formulaField"), title: "New Field",
-            width: "50", canFilter: false, canSortClientOnly: true};
+            width: "50", canFilter: false, canExport: false, canSortClientOnly: true};
     }
 
     this._formulaEditor = isc.Window.create({ title: "Formula Editor [" + field.title + "]",
@@ -3370,7 +4548,7 @@ addSummaryFieldText: "Add summary column...",
 //> @method databoundComponent.addSummaryField
 // Convenience method to display a +link{SummaryBuilder} to create a new Summary Field.  This 
 // is equivalent to calling +link{databoundComponent.editSummaryField, editSummaryField()} with 
-// no paramater.
+// no parameter.
 //
 // @group summaryFields
 // @visibility external
@@ -3387,9 +4565,17 @@ addSummaryField : function () {
 //<
 editSummaryFieldText: "Edit summary format...",
 
+//> @attr databoundComponent.removeSummaryFieldText (String: "Remove summary format..." : IRW)
+// Text for a menu item allowing users to remove a summary field
+//
+// @group i18nMessages
+// @visibility external
+//<
+removeSummaryFieldText: "Remove summary column..",
+
 //> @method databoundComponent.editSummaryField
 // Method to display a +link{SummaryBuilder} to edit a Summary Field.  If the function is called
-// without a paramater, a new field will be created when the summary is saved.
+// without a parameter, a new field will be created when the summary is saved.
 //
 // @param	field	   (Field)	Field to edit or null to add a new summary column
 // @group summaryFields
@@ -3409,7 +4595,7 @@ editSummaryField : function (field) {
     if (!editMode) {
         // new field - gen a unique field-name in the format summaryFieldxxx
         field = { name: component.getUniqueFieldName("summaryField"), title: "New Field",
-            width: "50", canFilter: false, canSortClientOnly: true};
+            width: "50", canFilter: false, canExport: false, canSortClientOnly: true};
     }
 
     this._formulaEditor = isc.Window.create({ title: "Summary Editor [" + field.title + "]",
@@ -3523,7 +4709,7 @@ getSummaryFieldValue : function (field, record) {
 //> @method databoundComponent.getRecordIndex()
 // Get the index of the provided record.
 // <P>
-// Override in subclasses to provide more specific behaviour, for instance, when data holds a
+// Override in subclasses to provide more specific behavior, for instance, when data holds a
 // large number of records
 //
 // @param record (Record) the record whose index is to be retrieved
@@ -3577,7 +4763,847 @@ getTitleField : function () {
                           fieldNames.first();
    }
    return this.titleField;
+},
+
+//> @method databoundComponent.getRecordHiliteCSSText()
+// Return all CSS style declarations associated with the hilites of a record's field.
+// @param record (Record)
+// @param cssText (String) if set, returned CSS will be appended to this text
+// @param field (Field) field object identifying whose CSS is to be returned
+// @return value (String) CSS style declarations for this record and field
+// @visibility external
+//<
+getRecordHiliteCSSText : function (record, cssText, field) {
+    if (field != null && field.userSummary) {
+        var fieldDetails = isc.SummaryBuilder.getFieldDetailsFromValue(
+                field.userSummary.summaryVars, this.getAllFields(), this),
+            summaryFields = fieldDetails.usedFields
+        ;
+
+        for (var fieldIndex = 0; fieldIndex < summaryFields.length; fieldIndex++) {
+            cssText = this.getRecordHiliteCSSText(record, cssText, summaryFields[fieldIndex]);
+        }
+    }
+    cssText = this.addObjectHilites(record, cssText, field);
+    cssText = this.addHiliteCSSText(record, this.getFieldNum(field), cssText);
+    return cssText;
+},
+
+//> @method databoundComponent.convertCSSToProperties()
+// Convert a string containing CSS declarations into an object mapping CSS
+// camelCaps property names with the declared values.
+// @param css (string) Block of CSS style text
+// @param allowedProperties (Array) optional array of CSS property names (camelCaps format)
+//        constraining the allowed properties to be returned
+// @return value (Object) CSS property-value pairs in camelCaps notation,
+//         or null if no CSS was found
+//<
+convertCSSToProperties : function (css, allowedProperties) {
+    if (css == null) return null;
+
+    var statementList = css.split(";"),  // split into [name, value] pairs
+        propertyList;
+        
+    statementList.map(function (decl) {
+        var pair = decl.split(":");          // [ name, value ]
+        if (pair.length != 2) return null;
+        
+        // Convert name to camelCaps. Trim whitespace from both name and value.
+        var trimRe = /^\s*(\S*)\s*$/,
+            name  = pair[0].cssToCamelCaps().replace(trimRe, "$1"),
+            value = pair[1]                 .replace(trimRe, "$1");
+        
+        if (!allowedProperties || allowedProperties.contains(name)) {
+            if (!propertyList) propertyList = {};
+            propertyList[name] = value;
+        }
+    });
+    
+    return propertyList;
+},
+// Overridable method to return the exportable value of a record's field. 
+// By default, the display value is returned (via getSpecificFieldValue).
+getExportFieldValue : function (record, fieldName, fieldIndex) {
+    return this.getSpecificFieldValue(record, fieldName, false);
+},
+
+//> @method databoundComponent.getClientExportData()
+// Export visual description of component data into a JSON form suitable for export.
+// @param settings (Object) contains configuration settings for the export, including:<br/>
+//        includeHiddenFields (Boolean) - controls if hidden fields should be exported<br/>
+//        allowedProperties (Array) optional array of CSS property names (camelCaps format)
+//             constraining the allowed properties to be returned
+//        includeCollapsedNodes (Boolean) - if true, when exporting a TreeGrid, include tree
+//             nodes underneath collapsed folders in the export output
+// @return exportData (Object) exported data
+//<
+// * Data is exported as an array of objects, with one object per record (visual row) 
+//   of the grid.
+// * The title of each visible field of the component is mapped to a property
+//   of a record's object. Correspondingly, the value of each visible field in a record is
+//   mapped to each value of a record's object.
+// * Additionally, if CSS hilighting styles are present on a record's field, the CSS text is
+//   converted into an object mapping CSS properties in camelCaps format to CSS values, and the
+//   object is stored in <property name>$style.
+// * Null record values are converted to empty strings.
+//
+// Example output:
+//  [
+//      { "Foo Fighter": "1",
+//        "Foo Figher$style": { backgroundColor: "#f00000" },
+//         bar: "baz",
+//         xyzzy: "",
+//        "Summary Field": "1 --- baz",
+//        "Summary Field$style": { font-weight: "bold" },
+//      }, ...
+//  ]
+getClientExportData : function (settings) {
+    var data = this.originalData || this.data,
+        exportData = [],
+        fields = this.getAllFields(),
+        includeHiddenFields,
+        allowedProperties,
+        includeCollapsedNodes;
+        
+    if (isc.isA.Object(settings)) {
+        includeHiddenFields = settings.includeHiddenFields;
+        allowedProperties = settings.allowedProperties;
+        includeCollapsedNodes = settings.includeCollapsedNodes;
+    }
+    if (isc.isA.ResultSet(data)) data = data.getAllLoadedRows();
+    if (isc.isA.ResultTree(data)) {
+        if (includeCollapsedNodes) data = data.getAllNodes();
+        else data = data.getOpenList();
+    }
+
+    // Generate a separate object for each row of data
+    for (var dataRow = 0; dataRow < data.getLength(); dataRow++) {
+        var exportObject = {},
+            record = data[dataRow];
+
+        // Iterate through all fields
+        for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+            var field = fields[fieldIndex];
+
+            // Skip field if it's hidden
+            if ((!this.fields.contains(field)) && !includeHiddenFields) continue;
+            
+            // get [ field name, field value ] pair
+            var fieldName = field.title || field.name,
+                fieldValue = this.getExportFieldValue(record, field.name, fieldIndex);
+                
+            
+            if (fieldValue == null || fieldValue == "&nbsp;") fieldValue = "";
+
+            // undo the effects of formatters that apply HTML to a field.
+            fieldValue = this.htmlUnescapeExportFieldValue(fieldValue);
+            var escapedFieldName = this.htmlUnescapeExportFieldTitle(fieldName);
+
+            exportObject[escapedFieldName] = fieldValue;
+            
+            // Get CSS and convert it to camelCaps
+            var cssText = this.getRecordHiliteCSSText(record, null, field),
+                cssProps = this.convertCSSToProperties(cssText, allowedProperties);
+            if (cssProps) exportObject[escapedFieldName + "$style"] = cssProps;
+        }
+        exportData.push(exportObject);
+    }
+    return exportData;
+},
+htmlUnescapeExportFieldTitle : function (fieldName) {
+    return this.htmlUnescapeExportFieldValue(fieldName);
+},
+htmlUnescapeExportFieldValue : function (value) {
+    // convert basic HTML like &nbsp; and <br> into normal text equivalents and escape all
+    // other HTML
+    if (isc.isA.String(value)) return value.unescapeHTML().replace(/<.*?>/g, isc.emptyString);
+    return value;
+},
+
+//> @method databoundComponent.exportClientData()
+// Exports this component's data with client-side formatters applied, so is suitable for direct
+// display to users.  This feature requires the SmartClient server, but does not rely on any
+// server-side DataSources.
+// <P>
+// To export unformatted data from this component's dataSource, 
+// see +link{dataBoundComponent.exportData, exportData} which does not include client-side 
+// formatters, but relies on both the SmartClient server and server-side DataSources.
+// @param requestProperties (DSRequest properties) Request properties for the export
+// @see dataSource.exportClientData
+// @visibility external
+//<
+exportClientData : function (requestProperties) {
+    var data = this.getClientExportData(),
+        props = requestProperties,
+        format = props && props.exportAs ? props.exportAs : "csv",
+        fileName = props && props.exportFilename ? props.exportFilename : "export",
+        exportDisplay = props && props.exportDisplay ? props.exportDisplay : "download"
+    ;
+
+    var serverProps = {
+        showPrompt:false,
+        transport: "hiddenFrame",
+        exportResults: true,
+        downloadResult: true,
+        downloadToNewWindow: (exportDisplay == "window"),
+        download_filename: (exportDisplay == "window" ? fileName : null)
+    };
+
+    isc.DMI.callBuiltin({
+        methodName: "downloadClientExport",
+        arguments: [ data, format, fileName, exportDisplay ],
+        requestParams: serverProps
+    });
+
+},
+
+//> @method databoundComponent.getSort()
+// Return the +link{SortSpecifier}s representing the current sort configuration of this
+// component.
+// @return sortSpecifiers (Array of SortSpecifier) The current sort specification for this component
+// @visibility external
+//<
+getSort : function () {
+    return this._sortSpecifiers ? isc.shallowClone(this._sortSpecifiers) : null;
+},
+
+//> @method databoundComponent.setSort()
+// Sort this component by a list of +link{SortSpecifier}s.  If the component's data is not a 
+// +link{ResultSet}, only the first specifier is applied.
+// 
+// @param sortSpecifiers (Array of SortSpecifier)  List of +link{SortSpecifier} objects, one 
+//   per sort-field and direction
+// @visibility external
+//<
+setSort : function (sortSpecifiers) {
+    this._sortSpecifiers = isc.shallowClone(sortSpecifiers);
+    if (this.data && this._sortSpecifiers && this._sortSpecifiers.length>0) {
+        if (this.data.setSort) this.data.setSort(this._sortSpecifiers);
+        else if (this.data.sortByProperty) {
+            var item = this._sortSpecifiers[0];
+            this.data.sortByProperty(
+                item.property, 
+                Array.shouldSortAscending(item.direction),
+                item.normalizer,
+                item.context
+            );
+        }
+    }
+},
+
+//> @method databoundComponent.askForSort()
+// Show a dialog to configure the sorting of multiple fields on this component.  Calls through
+// to +link{multiSortDialog.askForSort}, passing this component as the fieldSource and the
+// current +link{databoundComponent.getSort, sort-specification} if there is one.
+//
+// @visibility external
+//<
+askForSort : function () {
+    if (isc.MultiSortDialog && this.canMultiSort != false) {
+        isc.MultiSortDialog.askForSort(this, this.getSort(), this.getID()+".multiSortReply(sortLevels)");
+    }
+},
+
+multiSortReply : function (sortLevels) {
+    if (sortLevels != null) {
+        this.setSort(sortLevels);
+    }
+},
+
+//> @method dataBoundComponent.addValidationError()  (A)
+// Helper method to add a validation error (or array of errors) to a list of existing errors 
+// (passed in).
+// Avoids duplicating errors.
+// @group validation
+//
+// @param errors       (object)  current set of errors
+//                               {itemName:"error", itemName:["error 1", "error 2"]}
+// @param itemName     (string)  name of the item that has the error
+// @param errorMessage (string)  actual error message
+//
+// @return (boolean)  returns true if error is not a duplicate
+// @visibility internal
+//<
+// Not intended for public use - this is for directly updating an errors object.
+addValidationError : function (errors, itemName, errorMessage) {
+    var addedError = false;
+
+    if (isc.isAn.Array(errorMessage)) {
+        for (var i = 0; i < errorMessage.length; i++) {
+            addedError = this.addValidationError(errors, itemName, errorMessage[i]) || addedError;
+        }
+        return addedError;
+    }
+    if (!errors[itemName]) {
+    	errors[itemName] = errorMessage;
+        addedError = true;
+    } else {
+        if (!isc.isAn.Array(errors[itemName])) errors[itemName] = [errors[itemName]];
+        
+        if (!errors[itemName].contains(errorMessage)) {
+            errors[itemName].add(errorMessage);
+            addedError = true;
+        }
+    }
+    // Let caller know if we saved a new error message
+    return addedError;
+},
+
+// Is <field> dependent on <fieldName>?
+isFieldDependentOnOtherField : function (field, fieldName) {
+    if (!field.validators) return false;
+
+    var ds = this.getDataSource();
+
+    for (var i = 0; i < field.validators.length; i++) {
+        var validator = field.validators[i];
+        if (!validator) continue;
+
+        // Cache derived depedencies, if any.
+        // Cannot derive dependencies unless we have a data source.
+        if (!validator._derivedDependentFields && validator.applyWhen && ds != null) {
+            validator._derivedDependentFields = ds.getCriteriaFields (validator.applyWhen);
+        }
+
+        // Explicit dependency?
+        if (validator.dependentFields && validator.dependentFields.contains(fieldName)) {
+            return true;
+        }
+        // ApplyWhen dependency?
+        if (validator._derivedDependentFields &&
+            validator._derivedDependentFields.length > 0 &&
+            validator._derivedDependentFields.contains(fieldName))
+        {
+            return true;
+        }
+    }
+    return false;
+},
+
+// Return dependencies for field (i.e. what fields it is dependent on)
+getFieldDependencies : function (field) {
+    if (!field.validators) return null;
+
+    var ds = this.getDataSource(),
+        dependencies = []
+    ;
+
+    for (var i = 0; i < field.validators.length; i++) {
+        var validator = field.validators[i];
+        if (!validator) continue;
+
+        // Cache derived depedencies, if any.
+        // Cannot derive dependencies unless we have a data source.
+        if (!validator._derivedDependentFields && validator.applyWhen && ds != null) {
+            validator._derivedDependentFields = ds.getCriteriaFields (validator.applyWhen);
+        }
+
+        // Explicit dependencies
+        if (validator.dependentFields) {
+            if (!isc.isAn.Array(validator.dependentFields)) {
+                validator.dependentFields = [validator.dependentFields];
+            }
+            for (var i = 0; i < validator.dependentFields.length; i++) {
+                dependencies.add(validator.dependentFields[i]);
+            }
+        }
+
+        // ApplyWhen dependencies
+        if (validator._derivedDependentFields &&
+            validator._derivedDependentFields.length > 0)
+        {
+            dependencies.addList (validator._derivedDependentFields);
+        }
+    }
+    return (dependencies.length == 0 ? null : dependencies);
+},
+
+
+//> @method dataBoundComponent.validateFieldAndDependencies() (A)
+// Validate the field value against any validators defined on the field
+// where validateOnChange is true and validate any fields that are dependent
+// on the field.
+//
+// @param  field      (object)    pointer to the field descriptor object
+// @param  validators (array)     Validators to be applied to field
+// @param  newValue   (any)       value to be validated
+// @param  record     (object)    copy of the record object
+// @param  options    (object)    options object to control the validation process
+//                  in the format {dontValidatorNullValue: true/false,
+//                                 typeValidationsOnly: true/false,
+//                                 unknownErrorMessage: value or null,
+//                                 changing: true/false,
+//                                 serverValidationMode: "full"/"partial"}
+// @return (object) null if no validation was performed, or validation result object
+//                  in the format {valid: true/false,
+//                                 errors: null or {fieldName: ["error", ...], ...}
+//                                 resultingValue: value or null,
+//                                 stopOnError: true/false}
+//                  Note that if a dependent field has no errors an entry in the errors
+//                  object will still exist but be null. This lets the caller know the
+//                  field was validated and it is valid.
+//<
+validateFieldAndDependencies : function (field, validators, newValue, record, options) {
+
+    var errors = {},
+        validated = false,
+        result = {valid: true,
+                  errors: null,
+                  resultingValue: null}
+    ;
+
+    // Apply newValue to record so that dependencies can reference it
+    // If a validator changes newValue, the new value will overwrite this one.
+    record[field.name] = newValue;
+
+    // Process all validators for this field
+    var fieldResult = this.validateField(field, field.validators, newValue, record, options);
+    if (fieldResult != null) {
+        result.valid = fieldResult.valid;
+        result.stopOnError = fieldResult.stopOnError;
+        if (fieldResult.errors != null) {
+            this.addValidationError (errors, field.name, fieldResult.errors);
+        }
+        if (fieldResult.resultingValue != null) {
+            result.resultingValue = fieldResult.resultingValue;
+            record[field.name] = fieldResult.resultingValue;
+        }
+        validated = true;
+    }
+
+    // Validate other fields that are dependent on this one.
+    
+    var fieldName = field.name,
+        fields = this.getFields() || []
+    ;
+    for (var i = 0; i < fields.length; i++) {
+        var depField = fields[i];
+        if (depField.name != fieldName && this.isFieldDependentOnOtherField(depField, fieldName)) {
+            fieldResult = this.validateField (depField, depField.validators,
+                                              record[depField.name], record, options);
+            if (fieldResult != null ) {
+                if (fieldResult.errors != null) {
+                    this.addValidationError (errors, depField.name, fieldResult.errors);
+                } else {
+                    // Record the field in the errors object even though there is no error.
+                    // This lets the caller know the field was validated _and_ it is valid.
+                    this.addValidationError (errors, depField.name, null);
+                }
+                if (fieldResult.resultingValue != null) {
+                    record[depField.name] = fieldResult.resultingValue;
+                }
+            }
+        }
+    }
+
+    result.errors = errors;
+    return (validated ? result : null);
+},
+
+_$typeValidators: ["isInteger", "isFloat", "isBoolean", "isString"],
+
+//> @method dataBoundComponent.validateField() (A)
+// Validate the field value against any validators defined on the field.
+//
+// @param  field      (object)    pointer to the field descriptor object
+// @param  validators (array)     Validators to be applied to field
+// @param  value      (any)       Value to be validated
+// @param  record     (object)    pointer to the record object
+// @param  options    (object)    options object to control the validation process
+//                  in the format {dontValidatorNullValue: true/false,
+//                                 typeValidationsOnly: true/false,
+//                                 unknownErrorMessage: value or null,
+//                                 changing: true/false,
+//                                 serverValidationMode: "full"/"partial"}
+// @return (object) null if no validation was performed, or validation result object
+//                  in the format {valid: true/false,
+//                                 errors: null or {fieldName: ["error", ..], ...}
+//                                 resultingValue: value or null,
+//                                 stopOnError: true/false}
+//<
+_$partial: "partial",
+validateField : function (field, validators, value, record, options) {
+
+    // If there are no validators for this field, we are done
+    if (!validators) return null;
+
+    var errors = [],
+        validated = false,
+        stopOnError = null,
+        result = {valid: true,
+                  errors: null,
+                  resultingValue: null},
+        needsServerValidation = false,
+        forceShowPrompt = false
+    ;
+
+    if (!isc.isAn.Array(validators)) {
+        validators = [validators];
+    }
+
+    // loop through validators
+    for (var i = 0; i < validators.length; i++) {
+        var validator = validators[i];
+        if (!validator) continue;
+
+        // If we're validating type only (eg, for a filter field), ignore other types
+        // of validator
+        if (options && options.typeValidationsOnly && 
+            !this._$typeValidators.contains(validator.type))
+        {
+            continue;
+        }
+                
+        // Unless we're looking at a 'required' or  'requiredIf' field, don't try to validate
+        // null values.
+        
+        if (options && options.dontValidateNullValue && 
+            value == null && validator.type != "required" && validator.type != 'requiredIf')
+        {
+            continue;
+        }
+
+        // If we are processing all validators
+        // OR only validateOnChange ones and settings allow
+        if (!options || !options.changing || 
+            (validator.validateOnChange != false &&
+             (validator.validateOnChange || field.validateOnChange || this.validateOnChange)))
+        {
+            // Postpone server validations until we complete client-side ones
+            if (isc.Validator.isServerValidator(validator)) {
+                needsServerValidation = true;
+                // If any server validator has stopOnError set, force synchronous mode
+                if (validator.stopOnError) forceShowPrompt = true;
+                continue;
+            }
+
+            if (validator.applyWhen) {
+                var ds = this.getDataSource(),
+                    criteria = validator.applyWhen
+                ;
+                if (ds == null) {
+                    isc.logWarn("Conditional validator criteria ignored because form has no dataSource");
+                } else {
+                    var matchingRows = ds.applyFilter([record], criteria);
+                    // Skip validator if condition does not apply
+                    if (matchingRows.length == 0) {
+                        // Use result of null to let validator know it was skipped
+                        isc.Validator.performAction(null, field, validator, this);
+                        continue;
+                    }
+                }
+            }
+
+            // process the validator
+            validated = true;
+            var isValid = (isc.Validator.processValidator(field, validator, value, null, record) == true);
+            isc.Validator.performAction(isValid, field, validator, this);
+            if (!isValid) {
+                var errorMessage = isc.Validator.getErrorMessage(validator);
+                if (errorMessage == null && options && options.unknownErrorMessage) {
+                    errorMessage = options.unknownErrorMessage;
+                }
+                errors.add(errorMessage);
+
+                // Update stopOnError status based on the validator
+                if (validator.stopOnError) stopOnError = true;
+            }
+
+            // if the validator returned a resultingValue, use that as the new value
+            // whether the validator passed or failed.  This lets us transform data
+            // (such as with the mask validator).
+            if (validator.resultingValue != null) {
+                result.resultingValue = validator.resultingValue;
+
+                // Save resulting value for remaining validators
+                value = validator.resultingValue;
+            }
+            // if the validator failed and we're supposed to stop on a false validator, bail!
+            if (!isValid && validator.stopIfFalse) break;
+        }
+    }
+
+    // Process server-side validators
+    if (needsServerValidation) {
+        // If field or form has stopOnError set, we must show prompt for synchronous operation
+        forceShowPrompt = this._resolveStopOnError(forceShowPrompt, field.stopOnError,
+                                                   this.stopOnError);
+
+        // Default to partial validation unless overridden by the caller
+        var validationMode = ((options && options.serverValidationMode)
+                              ? options.serverValidationMode
+                              : this._$partial),
+            values = isc.addProperties({}, record),
+            showPrompt = (forceShowPrompt || field.synchronousValidation ||
+                          this.synchronousValidation || false)
+        ;
+        // Make sure any local conversion validator updates are sent
+        values[field.name] = value;
+        // send validation request to server
+        this.fireServerValidation (field, values, validationMode, showPrompt);
+    }
+
+    // If validation failed and focus should be retained in field, let caller know
+    result.stopOnError = (errors.length > 0 && 
+                          this._resolveStopOnError(stopOnError, field.stopOnError,
+                                                   this.stopOnError));
+
+    // Populate remainder of result object
+    result.errors = (errors.length == 0 ? null : errors);
+    result.valid = (errors.length == 0);
+    return (validated ? result : null);
+},
+
+// stopOnError is resolved validator value
+_resolveStopOnError : function(stopOnError, fieldStopOnError, formStopOnError) {
+    if (stopOnError != null) return stopOnError;
+    return (fieldStopOnError == null && formStopOnError) || fieldStopOnError || false;
+},
+
+fireServerValidation : function (field, record, validationMode, showPrompt) {
+    var ds = this.getDataSource();
+    if (ds != null) {
+        var requestProperties = {showPrompt: showPrompt, 
+                                 prompt: isc.RPCManager.validateDataPrompt,
+                                 validationMode: validationMode,
+                                 clientContext: {component: this,
+                                                 fieldName: field.name}
+                                };
+
+        // If processing asynchronously, we must keep a list of outstanding requests
+        // so that the DBC can check for dependencies before editing a field.
+        if (!showPrompt) {
+            var pendingFields = this._registerAsyncValidation(field);
+            requestProperties.clientContext.pendingFields = pendingFields;
+        }
+        ds.validateData(record, 
+                        this._handleServerValidationReply,
+                        requestProperties);
+    }
+},
+
+_handleServerValidationReply : function (dsResponse, data, dsRequest) {
+    if (dsResponse.status == isc.DSResponse.STATUS_FAILURE) {
+        isc.logWarn("Server-side validation for " + field.name + " failed: " + dsResponse.data);
+    }
+    var context = dsResponse.clientContext,
+        component = context.component,
+        pendingFields = context.pendingFields
+    ;
+    if (dsResponse.errors) {
+        var errors = isc.DynamicForm.getSimpleErrors(dsResponse.errors);
+
+        // Show server errors
+        for (var fieldName in errors) {
+            var fieldErrors = errors[fieldName],
+                field = component.getField(fieldName)
+            ;
+            if (fieldErrors != null && field != null) {
+                // Avoid changing focus by delaying update until redraw
+                if (!isc.isAn.Array(fieldErrors)) fieldErrors = [fieldErrors];
+                var stopOnError = null;
+                for (var i = 0; i < fieldErrors.length; i++) {
+                    component.addFieldErrors(fieldName, fieldErrors[i].errorMessage, false);
+                    if (fieldErrors[i].stopOnError) stopOnError = true;
+                }
+                field.redraw();
+
+                stopOnError = component._resolveStopOnError(stopOnError, field.stopOnError,
+                                                            component.stopOnError);
+
+                // Restore focus to primary field if stopOnError
+                if (fieldName == context.fieldName && stopOnError == true && !field.hasFocus) {
+                    if (!field.synchronousValidation && !component.synchronousValidation) {
+                        isc.logWarn("Server validation for " + fieldName +
+                                    " signaled stopOnError but validation is not set for" +
+                                    " synchronousValidation:true - stop ignored.");
+                    } else {
+                        component.focusInItem (field);
+                    }
+                }
+            }
+        }
+    }
+
+    // If request marked pending fields, clear them now.
+    if (pendingFields) {
+        component._clearAsyncValidation(pendingFields);
+    }
+},
+
+// Pending asynchronous validations
+// Format: <field>: <outstandingRequestCount>,
+//         ...
+_pendingAsyncValidations: {},
+
+// Register async validation request for <field>.
+// Returns: array of fields affected by this validation. Includes <field>.
+_registerAsyncValidation : function (field) {
+    var fields = this.getFields() || [],
+        pendingFields = [field.name],
+        fieldName = field.name
+    ;
+
+    // Register pending on field being validated
+    this._pendingAsyncValidations[fieldName] = 
+        (this._pendingAsyncValidations[fieldName] == null
+            ? 1
+            : this._pendingAsyncValidations[fieldName]++);
+
+    // Register pending on fields dependent on field being validated
+    for (var i = 0; i < fields.length; i++) {
+        var depField = fields[i];
+        if (depField.name != fieldName && this.isFieldDependentOnOtherField(depField, fieldName)) {
+            var depFieldName = depField.name;
+            pendingFields.add(depFieldName);
+
+            this._pendingAsyncValidations[depFieldName] = 
+                (this._pendingAsyncValidations[depFieldName] == null
+                    ? 1
+                    : this._pendingAsyncValidations[depFieldName]++);
+        }
+    } 
+    return pendingFields;
+},
+
+// Clear pending validation for <fieldNames> array.
+// If a pending UI interaction is blocked by a showPrompt, clear that.
+_clearAsyncValidation : function (fieldNames) {
+    var clearedAField = false;
+    for (var i = 0; i < fieldNames.length; i++) {
+        this._pendingAsyncValidations[fieldNames[i]]--;
+        if (this._pendingAsyncValidations[fieldNames[i]] == 0) {
+            delete this._pendingAsyncValidations[fieldNames[i]];
+            clearedAField = true;
+        }
+    }
+    // If any field was cleared see if we have a blocking focus to continue
+    if (clearedAField && this._blockingFocus != null) {
+        var unblock = true;
+        for (var i = 0; i < this._blockingFocus; i++) {
+            if (this._pendingAsyncValidations[this._blockingFocus[i]] > 0) {
+                unblock = false;
+                break;
+            }
+        }
+
+        if (unblock) {
+            this._blockingFocus = null;
+            isc.clearPrompt();
+        }
+    }
+},
+
+// Array of field names which must be cleared from pending validations
+// before unblocking focus.
+_blockingFocus: null,
+
+//> @method dataBoundComponent.blockOnFieldBusy
+// Block UI activity by displaying showPrompt if validation is pending for specified field
+// or any dependency. If shown the prompt will be removed automatically when responses
+// are received.
+//
+// @param field (FormItem) Field being entered.
+// @return (boolean) True if prompt was shown
+//
+// @visibility internal
+//<
+blockOnFieldBusy : function (field) {
+    // If already blocking, nothing more to do. Let caller know we are blocked.
+    if (this._blockingFocus != null) return true;
+
+    // See if any requests are pending to matter
+    var havePendingRequest = false;
+    for (var fieldName in this._pendingAsyncValidations) {
+        havePendingRequest = true;
+        break;
+    }
+    if (!havePendingRequest) return false;
+
+    // Get the list of fields we should check
+    var dependentOnFields = this.getFieldDependencies(field) || [];
+    dependentOnFields.add(field.name);
+
+    // Determine which fields are still pending, if any
+    var waitForFieldNames = [];
+    for (var i = 0; i < dependentOnFields.length; i++) {
+        var depFieldName = dependentOnFields[i];
+        if (this._pendingAsyncValidations[depFieldName] > 0) {
+            waitForFieldNames.add(depFieldName);
+        }
+    }
+    if (waitForFieldNames.length > 0) {
+        // We have at least one of our dependent fields pending a response - we have to block.
+        this._blockingFocus = waitForFieldNames;
+        
+        
+        this.delayCall("showValidationBlockingPrompt");
+        return true;
+    }
+    return false;
+},
+
+// Called on a delay so execution occurs outside the "focus" thread.
+// Don't show the prompt if this._blockingFocus has already been cleared
+showValidationBlockingPrompt : function () {
+    if (this._blockingFocus) isc.showPrompt(isc.RPCManager.validateDataPrompt);
+
+},
+
+// The following methods should be overridden by DBC implementations.
+// These are used in validatorDefinition.action() methods to set the
+// appearance of a field.
+enableField : function (fieldName) {
+    if (fieldName == null || isc.isAn.emptyString(fieldName)) return;
+ 
+    var field = this.getField(fieldName);
+    if (field) {
+        field.disabled = false;
+        this.redraw();
+    }
+},
+
+disableField : function (fieldName) {
+    if (fieldName == null || isc.isAn.emptyString(fieldName)) return;
+ 
+    var field = this.getField(fieldName);
+    if (field) {
+        field.disabled = true;
+        this.redraw();
+    }
+},
+
+showField : function (fieldName) {
+    if (fieldName == null || isc.isAn.emptyString(fieldName)) return;
+ 
+    var field = this.getField(fieldName);
+    if (field) {
+        field.hidden = false;
+        this.redraw();
+    }
+},
+
+hideField : function (fieldName) {
+    if (fieldName == null || isc.isAn.emptyString(fieldName)) return;
+ 
+    var field = this.getField(fieldName);
+    if (field) {
+        field.hidden = true;
+        this.redraw();
+    }
+},
+
+setFieldCanEdit : function (fieldName, canEdit) {
+    if (fieldName == null || isc.isAn.emptyString(fieldName)) return;
+ 
+    var field = this.getField(fieldName);
+    if (field) {
+        field.canEdit = canEdit;
+        this.redraw();
+    }
 }
+
+
 });
 
 
@@ -4050,8 +6076,8 @@ isc.MathFunction.registerFunction(
 //<
 
 //> @attr testFunctionResult.failedExecution (boolean : false : IRW)
-// Set to true if callng the formula or summary format resulted in a JavaScript Error.
-// This would generally indicate a reference to non-existant data values.  See 
+// Set to true if calling the formula or summary format resulted in a JavaScript Error.
+// This would generally indicate a reference to non-existent data values.  See 
 // +link{testFunctionResult.failedGeneration} for other types of failure.
 // <P>
 // When set to true, +link{testFunctionResult.errorText} contains the exception message.

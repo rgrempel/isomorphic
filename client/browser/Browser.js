@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -207,23 +207,40 @@ if (isc.Browser.isStrict && isc.Browser.isMoz) {
                                  isc.Browser._docTypePublicID.indexOf("Frameset") != -1;
 }
 
+//> @classAttr Browser.isIE8 (boolean : ? : R)
+// Returns true if we're running IE8 and we're in IE8 mode
+// IE8 has a 'back-compat' type mode whereby it can run using IE7 rendering logic.
+// This is explicitly controlled via the meta tags:
+//
+//    &lt;meta http-equiv="X-UA-Compatible" content="IE=8" /&gt;
+// or
+//    &lt;meta http-equiv="X-UA-Compatible" content="IE=7" /&gt;
+//
+// In beta versions IE8 reported itself version 7 and ran in IE7 mode unless the explicit IE8
+// tag was present
+// In final versions (observed on 8.0.6001.18702) it reports a browser version of 8 and runs
+// in IE8 mode by default - but can be switched into IE7 mode via the explicit IE=7 tag.
+// 
+// We therefore want to check the document.documentMode tag rather than just the standard
+// browser version when checking for IE8
+//<
+isc.Browser.isIE8 = isc.Browser.isIE && isc.Browser.version>=8 && document.documentMode >7
+
+//<
 //> @classAttr Browser.isIE8Strict (boolean : ? : R)
-// Are we in IE8 mode.
+// Are we in IE8 strict mode.
 // <P>
-// In IE8 (at least beta2), setting DOCTYPE is not enough to actually trigger IE8 mode, you
-// must actually add a meta tag to use IE8 mode:
+// In IE8 when the meta tag is present to trigger IE7 / IE8 mode the document is in
 // 
 //    &lt;meta http-equiv="X-UA-Compatible" content="IE=8" /&gt;
+//    &lt;meta http-equiv="X-UA-Compatible" content="IE=7" /&gt;
 //
 // If this tag is present, the document is in strict mode even if no DOCTYPE was present.
 // The presence of this tag can be detected as document.documentMode being 8 rather than 7.
 // document.compatMode still reports "CSS1Compat" as with earlier IE.
-// <P>
-// Note that IE8 beta2 reports itself as IE7 via the userAgent String and we currently detect
-// it as version 7.
 //<
 isc.Browser.isIE8Strict = isc.Browser.isIE && isc.Browser.isStrict && 
-                            document.documentMode > 7;
+                            isc.Browser.isIE8;
 
 
 //> @classAttr  Browser.isBorderBox    (boolean : ? : R)
@@ -358,4 +375,18 @@ isc.Browser.isSupported = (
     // Safari (only available on Mac)
     isc.Browser.isSafari ||
     isc.Browser.isAIR
+);
+
+
+//>	@classAttr	Browser.allowsXSXHR	(boolean : ? : RA)
+//	Traditionally, web browsers reject attempts to make an XmlHttpRequest of a server other than the origin
+//  server. However, some more recent browsers allow cross-site XmlHttpRequests to be made, relying on the 
+//  server to accept or reject them depending on what the origin server is.
+//<
+isc.Browser.allowsXSXHR = (
+    (isc.Browser.isFirefox && isc.Browser.firefoxVersion >= "3.5") ||
+    // Chrome auto-updates to latest stable version every time you start it, and there is no option to prevent 
+    // this from happening, so there's no point in querying version
+    (isc.Browser.isChrome) ||
+    (isc.Browser.isSafari && isc.Browser.safariVersion >= 531)
 );

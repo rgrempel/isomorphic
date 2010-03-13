@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -28,8 +28,11 @@ isc.xnbsp = "&amp;nbsp;"; // XHTML
 isc._false = "false";
 isc._falseUC = "FALSE";
 isc._underscore = "_";
-isc._obsPrefix = "_$_";
+isc._dollar = "$";
+isc._obsPrefix = "_$observed_";
 isc._superProtoPrefix = "_$SuperProto_";
+
+isc.gwtRef = "__ref";
 
 //> @classMethod isc.logWarn()
 // Same as +link{classMethod:Log.logWarn}.
@@ -412,6 +415,7 @@ isc.addPropertyList = function (destination, sourceList) {
  
     var props = destination._isInterface ? isc._getInterfaceProps(destination) : null;
 
+    var undef;
     for (var i = 0, l = sourceList.length; i < l; i++) {
         
     	// add it's properties to the destination
@@ -427,12 +431,12 @@ isc.addPropertyList = function (destination, sourceList) {
             // or any of the source's properties are registered as stringMethods on the 
             //          destination object
             // use addMethods to copy these properties
-            var undefined;
             
+
+            var propIsAFunction = checkFunctions && isc.isA.Function(propValue);
             // Check for functions / stringMethods as appropriate.
             
-            if (registry[propName] !== undefined || 
-                (checkFunctions && isc.isA.Function(propValue)))
+            if (registry[propName] !== undef || propIsAFunction)
             {
                 if (methods == null) methods = {};
                 methods[propName] = propValue;
@@ -443,17 +447,21 @@ isc.addPropertyList = function (destination, sourceList) {
             //       if the superclass default is changed.            
 			//} else if (!(source[property] === destination[property])) {
             } else {
+                // property is not a function and this slot is not a StringMethod
+
+                // for Interfaces, keep track of all properties added to them
                 if (props != null) props[props.length] = propName;
 
                 // check for clobbering a function with a non-function value, eg setting
                 // Canvas.enable:false.
-                
-                if (isc.Log != null && checkFunctions && 
-                    (!isc.isA.Function(propValue) && 
-                     isc.isA.Function(destination[propName])))
+                var destinationProp = destination[propName];
+                if (!propIsAFunction && destinationProp != null &&
+                    isc.isA.Function(destination[propName]))
                 {
-                    isc.Log.logWarn("method " + propName + " on " + destination + 
-                                    " overriden with non-function: '" + propValue + "'");
+                    if (isc.Log != null) {
+                        isc.Log.logWarn("method " + propName + " on " + destination + 
+                                        " overridden with non-function: '" + propValue + "'");
+                    }
                 }
                 
                 destination[propName] = propValue;
@@ -753,18 +761,18 @@ isc.addGlobal("getValues", function (object) {
 // Usage example - may be used to sort a +link{FormItem.valueMap, formItem valueMap} defined
 // as an object.
 // @param object (object) Object to sort
-// @param [comparitor] (function) Comparitor function to use when sorting the objects keys
+// @param [comparator] (function) Comparator function to use when sorting the objects keys
 // @return (object) sorted version of the object passed in.
 // @visibility external
 //<
-isc.addGlobal("sortObject", function (object, sortComparitor) {
+isc.addGlobal("sortObject", function (object, sortComparator) {
     if (!isc.isA.Object(object)) return object;
     if (isc.isAn.Array(object)) {
-        if (sortComparitor != null) return object.sort(sortComparitor);
+        if (sortComparator != null) return object.sort(sortComparator);
         return object.sort();
     }
     var keys = isc.getKeys(object);
-    keys = (sortComparitor == null ? keys.sort() : keys.sort(sortComparitor));
+    keys = (sortComparator == null ? keys.sort() : keys.sort(sortComparator));
     var sortedObject = {};
     for (var i = 0; i < keys.length; i++) {
         sortedObject[keys[i]] = object[keys[i]];
@@ -779,18 +787,18 @@ isc.addGlobal("sortObject", function (object, sortComparitor) {
 // Usage example - may be used to sort a +link{FormItem.valueMap, formItem valueMap} defined
 // as an object by display value.
 // @param object (object) Object to sort
-// @param [comparitor] (function) Comparitor function to use when sorting the object properties
+// @param [comparator] (function) Comparator function to use when sorting the object properties
 // @return (object) sorted version of the object passed in.
 // @visibility external
 //<
-isc.addGlobal("sortObjectByProperties", function (object, sortComparitor) {
+isc.addGlobal("sortObjectByProperties", function (object, sortComparator) {
     if (!isc.isA.Object(object)) return object;
     if (isc.isAn.Array(object)) {
-        if (sortComparitor != null) return object.sort(sortComparitor);
+        if (sortComparator != null) return object.sort(sortComparator);
         return object.sort();
     }
     var values = isc.getValues(object);
-    values = (sortComparitor == null ? values.sort() : values.sort(sortComparitor));
+    values = (sortComparator == null ? values.sort() : values.sort(sortComparator));
     var sortedObject = {};
 
     for (var i = 0; i < values.length; i++) {
@@ -847,6 +855,68 @@ isc.addGlobal("propertyDefined", function (object, propertyName) {
 	var properties = isc.getKeys(object);
     return (properties.contains(propertyName));
 });
+
+isc.addGlobal("objectsAreEqual", function (object1, object2) {
+    // match -> return true
+    
+    if (object1 === object2) return true;
+    
+    else if (isc.isAn.Object(object1) && isc.isAn.Object(object2)) {
+        if (isc.isA.Date(object1)) {
+            return isc.isA.Date(object2) && (Date.compareDates(object1,object2) == 0); 
+        } else if (isc.isAn.Array(object1)) {
+            if (isc.isAn.Array(object2) && object1.length == object2.length) {
+                for (var i = 0; i < object1.length; i++) {
+                    if (!isc.objectsAreEqual(object1[i], object2[i])) return false;
+                }
+                return true;
+            }
+            return false;
+        } else {
+            if (isc.isAn.Array(object2)) return false;
+            var numProps = 0;
+            for (var prop in object1) {
+                if (!isc.objectsAreEqual(object1[prop],object2[prop])) return false;
+                numProps ++;
+            }
+            if (isc.getKeys(object2).length != numProps) return false;
+            return true;
+        }
+    } else {
+        return false;
+    }
+});
+
+
+// combineObject() - like addProperties() except it handles nested object data structures
+// so if an attribute of the source is an object, properties from that object will be
+// combined across to the destination, rather than simply clobbering the previous attribute value
+// for the field.
+// Note the goal here isn't to avoid the destination pointing to the same objects as the source
+// (like a duplicate), it's just to merge field values in for nested objects
+isc.addGlobal("combineObjects", function (destination, source) {
+    if (destination == null || !isc.isAn.Object(destination)) return source;
+    if (source == null || !isc.isAn.Object(source)) return destination;
+
+    for (var prop in source) {
+        var destProp = destination[prop],
+            sourceProp = source[prop];
+        // If both the source and destination contain simple objects, iterate through the
+        // attributes on the source property object and copy them across to the destination property
+        // object
+        if (isc.isAn.Object(destProp) && !isc.isAn.Array(destProp) && !isc.isA.Date(destProp) 
+            && isc.isAn.Object(sourceProp) && !isc.isAn.Array(sourceProp) && 
+            !isc.isA.Date(sourceProp))
+        {
+            isc.combineObjects(destProp, sourceProp); 
+        // Otherwise we can just copy the value across as with standard addProperties
+        } else {
+            destination[prop] = sourceProp;
+        }
+        
+    }
+});
+
 
 //> @method isc.applyMask()
 // Create a copy of an Object or Array of Objects that has been trimmed to a specified set of
@@ -993,7 +1063,7 @@ isc.booleanValue = function (value, def) {
 }
 
 // isc.objectToLocaleString()
-// Centralized, customizeable toLocaleString() formatter for objects. 
+// Centralized, customizable toLocaleString() formatter for objects. 
 isc.iscToLocaleString = function (object) {
     if (object != null) {
         return object.iscToLocaleString ? object.iscToLocaleString() :

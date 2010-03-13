@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -8,6 +8,8 @@
  *
  * http://smartclient.com/license
  */
+if (isc.Window) {
+    
 isc.ClassFactory.defineClass("FieldEditor", "Window");
 
 isc.FieldEditor.addProperties({
@@ -16,7 +18,7 @@ isc.FieldEditor.addProperties({
         showMinimizeButton: false,
         autoCenter: true,
         autoSize:true,
-        defaultWidth:375,
+        defaultWidth:475,
         visibleFieldsConstructor: "ListGrid",
         hiddenFieldsConstructor: "ListGrid",
         showFooter: false,
@@ -30,6 +32,7 @@ isc.FieldEditor.addProperties({
         },
         instructions:"Drag fields between grids to control which fields are visible " +
                      "and the order in which fields are displayed",
+
         initWidget : function () {
             this.invokeSuper(isc.FieldEditor, "initWidget");
 
@@ -37,80 +40,78 @@ isc.FieldEditor.addProperties({
                 isc.logWarn('FieldEditor can not be created because no fields were provided');
                 return;
             }
-    
+
             this.addItem(this.addAutoChild("instructionsPane", {
                 contents:this.instructions
             }));
 
-            var gridProps = {
-                showHeader: false,
-                height:200, width:150,
+            this.visibleFieldsDefaults = this.hiddenFieldsDefaults = {
+                height:200, width: 200,
                 leaveScrollbarGap:false,
-                fields:[{
-                    name:"title",
-                    formatCellValue : "value || record.name"
-                }],
                 canDragRecordsOut: true,
                 canAcceptDroppedRecords: true,
                 canReorderRecords: true,
                 dragDataAction: "move"                
             };
-            
-            var visFieldsGrid = this.visibleFieldsGrid = this.createAutoChild("visibleFields",gridProps);
+    
+
+            var visFieldsGrid = this.visibleFieldsGrid = this.createAutoChild("visibleFields", {
+                fields:[{
+                    name:"title", title: "Visible Fields",
+                    formatCellValue : "value || record.name"
+                }]
+            });
+    
             var allFields = this.fields;
-            
+    
             var vFields = allFields.findAll("visible", null);
             var hFields = allFields.findAll("visible", false);
-            
+    
             visFieldsGrid.setData(vFields);
-            gridProps.canReorderRecords = false;
-            var hidFieldsGrid = this.hiddenFieldsGrid = this.createAutoChild("hiddenFields", gridProps);
-           
+            var hidFieldsGrid = this.hiddenFieldsGrid = this.createAutoChild("hiddenFields", {
+    	        canReorderRecords: false,
+                fields:[{
+                    name:"title", title: "Hidden Fields",
+                    formatCellValue : "value || record.name"
+                }]
+            });
+   
             hidFieldsGrid.setData(hFields);
-            var container = isc.HStack.create({membersMargin:10,
+            var container = isc.HLayout.create({membersMargin:10,
+    	        layoutMargin: 5,
                 height: 1, overflow:"visible",
                 members:[
-                    isc.VStack.create({
-                        layoutMargin:5, membersMargin:5,
-                        members:[
-                            isc.Label.create({autoFit:true,contents:"<nobr><b>Visible Fields</b></nobr>"}),
-                            visFieldsGrid
-                        ]
-                    }),
+                    visFieldsGrid,
                     isc.VStack.create({width:32, height:74, layoutAlign:"center", membersMargin:10, 
-                      members:[
+                    members:[
                         isc.Img.create({src:"[SKINIMG]actions/back.png", width:16, height:16,
-                                visFieldsGrid: visFieldsGrid, hidFieldsGrid: hidFieldsGrid,
-                                layoutAlign:"center",
-                                click:"this.visFieldsGrid.transferSelectedData(this.hidFieldsGrid)"
+                            visFieldsGrid: visFieldsGrid, hidFieldsGrid: hidFieldsGrid,
+                            layoutAlign:"center",
+                            click:"this.visFieldsGrid.transferSelectedData(this.hidFieldsGrid)"
                         }),
                         isc.Img.create({src:"[SKINIMG]actions/forward.png", width:16, height:16,
-                                layoutAlign:"center",
-                                visFieldsGrid: visFieldsGrid, hidFieldsGrid: hidFieldsGrid,
-                                click:"this.hidFieldsGrid.transferSelectedData(this.visFieldsGrid)"
+                            layoutAlign:"center",
+                            visFieldsGrid: visFieldsGrid, hidFieldsGrid: hidFieldsGrid,
+                            click:"this.hidFieldsGrid.transferSelectedData(this.visFieldsGrid)"
                         })
                     ]}),
-                    isc.VStack.create({
-                        layoutMargin:5, membersMargin:5, 
-                        members:[
-                            isc.Label.create({autoFit:true,contents:"<nobr><b>Hidden Fields</b></nobr>"}),
-                            hidFieldsGrid
-                        ]
-                    })
-                
-                ]});
-           
+                    hidFieldsGrid
+                ]
+            });
+       
             this.addItem(container);
-            
+    
             var okButton = this.createAutoChild("okButton", {
-                    autoDraw: false,
-                    title: "Done",
-                    fieldEditor: this,
-                    click: function () { this.creator.okClick(); },
-                    layoutAlign:"center"
+                autoDraw: false,
+                title: "Done",
+                fieldEditor: this,
+                click: function () { this.creator.okClick(); },
+                layoutAlign:"center"
             }, isc.IButton);
             this.addItem(okButton);
         },
+
+
         okClick : function () {
             var vFields = isc.clone(this.visibleFieldsGrid.data);
             var hFields = isc.clone(this.hiddenFieldsGrid.data);
@@ -131,3 +132,5 @@ isc.FieldEditor.addProperties({
         }
         
 });
+
+} // end if (isc.Window)

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -146,7 +146,6 @@ isc.SliderItem.addMethods({
             // between setting the value to 'null' vs 'undefined'
             if (defaultVal != null) value = defaultVal;
         }
-
         // update the previous value so we don't fire a change handler on 'sliderChanged'
         this._currentValue = value;
         this.canvas.setValue(value, (defaultVal != null));
@@ -157,15 +156,34 @@ isc.SliderItem.addMethods({
         return this.canvas.getValue();
     },
     
+    //>@attr sliderItem.changeOnDrag (boolean : true : IRW)
+    // Should this sliderItem update its value and fire change handlers while the user is
+    // actively dragging the slider.
+    // Setting this attribute value to <code>false</code> will suppress any change notifications
+    // from the user dragging the slider thumb until the user releases the mouse at the final
+    // position.
+    // This can be useful to avoid repeatedly firing expensive operations such as server fetches
+    // while the user drags through a range of values.
+    // @visibility external
+    //<
+    
+    changeOnDrag:true,
+    
     // Define a sliderChange function to handle value changes
     sliderChange : function() {
         
         // Note: the slider.valueChanged method doesn't inform us what the old value was, so
         // we need to track this ourselves in order to pass it to any item level change handler.
         var val = this.canvas.getValue();
+
         if (this._currentValue != val) {
-            this._updateValue(val);
-            this._currentValue = val;
+            // if changeOnDrag is false, don't update anything until the user is done dragging
+            // the slider around
+            if (this.changeOnDrag || !this.canvas.valueIsChanging()) {
+                this._updateValue(val);
+                this._currentValue = val;
+            }
+            
         // catch the case where there was an explicit setValue() call, and save out the new
         // value from the slider.
         } else {

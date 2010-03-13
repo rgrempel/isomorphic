@@ -10,21 +10,21 @@
         <field name="vertical"   type="boolean" hidden="true"/>
 		<field name="orientation"   type="string" hidden="true"/>
         
-        <field name="align"         type="anyAlignEnum"/>
-        <field name="defaultLayoutAlign" type="anyAlignEnum"/>	
+        <field name="align"         type="anyAlignEnum" basic="true"/>
+        <field name="defaultLayoutAlign" type="anyAlignEnum" basic="true"/>	
         <field name="members"       type="Canvas" multiple="true" propertiesOnly="true"/>
 
         <field name="animateMembers"   type="boolean"/>
         <field name="animateMemberTime"      type="number" visibility="animation"/>
         <field name="canDropComponents"     type="boolean"/>
 
-		<field name="layoutMargin"	type="positiveInteger"/>
-                <field name="paddingAsLayoutMargin" type="boolean"/>
+		<field name="layoutMargin"	type="positiveInteger" basic="true"/>
+        <field name="paddingAsLayoutMargin" type="boolean"/>
 		<field name="layoutLeftMargin"	type="positiveInteger"/>
 		<field name="layoutRightMargin"	type="positiveInteger"/>
 		<field name="layoutTopMargin"	type="positiveInteger"/>
 		<field name="layoutBottomMargin"	type="positiveInteger"/>
-		<field name="membersMargin"	type="positiveInteger"/>
+		<field name="membersMargin"	type="positiveInteger" basic="true"/>
 
 		<field name="reverseOrder"  type="boolean"/>
 
@@ -42,6 +42,7 @@
     </fields>
 
     <groups>
+        <group>basics</group>
         <group>sizing</group>
         <group>appearance</group>
         <group>contents</group>

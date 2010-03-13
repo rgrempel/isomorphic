@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -196,7 +196,8 @@ isc.EditorActionMethods.addInterfaceMethods({
     // @visibility external
     //<
 	editRecord : function (record) {        
-        this.setSaveOperationType("update");
+        var saveOperationType = (record == null ? "add" : "update");
+        this.setSaveOperationType(saveOperationType);
         this._editRecord(record);
 	},
     
@@ -323,8 +324,6 @@ isc.EditorActionMethods.addInterfaceMethods({
         // redraw the form to show errors - otherwise we rely on the callback to apply errors
         // to the form.
         var context = this.buildRequest(requestProperties, "validate");
-    
-        context.willHandleError = true;
         context.editor = this;
 
         // valuesAsParams - also sends the DSRequest values as request parameters
@@ -333,19 +332,19 @@ isc.EditorActionMethods.addInterfaceMethods({
             isc.addProperties(context.params, values);
         }
 
-		var dataSource = this.getDataSource();
-        return dataSource.performDSOperation(
-                    context.operation.type, values, 
-                    callback ? callback : {target:this, methodName:"saveEditorReply"}, 
-                    context
-                );
+        var dataSource = this.getDataSource();
+        return dataSource.validateData(
+                   values, 
+                   callback ? callback : {target:this, methodName:"saveEditorReply"}, 
+                   context
+               );
     },
 
     //>	@method	dynamicForm.reset()   ([])
     //
     // Resets values to the state it was the last time <code>setValues()</code> or
     // <code>rememberValues()</code> was called. If neither of those methods has been called,
-    // values will be set back to their inital values at init time.
+    // values will be set back to their initial values at init time.
     //
     // @group formValues
     // @visibility external
@@ -463,8 +462,8 @@ isc.EditorActionMethods.addInterfaceMethods({
     // current +link{DynamicForm.saveOperationType}.
     // <P>
     // On either a client-side or server-side validation failure, validation errors will be
-    // displayed in the form.  Visible items within a DynamicForms will be redrawn to display
-    // errors. Validation failure occuring on hidden items, or DataSource fields with no 
+    // displayed in the form.  Visible items within a DynamicForm will be redrawn to display
+    // errors. Validation failure occurring on hidden items, or DataSource fields with no 
     // associated form items may be handled via +link{DynamicForm.handleHiddenValidationErrors}
     // or +link{ValuesManager.handleHiddenValidationErrors}.
     // <P>
@@ -483,9 +482,22 @@ isc.EditorActionMethods.addInterfaceMethods({
     // NOTE: not documenting direct submit (If the editor is a multi-part encoded dynamicForm,
     // a direct submit will be performed.)
     saveData : function (callback, requestProperties, noValidation) {
+        
         if (this.dataSource == null) {
             
-            this.logWarn("saveData() called on a non-databound DynamicForm. This is not supported. " +
+            // If we have a 'selectionComponent', just tell it to pick up the changes and display
+            // them
+            if (this.selectionComponent != null) {
+                var pks = this._selectionComponentRecordPKs;
+                // check for 'setRecordValues' is a sanity check only - we should only allow
+                // binding to components where this is supported.
+                if (pks && this.selectionComponent.setRecordValues) {
+                    this.selectionComponent.setRecordValues(pks, this.getValues());
+                }
+                return;
+            }
+            
+            this.logWarn("saveData() called on a non-databound " + this.Class + ". This is not supported. " +
                        " for information on databinding of components look at the documentation" +
                        " for the DataSource class.  " +
                        "If this was intended to be a native HTML form submission, set the " +
@@ -502,7 +514,14 @@ isc.EditorActionMethods.addInterfaceMethods({
             callback = requestProperties.afterFlowCallback;
         } //<!BackCompat
 
-        // do server validation if validationURL is specified            
+        if (requestProperties == null) requestProperties = {};
+
+        // send oldValues to allow long transactions
+        if (!requestProperties.oldValues) {
+            requestProperties.oldValues = this._oldValues;
+        }
+
+        // do server validation if validationURL is specified
         if (this.validationURL && !noValidation) {
             var validateProps = {};
             isc.addProperties(validateProps, requestProperties);
@@ -535,7 +554,7 @@ isc.EditorActionMethods.addInterfaceMethods({
             if (!this.validate()) return false;
             return fileItemForm.saveData(callback, requestProperties, noValidation);
         }
-        
+
         var operationType = this.getSaveOperationType(requestProperties);
 
         // hold on to end user callback, and pass our own to the RPC layer.  We do this to
@@ -544,9 +563,6 @@ isc.EditorActionMethods.addInterfaceMethods({
       
         callback = this.getID()+"._saveDataReply(dsRequest, dsResponse, data)";
 		requestProperties = this.buildRequest(requestProperties, operationType, callback);
-
-        // send oldValues to allow long transactions
-        requestProperties.oldValues = this._oldValues;
 
         // if the form specified an action different from the default, use it as the RPC target
         var doSubmit = false;
@@ -570,7 +586,7 @@ isc.EditorActionMethods.addInterfaceMethods({
         
         if (!this.validate()) return false
         var values = this.getValues();        
-        
+
         // perform a direct submit if the form is multipart-encoded
         
         if ((isc.DynamicForm && isc.isA.DynamicForm(this) && this.isMultipart())
@@ -584,6 +600,91 @@ isc.EditorActionMethods.addInterfaceMethods({
         }
 
 	},
+    
+    //> @attr dynamicForm.selectionComponent (DataBoundComponent : null : IRW)
+    // May be set to a databound component which displays multiple records and supports
+    // selection, such as a ListGrid or TileGrid.<br>
+    // If set, the values in this form will be automatically updated on selection change in
+    // the selection component to display the (first) selected record's values, and 
+    // +link{dynamicForm.saveData()} will update the record displayed in the selectionComponent
+    // even if no dataSource is specified.
+    // @visibility selectionComponent
+    //<
+    
+    //> @method dynamicForm.setSelectionComponent()
+    // setter for +link{dynamicform.selectionComponent}
+    // @param component (ID | canvas) new selection component
+    // @visibility selectionComponent
+    //<
+    setSelectionComponent : function (component, init) {
+        if (!component) {
+            if (this.selectionComponent != null) {
+                this.ignore(this.selectionComponent, "selectionChanged");
+                this.ignore(this.selectionComponent, "cellSelectionChanged");
+            }
+            delete this.selectionComponent;
+        } else {
+            var specifiedComponent = component;
+            if (isc.isA.String(component)) component = window[component];
+            if (!component || !isc.isA.Canvas(component) || component.dataArity != "multiple") {
+                this.logWarn("setSelectionComponent() - selection component specified as:" + 
+                    specifiedComponent + " this is not a valid component");
+                return;
+            }
+            
+            if (!component.getSelection) {
+                this.logWarn("setSelectionComponent() - specified selection component:" + component + 
+                  " does not support selection - ignoring");
+                return;
+            }
+            // if we had a previous selection component, clear up observations
+            if (!init && this.selectionComponent) {
+                // already pointing a the sc - we're done!
+                if (this.selectionComponent == component) return
+                if (this.isObserving(this.selectionComponent, "selectionChanged")) {
+                    this.ignore(this.selectionComponent, "selectionChanged");
+                }
+                if (this.isObserving(this.selectionComponent, "cellSelectionChanged")) {
+                    this.ignore(this.selectionComponent, "cellSelectionChanged");
+                }
+            } 
+            this.selectionComponent = component;
+            
+            // Possibilities for ListGrid:
+            // selectionChanged - record, state
+            // cellSelectionChanged - cellList
+            
+            if (!this.selectionComponent.useCellRecords) {
+                this.observe(this.selectionComponent, "selectionChanged",
+                             "observer.selectionComponentSelectionChanged(observed, record,state)");
+            } else {
+                this.observe(this.selectionComponent, "cellSelectionChanged",
+                             "observer.selectionComponentCellSelectionChanged(observed, cellList)");
+            }
+            var selection = this.selectionComponent.getSelection
+        }
+    },
+    
+    // selectionChanged / cellSelectionChanged on the selectionComponent 
+    selectionComponentSelectionChanged : function (selectionComponent, record, state) {
+        if (!state) return;
+        //this.logWarn("selectionComponent changed selection - new record:" + record);
+        this._selectionComponentRecordPKs = selectionComponent.getPrimaryKeys(record);
+        this.editRecord(record);
+    },
+    
+    selectionComponentCellSelectionChanged : function (selectionComponent, cellList) {
+        for (var i = 0; i < cellList.length; i++) {
+            var cell = cellList[i],
+                record = this.selectionComponent.getCellRecord(cell[0], cell[1]);
+            if (selectionComponent.cellIsSelected(record)) break;
+            record = null;
+        }
+        if (record) {
+            this._selectionComponentRecordPKs = selectionComponent.getPrimaryKeys(record);
+            this.editRecord(record);
+        }
+    },
     
     // Helper method to prepare the fileItemForm for submission
     updateFileItemForm : function () {
@@ -698,8 +799,8 @@ isc.EditorActionMethods.addInterfaceMethods({
                     }
                     
                     var item = this.getItem(key);
-                    if (item && (item.shouldSaveValue && item.isEditable())) {
-                        //this.logWarn("saveData(): value for primary key is editable - assuming this is an add");
+                    if (item && item.isVisible() && (item.shouldSaveValue && item.isEditable())) {
+                        //this.logWarn("saveData(): value for primary key is visible and editable - assuming this is an add");
                         operationType = "add" 
                         break;
                     }
@@ -746,10 +847,11 @@ isc.EditorActionMethods.addInterfaceMethods({
                 currentValues = this.getValues();
             for (var i in data) {
                 // We're making the assumption that any fields not present in the data object are
-                // unchanged
+                // unchanged - also, now, that uploadItems can never be updated here
                 var field = this.getField(i);
                 if (!this.fieldValuesAreEqual(field, submittedValues[i],data[i]) &&
-                    this.fieldValuesAreEqual(field, currentValues[i], submittedValues[i])) 
+                    this.fieldValuesAreEqual(field, currentValues[i], submittedValues[i]) && 
+                    (!field || !isc.isAn.UploadItem(field))) 
                 {
                     this.setValue(i, data[i]);
                 }
@@ -798,12 +900,21 @@ isc.EditorActionMethods.addInterfaceMethods({
         
         var undefined;
 		if (!context) context = {};
+		
 		isc.addProperties(context, {
 			prompt:(context.prompt || isc.RPCManager.saveDataPrompt),
-			editor:this,
-			willHandleError:true
+			editor:this
 		});
-
+		
+	
+		// willHandleError will have to be true so we can show validation errors.
+		// However if the user didn't already specify this we need to hang onto the original
+		// setting so we can fire default error handling
+		if (context.clientContext == null) context.clientContext = {};
+		context.clientContext._explicitWillHandleError = context.willHandleError;
+		context.willHandleError = true;
+    
+		
         // valuesAsParams - also sends the DSRequest values as request parameters
         if (context.valuesAsParams) {
             if (!context.params) context.params = {};
@@ -840,13 +951,17 @@ isc.EditorActionMethods.addInterfaceMethods({
 		}
 
 		// some error we weren't expecting occurred, bail with an error dialog
-		if (response.status < 0) return isc.RPCManager._handleError(response, request);
+		if (request.clientContext) {
+		    request.willHandleError = request.clientContext._explicitWillHandleError;
+		}                           
+		if (response.status < 0 && !request.willHandleError)
+		    return isc.RPCManager._handleError(response, request);
         
 		return true;
 	},    
 
     _saveFormValidateCallback : function (rpcRequest, rpcResponse, data) {
-        if(rpcResponse.status == isc.RPCResponse.STATUS_SUCCESS) {
+        if (rpcResponse.status == isc.RPCResponse.STATUS_SUCCESS) {
             this.performingServerValidation = false;
             this.markForRedraw("serverValidationSuccess");
             this.saveData(rpcRequest._userCallback, rpcRequest._userProps, true);

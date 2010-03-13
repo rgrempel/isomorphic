@@ -3,11 +3,11 @@
     <!-- NOTE: show local fields only as full inheritance from ListGridRecord picks up a lot of
          inappropriate stuff, like editing-related properties -->
 	<fields>
-		<field name="title"/>
+		<field name="title" basic="true"/>
 		<field name="submenu" type="Menu"/>
-		<field name="isSeparator"/>
-		<field name="enabled" type="boolean"/>
-		<field name="checked" type="boolean"/>
+		<field name="enabled" type="boolean" basic="true"/>
+		<field name="checked" type="boolean" basic="true"/>
+		<field name="isSeparator" basic="true"/>
 		<field name="icon" type="string"/>
 		<field name="iconWidth" type="positiveInteger"/>
 		<field name="iconHeight" type="positiveInteger"/>

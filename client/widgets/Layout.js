@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -110,7 +110,7 @@ isc.Layout.addProperties({
     //> @attr layout.overflow   (Overflow : "visible" : IR)
     // Normal +link{type:Overflow} settings can be used on layouts, for example, an
     // overflow:auto Layout will scroll if members exceed its specified size, whereas an
-    // overflow:visible Layout will grow to accomodate members.
+    // overflow:visible Layout will grow to accommodate members.
     //
     // @group layoutPolicy
     // @visibility external
@@ -144,7 +144,7 @@ isc.Layout.addProperties({
     vPolicy:isc.Layout.FILL,
 
 	//> @attr layout.hPolicy    (LayoutPolicy : "fill" : IRWA)
-	// Sizing policy applied to members on horizonal axis
+	// Sizing policy applied to members on horizontal axis
     // @group layoutPolicy
     // @visibility external
 	//<   
@@ -236,7 +236,7 @@ isc.Layout.addProperties({
     // normally does not affect absolutely positioned children).  Leaving this setting true
     // allows a designer to more effectively control layout purely from CSS.
     // <P>
-    // Note that +link{layout.layoutMargin} if specified, takes precidence over this value.
+    // Note that +link{layout.layoutMargin} if specified, takes precedence over this value.
     // @group layoutMargin
     // @visibility external
     //<
@@ -608,7 +608,7 @@ getMemberLength : function (member) {
 // member.
 // @param member (Canvas) Component to be positioned
 // @param defaultOffset (Number) Value of the currently calculated member offset. This
-//      may be returned verbatim or manupulated in this method.
+//      may be returned verbatim or manipulated in this method.
 // @param alignment (String) alignment of the enclosing layout
 // @group layoutMember
 // @visibility external
@@ -929,6 +929,7 @@ _memberCanFocus : function (member) {
 // Returns the set of members that should be predrawn.
 //<	
 _setupMembers : function () {
+    if (!this.members) return;
 	for (var i = 0; i < this.members.length; i++) {
         var member = this.members[i];
         if (member == null) {
@@ -1470,7 +1471,7 @@ stackMembers : function (members, layoutInfo, updateSizes) {
     }
     
 	// start position of the next member on length axis.
-    // if reversing, start stacking at end coordinate at work backwards.  Note that this
+    // if reversing, start stacking at end coordinate and work backwards.  Note that this
     // effectively creates right/bottom alignment by default. 
     var nextMemberPosition = (this.vertical ? 
                                 (!reverse ? layoutTop : layoutTop + totalLength) : 
@@ -1478,19 +1479,23 @@ stackMembers : function (members, layoutInfo, updateSizes) {
                              );
     
     // if align has been set to non-default, 
-    if (this.align != null && 
-        ((!reverse && (this.align == isc.Canvas.BOTTOM || this.align == isc.Canvas.RIGHT)) ||
-         (reverse && (this.align == isc.Canvas.LEFT || this.align == isc.Canvas.TOP))))
-    {
-        // leave the space that would have been at the end at the beginning instead.
-        // if reversed, hence normally right/bottom aligned, and align has been set to
-        // left/top, subtract off remaining space instead.  NOTE: can't simplify reversal to
-        // just mean right/bottom align: reverse stacking starts from endpoint and subtracts
-        // off sizes during stacking.
+    if (this.align != null) {
         var totalMemberLength = this._getTotalMemberLength(),
             visibleLength = Math.max(this.getLength(), totalMemberLength),
             remainingSpace = visibleLength - totalMemberLength;
-        nextMemberPosition += (direction * remainingSpace);
+
+        if (((!reverse && (this.align == isc.Canvas.BOTTOM || this.align == isc.Canvas.RIGHT)) ||
+            (reverse && (this.align == isc.Canvas.LEFT || this.align == isc.Canvas.TOP))))
+        {
+            // leave the space that would have been at the end at the beginning instead.
+            // if reversed, hence normally right/bottom aligned, and align has been set to
+            // left/top, subtract off remaining space instead.  NOTE: can't simplify reversal to
+            // just mean right/bottom align: reverse stacking starts from endpoint and subtracts
+            // off sizes during stacking.
+            nextMemberPosition += (direction * remainingSpace);
+        } else if (this.align == isc.Canvas.CENTER) {
+            nextMemberPosition += Math.round(remainingSpace/2);
+        }
     }
 
     // start position of all members on breadth axis
@@ -2186,7 +2191,7 @@ childResized : function (child, deltaX, deltaY, reason) {
 
     
     if (child._canvas_initializing) return;
-
+	
     // non-member child, ignore
     if (!this.members.contains(child)) return;
 
@@ -2485,7 +2490,7 @@ addMembers : function (newMembers, position, dontAnimate) {
         }
 
         if (this.members.contains(newMember)) {
-            // already a member; if a position was specifed, move to that position
+            // already a member; if a position was specified, move to that position
             if (position != null) {
                 this.members.slide(this.members.indexOf(newMember), position+i);
             }
@@ -2776,7 +2781,7 @@ _completeRemoveMembers : function (members) {
 // Methods to show/hide members, with animation if appropraite
 
 //> @method layout.showMember()
-// Show the specified member, firing the specified callback when the hide is complete.
+// Show the specified member, firing the specified callback when the show is complete.
 // <P>
 // Members can always be directly shown via <code>member.show()</code>, but if
 // +link{animateMembers,animation} is enabled, animation will only occur if showMember() is
@@ -2947,23 +2952,29 @@ replaceMember : function (oldMember, newMember) {
 
 // internal membersChanged
 _membersChanged : function () {
-    var defResize = this.defaultResizeBars;
-    // skip resizeBar logic if default is none
-    if (defResize != isc.Canvas.NONE) {
-        for (var i = this.members.length-1; i >= 0; i--) {
-            var member = this.members[i];
-            var showResize = false;
-            if (defResize == isc.Canvas.MARKED && member.showResizeBar) {
-                showResize = true;                  
-            } else if (defResize == isc.Canvas.MIDDLE && i < this.members.length - 1 
-                        && member.showResizeBar != false) {
-                showResize = true;
-            } else if (defResize == isc.Canvas.ALL && member.showResizeBar != false) {
-                showResize = true;
+    if (!this.destroying) { // skip if happening during destroy()
+
+        var defResize = this.defaultResizeBars;
+        // skip resizeBar logic if default is none
+        if (defResize != isc.Canvas.NONE) {
+            for (var i = this.members.length-1; i >= 0; i--) {
+                var member = this.members[i];
+                // handle sparse array
+                if (member == null) continue;
+                var showResize = false;
+                if (defResize == isc.Canvas.MARKED && member.showResizeBar) {
+                    showResize = true;                  
+                } else if (defResize == isc.Canvas.MIDDLE && i < this.members.length - 1 
+                            && member.showResizeBar != false) {
+                    showResize = true;
+                } else if (defResize == isc.Canvas.ALL && member.showResizeBar != false) {
+                    showResize = true;
+                }
+                member.setShowResizeBar(showResize);
             }
-            member.setShowResizeBar(showResize);
         }
     }
+
     // fire membersChanged event
     if (this.membersChanged) this.membersChanged();
 },
@@ -3045,7 +3056,7 @@ dragRepositionStart : function () {
 },
 
 // This helper method is called when dragging a member out of a layout.
-// It will deparent the member and move it to the appropriate postion (so it can be dragged
+// It will deparent the member and move it to the appropriate position (so it can be dragged
 // and/or animated around outside the parent).
 // It also adds a spacer to the layout where the member was taken from so we don't get an
 // unexpected reflow.
@@ -3102,10 +3113,10 @@ dragRepositionStop : function () {
     // If the appearance is neither OUTLINE nor TARGET - just kill the event        
     if (!isTarget && (appearance != isc.EH.OUTLINE)) return false;
     
-    // Default EH.dragRepostionStop() behavior:
+    // Default EH.dragRepositionStop() behavior:
     // - if dragAppearance is target, and target.dragRepositionStop() returns false, call 
     //   'moveTo' to reset the position of the member to whatever it was before dragging started
-    // - if dragAppearance is outline or tracker, and target.dragRepostionStop() does not 
+    // - if dragAppearance is outline or tracker, and target.dragRepositionStop() does not 
     //   return false, call 'moveTo' on the target to move it to the drop position.
     // To suppress both these behaviors we therefore return false if dragAppearance is outline,
     // or STOP_BUBBLING if dragAppearance is target.
@@ -3241,7 +3252,7 @@ dropStop : function () { this.hideDropLine(); },
 //
 // @param dragTarget (Canvas) current drag target 
 // @param dropPosition (int) index of the drop in the list of current members
-// @return (boolean) Returning false will cancel the drop entirely
+// @return (Canvas) the component to add to the layout, or null to cancel the drop
 //
 // @visibility external
 //<
@@ -3561,11 +3572,17 @@ showDropLine : function () {
     var breadth = this.vertical ? 
         this.getVisibleWidth() - this.getVMarginBorder() - this._getBreadthMargin() :
         this.getVisibleHeight() - this.getHMarginBorder() - this._getLengthMargin();
+        
+    // "breadth" was being used for the height of the dropLine in an HLayout in the 
+    // setPageRect() below, but includes inappropriate margins. Calculating the proper height
+    // separately to avoid the risk of breaking something else
+    var height = breadth + this._getLengthMargin();
+    
     this._dropLine.setPageRect(
         (this.vertical ? this.getPageLeft() + breadthOffset : lengthOffset),
         (this.vertical ? lengthOffset : this.getPageTop() + breadthOffset),
         (this.vertical ? breadth : thickness),
-        (this.vertical ? thickness : breadth)
+        (this.vertical ? thickness : height)
     );
     
     var topParent = this.topElement || this;
@@ -3747,7 +3764,7 @@ reportSizes : function (layoutInfo, reason) {
 //
 //  A subclass of Layout that applies a sizing policy along the horizontal axis, interpreting
 //  percent and "*" sizes as proportions of the width of the layout. HLayouts will set any members
-//  that do not have explict heights to match the layout.
+//  that do not have explicit heights to match the layout.
 //
 // @see Layout.hPolicy
 // @treeLocation Client Reference/Layout
@@ -3763,7 +3780,7 @@ isc.defineClass("HLayout","Layout").addProperties({
 //
 //  A subclass of Layout that applies a sizing policy along the vertical axis, interpreting
 //  percent and "*" sizes as proportions of the height of the layout. VLayouts will set any
-//  members that do not have explict widths to match the layout.
+//  members that do not have explicit widths to match the layout.
 //
 // @see Layout.vPolicy
 // @treeLocation Client Reference/Layout
@@ -3777,7 +3794,7 @@ isc.defineClass("VLayout","Layout").addProperties({
 //>	@class	HStack
 //
 // A subclass of Layout that simply stacks members on the horizontal axis without trying to
-// manage their width.  On the vertical axis, any members that do not have explict heights will
+// manage their width.  On the vertical axis, any members that do not have explicit heights will
 // be sized to match the height of the stack.
 //
 // @see Layout.hPolicy
@@ -3800,7 +3817,7 @@ isc.defineClass("HStack","Layout").addProperties({
 //>	@class	VStack
 //
 // A subclass of Layout that simply stacks members on the vertical axis without trying to
-// manage their height.  On the horizontal axis, any members that do not have explict widths
+// manage their height.  On the horizontal axis, any members that do not have explicit widths
 // will be sized to match the width of the stack.
 //
 // @see Layout.vPolicy

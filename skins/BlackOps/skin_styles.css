@@ -93,6 +93,12 @@
     font-family:Arial,sans-serif; font-size:11px; color:black;
     background-color:#FFFFD0; border:1px solid #808080; padding:5px;
 }
+/* group label */
+.groupLabel {
+    font-family:Arial,sans-serif; font-size:11px;
+    color:#CCCCCC; padding-left:5px; padding-right:5px;
+}
+
 /*============================================================
     2) Button
 		button.baseStyle
@@ -513,6 +519,12 @@
 .imgSectionHeaderTitleOveropened {
     font-family:Arial,sans-serif; font-size:11px; font-weight:bold;
     color:#FFFFFF;
+    border-left:5px;
+}
+.imgSectionHeaderTitleDisabledopened,
+.imgSectionHeaderTitleDisabledclosed {
+    font-family:Arial,sans-serif; font-size:11px; font-weight:bold;
+    color:grey;
     border-left:5px;
 }
 /* 
@@ -996,7 +1008,7 @@
 .listTable {}
 /* for filterEditor */
 .recordEditorCell {
-    font-family:Arial,sans-serif; font-size:11px; color:black; background-color:#d0d0d0;
+    font-family:Arial,sans-serif; font-size:11px; color:black; background-color:#262626;
 }
 
 
@@ -1093,35 +1105,127 @@
 .cellSelectedOverDark,
 .cellDisabled,
 .cellDisabledDark,
+.tallCell,
+.tallCellDark,
+.tallCellOver,
+.tallCellOverDark,
+.tallCellSelected,
+.tallCellSelectedDark,
+.tallCellSelectedOver,
+.tallCellSelectedOverDark,
+.tallCellDisabled,
+.tallCellDisabledDark,
+.gridSummaryCell,
+.gridSummaryCellDisabled,
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark,
+.specialCol,
+.specialColOver,
+.specialColSelected,
+.specialColSelectedOver,
+.specialColDisabled,
 .groupNode {
 	font-family:Arial,sans-serif; font-size:11px; text-overflow:ellipsis;
 	color:#C0C0C0;
 }
-.cellDark {
+
+.specialCol {
+	color:#888888;
+	background-color:#404040;
+}
+
+.tallCell,
+.tallCellDark,
+.tallCellOver,
+.tallCellOverDark,
+.tallCellSelected,
+.tallCellSelectedDark,
+.tallCellSelectedOver,
+.tallCellSelectedOverDark,
+.tallCellDisabled,
+.tallCellDisabledDark {
+ border-bottom:1px solid #E1E1E1;
+ }
+.cellDark
+{
     color:#D9D9D9;
 	background-color:#262626;
 }
+.tallCellDark {
+	background-color:#F6F7F9;
+}
 .cellOver,
-.cellOverDark {
+.cellOverDark,
+.specialColOver,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark {
     color:#111111;
     background:url(./images/ListGrid/row.png) repeat scroll;
 }
+.tallCellOver,
+.tallCellOverDark {
+	background-color:#E5F6FF; border-bottom:1px solid #C4DEFF;
+}
 .cellSelected,
-.cellSelectedDark {
+.cellSelectedDark,
+.specialColSelected,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark {
     color:#EEEEEE;
 	background-color:rgb(44,88,147);
 }
+.tallCellSelected,
+.tallCellSelectedDark {
+    color:#EEEEEE;
+	background-color:rgb(44,88,147); border-bottom:1px solid #C4DEFF;
+}
 .cellSelectedOver,
-.cellSelectedOverDark {
+.cellSelectedOverDark,
+.specialColSelectedOver,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark {
     color:#DDDDDD;
 	background:rgb(44,88,147) url(./images/ListGrid/row_Selected.png) repeat scroll;
 }
+.tallCellSelectedOver,
+.tallCellSelectedOverDark {
+	background-color:#A2CBFF; border-bottom:1px solid #9BC8FF;
+}
 .cellDisabled,
-.cellDisabledDark {
+.cellDisabledDark,
+.tallCellDisabled,
+.tallCellDisabledDark,
+.specialColDisabled,
+.gridSummaryCellDisabled,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
 	color:#595959;
 	background-color:#404040;
 }
 
+.gridSummaryCell,
+.gridSummaryCellDisabled,
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
+    font-weight:bold;
+}
+      
 /* for grouping */
 .groupNode {
     font-weight:bold;
@@ -1132,6 +1236,11 @@
 .sampleOutput {
     border: 2px solid #D9D9D9;
     padding: 3px; 
+}
+
+/* Multi-sort - sort-index appearing next to sort-arrows in field headers */
+.sortNumeral {
+    font-size:7px
 }
 
 /*============================================================
@@ -1941,6 +2050,7 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 .calMonthOtherDayBlankOverDark {
     font-family:Arial,sans-serif; font-size:11px;
     color:#444444;
+    border-bottom:1px solid #a0a0a0; border-right:1px solid #a0a0a0;
     background-color: #E6E6E6;
 }
 

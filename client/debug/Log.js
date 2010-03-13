@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1057,10 +1057,15 @@ isc.Log.addClassMethods({
 	addLogMessage : function (priority, message, category, msgPrefix, timestamp) {
         
 
-		this.addToMasterLog(this._makeLogMessage(priority, message, category, msgPrefix, timestamp))
+        var logMessage = this._makeLogMessage(priority, message, category, msgPrefix, timestamp);
+		this.addToMasterLog(logMessage);
+
+        if (this.warningLogged != null && priority != null && priority <= this.WARN) {
+            this.warningLogged(logMessage);
+        }
 
 		// show alerts in addition for error and fatal level log messages
-		if (priority != null && (priority == this.FATAL || priority == this.ERROR)) {
+		if (priority != null && priority <= this.ERROR) {
 			alert(message);
 		}
 	},
@@ -1294,6 +1299,7 @@ isc.Log.addClassMethods({
     },
 	
     // generate a function that calls the original message and logs timing data
+    _currentlyTiming:{},
 	makeTimerFunction : function (methodName, object, storeTotals, dontLog, causeGC) {
 
 		var method = object[methodName],
@@ -1306,10 +1312,13 @@ isc.Log.addClassMethods({
             // you can use this to take the GC-based variability out of a method being timed
             if (causeGC) isc.Log._causeGC();
 			var start = isc.timeStamp();
+            
+            
             var returnValue = method.call(this, a,b,c,d,e,f,g,h,i,j,k);
             var total = (isc.timeStamp()-start);
  
             
+                
             if (!dontLog) isc.Log._logTimerResult(this, fullMethodName, total);
             return returnValue;
         }
@@ -1459,15 +1468,18 @@ isc.Log.addClassMethods({
         if (this._hiliteCanvas) this._hiliteCanvas.hide();
     },
 
+    flashHiliteCount: 7,
+    flashHilitePeriod: 500,
+    
     _flashHiliteCanvas : function () {
         // a function to set the hilite canvas to flash on a timer a few times
         var borders = [this._hiliteCanvas.border1,this._hiliteCanvas.border2];
         
-        for (var i=0; i<7; i++) {
+        for (var i=0; i<this.flashHiliteCount; i++) {
             isc.Timer.setTimeout({
                     target:this._hiliteCanvas, methodName:"setBorder",
                     args:[borders[i%2]]
-                }, (500*i)
+                }, (this.flashHilitePeriod*i)
             )
         }
     }

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -34,6 +34,10 @@ var libs =
 		"application/ResultSet",        // data model for Lists loaded incrementally from a server
 		"application/ResultTree",       // data model for Trees loaded incrementally from a server
 		"application/ActionMethods",      // flow methods for databinding-capable components
+        
+        "application/DataView",         // Self-contained application element, capable of loading 
+                                        // its own config, components and data from webservices
+        "application/ServiceOperation", // A webservice operation
 
         
         
@@ -63,6 +67,7 @@ var libs =
         "schema/WebServiceOperation.ds.xml",
         "schema/WSOperationHeader.ds.xml",
 
+
         "application/Operators",        // i18n naming object for AdvancedCriteria operators
 		"widgets/form/FilterBuilder",	// advanced search form that allows the user to specify
                                         // individual fields and operators
@@ -72,7 +77,11 @@ var libs =
         //"application/S3",
         //<S3
         
-        "widgets/ScreenReader"
+        "widgets/ScreenReader",
+        
+        "widgets/DataSourceEditor",
+        
+        "application/MultiSortDialog"
         
 	];
 

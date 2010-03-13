@@ -3,7 +3,7 @@
 		<field name="required" 			type="boolean"  title="Required" inapplicable="true"/>    
 		<field name="defaultValue"      type="date"   useTextField="true" 
                title="Default Value"/> 
-		<field name="useTextField"      type="boolean"  title="Use Text Field"/>
+		<field name="useTextField"      type="boolean"  title="Use Text Field" basic="true" />
         <field name="invalidDateStringMessage"  type="string"/>
 		<field name="centuryThreshold"  type="positiveInteger"  title="Century Threshold"/>    
 		<field name="dateFormat"	type="enum"> 

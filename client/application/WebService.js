@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -32,6 +32,10 @@
 isc.defineClass("Schema", "DataSource").addProperties({
     dataFormat : "xml",
 
+    // since the schema already knows the types and can be consulted for type information at
+    // any time, when decoding data we drop all namespace declarations on nodes.
+    dropNamespaceDeclarations:true,
+
     // NOTE: currently all subclasses of Schema are generated from various XML formats.  We
     // assume they shouldn't be global variables, which is really just intended as a
     // convenience for user-authored DataSources.
@@ -41,13 +45,12 @@ isc.defineClass("Schema", "DataSource").addProperties({
 isc.defineClass("WSDLMessage", "Schema").addMethods({
 
     
-    getWSOperation : function () {
-        var service = this.getWebService();
-        // HACK: find the operation whose input message matches our ID with the prefix
-        // "message:" removed
-        var operation = service.operations.find("inputMessage", this.ID.substring(8));
-        if (operation) return operation;
-        return service.operations.find("outputMessage", this.ID.substring(8));
+    getWSOperation : function (dsRequest) {
+        var service = this.getWebService(dsRequest);
+        // being invoked by way of an entity DataSource performing an operation
+        if (dsRequest && dsRequest.wsOperation) return service.getOperation(dsRequest.wsOperation);
+        // being invoke standalone, eg, callOperation()
+        else return service.getOperationForMessage(this.ID.substring(8));
     }
 });
 
@@ -70,6 +73,7 @@ isc.defineClass("SchemaSet").addMethods({
     // @visibility xmlBinding
     //<
     init : function () {
+	    this.ns.ClassFactory.addGlobalID(this);
 
         // register the schemaSet globally with the SchemaSet class
         var schemaNamespace = this.schemaNamespace,
@@ -88,10 +92,12 @@ isc.defineClass("SchemaSet").addMethods({
             registry[schemaNamespace] = this;
         }
 
+        // index all schema within this schemaset
         var serviceNamespace = this.serviceNamespace;
         if (this.schema) {
             this._typeIndex = {};
             this._elementIndex = {};
+            this._simpleTypeIndex = {};
 
             for (var i = 0; i < this.schema.length; i++) {
                 var schema = this.schema[i];
@@ -99,9 +105,12 @@ isc.defineClass("SchemaSet").addMethods({
                 // attribute set
                 schema.serviceNamespace = serviceNamespace;
                 schema.schemaNamespace = schemaNamespace;
+                schema.location = this.location;
 
                 // make an index of all the schema in this SchemaSet
-                if (schema.ID) {
+                if (isc.isA.SimpleType(schema)) {
+                    this._simpleTypeIndex[schema.name] = schema;
+                } else if (schema.ID) {
                     
                     if (isc.isAn.XSElement(schema)) {
                         this._elementIndex[schema.ID] = schema;
@@ -128,10 +137,98 @@ isc.defineClass("SchemaSet").addMethods({
     // @visibility xmlBinding
     // @example xmlSchemaImport
     //<
-    getSchema : function (schemaName, schemaType) {
-        if (schemaType == isc.DS._$element) return this._elementIndex[schemaName];
-        if (schemaType == isc.DS._$type) return this._typeIndex[schemaName];
-        return this._typeIndex[schemaName] || this._elementIndex[schemaName];
+    getSchema : function (schemaName, schemaType, alreadyVisited) {
+        // xs:schema routinely import each other, so avoid looping getSchema calls
+        if (!alreadyVisited) alreadyVisited = [this];
+        else alreadyVisited.add(this);
+
+        var schema;
+    
+        // try local, type-specific indexes 
+        if (schemaType == isc.DS._$element) schema = this._elementIndex[schemaName];
+        else if (schemaType == isc.DS._$type) schema = this._typeIndex[schemaName];
+
+        // if schemaType wasn't specified take either type of schema locally
+        if (schemaType == null) {
+            schema = this._typeIndex[schemaName] || this._elementIndex[schemaName];
+            if (schema != null) return schema;
+        }
+
+        // resolve all <xs:import> tags to find already loaded schemaSets we imported
+        if (!this._lookedUpImports) {
+            isc.SchemaSet.findLoadedImports(this);
+            this._lookedUpImports = true;
+        }
+
+        // try imported schema if present
+        var schemaSets = this._schemaSets;
+        if (schemaSets != null) {
+            for (var i = 0; i < schemaSets.length; i++) {
+                var schemaSet = schemaSets[i];
+                if (alreadyVisited.contains(schemaSet)) continue;
+                schema = schemaSet.getSchema(schemaName, schemaType, alreadyVisited);
+                if (schema != null) return schema;
+            }
+        }
+    },
+
+    getSimpleType : function (typeName, alreadyVisited) {
+        // xs:schema routinely import each other, so avoid looping getSchema calls
+        if (!alreadyVisited) alreadyVisited = [this];
+        else alreadyVisited.add(this);
+
+        var simpleType;
+        if (this._simpleTypeIndex) {
+            simpleType = this._simpleTypeIndex[typeName];
+            if (simpleType) return simpleType;
+        }
+
+        if (this._schemaSets != null) {
+            for (var i = 0; i < this._schemaSets.length; i++) {
+                var schemaSet = this._schemaSets[i];
+                if (alreadyVisited.contains(schemaSet)) continue;
+                simpleType = schemaSet.getSimpleType(typeName, alreadyVisited);
+                if (simpleType != null) return simpleType;
+            }
+        }
+    },
+
+    setLocation : function (location) {
+        this.location = location;
+        if (!this.schema) return;
+
+        for (var i = 0; i < this.schema.length; i++) {
+            var schema = this.schema[i];
+            schema.location = location;
+        }
+    },
+
+    loadImports : function (callback) {
+        isc.SchemaSet.loadImports(callback, this);
+    },
+
+    // override point for changing how imported schema are loaded
+    // NOTE: duplicated in WebService
+    loadImport : function (namespace, location, callback, isWSDL) {
+        return isc.SchemaSet.loadImport(namespace, location, callback, isWSDL, this);
+    },
+    doneImporting : function () {
+        this.fireCallback(this._doneImportingCallback);
+    },
+
+    // when captureXML has been set in loadWSDL / loadXMLSchema, this method is called on the
+    // initiator of a series of schema loads so that complete source is available
+    addImportXMLSource : function (xmlText, location) {
+        this.importSources = this.importSources || [];
+        this.importSources.add({
+            xmlText : xmlText,
+            location : location
+        })
+    },
+
+    addSchemaSet : function (schemaSet, namespace) {
+        this._imports = this._imports || [];
+        this._imports.add(schemaSet);
     }
 
 });
@@ -150,8 +247,174 @@ isc.SchemaSet.addClassMethods({
     //<
     get : function (schemaNamespace) {
         return this.schemaSets[schemaNamespace];
-    }
+    },
+
+    // find already loaded SchemaSets to fulfill <xs:import>s from within a WSDL or XML Schema
+    // file.  Note loadImports() is what would actually attempt to load imported files from
+    // the "location" attribute provided on the <xs:import> tag (if any)
+    // "loader" may be an instance of WebService or SchemaSet
+    findLoadedImports : function (loader) {
+        var imports = this.getAllImports(loader);
+
+        if (!imports) return;
+
+        var schemaSets = loader._schemaSets = loader._schemaSets || [];
+        var webServices = loader._webServices = loader._webServices || [];
+
+        for (var i = 0; i < imports.length; i++) {
+            var importDef = imports[i],
+                isWSDL = importDef.isWSDL,
+                importNamespace = importDef.namespace;
+
+            if (this._ignoreImports.contains(importNamespace)) continue;
+
+            // we already have it
+            if ((isWSDL && webServices.find("serviceNamespace", importNamespace)) ||
+                (!isWSDL && schemaSets.find("schemaNamespace", importNamespace)))
+                continue;
+
+            var importObj = isWSDL ? 
+                    isc.WebService.get(importNamespace) : isc.SchemaSet.get(importNamespace);
+            if (importObj == null) {
+                var preamble;
+                if (isc.isA.WebService(loader)) {
+                    preamble = "WebService with targetNamespace '" + loader.serviceNamespace;
+                } else {
+                    preamble = "SchemaSet with targetNamespace '" + loader.schemaNamespace;
+                }
+                // it's common for WSDL or XSD to contain a bunch of imports for which there is
+                // no actual file, in a usage almost like "marker interfaces" in Java.  If
+                // there's no location, don't consider this a warning.
+                var logMethod = importDef.location ? "logWarn" : "logInfo";
+                loader[logMethod](preamble + "' could not find " +
+                                  (isWSDL ? "webService" : "SchemaSet") +
+                                  " for namespace: '" + importNamespace + 
+                                  "'. Pass autoLoadImports to loadWSDL()/loadXMLSchema() or " +
+                                  "separately load via loadWSDL/loadXMLSchema jsp tag or method", 
+                                   "schemaLoader");
+                continue;
+            }
+            // any schemaSet that was independently loaded would have it's own location
+            // already set.  If it's got no location assume it was loaded with this web
+            // service.  XXX not true of schema loaded by JSP tags
+            if (importObj.location == null) importObj.setLocation(loader.location);
+            isWSDL ? webServices.add(importObj) : schemaSets.add(importObj);
+        }
+    },
+
+    getAllImports : function (loader) {
+        var imports = loader.schemaImports;
+        if (loader.wsdlImports) {
+            loader.wsdlImports.setProperty("isWSDL", true);
+            imports = imports || [];
+            imports = imports.concat(loader.wsdlImports);
+        }
+        return imports;
+    },
+
+    // fulfill <xs:import>s from within a WSDL or XML Schema by actually attempting to load 
+    // the imported XML Schema from the "location" attribute provided on the <xs:import> tag
+    // (if any)
+    loadImports : function (callback, loader) {
+        loader._doneImportingCallback = callback;
+
+        var imports = this.getAllImports(loader);
+
+        // if nothing to import, fire callback immediately
+        if (!imports) return loader.doneImporting();
+
+        loader._importCount = 0;
+
+        //loader.logWarn("imports are: " + loader.echoFull(imports));
+
+        for (var i = 0; i < imports.length; i++) {
+            var importDef = imports[i],
+                namespace = importDef.namespace;
+
+            if (namespace) {
+                var alreadyLoaded = (importDef.isWSDL ? 
+                    isc.WebService.get(namespace) :
+                    isc.SchemaSet.get(namespace));
+                if (alreadyLoaded != null) { 
+                    loader.logDebug("import already loaded: " + namespace + ", skipping",
+                                    "schemaLoader");
+                    continue;
+                }
+            }
+            if (importDef.location && importDef.location != loader.location) {
+                var requested = loader.loadImport(namespace, importDef.location, function (loadedObj) {
+                    if (isc.isA.WebService(loadedObj)) {
+                        loader.addWebService(loadedObj, namespace);
+                    } else {
+                        loader.addSchemaSet(loadedObj, namespace);
+                    }
+                    loader._importCount--;
+                    loader.logInfo(loader + " loaded import: " + loadedObj +
+                                    " as namespace: " + namespace +
+                                    ", remaining imports: " + loader._importCount,
+                                    "schemaLoader");
+                    if (loader._importCount == 0) loader.doneImporting();
+                }, importDef.isWSDL);
+                if (requested) loader._importCount++;
+            }
+        }
+        // no attempts to load imports, fire callback now
+        if (loader._importCount == 0) loader.doneImporting();
+    },
+    loadImport : function (namespace, location, callback, isWSDL, loader) {
+        // "location" attribute is intended to the location of the file doing the import, so
+        // combine URLs
+        var baseDir = loader.location.substring(0, loader.location.lastIndexOf("/"));
+        if (!baseDir.endsWith("/")) baseDir += "/";
+        var url = isc.Page.combineURLs(baseDir, location);
+
+        // strangely XML schema files sometimes import themselves
+        if (url == loader.location) {
+            loader.logDebug("skipping self-reference import: " + url, "schemaLoader");
+            return false;
+        }
+
+        // skip certain pedantic imports like importing the XML namespace
+        if (this._ignoreImports.contains(url)) {
+            loader.logDebug("skipping pedantic import: " + url, "schemaLoader");
+            return false;
+        }
+
+        // skip definitely redundant loads (this page has already loaded from this URL)
+        if (this._allImports.contains(url)) {
+            loader.logDebug("skipping redundant import: " + url, "schemaLoader");
+            return false;
+        }
+        this._allImports.add(url);
+
+        loader.logInfo("loading import from: " + url +
+                       "\nschema/service base dir: " + baseDir + 
+                       "\nimport location: " + location, "schemaLoader");
+        
+        var method = isWSDL ? "loadWSDL" : "loadXMLSchema";
+        isc.xml[method](url, function (schemaSet) {
+            loader.fireCallback(callback, "schemaSet", [schemaSet]);
+        }, null, true, {
+            // track the initiator of any series of schema loads (first WebService / SchemaSet
+            // to have loaded)
+            initiator:loader.initiator || loader,
+            // recursively capture XML if the original call asked for it
+            captureXML:loader.captureXML 
+        });
+        return true;
+    },
+    _ignoreImports : [
+        "http://www.w3.org/2001/xml.xsd",
+        "http://www.w3.org/2001/XMLSchema",
+        "http://www.w3.org/XML/1998/namespace"
+    ],
+    _allImports : []
 });
+
+isc.SchemaSet.getPrototype().toString = function () {
+    return "[" + this.Class + " ns=" + this.echoLeaf(this.schemaNamespace) + 
+        (this.location ? " location=" + isc.Page.getLastSegment(this.location) : "") + "]";
+};
 
 //> @class WSRequest
 // A WSRequest (or "web service request") is an extended RPCRequest will additional properties
@@ -182,6 +445,24 @@ isc.SchemaSet.addClassMethods({
 // @visibility external
 //<
 
+//> @attr wsRequest.xmlNamespaces (Object : null : IR)
+// Optional object declaring namespace prefixes for use in evaluating the
+// <code>resultType</code> parameter of +link{WebService.callOperation()}, if resultType is an
+// XPath.
+// <P>
+// Format is identical to +link{operationBinding.xmlNamespaces}, and default namespaces
+// bindings are also identical.
+//
+// @visibility external
+//<
+
+//> @attr wsRequest.xmlResult (boolean : false : IR)
+// Valid only with +link{WebService.callOperation()}.  If set, do not transform XML results to
+// JavaScript.  Instead just return the XML nodes selected by the passed XPath or recordName,
+// or all nodes within the SOAP body if no XPath was passed.
+//
+// @visibility external
+//<
 
 //> @attr wsRequest.headerData (any : null : IR)
 // Data to be serialized to form the SOAP headers, as a map from the header part name to the
@@ -223,15 +504,117 @@ isc.defineClass("WebService").addMethods({
         }
 
         // register globally
-        this.logInfo("registered service with serviceNamespace: " + namespace);
-        isc.WebService.services[namespace] = this;
+        this.logInfo("registered service with serviceNamespace: " + namespace +
+                     " service name: " + this.name);
+        isc.WebService.services.add(this);
 
         // for loadWSDL() callback to return WebService
         isc.WebService._lastLoaded = this; 
     },
-    getOperation : function (operationName) {
+
+    loadImports : function (callback) {
+        isc.SchemaSet.loadImports(callback, this);
+    },
+
+    // override point for changing how imported schema are loaded
+    // NOTE: duplicated in SchemaSet
+    loadImport : function (namespace, location, callback, isWSDL) {
+        return isc.SchemaSet.loadImport(namespace, location, callback, isWSDL, this);
+    },
+    doneImporting : function () {
+        this.fireCallback(this._doneImportingCallback);
+    },
+
+    addSchemaSet : function (schemaSet, namespace) {
+        this._schemaSets = this._schemaSets || [];
+        this._schemaSets.add(schemaSet);
+    },
+
+    addWebService : function (webService, namespace) {
+        this._webServices = this._webServices || [];
+        this._webServices.add(webService);
+    },
+
+    // when captureXML has been set in loadWSDL / loadXMLSchema, this method is called on the
+    // initiator of a series of schema loads so that complete source is available
+    addImportXMLSource : function (xmlText, location) {
+        this.importSources = this.importSources || [];
+        this.importSources.add({
+            xmlText : xmlText,
+            location : location
+        })
+    },
+
+    getOperation : function (operationName, portTypeName) {
         if (isc.isAn.Object(operationName)) return operationName;
-        return this.operations.find("name", operationName);
+
+        // ensure we've looked up related WSDL/XMLSchema imports
+        if (!this._lookedUpImports) {
+            isc.SchemaSet.findLoadedImports(this);
+            this._lookedUpImports = true;
+        }
+
+        // look up the binding and portType definitions
+        var bindingOperation = this.getBindingOperation(operationName, portTypeName);
+        var portTypeOperation = this.getPortTypeOperation(operationName, portTypeName);
+        
+        if (!bindingOperation && !portTypeOperation) {
+            this.logWarn(this + ": no such operation: '" + operationName + "'");
+            return null;
+        }
+
+        // and combine into a structure that has everything we need to know
+        return isc.addProperties({}, portTypeOperation, bindingOperation);
+    },
+    
+    // find an operation from a list of bindings or portTypes
+    findOperation : function (operationName, portTypeName, bindingList, isPortType) {
+        if (!bindingList) return;
+
+        // if portTypeName is specified, look in only <binding>s or <portType>s of that name
+        if (portTypeName) bindingList = bindingList.findAll("portTypeName", portTypeName);
+        if (!bindingList) return;
+
+        // check imported web service definitions
+        if (this._webServices) {
+            for (var i = 0; i < this._webServices.length; i++) {
+                var webService = this._webServices[i],
+                    method = isPortType ? "getPortTypeOperation" : "getBindingOperation",
+                    operation = webService[method](operationName, portTypeName);
+                if (operation != null) return operation;
+            }
+        }
+
+        // otherwise look in any of them, so that only operationName needs to be specified so
+        // long as it's unique
+        for (var i = 0; i < bindingList.length; i++) {
+            var operations = bindingList[i].operation;
+            if (!isc.isAn.Array(operations)) operations = [operations];
+            var operation = operations.find("name", operationName);
+            if (operation != null) return operation;
+        }
+    },
+
+    // get an <operation> definition from a <portType>
+    // portTypes contain the inputMessage and outputMessage
+    getPortTypeOperation : function (operationName, portTypeName) {
+        return this.findOperation(operationName, portTypeName, this.portTypes, true);
+    },
+    // get an <operation> definition from a <binding>
+    // bindings contain the soapAction, parts (which parts of the message to use), soapEncoding
+    // style, input and output namespace (for encodings that cause an element to be output
+    // corresponding to the operation name)
+    getBindingOperation : function (operationName, portTypeName) {
+        return this.findOperation(operationName, portTypeName, this.bindings);
+    },
+
+    getOperationForMessage : function (messageName) {
+        var operations = this.getOperations();
+        if (!operations) return;
+        var operation = operations.find("inputMessage", messageName);
+        if (operation) return operation;
+        operation = operations.find("outputMessage", messageName);
+        if (operation) return operation;
     },
 
     //> @method webService.getOperationNames()
@@ -240,7 +623,60 @@ isc.defineClass("WebService").addMethods({
     // @visibility xmlBinding
     //<
     getOperationNames : function () {
-        return this.operations.getProperty("name");
+        // return cached list
+        var operationNames = this.operationNames;
+        if (operationNames) return operationNames;
+
+        // ensure we've looked up related WSDL/XMLSchema imports to connect to separately
+        // loaded portTypes
+        if (!this._lookedUpImports) {
+            isc.SchemaSet.findLoadedImports(this);
+            this._lookedUpImports = true;
+        }
+
+        operationNames = this.operationNames = [];
+        if (this.bindings) {
+            for (var i = 0; i < this.bindings.length; i++) {
+                var binding = this.bindings[i],
+                    operations = binding.operation;
+                if (!isc.isAn.Array(operations)) operations = [operations];
+                operationNames.addList(operations.getProperty("name"));
+                // find the corresponding portType operation and mark it as having a binding
+                for (var j = 0; j < operationNames.length; j++) {
+                    var ptOperation = this.getPortTypeOperation(operationNames[j], binding.portTypeName);
+                    if (ptOperation) ptOperation.hasBinding = true;
+                }
+            }
+        }
+        // add all operations on portType that don't have a binding
+        if (this.portTypes) {
+            for (var i = 0; i < this.portTypes.length; i++) {
+                var portType = this.portTypes[i],
+                    operations = portType.operation;
+                if (!isc.isAn.Array(operations)) operations = [operations];
+                var unbound = operations.findAll("hasBinding", true);
+                if (unbound) {
+                    operations = operations.duplicate();
+                    operations.removeAll(unbound);
+                }
+                operationNames.addList(operations.getProperty("name"));
+            }
+        }
+
+        // expensive, so cache it
+        return (this.operationNames = operationNames);
+    },
+
+    // get operation definitions for all of the operations supported by this web service
+    getOperations : function (boundOnly) {
+        var operationNames = this.getOperationNames(),
+            operations = [];
+        for (var i = 0; i < operationNames.length; i++) {
+            var operation = this.getOperation(operationNames[i]);
+            if (boundOnly && !operation.hasBinding) continue;
+            operations.add(operation);
+        } 
+        return operations;
     },
 
     //> @method webService.getSchema()
@@ -260,31 +696,19 @@ isc.defineClass("WebService").addMethods({
         // look up all the schemaSets that the WSDL file referred to.
         // do this lazily so order of creation doesn't matter for SchemaSets and WebServices
         // loaded from one WSDL file
-        var schemaSets = this._schemaSets;
-        if (!schemaSets) {
-            schemaSets = this._schemaSets = [];
-            var imports = this.schemaImport;
-            if (imports) {
-                if (!isc.isAn.Array(imports)) imports = [imports];
-                var namespaces = imports.getProperty("namespace");
-                for (var i = 0; i < namespaces.length; i++) {
-                    var schemaNamespace = namespaces[i],
-                        schemaSet = isc.SchemaSet.get(schemaNamespace);
-                    if (schemaSet == null) {
-                        this.logWarn("Could not find SchemaSet for schemaNamespace: '" +
-                                     schemaNamespace + "', schema imported via 'xs:import' must " +
-                                     "be separately loaded via loadXMLSchema");
-                        continue;
-                    }
-                    schemaSets.add(schemaSet);
-                }
-            }
+        if (!this._lookedUpImports) {
+            isc.SchemaSet.findLoadedImports(this);
+            this._lookedUpImports = true;
         }
 
-        // look through each schemaSet for a schema of this name
-        for (var i = 0; i < schemaSets.length; i++) {
-            var schema = schemaSets[i].getSchema(name, schemaType);
-            if (schema) return schema;
+        var schemaSets = this._schemaSets;
+        if (schemaSets != null) {
+            // look through each schemaSet for a schema of this name
+            for (var i = 0; i < schemaSets.length; i++) {
+                var schemaSet = schemaSets[i];
+                var schema = schemaSet.getSchema(name, schemaType);
+                if (schema) return schema;
+            }
         }
         
         // finally, look globally.  This is key for discovering schema loaded from separate
@@ -295,11 +719,32 @@ isc.defineClass("WebService").addMethods({
     // get the request or response message schema
     getRequestMessage : function (operationName) {
         var operation = this.getOperation(operationName);
-        return this.messages.find("ID", "message:" + operation.inputMessage);
+        return this.getMessage(operation.inputMessage);
     },
     getResponseMessage : function (operationName) {
         var operation = this.getOperation(operationName);
-        return this.messages.find("ID", "message:" + operation.outputMessage);
+        return this.getMessage(operation.outputMessage);
+    },
+
+    getMessage : function (messageName) {
+        var message = this.messages.find("ID", "message:" + messageName);
+        if (message) return message;
+
+        // ensure we're connected to any imported WSDL services, which may contain message
+        // definitions
+        if (!this._lookedUpImports) {
+            isc.SchemaSet.findLoadedImports(this);
+            this._lookedUpImports = true;
+        }
+
+        // look in imported services
+        if (this._webServices) {
+            for (var i = 0; i < this._webServices.length; i++) {
+                var webService = this._webServices[i];
+                message = webService.getMessage(messageName);
+                if (message) return message;
+            }
+        }
     },
 
     getBodyPartNames : function (operationName, isOutput) {
@@ -361,7 +806,9 @@ isc.defineClass("WebService").addMethods({
     // @param data          (Object)    data to serialize as XML to form the inbound message of
     //                                  the operation
     // @param resultType    (Type or ElementName or XPath) Type, Element name, or XPath that
-    //                                  should be selected from the result
+    //                                  should be selected from the result.  For XPaths, see
+    //                                  +link{wsRequest.xmlNamespaces} for available namespace
+    //                                  prefixes and how to add more.
     // @param callback      (Callback)  Callback to invoke on completion.  Signature
     //                                  callback(data, xmlDoc, rpcResponse, wsRequest)
     // @param requestProperties (WSRequest Properties) Additional properties for the WSRequest, such
@@ -389,6 +836,10 @@ isc.defineClass("WebService").addMethods({
             contentType: "text/xml",
             data : data,
             serviceNamespace : this.serviceNamespace,
+            // NOTE: this ensures that all DataSources involved in serialization consistently
+            // lookup the WebService instance that callOperation was called on, even if there
+            // are multiple WSDL files that defined <WebService>s in a common namespace
+            serviceName : this.name,
             wsOperation : operationName
         }, requestProperties);
         wsRequest.headerData = requestProperties.headerData || this.getHeaderData(wsRequest);
@@ -439,6 +890,9 @@ isc.defineClass("WebService").addMethods({
         }
 
         xmlDoc.addNamespaces(this.getOutputNamespaces(operationName));
+        if (rpcRequest.xmlNamespaces) {
+            xmlDoc.addNamespaces(rpcRequest.xmlNamespaces);
+        }
 
         // we were passed a type (FIXME crude detection)
         var passedXPath = (resultType != null && resultType.contains("/")),
@@ -457,6 +911,10 @@ isc.defineClass("WebService").addMethods({
             // don't create a spurious Array for the most common case of a singular body
             // element
             if (data.length == 1) data = data[0];
+        }
+    
+        if (this.logIsDebugEnabled()) {
+            this.logDebug("selected response data is: " + this.echoFull(data));
         }
     
         if (context._xmlResult) {
@@ -540,7 +998,7 @@ isc.defineClass("WebService").addMethods({
 
         if (serializer == null) {
             this.logWarn("no " + (forResponse ? "response" : "request") +
-                         " message definition found for operation: '" + operationName);
+                         " message definition found for operation: '" + operationName + "'");
             return;
         }
 
@@ -572,6 +1030,16 @@ isc.defineClass("WebService").addMethods({
             }
         }
         return serializer;
+    },
+
+    // whether this operation uses simplified inputs, that is, does not expect data to contain
+    // an object named after the message name, since the message name does not appear in the
+    // generated message itself.  Useful for callers who form a data structure that exactly
+    // corresponds to the message structure (ServiceOperation).
+    useSimplifiedInputs : function (operationName, forResponse) {
+        var normalSerializer = forResponse ? this.getResponseMessage(operationName)
+                                           : this.getRequestMessage(operationName);
+        return this.getMessageSerializer(operationName, forResponse) != normalSerializer;
     },
 
     //> @method webService.getSoapMessage() [A]
@@ -655,16 +1123,10 @@ isc.defineClass("WebService").addMethods({
         for (var i = 0; i < headers.length; i++) {
             var partName = headers[i].part,
                 messageSchema = this.getSchema("message:"+headers[i].message);
+
             //this.logWarn("messageSchema: " + messageSchema);
 
-            // the field for a wsdl:part with @element will have field.name matching the
-            // @element name (correct for serialization) but will also have a partName
-            // attribute matching the "part" from the operation.inputHeaders/outputHeaders.
-            // See schemaTranslator.xsl.
-            var partField = messageSchema.getField(partName);
-            if (partField == null) {
-                partField = isc.getValues(messageSchema.getFields()).find("partName", partName);
-            }
+            var partField = messageSchema.getPartField(partName);
 
             //this.logWarn("partField: " + this.echo(partField));
             // NOTE: simple type headers are legal, in which case we just return the field
@@ -752,10 +1214,23 @@ isc.defineClass("WebService").addMethods({
         var operation = this.getOperation(operationName),
             outputMessage = this.getSchema("message:" + operation.outputMessage),
             targetSchema = this.getSchema(schemaName);
+
+        if (targetSchema == null) {
+            this.logWarn("selectByType: type '" + schemaName + 
+                         "' not present in schema for message: " + operation.outputMessage);
+            return null;
+        }
     
         // find the tagName the target schema will appear as in the response message
-        var tagLocation = outputMessage.findTagOfType(targetSchema.ID),
-            tagLocationDS = tagLocation[0],
+        var tagLocation = outputMessage.findTagOfType(targetSchema.ID);
+
+        if (tagLocation == null) {
+            this.logWarn("selectByType: no tag of type '" + schemaName + 
+                         "' could be found in message: " + operation.outputMessage);
+            return null;
+        }
+
+        var tagLocationDS = tagLocation[0],
             tagName = tagLocation[1],
             parentSchema = tagLocation[2],
             parentSchemaTagName = tagLocation[3],
@@ -773,7 +1248,7 @@ isc.defineClass("WebService").addMethods({
         var qualify = targetSchema.mustQualify,
             namespace = targetSchema.schemaNamespace,
             xpath = "//" + (qualify ? "ns0:" : "") + tagName;
-     
+
         /*
         
         if (parentSchema && !isc.isA.WSDLMessage(parentSchema) && 
@@ -810,6 +1285,7 @@ isc.defineClass("WebService").addMethods({
     getDefaultOutputDS : function (operationName) {
         var schema = this.getResponseMessage(operationName);
 
+        if (!schema) return null;
         // skip one level of pointless containment: a complexType with just one subelement,
         // which is also a complexType.
         var fieldNames = schema.getFieldNames();
@@ -856,6 +1332,11 @@ isc.defineClass("WebService").addMethods({
         if (resultType == null) resultType = this.getDefaultOutputDS(operationName);
         resultType = isc.isA.Object(resultType) ? resultType.ID : resultType;
 
+        if (resultType != null && this.getSchema(resultType) == null) {
+            this.logWarn("getFetchDS: resultType: '" + resultType + 
+                         "' not present in web service - missing XML files?");
+        }
+    
         // we subclass because we need operation-specific properties on this DataSource,
         // where it may be shared as the inputs or part of the inputs for another operation
         var fetchDS = isc.DS.create({
@@ -893,17 +1374,24 @@ isc.defineClass("WebService").addMethods({
     // @visibility xmlBinding
     //<
     setLocation : function (location, operation) { 
-        if (operation) this.getOperation(operation).dataURL = location;
+        if (operation) this.getBindingOperation(operation).dataURL = location;
         else this.dataURL = location; 
     }
 });
 
 isc.WebService.addClassMethods({
-    services : {},
+    // NOTE: we create one WebService per .wsdl file, however, two <wsdl:definition>s can
+    // appear in two different files with different <wsdl:service> elements.  In this case
+    // the different <wsdl:service>s can be distinguished by the @name attribute on the
+    // <wsdl:service>.
+    services : [],
     
     //> @classMethod WebService.get()
     // Retrieve a WebService object by the targetNamespace declared on the &lt;wsdl:definitions&gt;
     // element in the WSDL file from which the WebService was derived.
+    // <P>
+    // If you have more than one &lt;wsdl:service&gt; in the same target namespace, use
+    // +link{classMethod:WebService.getByName} to disambiguate.
     //
     // @param serviceNamespace (String) uri from the "targetNamespace" attribute of the
     // &lt;wsdl:definitions&gt; element in the WSDL file
@@ -914,12 +1402,32 @@ isc.WebService.addClassMethods({
     // @example wsdlBinding
     //<
     get : function (serviceNamespace) {
-        return this.services[serviceNamespace];
+        return this.services.find("serviceNamespace", serviceNamespace);
+    },
+
+    //> @classMethod WebService.getByName()
+    // Retrieve a WebService object by the name attribute declared on the &lt;wsdl:service&gt; tag.
+    //
+    // @param serviceName (String) name attribute from the &lt;wsdl:service&gt; tag
+    // @param [serviceNamespace] (String) optional serviceNamespace if needed to disambiguate
+    // @return (WebService) the requested WebService, or null if not loaded
+    //
+    // @group webService
+    // @visibility xmlBinding
+    //<
+    getByName : function (serviceName, serviceNamespace) {
+        if (serviceName == "") serviceName = null;
+        if (serviceNamespace != null) {
+            return this.services.find({name: serviceName, serviceNamespace: serviceNamespace});
+        } else {
+            return this.services.find("name", serviceName);
+        }
     }
 });
 
 isc.WebService.getPrototype().toString = function () {
-    return "[" + this.Class + " ns=" + this.serviceNamespace + "]";
+    return "[" + this.Class + " ns=" + this.echoLeaf(this.serviceNamespace) + 
+        (this.location ? " location=" + isc.Page.getLastSegment(this.location) : "") + "]";
 };
 
 //> @groupDef wsdlBinding 

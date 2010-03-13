@@ -2,33 +2,29 @@
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to
@@ -40,26 +36,52 @@
 if(window.isc&&window.isc.module_Core&&!window.isc.module_FileBrowser){isc.module_FileBrowser=1;isc._moduleStart=isc._FileBrowser_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'FileBrowser load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime')
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM
-else isc._preLog=[isc._pTM]}isc.DataSource.create({
+else isc._preLog=[isc._pTM]}isc.definingFramework=true;isc.DataSource.create({
+ID:"Filesystem",
 criteriaPolicy:"dropOnChange",
 serverConstructor:"com.isomorphic.datasource.FilesystemDataSource",
-ID:"Filesystem",
 fields:{
 path:{
-type:"text",
-title:"Path",
+length:"2000",
 name:"path",
-length:2000,
+primaryKey:true,
 required:true,
-primaryKey:true
+title:"Path",
+type:"text"
 },
-parentID:{type:"text",name:"parentID",required:true,foreignKey:"Filesystem.path",rootValue:"/",
-hidden:true},
-name:{type:"text",name:"name"},
-isFolder:{type:"boolean",name:"isFolder"},
-size:{type:"long",name:"size"},
-lastModified:{type:"lastModified",name:"lastModified"},
-mimeType:{type:"text",name:"mimeType"}
+parentID:{
+foreignKey:"Filesystem.path",
+hidden:true,
+name:"parentID",
+required:true,
+rootValue:"/",
+type:"text"
+},
+name:{
+name:"name",
+type:"text"
+},
+isFolder:{
+name:"isFolder",
+type:"boolean"
+},
+size:{
+name:"size",
+type:"long"
+},
+lastModified:{
+name:"lastModified",
+type:"lastModified"
+},
+mimeType:{
+name:"mimeType",
+type:"text"
+},
+contents:{
+name:"contents",
+size:"1000000",
+type:"text"
+}
 }
 })
 isc.defineClass("FileBrowser","Window");isc.A=isc.FileBrowser;isc.A.dsDir="/shared/ds";isc.A.appDir="/shared/app";isc.A.uiDir="/shared/ui";isc.A=isc.FileBrowser.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.autoCenter=true;isc.A.modal=true;isc.A.width=400;isc.A.height=300;isc.A.canDragResize=true;isc.A.actionStripConstructor="ToolStrip";isc.A.actionStripDefaults={height:24,autoParent:"body"};isc.A.actionStripControls=["spacer:10","pathLabel","previousFolderButton","spacer:10","upOneLevelButton","spacer:10","createNewFolderButton","spacer:10","refreshButton","spacer:2"];isc.A.pathLabelConstructor="Label";isc.A.pathLabelDefaults={width:"*",autoParent:"actionStrip"};isc.A.previousFolderButtonConstructor="ImgButton";isc.A.previousFolderButtonDefaults={size:16,layoutAlign:"center",src:"[SKIN]/previousFolder.png",showRollOver:false,showDown:false,prompt:"Go To Last Folder Visited",click:"this.creator.previousFolder()"};isc.A.upOneLevelButtonConstructor="ImgButton";isc.A.upOneLevelButtonDefaults={autoParent:"actionStrip",size:16,layoutAlign:"center",src:"[SKIN]/upOneLevel.png",showRollOver:false,showDown:false,prompt:"Up One Level",click:"this.creator.upOneLevel()"};isc.A.createNewFolderButtonConstructor="ImgButton";isc.A.createNewFolderButtonDefaults={autoParent:"actionStrip",size:16,layoutAlign:"center",src:"[SKIN]/createNewFolder.png",showRollOver:false,showDown:false,prompt:"Create New Folder",click:"this.creator.createNewFolder()"};isc.A.refreshButtonConstructor="ImgButton";isc.A.refreshButtonDefaults={autoParent:"actionStrip",size:16,layoutAlign:"center",src:"[SKIN]/refresh.png",showRollOver:false,showDown:false,prompt:"Refresh",click:"this.creator.refresh()"};isc.A.directoryListingConstructor="ListGrid";isc.A.directoryListingDefaults={dataSource:"Filesystem",sortFieldNum:1,canEdit:true,folderIcon:"[SKIN]/FileBrowser/folder.png",fileIcon:"[SKIN]/FileBrowser/file.png",loadingDataMessage:"&nbsp;",emptyMessage:"&nbsp;",fileBrowser:this,showHeader:false,selectionStyle:"single",recordClick:function(_1,_2,_3){_2._canEdit=false;if(!_2.isFolder){this.creator.actionForm.setValue("fileName",_2.name)}
@@ -95,38 +117,34 @@ isc.DMI.callBuiltin({methodName:"saveFile",arguments:[this.$48v(this.currentDir,
 );isc.B._maxIndex=isc.C+8;isc.defineClass("LoadFileDialog","FileBrowser");isc.A=isc.LoadFileDialog.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.title="Load File";isc.A.actionButtonTitle="Load";isc.B.push(isc.A.fileSelected=function(_1){if(_1==null)return;this.loadFile(_1)}
 ,isc.A.loadFile=function(_1){this.fileName=_1;isc.DMI.callBuiltin({methodName:"loadFile",arguments:[this.makePath(this.currentDir,_1)],callback:this.getID()+".loadFileCallback(data)"})}
 ,isc.A.loadFileCallback=function(_1){this.fireCallback("fileLoaded","fileContents,fileName",[_1,this.fileName])}
-);isc.B._maxIndex=isc.C+3;isc.LoadFileDialog.registerStringMethods({fileLoaded:"fileContents,fileName"});isc._moduleEnd=isc._FileBrowser_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('FileBrowser module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'FileBrowser'.");}
+);isc.B._maxIndex=isc.C+3;isc.LoadFileDialog.registerStringMethods({fileLoaded:"fileContents,fileName"});isc._moduleEnd=isc._FileBrowser_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('FileBrowser module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'FileBrowser'.");}
 
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to

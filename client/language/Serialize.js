@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -53,14 +53,17 @@ isc.Comm.addClassMethods({
 //		@group	serialization
 //		
 //		@param	object		(any)		object to be serialized
-//		@param	[indent]	(boolean)	true == output should be indented for reading, false == no indentation
-//
+//		@param	[indent]	(boolean)	should output be formatted with line breaks and indenting
+//                                      for readability? If unspecified, indenting occurs if
+//                                      +link{JSONEncoder.prettyPrint} is true.
 //		@return				(string)	serialized form of the object
 //<
 
 serialize : function (object, indent) {
-    var props = { strictQuoting:false, dateFormat:"dateConstructor" };
-    if (indent) props.prettyPrint = true;
+    var props = { strictQuoting:false, dateFormat:"dateConstructor"};
+
+    // if indent was explicitly specified, respect it
+    if (indent != null) props.prettyPrint = indent;
 	return isc.JSON.encode(object, props);
 }
 
@@ -94,8 +97,10 @@ encode : function (object, settings) {
 //
 // @param jsonString (String) JSON data to be de-serialized
 // @return (String) object derived from JSON String
+// @visibility external
 //<
 decode : function (jsonString) {
+    //!OBFUSCATEOK
     // Add parens to the JSON to avoid
     // an issue where eval() gets confused and believes it is dealing with a block
     return eval("(" + jsonString + ")");        
@@ -180,7 +185,9 @@ encode : function (object) {
 //
 // @value "xmlSchema" dates are is encoded as a String in <a target=_blank
 //        href="http://www.w3.org/TR/xmlschema-2/#dateTime">XML Schema date format</a> in UTC,
-//        for example, "2005-08-01T21:35:48.350"
+//        for example, "2005-08-02" for logical date fields or "2005-08-01T21:35:48.350"
+//        for <code>datetime</code> fields. See +link{group:dateFormatAndStorage,Date format and
+//        storage} for more information.
 // @value "dateConstructor" dates are encoded as raw JavaScript code for creating a Date object,
 //        that is:
 // <pre>
@@ -191,6 +198,49 @@ encode : function (object) {
 //
 // @visibility external
 //<
+
+//> @type JSONInstanceSerializationMode
+// Controls the output of the JSONEncoder when instances of SmartClient classes (eg a ListGrid)
+// are included in the data to be serialized.
+//
+// @value "long" instances will be shown as a specially formatted JSON listing the most
+//               relevant properties of the instance. Result is not expected to
+//               decode()/eval() successfully if instances are included.
+// @value "short" instances will be shown in a shorter format via a call to +link{isc.echoLeaf()}.
+//                Result is not expected to decode()/eval() successfully if instances are
+//                included.
+// @value "skip" no output will be shown for instances (as though they were not present in the
+//               data).  Result should decode()/eval() successfully (depending on other
+//               settings)
+//
+// @visibility external
+//<
+
+
+//> @attr JSONEncoder.serializeInstances (JSONInstanceSerializationMode : "long" : IR)
+// Controls the output of the JSONEncoder when instances of SmartClient classes (eg a ListGrid)
+// are included in the data to be serialized.  See +link{JSONInstanceSerializationMode}.
+// <P>
+// Note that the JSONEncoder does not support a format that will recreate the instance if
+// passed to decode() or eval().
+//
+// @visibility external
+//<
+serializeInstances: true,
+
+//> @attr JSONEncoder.skipInternalProperties    (Boolean : false : IR)
+// If true, don't show isc internal properties when encoding and object.
+// @visibility external
+//<
+
+//> @attr JSONEncoder.showDebugOutput (boolean : false : IR)
+// If objects that cannot be serialized to JSON are encountered during serialization, show a
+// placeholder rather than just omitting them. 
+// <P>
+// The resulting String will not be valid JSON and so cannot be decoded/eval()'d
+// @visibility external
+//<
+
 
 //> @attr JSONEncoder.dateFormat (JSONDateFormat : "xmlSchema" : IR)
 // Format for encoding JavaScript Date values in JSON.  See +link{type:JSONDateFormat} for
@@ -244,7 +294,7 @@ strictQuoting: true,
 //               will have a property with a null value
 // @value "marker" leave a string marker, the +link{jsonEncoder.circularReferenceMarker},
 //                 wherever a circular reference is found
-// @value "path" leave a string marker <i>followed by</i> the path to the first occurence of
+// @value "path" leave a string marker <i>followed by</i> the path to the first occurrence of
 //               the circular reference from the top of the object tree that was serialized.
 //               This potentially allows the original object graph to be reconstructed.
 // @visibility external
@@ -283,16 +333,15 @@ prettyPrint: true,
 //
 //		@return	(string)			serialized object as a string
 //<
-_serialize : function (object, prefix, objPath) {
-	
+_serialize : function (object, prefix, objPath) {	
     if (!objPath) {
         if (object && object.getID) objPath = object.getID();
         else objPath = "";
     }
 	
-	// handle simple types
 	if (object == null) return null;
 
+	// handle simple types
     // In Safari a cross-frame scripting bug means that the 'asSource' method may not always be
     // available as an instance method.
     // call the static version of the same method if this happens.
@@ -302,12 +351,19 @@ _serialize : function (object, prefix, objPath) {
 	if (isc.isA.Number(object) || isc.isA.SpecialNumber(object)) return object;
 	if (isc.isA.Boolean(object)) return object;
 	if (isc.isA.Date(object)) return this.encodeDate(object);
-	// for complex types:
+
+    // handle instances
+    if (isc.isAn.Instance(object)) {
+        if (this.serializeInstances == "skip") return null;
+        else if (this.serializeInstances == "short") return isc.echoLeaf(object);
+        // else "long".. fall through to logic below to have properties output
+    }
 	
+	// for complex types:
 	// detect infinite loops by checking if we've seen this object before.
     // To disambiguate between true loops vs the same leaf object being encountered twice
     // (such as a simple Array containing two Strings which appears in two spots).  Only
-    // consider this a loop if the preceding occurence of the object was some parent of
+    // consider this a loop if the preceding occurrence of the object was some parent of
     // ours.  
 	var prevPath = isc.JSONEncoder._serialize_alreadyReferenced(this.objRefs, object);
     
@@ -368,10 +424,10 @@ _serialize : function (object, prefix, objPath) {
 //		@group	serialization
 //
 //		@param	object	(any)		object o serialize
-//		@param	prefix	(string)	string to put before each line of serialization output
+//		@param	objPath	(string)	global variable path to this object, for serializing object references
 //		@param	objRefs	(object[])	array of objects that have been serialized already so
 //									 we don't get into endless loops		
-//		@param	objPath	(string)	global variable path to this object, for serializing object references
+//		@param	prefix	(string)	string to put before each line of serialization output 
 //
 //		@return	(string)			serialized object as a string
 //<
@@ -427,15 +483,38 @@ _serializeObject : function (object, objPath, objRefs, prefix) {
 
     object = isc.JSONEncoder._serialize_cleanNode(object);
 
+    try {
+        
+    	for (var key in object) break;
+    } catch (e) {
+        if (this.showDebugOutput) {
+            if (isc.isAn.XMLNode(object)) return isc.echoLeaf(object);
+
+            var message;
+            if (e.message) {
+	            message = (e.message.asSource != null ? e.message.asSource() 
+                                                      : String.asSource(e.message));
+                return "{ cantEchoObject: " + message + "}";
+            } else {
+                return "{ cantEchoObject: 'unspecified error' }";
+            }
+        } else return null;
+    }
+
     output.append("{");
 	// for each key in the object
 	for (var key in object) {
 		// skip null keys
 		if (key == null) continue;
-		
+        // skip internal properties, if the flag is set
+		if (this.skipInternalProperties && (isc.startsWith(key, isc._underscore) || isc.startsWith(key, isc._dollar))) continue;
 		var value = object[key];
+
 		// if the value is a function, skip it		
 		if (isc.isA.Function(value)) continue;
+
+        // omit instances entirely if so configured
+        if (isc.isAn.Instance(value) && this.serializeInstances == "skip") continue;
 
 		// otherwise return the key:value pair
 
@@ -445,10 +524,18 @@ _serializeObject : function (object, objPath, objRefs, prefix) {
 		if (!isc.Comm._simpleIdentifierRE.test(keyStr) || this.strictQuoting) keyStr = '"' + keyStr + '"';
     
         var objPath = isc.JSONEncoder._serialize_addToPath(objPath, key);
-        var serializedValue = 
-            this._serialize(value, 
-                                (prefix != null ? prefix + isc.Comm.indent : null),
-                                objPath);
+        var serializedValue;
+        // don't try to serialize references to GWT Java objects
+        if (key == isc.gwtRef) {
+            if (!this.showDebugOutput) continue;
+            // show a marker if asked for debug output
+            serializedValue = "{GWT Java Obj}";
+        } else {
+            serializedValue = 
+                this._serialize(value, 
+                                    (prefix != null ? prefix + isc.Comm.indent : null),
+                                    objPath);
+        }
 
         // skip values that resolve to undefined
         //if (serializedValue === undefined) {

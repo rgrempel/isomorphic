@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -485,25 +485,25 @@ createComplexElements : function () {
              width: "40", defaultValue: this._pickedRed,
              prompt: "The Red component of the selected color",
              picker: this,
-             changed: function (value) { this.picker.setRed(value); } },
+             changed: function (form,item,value) { this.picker.setRed(value); } },
 
             {name: "pickerGrnVal", title:"Green", type: "text", 
              width: "40", defaultValue: this._pickedGrn,
              prompt: "The Green component of the selected color",
              picker: this,
-             changed: function (value) { this.picker.setGreen(value); } },
+             changed: function (form,item,value) { this.picker.setGreen(value); } },
 
             {name: "pickerBluVal", title:"Blue", type: "text", 
              width: "40", defaultValue: this._pickedBlu,
              prompt: "The Blue component of the selected color",
              picker: this,
-             changed: function (value) { this.picker.setBlue(value); } },
+             changed: function (form,item,value) { this.picker.setBlue(value); } },
 
             {name: "pickerHtmlVal", title:"HTML", type: "text", 
              width: "65", defaultValue: this._pickedHtml,
              prompt: "The selected color's HTML coding",
              picker: this,
-             changed: function (value) { this.picker.setHtmlColor(value); } }
+             changed: function (form,item,value) { this.picker.setHtmlColor(value); } }
         ]
                      
     });
@@ -518,19 +518,19 @@ createComplexElements : function () {
              width: "40", defaultValue: this._pickedHue,
              prompt: "The Hue (base tone) of the selected color",
              picker: this,
-             changed: function (value) { this.picker.setHue(value); } },
+             changed: function (form,item,value) { this.picker.setHue(value); } },
 
             {name: "pickerSatVal", title:"Sat", type: "text", 
              width: "40", defaultValue: this._pickedSat,
              prompt: "The Saturation (color purity) of the selected color",
              picker: this,
-             changed: function (value) { this.picker.setSaturation(value); } },
+             changed: function (form,item,value) { this.picker.setSaturation(value); } },
 
             {name: "pickerLumVal", title:"Lum", type: "text", 
              width: "40", defaultValue: this._pickedLum,
              prompt: "The Luminosity (brightness) of the selected color",
              picker: this,
-             changed: function (value) { this.picker.setLuminosity(value); } }
+             changed: function (form,item,value) { this.picker.setLuminosity(value); } }
         ]
                      
     });
@@ -538,7 +538,7 @@ createComplexElements : function () {
     this._crossHair = isc.Img.create({
         autoDraw: false,
         imageWidth: 16, imageHeight: 16, src: this.crosshairImageURL,
-        width: 16, height: 16,
+        width: 16, height: 16, imageType: "normal",
         canDrag: true,
         canDrop: true,
         dragAppearance: "target",

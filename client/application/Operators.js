@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -223,6 +223,55 @@ isc.defineClass("Operators", "Class").addClassProperties({
     // @visibility external
     //<
     notEqualFieldTitle: "differs from field",
+
+    //> @classAttr Operators.greaterThanFieldTitle (String : "greater than field" : IR)
+    // Title for the "greaterThanField" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    greaterThanFieldTitle: "greater than field",
+
+    //> @classAttr Operators.lessThanFieldTitle (String : "less than field" : IR)
+    // Title for the "lessThanField" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    lessThanFieldTitle: "less than field",
+
+    //> @classAttr Operators.greaterOrEqualFieldTitle (String : "greater than or equal to field" : IR)
+    // Title for the "greaterOrEqualField" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    greaterOrEqualFieldTitle: "greater than or equal to field",
+
+    //> @classAttr Operators.lessOrEqualFieldTitle (String : "less than or equal to field" : IR)
+    // Title for the "lessOrEqualField" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    lessOrEqualFieldTitle: "less than or equal to field",
+
+    //> @classAttr Operators.containsFieldTitle (String : "contains (match case) another field value" : IR)
+    // Title for the "containsField" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    containsFieldTitle: "contains (match case) another field value",
+
+    //> @classAttr Operators.startsWithFieldTitle (String : "starts with (match case) another field value" : IR)
+    // Title for the "startsWithField" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    startsWithFieldTitle: "starts with (match case) another field value",
+
+    //> @classAttr Operators.endsWithFieldTitle (String : "ends with (match case) another field value" : IR)
+    // Title for the "endsWithField" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    endsWithFieldTitle: "ends with (match case) another field value",
 
     //> @classAttr Operators.andTitle (String : "Match All" : IR)
     // Title for the "and" operator

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -178,13 +178,13 @@ isc.GroupingMessages.addClassProperties({
     //<
     bySecondsTitle: "by Seconds",
     
-    //> @classAttr GroupingMessages.byMilisecondsTitle   (string : "by Miliseconds" : IRW)
-    // Title to use for the menu option which groups a time field by miliseconds.
+    //> @classAttr GroupingMessages.byMillisecondsTitle   (string : "by Milliseconds" : IRW)
+    // Title to use for the menu option which groups a time field by milliseconds.
     //
     // @visibility external
     // @group i18nMessages
     //<
-    byMilisecondsTitle: "by Miliseconds"
+    byMillisecondsTitle: "by Milliseconds"
 });
 
 isc.builtinTypes =
@@ -362,7 +362,7 @@ isc.builtinTypes =
             hours:isc.GroupingMessages.byHoursTitle,
             minutes:isc.GroupingMessages.byMinutesTitle,
             seconds:isc.GroupingMessages.bySecondsTitle,
-            miliseconds:isc.GroupingMessages.byMilisecondsTitle
+            milliseconds:isc.GroupingMessages.byMillisecondsTitle
         },
         defaultGroupingMode : "hours", //default grouping mode
         groupingMode : this.defaultGroupingMode,
@@ -375,7 +375,7 @@ isc.builtinTypes =
            if (isc.isA.Date(value) && groupingMode) {
                // check all possible values in the form {identified : return string}
                // { hours:"by Hours", minutes:"by Minutes", seconds:"by Seconds" }
-               // { miliseconds:"by Miliseconds", }
+               // { milliseconds:"by Milliseconds", }
                // { default: { hours:"by hours" }
                switch (groupingMode) {
                    case "hours":
@@ -387,7 +387,7 @@ isc.builtinTypes =
                    case "seconds":
                        returnValue = value.getSeconds();
                    break;
-                   case "miliseconds":
+                   case "milliseconds":
                        returnValue = value.getMilliseconds();
                    break;
                }
@@ -401,13 +401,13 @@ isc.builtinTypes =
            if (groupingMode && value != "-none-") {
                // check all possible values in the form {identified : return string}
                // { hours:"by Hours", minutes:"by Minutes", seconds:"by Seconds" }
-               // { miliseconds:"by Miliseconds", }
+               // { milliseconds:"by Milliseconds", }
                // { default: { hours:"by hours" }
                switch (groupingMode) {
                    case "hours":
                    case "minutes":
                    case "seconds":
-                   case "miliseconds":
+                   case "milliseconds":
                        returnValue = value;
                    break;
                }
@@ -425,11 +425,16 @@ isc.builtinTypes =
     number:{inheritsFrom:"integer"},
     decimal:{inheritsFrom:"float"}, // XML Schema
     "double":{inheritsFrom:"float"}, // XML Schema
-    dateTime:{inheritsFrom:"date"}, // XML Schema
-    datetime:{inheritsFrom:"date"},
-
 
     // derived types
+    datetime:{inheritsFrom:"date",
+        normalDisplayFormatter : function (value, field) {
+           if (isc.isA.Date(value)) return value.toShortDateTime(null, true);
+           return value;
+        }
+    },
+    dateTime:{inheritsFrom:"datetime"},
+
     positiveInteger:{
         inheritsFrom:"integer",
         validators:{type:"integerRange", min:0}
@@ -464,8 +469,21 @@ isc.builtinTypes =
         inheritsFrom:"enum",
         valueMap:{left:"left", right:"right", top:"top", bottom:"bottom"}
     },
-    color:{inheritsFrom:"string", validators:"isColor"}
+    color:{inheritsFrom:"string", validators:"isColor"},
     
+    modifier: {inheritsFrom:"text", hidden: true, canEdit: false},
+    modifierTimestamp: {inheritsFrom:"datetime", hidden: true, canEdit: false},
+    creator: {inheritsFrom:"text", hidden: true, canEdit: false},
+    creatorTimestamp: {inheritsFrom:"datetime", hidden: true, canEdit: false},
+    password: {
+        inheritsFrom:"text",
+        normalDisplayFormatter : function (value, field) {
+           return new Array((value && value.length > 0 ? value.length+1 : 0)).join("*");
+        },
+        shortDisplayFormatter : function (value, field) {
+           return new Array((value && value.length > 0 ? value.length+1 : 0)).join("*");
+        }
+    }
 };
 
 (function () { 
@@ -585,7 +603,12 @@ isc.defineClass("SimpleType").addClassMethods({
     // @visibility external
     //<
 
-    // get a type definition
+    //> @classMethod SimpleType.getType()
+    // Retrieve a simpleType definition by type name
+    // @param typeName (string) the <code>name</code> of the simpleType to return
+    // @returns (SimpleType) simple type object
+    // @visibility external
+    //<
     getType : function (typeName, ds) {
         // respect local types (dataSource.getType() calls us back, but without passing itself)
         if (ds) return ds.getType(typeName); 
@@ -600,7 +623,7 @@ isc.defineClass("SimpleType").addClassMethods({
     getBaseType : function (type, ds) {
         if (isc.isA.String(type)) type = this.getType(type, ds);
         if (type == null) return null; // return null for being passed null and for
-                                       // non-existant types
+                                       // non-existent types
         while (type.inheritsFrom) {
             var parentType = this.getType(type.inheritsFrom, ds);
             if (parentType == null) return null; // no such parentType
@@ -612,7 +635,7 @@ isc.defineClass("SimpleType").addClassMethods({
     // determine whether one type inherits from another
     inheritsFrom : function (type, otherType, ds) {
         if (isc.isA.String(type)) type = this.getType(type, ds);
-        if (type == null) return false; // return false for non-existant types
+        if (type == null) return false; // return false for non-existent types
 
         if (type.name == otherType) return true;
         while (type.inheritsFrom) {
@@ -781,17 +804,250 @@ isc.defineClass("SimpleType").addClassMethods({
             if (i != 0) validators.unshift(validators[i]);
             validators[0].stopIfFalse = true;
         }
-    }
- 
+    },
+    
+    // -------------------------------------------------------------------------------
+    // summary functions
 
+    //> @type SummaryFunction
+    // Function to produce a summary value based on an array of records and a field definition.
+    // An example usage is the +link{listGrid.showGridSummary,listGrid summary row}, where
+    // a row is shown at the bottom of the listGrid containing summary information about each
+    // column.
+    // <P>
+    // SummaryFunctions may be specified in one of 2 ways:<ul>
+    // <li>as an explicit function or executable
+    // +link{type:stringMethod}, which will be passed <code>records</code> (an array of records)
+    // and <code>field</code> (the field definition for which the summary is required).</li>
+    // <li>as a standard SummaryFunction identifier</li></ul>
+    //
+    // @value sum Iterates through the set of records, picking up and summing all numeric values
+    // for the specified field. Returns null to indicate invalid summary value if
+    // any non numeric field values are encountered.
+    // @value avg Iterates through the set of records, picking up all numeric values
+    // for the specified field and determining the mean value. Returns null to indicate invalid
+    // summary value if any non numeric field values are encountered.
+    // @value max Iterates through the set of records, picking up all values
+    // for the specified field and finding the maximum value. Handles numeric fields and
+    // date type fields only. Returns null to indicate invalid
+    // summary value if any non numeric/date field values are encountered.
+    // @value min Iterates through the set of records, picking up all values
+    // for the specified field and finding the minimum value.  Handles numeric fields and
+    // date type fields only. Returns null to indicate invalid summary value if
+    // any non numeric field values are encountered.
+    // @value multiplier Iterates through the set of records, picking up all numeric values
+    // for the specified field and multiplying them together.
+    // Returns null to indicate invalid summary value if
+    // any non numeric field values are encountered.
+    // @value count Returns a numeric count of the total number of records passed in.
+    //
+    // @visibility external
+    //<
+    
+    // set up default registered summary functions (documented above)
+    _registeredSummaryFunctions:{
+      sum : function (records, field) {
+            var fieldName = field.name;
+            if (!fieldName) return;
+            var total = 0;
+            for (var i = 0; i < records.length; i++) {
+                var value = records[i][fieldName],
+                    floatVal = parseFloat(value);
+                if (isc.isA.Number(floatVal) && (floatVal == value)) total += floatVal;
+                // if we hit any invalid values, just return null - the grid will show
+                // the 'invalidSummaryValue' marker
+                else return null;
+            }
+            return total;
+        },
+        
+        avg : function (records, field) {
+            var fieldName = field.name;
+            if (!fieldName) return;
+            var total = 0, count=0;
+            for (var i = 0; i < records.length; i++) {
+                var value = records[i][fieldName],
+                    floatVal = parseFloat(value);
+                if (isc.isA.Number(floatVal) && (floatVal == value)) {
+                    count += 1;
+                    total += floatVal;
+                } else {
+                    // if we hit any invalid values, just return null - the grid will show
+                    // the 'invalidSummaryValue' marker
+                    return null;
+                }
+            }
+            return count > 0 ? total/count : null;
+        },
+        
+        max : function (records, field) {
+            var fieldName = field ? field.name :  null;
+            if (!fieldName) return;
+            
+            var dateCompare = (field && (field.type == "date"));
+            var max;
+            for (var i = 0; i < records.length; i++) {
+                var value = records[i][fieldName];
+                if (dateCompare) {
+                    if (!isc.isA.Date(value)) return null;
+                    if (max == null || value.getTime() > max.getTime()) max = value.duplicate(); 
+                } else {
+                    var floatVal = parseFloat(value);
+                        
+                    if (isc.isA.Number(floatVal) && (floatVal == value)) {
+                        if (max == null) max = floatVal;
+                        else if (max < value) max = floatVal;
+                    } else {
+                        // if we hit any invalid values, just return null - the grid will show
+                        // the 'invalidSummaryValue' marker
+                        return null;
+                    }
+                }
+            }
+            return max;
+        },
+        min : function (records, field) {
+            var fieldName = field ? field.name : null;
+            if (!fieldName) return;
+            var dateCompare = (field.type == "date")
+            var min;
+            for (var i = 0; i < records.length; i++) {
+                var value = records[i][fieldName];
+                if (dateCompare) {
+                    if (!isc.isA.Date(value)) return null;
+                    if (min == null || value.getTime() < min.getTime()) min = value.duplicate();
+                } else {
+                    var floatVal = parseFloat(value);
+                    if (isc.isA.Number(floatVal) && (floatVal == value)) {
+                        if (min == null) min = floatVal;
+                        else if (min > value) min = floatVal;
+                    } else {
+                        return null;
+                    }
+                }
+            }
+            return min;
+        },
+        multiplier : function (records, field) {
+            var fieldName = field ? field.name : null;
+            if (!fieldName) return;
+            var multiplier = 0;
+            for (var i = 0; i < records.length; i++) {
+                var value = records[i][fieldName];
+                var floatVal = parseFloat(value);
+                if (isc.isA.Number(floatVal) && (floatVal == value)) {
+                    if (multiplier == 0) multiplier = floatVal;
+                    else multiplier = (multiplier * floatVal);
+                } else {
+                    return null;
+                }
+            }
+            return multiplier;
+        },
+        count : function (records, field) {
+            return records.length;
+        }
+        
+    },
+    
+    //> @classMethod SimpleType.registerSummaryFunction()
+    // Registers a new +link{type:summaryFunction} by name. After calling this method,
+    // developers may specify the name passed in as a standard summaryFunction
+    // (for example in +link{listGridField.summaryFunction}).
+    // @param functionName (string) name for the newly registered summaryFunction
+    // @param method (function) New summary function. This function should take 2 parameters -
+    //   <code>records</code>: an array of records for which a summary must be generated, 
+    //   and <code>field</code>: a field definition - and return a summary value for the field.
+    // @visibility external
+    //<
+    registerSummaryFunction : function (functionName, method) {
+        
+        if (functionName == null) return;
+        // handle being passed a stringMethod
+        if (isc.isA.String(method)) {
+             method = isc.Func.expressionToFunction("records,field", functionName);
+        }
+        this._registeredSummaryFunctions[functionName] = method;
+    },
+    
+    //> @classMethod SimpleType.setDefaultSummaryFunction()
+    // Set up a default summary function for some field type.
+    // <P>
+    // Note that the following default summary functions are set up when SmartClient initializes:
+    // <br>- <code>"integer"</code> defaults to <code>"sum"</code>
+    // <br>- <code>"float"</code> defaults to <code>"sum"</code>.
+    //
+    // @param typeName (string) type name
+    // @param summaryFunction (SummaryFunction) summary function to set as the default for
+    //   this data type.
+    // @visibility external
+    //<
+    setDefaultSummaryFunction : function (type, summaryFunction) {
+        var typeObj = this.getType(type);
+        if (typeObj) typeObj._defaultSummaryFunction = summaryFunction;
+    },
+    
+    //> @classMethod SimpleType.getDefaultSummaryFunction()
+    // Retrieves the default summary function for some field type.
+    // @param typeName (string) type name
+    // @return (SummaryFunction) default summary function for this data type.
+    // @visibility external
+    //<
+    getDefaultSummaryFunction : function (type) {
+        var typeObj = this.getType(type);
+        if (typeObj) return typeObj._defaultSummaryFunction;
+    },
+    
+    //> @classMethod SimpleType.applySummaryFunction()
+    // Applies a +link{type:SummaryFunction} to an array of records
+    // @param records (Array of Objects) set of records to retrieve a summary value for
+    // @param field (DataSourceField) field for which we're picking up a summary value
+    // @param summaryFunction (SummaryFunction) SummaryFunction to apply to the records
+    //  in order to retrieve the summary value. May be specified as an explicit function
+    //  or string of script to execute, or a SummaryFunction identifier
+    // @return (any) summary value generated from the applied SummaryFunction
+    // @visibility external
+    //< 
+    applySummaryFunction : function (records, field, summaryFunction) {
+        if (!summaryFunction || !field || !records) return;
+        
+        // convert to an actual method to execute if necessary
+        if (isc.isA.String(summaryFunction)) {
+            if (this._registeredSummaryFunctions[summaryFunction]) {
+                summaryFunction = this._registeredSummaryFunctions[summaryFunction];
+            } else {
+                summaryFunction = isc.Func.expressionToFunction("records,field", summaryFunction);
+            }
+        }
+        if (isc.isA.Function(summaryFunction)) {
+            return summaryFunction(records,field);
+        }
+    } 
+    
 });
+
+// these are documented in setDefaultSummaryFunction
+isc.SimpleType.setDefaultSummaryFunction("integer", "sum");
+isc.SimpleType.setDefaultSummaryFunction("float", "sum");
+
 isc.SimpleType.addMethods({
     init : function () {
+        // anonymous type; really only occurs validly with xsd:list and xsd:union, otherwise
+        // anonymous types are just rolled into a DataSourceField definition and never create a
+        // SimpleType as such
+        if (!this.name) this.name = isc.ClassFactory.getNextGlobalID(this);
+
         if (isc.builtinTypes[this.name] != null) {
-            this.logWarn("SimpleType " + this.name + " defined twice: " +
-                         this.getStackTrace());
+            // clobber existing types, but not if the new type came from XML Schema (and hence
+            // is namespaced and still available via the SchemaSet)
+            if (!this.xmlSource) {
+                this.logWarn("SimpleType '" + this.name + "' defined twice: " +
+                             this.getStackTrace());
+                isc.builtinTypes[this.name] = this;
+            }
+        } else {
+            isc.builtinTypes[this.name] = this;
         }
-        isc.builtinTypes[this.name] = this;
         
         // If validOperators is set, register it with isc.DataSource
         if (this.validOperators != null) {
@@ -801,3 +1057,7 @@ isc.SimpleType.addMethods({
 });
 
 
+isc.SimpleType.getPrototype().toString = function () {
+    return "[" + this.Class + " name=" + this.name + 
+        (this.inheritsFrom ? " inheritsFrom=" + this.inheritsFrom : "") + "]";
+};

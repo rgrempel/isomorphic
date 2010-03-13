@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -81,7 +81,7 @@
 // <br><br>
 // If the status field shows a failure, the RPCManager will, by default, show a dialog with the
 // contents of the +link{rpcRequest.data} field (which is assumed to contain a 
-// meaningful description of the error that occured).  If you specified a callback in your
+// meaningful description of the error that occurred).  If you specified a callback in your
 // RPCRequest, it will <b>not</b> be called if the status shows a failure (see below for how to
 // change this).
 // <br><br>
@@ -364,7 +364,7 @@ isc.RPCRequest.addClassMethods({
 // The params value can also be specified as a componentID or component instance that provides
 // a method getValues() that returns an Object literal.  SmartClient components
 // +link{class:DynamicForm}, +link{class:ValuesManager} are two such classes.  Lastly, you may
-// specify the ID of a native form element (retreivable via getElementById()) and the params
+// specify the ID of a native form element (retrievable via getElementById()) and the params
 // will be populated from there.  If there is an error resolving your params directive, it will
 // be logged to the Developer Console.
 // </span>
@@ -433,14 +433,28 @@ isc.RPCRequest.addClassMethods({
 
 //> @attr rpcRequest.callbackParam (String : "callback" : IRW) 
 //
-// For use only with the <code>scriptInclude</code> transport, this attribute specifies the
-// name of the parameter from which the server expects to read the name of the JavaScript
-// callback function.
+// For use only with the +link{type:RPCTransport,scriptInclude} transport, this attribute
+// specifies the name of the URL parameter which is used to specify the callback function that
+// the server is expected to call by writing out JavaScript code.  The actual function to call
+// is automatically generated and differs for every request (to allow concurrency).
 // <P>
-// SmartClient will use the callback mechanism provided by the server, then call
+// For example, with <code>callbackParam</code> set to it's default value of "callback", the
+// server might be contacted with a URL like:
+// <pre>
+//    loadData?callback=isc_scriptIncludeCallback_5
+// </pre>
+// .. then the server's response should look like:
+// <pre>
+//    isc_scriptIncludeCallback_5({ .. data .. });
+// </pre>
+// The name "isc_scriptIncludeCallback_5" is automatically generated and will differ each time
+// the server is contacted.
+// <P>
+// SmartClient makes of this server-provided callback mechanism, then calls
 // +link{rpcRequest.callback} normally.
 // <p>
-// This attribute is ignored by all other transports.
+// <code>rpcRequest.callbackParam</code> is ignored by all transport other than
+// <code>scriptInclude</code>.
 //
 // @visibility external
 //<
@@ -497,7 +511,7 @@ isc.RPCRequest.addClassMethods({
 // If you specify the <code>xmlHttpRequest</code> transport and it is not available, a warning will be
 // logged to the Developer Console and the RPCManager will attempt to use the
 // <code>hiddenFrame</code> transport instead for this request.  Note that some features like
-// +link{RPCRequest.serverOutputAsString} requre the <code>xmlHttpRequest</code> transport and will not
+// +link{RPCRequest.serverOutputAsString} require the <code>xmlHttpRequest</code> transport and will not
 // work if the <code>xmlHttpRequest</code> transport is unavailable (this can happen if the end user is
 // using Internet Explorer and has disabled ActiveX).  You can check whether or not the
 // <code>xmlHttpRequest</code> transport is currently available by calling
@@ -523,7 +537,7 @@ isc.RPCRequest.addClassMethods({
 // If you specify <code>true</code> for this attribute and XMLHttp is not available, a warning
 // will be logged to the Developer Console and RPCManager will attempt to use the frames
 // transport for this request.  Note that some features like
-// +link{RPCRequest.serverOutputAsString} requre the XMLHttp transport and will not work if the
+// +link{RPCRequest.serverOutputAsString} require the XMLHttp transport and will not work if the
 // XMLHttp transport is unavailable (this can happen if the end user is using Internet Explorer
 // and has disabled ActiveX).  You can query the availability of XMLHttp by calling
 // +link{RPCManager.xmlHttpRequestAvailable()}
@@ -757,7 +771,7 @@ isc.RPCRequest.addClassMethods({
 
 //> @attr rpcResponse.httpResponseCode (integer : null : R) 
 //
-// This attribute (avialable when using the the <code>xmlHttpRequest</code> transport) contains
+// This attribute (available when using the the <code>xmlHttpRequest</code> transport) contains
 // the HTTP response code sent by the server.
 // <p>
 // Note that this is different from +link{attr:RPCResponse.status} - that attribute is used to
@@ -855,7 +869,7 @@ isc.RPCRequest.addClassMethods({
 // paths 1 and 4 in the diagram below).  See the discussion in +link{clientServerIntegration}
 // for more information on the integration paths shown in the diagram below.
 // <p>
-// You call +link{XMLTools.nativeXMLAvailable()} to check for the avialability of a native XML
+// You call +link{XMLTools.nativeXMLAvailable()} to check for the availability of a native XML
 // parser at runtime.
 // <p>
 // <img src="${isc.DocViewer.instance.referenceRoot}skin/ds_bindings.png" width=763 height=475>
@@ -992,6 +1006,17 @@ errorCodes : {
     //<
     STATUS_LOGIN_SUCCESS: -8,
 
+    //> @classAttr rpcResponse.STATUS_UPDATE_WITHOUT_PK_ERROR (integer : -9 : R)
+    //
+    // Indicates that the client attempted an update or remove operation without providing 
+    // primary key field(s)
+    // 
+    // @see class:RPCRequest
+    // @group statusCodes
+    // @visibility external
+    //<
+    STATUS_UPDATE_WITHOUT_PK_ERROR: -9,
+
     //> @classAttr rpcResponse.STATUS_TRANSPORT_ERROR (integer : -90 : R)
     //
     // This response code is usable only with the XMLHttpRequest transport and indicates that
@@ -1014,10 +1039,6 @@ errorCodes : {
     // servlet when the target host is unknown (ie, cannot be resolved through DNS).  This
 	// response probably indicates that you are attempting to contact a nonexistent server 
     // (though it might mean that you have DNS problems).
-    // <p>
-    // Note that this status will be reported alongside an httpResponseCode of 591 - this is 
-    // an artificial httpResponseCode used by the proxy to signal this particular condition;
-    // it is not a valid HTTP response code sent by a webserver.
     //
     // @group statusCodes
     // @visibility external
@@ -1029,10 +1050,6 @@ errorCodes : {
     // This response code only occurs when using the HTTP proxy.  It is issued by the proxy
     // servlet when the attempt to contact the target server results in a Java SocketException.
 	// This response probably indicates that the target server is currently down.
-    // <p>
-    // Note that this status will be reported alongside an httpResponseCode of 592 - this is 
-    // an artificial httpResponseCode used by the proxy to signal this particular condition;
-    // it is not a valid HTTP response code sent by a webserver.
     //
     // @group statusCodes
     // @visibility external
@@ -1118,7 +1135,7 @@ isc.RPCManager.addClassProperties({
     defaultPrompt:"Contacting server...",
     
     //> @classAttr RPCManager.timeoutErrorMessage   (string : "Operation timed out" : IRW)
-    // Default message displayed to user when an opration fails to return from the server within
+    // Default message displayed to user when an operation fails to return from the server within
     // the timeout period specified by +link{RPCManager.defaultTimeout}.
     // @see classAttr:RPCManager.defaultTimeout
     // @visibility external
@@ -1127,7 +1144,7 @@ isc.RPCManager.addClassProperties({
     timeoutErrorMessage:"Operation timed out",
     
     //> @classAttr RPCManager.removeDataPrompt  (string : "Deleting Record(s)..." : IRW)
-    // Default prompt displayed to user while an opration is running to remove data from
+    // Default prompt displayed to user while an operation is running to remove data from
     // the server.<br>
     // Displayed as a result of the +link{ListGrid.removeSelectedData()} code path.
     // @visibility external
@@ -1137,13 +1154,20 @@ isc.RPCManager.addClassProperties({
     
     
     //> @classAttr  RPCManager.saveDataPrompt   (string : "Saving form..." : IRW)
-    // Default prompt displayed to the user while an opreration is running to save data to
+    // Default prompt displayed to the user while an operation is running to save data to
     // the server.<br>
     // Displayed as a result of the +link{DynamicForm.saveData()} code path.
     // @visibility external
     // @group i18nMessages
     //<
     saveDataPrompt:"Saving form...",
+    
+    //> @classAttr  RPCManager.validateDataPrompt   (string : "Validating..." : IRW)
+    // Default prompt displayed to the user while a server validation is pending.
+    // @visibility external
+    // @group i18nMessages
+    //<
+    validateDataPrompt:"Validating...",
     
     //> @type PromptStyle
     //
@@ -1182,22 +1206,39 @@ isc.RPCManager.addClassProperties({
     useCursorTracker: isc.Browser.isSafari || (isc.Browser.isMoz && isc.Browser.geckoVersion < 20051111),
     cursorTrackerConstructor: "Img",
     cursorTrackerDefaults: {
-        src : isc.Page.getSkinDir()+"/images/shared/progressCursorTracker.png",
+        src : "[SKINIMG]shared/progressCursorTracker.gif",
         size: 16,
         offsetX: 12,
         offsetY: 0,
-        _updatePosition : function () {
-            this.setLeft(isc.EH.getX()+this.offsetX);
-            this.setTop(isc.EH.getY()+this.offsetY);
+        _updatePosition : function (init) {
+            var left = (isc.EH.getX()+this.offsetX),
+                top = (isc.EH.getY()+this.offsetY);
+
+            // hide the cursorTracker when we hit the right or bottom edge of the browser so it
+            // doesn't cause overflow and introduce scrolling
+            if (left+this.size >= isc.Page.getWidth() || top+this.size >= isc.Page.getHeight()) {
+                this.hide();
+                return;
+            }
+
+            // we've seen cases where we can get non numeric values here - in this case
+            // calling setLeft/top can mess up sizing of the wait img
+            if (isNaN(left)) left = 0;
+            if (isNaN(top)) top = 0;
+            this.setLeft(left);
+            this.setTop(top);
+            if (!init && !this.isVisible()) this.show();
         },
         initWidget : function () {
             this.Super("initWidget", arguments);
-            this._updatePosition();
-            this._updateEvent = isc.Page.setEvent("mouseMove", this.getID()+"._updatePosition()");            
+            this._updatePosition(true);
+            this._updateEvent = isc.Page.setEvent("mouseMove", this.getID()+"._updatePosition()");
+            this._mouseOutEvent = isc.Page.setEvent("mouseOut", this.getID() + ".hide()");
             this.bringToFront();
         },
         destroy : function () {
             isc.Page.clearEvent("mouseMove", this._updateEvent);
+            isc.Page.clearEvent("mouseOut", this._mouseOutEvent);
             this.Super("destroy", arguments);
         }
     },
@@ -1529,6 +1570,8 @@ sendProxied : function (request, allowRPCFormat) {
                     params : request.params,
                     contentType : request.contentType,
                     requestBody : request.data,
+                    username : request.username,
+                    password : request.password,
                     // NOTE: the only header the proxy actually supports sending through is
                     // "SOAPAction", but we send all headers to the server in case someone wants to
                     // customize this
@@ -1987,22 +2030,46 @@ isLocalURL : function (url) {
         this._showedPrompt = null;
     },
 
-    //> @classMethod RPCManager.cancelQueue()
-    // Cancel a transaction (a queue of requests being sent to the server). 
+    //> @classMethod RPCManager.getCurrentTransactionId()
+    // Returns the id of the current transaction (a queue of requests).
+    // <P>
+    // This method must be called after startQueue() has been called and
+    // at least one request has been issued.
+    // 
+    // @return (number) the transactionNum of the current transaction.
     // @visibility external
-    //<     
-    // Note: after the transaction has been sent via sendQueue(), this method may not prevent 
-    // the transaction from reaching the server
-    // @param [transaction] (transaction object or identifier) Transaction to cancel - defaults
-    //       to cancelling any outstanding (un-sent) queue.
-    cancelQueue : function (transaction) {
-        if (transaction == null) {
+    //<
+    getCurrentTransactionId : function () {
+        return this.currentTransaction ? this.currentTransaction.transactionNum : null;
+    },
+
+    //> @classMethod RPCManager.cancelQueue()
+    // Cancel a queue of requests (also called a transaction).
+    // <P>
+    // If a transactionId is passed, that transaction will be cancelled, otherwise, the current 
+    // (not yet sent) transaction is cancelled.  You can retrieve the id of the current 
+    // transaction, if there is one, by calling 
+    // +link{RPCManager.getCurrentTransactionId(), getCurrentTransactionId()} before the
+    // transaction has been sent.
+    // <P>
+    // Note that cancelQueue() calls +link{RPCManager.clearTransaction(), clearTransaction()}
+    // and attempts to abort the request.  However, note also that whilst cancelling a 
+    // transaction that has already been sent will not necessarily stop the HTTP request that 
+    // has been issued - this is only possible on some browsers and with some transports - it 
+    // will reliably cause SmartClient to ignore any response returned by the server and not 
+    // fire any callbacks that have been passed in.
+    // 
+    // @param [transactionNum] (id) transactionId of the queue.
+    // @visibility external
+    //<
+    cancelQueue : function (transactionNum) {
+        if (!transactionNum) {
             // cancel the current transaction
             this.currentTransaction = null;  
             return;      
         }
         // cancel a specific transaction (outstanding)
-        var transaction = this.getTransaction(transaction);
+        var transaction = this.getTransaction(transactionNum);
         if (transaction == null) return;        
 
         // clear the prompt if any of our operations showed it.
@@ -2045,11 +2112,13 @@ isLocalURL : function (url) {
             }
         }
 
-        // index into transactions array 
+        // transaction id passed
         //
         // NOTE: this has to be last, because the code above that finds the transaction via the
         // window object depends on leaving transaction as a Number when it's done
-        if (isc.isA.Number(transaction)) transaction = this._transactions.find({transactionNum: transaction});
+        if (isc.isA.Number(transaction) || isc.isA.String(transaction)) {
+            transaction = this._transactions.find({transactionNum: transaction});
+        }
 
         // NOTE: when trackRPCs mode is activated in the Developer Console, we retain
         // transactions that have been cleared.  But these should not be returned.
@@ -2072,7 +2141,11 @@ isLocalURL : function (url) {
     // <P>
     // A transaction means a batch of one or more RPCRequests that have already been sent to
     // the server via +link{RPCManager.sendQueue()}.
-    //
+    // <P>
+    // You can retrieve the id of the current transaction, if there is one, by 
+    // +link{RPCManager.getCurrentTransactionId(), getCurrentTransactionId()} before the 
+    // transaction is sent.
+    // 
     // @param transactionNum (id) id of the transaction to be cleared
     // @see group:relogin
     // @visibility external
@@ -2419,7 +2492,7 @@ isLocalURL : function (url) {
     },
 
     transactionAsGetRequest : function (transaction, baseURL, params) {
-        transaction = this.getTransaction(transaction) || this.getCurrentTransaction();
+        if (!transaction.cleared) transaction = this.getTransaction(transaction) || this.getCurrentTransaction();
         baseURL = (baseURL || transaction.URL || this.getActionURL());
         if(!params) params = {};
         params._transaction = this.serializeTransaction(transaction);
@@ -2436,7 +2509,7 @@ isLocalURL : function (url) {
     // NOTE: Dates: JSON.encode() would currently return "new Date(.." for a Date;
     // using the XML Schema format is a better default.  Note also that we support a flag
     // on Dates "logicalDate" that causes it to be serialized showing just the date with no
-    // time values.
+    // time values, or "logicalTime" to serialize just the time value (not the date).
     encodeParameter : function (paramName, paramValue) {
         if (isc.isA.Date(paramValue)) {
             isc.Comm.xmlSchemaMode = true;
@@ -2474,14 +2547,14 @@ isLocalURL : function (url) {
 	// requestData member of the passed in transaction object.
 	serializeTransaction : function (transaction) {
         var result;
-		if (this.dataEncoding == "JS") {
-            
-            isc.Comm._legacyJSMode = true;
-            result = isc.Comm.serialize(transaction.requestData);
-            isc.Comm._legacyJSMode = null;
-        } else {
-            result = isc.Comm.xmlSerialize("transaction", transaction.requestData);
-        }
+            if (this.dataEncoding == "JS") {
+                
+                isc.Comm._legacyJSMode = true;
+                result = isc.Comm.serialize(transaction.requestData);
+                isc.Comm._legacyJSMode = null;
+            } else {
+                result = isc.Comm.xmlSerialize("transaction", transaction.requestData);
+            }
         //this.logWarn("serialized transaction: " + result);
         return result;
 	},
@@ -2513,7 +2586,7 @@ isLocalURL : function (url) {
     // first to enable queuing may have more requests to add to the same queue.
     //
     // @param [callback] (Callback) Callback to fire when the queued operations complete. Callback
-    // will be fired with 1 paramter: <code>responses</code> an array of +link{DSResponse} or 
+    // will be fired with 1 parameter: <code>responses</code> an array of +link{DSResponse} or 
     // +link{RPCResponse} objects that were part of the transaction fired by this method.
     // 
     // @see classMethod:RPCManager.send()
@@ -2531,8 +2604,9 @@ isLocalURL : function (url) {
 		this.queuing = false;
 
 		if (!transaction) {
-			//>DEBUG
-			this.logWarn("sendQueue called with no current queue, ignoring");
+			//>DEBUG Note this can happen easily if rpcRequests have been deferred because they
+            // are attempted before page load.
+			this.logInfo("sendQueue called with no current queue, ignoring");
 			//<DEBUG
 			return false;
 		}
@@ -2575,6 +2649,7 @@ isLocalURL : function (url) {
 		}
 		if (allClientOnly) {
             transaction.allClientOnly = true;   
+		    transaction.sendTime = isc.timeStamp();
             
             this.delayCall("_performTransactionReply", [transaction.transactionNum], 0);
 			return request;
@@ -2742,7 +2817,7 @@ isLocalURL : function (url) {
 		}
         
         
-        delete transaction._hadlingResponse;
+        delete transaction._handlingResponse;
         delete transaction.abortCallbacks;
         
         transaction.receiveTime = isc.timeStamp();
@@ -2826,18 +2901,41 @@ isLocalURL : function (url) {
                 this.handleLoginRequired(transactionNum);
                 return;
             }
+
+            // see: http://danweber.blogspot.com/2007/04/ie6-and-error-code-12030.html
+            if (status == 12030 && isc.Browser.isIE) {
+                this.logWarn("Received HTTP status code 12030, resubmitting request");
+                this.resubmitTransaction(transactionNum);
+                return;
+            }
+
+            
+            var url = transaction.URL;
+            var realStatus;
+            if (transaction.isProxied) {
+                url = transaction.proxiedURL+" (via proxy: " + url +")";
+                
+                
+                var headers = this.getHttpHeaders(xmlHttpRequest, transaction);
+                var proxyHeader;
+                if (headers) {
+                    
+                    for (var key in headers) {
+                        if (key.toLowerCase() == "x-isc-httpproxy-status") {
+                            proxyHeader = headers[key];
+                            break;
+                        }
+                    }
+                }
+                if (proxyHeader && proxyHeader == "-91") realStatus = -91;
+                if (proxyHeader && proxyHeader == "-92") realStatus = -92;
+            }
+            
+            if (realStatus) status = 500;
+
             // All HTTP 2xx codes indicate success.  Success codes other than 200 OK are
             // somewhat obscure, but are used by Amazon S3 and possibly other REST APIs
             if (status > 299 || status < 200) { //error
-                var url = transaction.URL;
-                var realStatus;
-                if (transaction.isProxied) {
-                    url = transaction.proxiedURL+" (via proxy: " + url +")";
-                    if (status > 590) {
-                        // This was a special HTTP error response set by the proxy
-                        realStatus = (status - 500) * -1;
-                    }
-                }
                 results = this._makeErrorResults(transaction, {
                     data : "Transport error - HTTP code: "+ status
                            +" for URL: " + url
@@ -2983,7 +3081,7 @@ isLocalURL : function (url) {
     // create an RPCResponse, defaulting various fields based on the HTTP transaction it was
     // part of
     createRPCResponse : function (transaction, request, props) {
-        return isc.addProperties({
+        var response = isc.addProperties({
             operationId: request.operation.ID,
             // expose the passed clientContext
             clientContext : request.clientContext,
@@ -2998,6 +3096,72 @@ isLocalURL : function (url) {
             status: transaction.status,
             clientOnly: request.clientOnly
         }, props);
+        
+        if (transaction.transport == "xmlHttpRequest") {
+            isc.addProperties(response, {
+                httpHeaders: this.getHttpHeaders(transaction.xmlHttpRequest, transaction)
+            });
+        }
+        
+        return response;
+    },
+    
+    getHttpHeaders : function (xhr, transaction) {
+    
+        // A clientOnly request will of course not have an HTTP response of any kind
+        if (transaction.allClientOnly) {
+            //this.logWarn("Skipping getHttpHeaders for clientOnly request");
+            return;
+        } 
+
+        // Otherwise the xmlHttpRequest should be valid
+        if (!xhr) {
+            this.logWarn("getHttpHeaders called with a null XmlHttpRequest object"); 
+            return;
+        }
+
+        // This check for xhr.getAllResponseHeaders fails with a JS error ("Object does not 
+        // support method or property") in all versions of Internet Explorer
+        if (!isc.Browser.isIE && !xhr.getAllResponseHeaders) {
+            // A normal case - probably just indicates that we're in an older browser
+            return null;
+        }
+        
+        var headersString;
+        try {
+            headersString = xhr.getAllResponseHeaders();
+        } catch (e) {
+            this.logWarn("Exception thrown by xmlHttpRequest.getAllResponseHeaders(): " + e); 
+        }
+        
+        if (!headersString) {
+            this.logWarn("xmlHttpRequest.getAllResponseHeaders() returned null"); 
+            return null;
+        }
+        
+        var headers = headersString.split('\n');
+        var headersObj = {};
+        for (var i = 0; i < headers.length; i++) {
+            if (headers[i].replace(/^\s+|\s+$/g, '') == "") continue;
+            var colonPos = headers[i].indexOf(':');
+            if (colonPos == -1) {
+                this.logWarn("GetAllResponseHeaders string had malformed entry at line " + 1 + 
+                             ".  Line reads " + headers[i]);
+                continue;
+            }
+            var key = headers[i].substring(0, colonPos);
+            headersObj[key] = headers[i].substring(colonPos+1).replace(/^\s+|\s+$/g, '');
+            // Just to be helpful...
+            if (headersObj[key] == "true") headersObj[key] = true;
+            if (headersObj[key] == "false") headersObj[key] = false;
+        }
+
+        // note that 'Set-Cookie' is renamed by the proxy server - copy across if present
+        if (headersObj["X-Proxied-Set-Cookie"] != null) {
+            headersObj["Set-Cookie"] = headersObj["X-Proxied-Set-Cookie"];
+        }
+        return headersObj;
+
     },
 
     
@@ -3023,11 +3187,18 @@ isLocalURL : function (url) {
         //<DEBUG
         
         
-        
-        if (transaction.allClientOnly) {
+        var responseIsStructured;
+        if (transaction.transport == "scriptInclude") {
+            // not structured, results are values
+        } else if (isc.isAn.Array(transaction.results)) {
+            // error - don't do anything here, just drop through to the logic below
+            responseIsStructured = true;
+            
+        } else if (transaction.allClientOnly) {
             
 
             transaction.results = {status:0};
+            transaction.receiveTime = isc.timeStamp();
         } else {
             // the results are available as a single string, which we can eval to get JS
             // objects.  
@@ -3036,7 +3207,6 @@ isLocalURL : function (url) {
         }
 
         var results = transaction.results;
-
         
 
         var requests = transaction.operations,
@@ -3052,6 +3222,8 @@ isLocalURL : function (url) {
             var request = requests[i];
             var response = isc.addProperties(this.createRPCResponse(transaction, request), {
                 
+                isStructured: responseIsStructured,
+                
                 // for scriptInclude, make all values available via callbackArgs - typically
                 // there will be only one - and that's accessible via "data", but all args
                 // are available via this callbackArgs - not currently exposed
@@ -3062,15 +3234,30 @@ isLocalURL : function (url) {
                 // if the response is not an rpc, then the same response applies to all
                 // requests.  In general we really expect there to be only one request for non
                 // RPC responses.
-                results: 
-                                                results
+                results: responseIsStructured ? results[j++] : results
                 });
 
             // if no status has been set on the response, set to SUCCESS.  This can happen with
             // unstructured responses that simply load a file.
             if (response.status == null) response.status = 0;
 
-            
+            if (response.isStructured) {
+                if (response.results.errors) {
+                    var errors = response.results.errors;
+                    // if the errors array contains only a single map, strip the enclosing array.
+                    if (isc.isAn.Array(errors) && errors.length == 1) {
+                        errors = errors[0];
+                    }
+                }
+                
+                
+                if (response.results) {
+                    // this makes status, data, startRow, endRow, etc available directly on 
+                    // "rpcResponse"/"dsResponse", so it's not necessary to use eg
+                    // "response.results.data"
+                    isc.addProperties(response, response.results);
+                }
+            }
             responses[i] = response;
             transaction.responses[i] = response;
             transaction.changed();
@@ -3082,7 +3269,6 @@ isLocalURL : function (url) {
         {
             var request = requests[requestNum],
                 response = responses[requestNum];
-
             this.performOperationReply(request, response);
             requestNum++;
         }
@@ -3260,7 +3446,7 @@ isLocalURL : function (url) {
                 if (val == false) return;
             }
         }
-        this.handleError(response, request);
+        return this.handleError(response, request);
     },
 	handleError : function (response, request) {
 		var context = (response.context ? response.context : {}),
@@ -3420,7 +3606,7 @@ isLocalURL : function (url) {
 // <P>
 // Note also that there is no requirement that the relogin process blocks user interaction.
 // Applications that access multiple services may choose to simply show an unobtrusive error
-// indication such that the user can log back in at his liesure, or even log the user back in
+// indication such that the user can log back in at his leisure, or even log the user back in
 // automatically.
 //
 // @title Relogin
@@ -3825,16 +4011,17 @@ isc.InstantDataApp.addMethods({
 //
 // <b>Built-in SQL Connectivity</b>
 // <br><br>
-// The SmartClient server comes with built-in SQL connectivity, so that SQL-based DataSources
-// can be created and used without any server-side code needing to be written.  In contrast,
+// The SmartClient Server comes with a built-in +link{group:sqlDataSource,SQLDataSource}
+// which can be used without any server-side code needing to be written.  In contrast,
 // any operation which uses custom server-side code is called a "Custom Operation".
 // <br><br>
 // Generally it makes sense to prototype an application using Built-in DataSource Operations,
 // then on the backend, create Custom DataSource Operations to retrieve data from the data
-// store you will use in production.  As you switch from using Built-in DataSources to Custom
-// Operations, no client-side code changes will be required, because the client cares only
-// about the DataSource definition, not the data store which the data is ultimately retrieved
-// from.
+// store you will use in production (though don't rule out using the SQL DataSource in 
+// production - see +link{group:sqlVsJPA,this discussion} of the advantages of doing so}.  
+// As you switch from using Built-in DataSources to Custom Operations, no client-side code 
+// changes will be required, because the client cares only about the DataSource definition, 
+// not the data store which the data is ultimately retrieved from.
 // <br><br>
 //
 // <b>Data Managers: ResultSet and ResultTree</b>
@@ -3868,7 +4055,10 @@ isc.InstantDataApp.addMethods({
 //> @groupDef dataSourceOperations
 // A DataSource Operation is a type of +link{group:operations,operation} that acts on the set
 // of stored objects represented by a +link{DataSource}, performing one of the basic actions
-// that makes sense on a set of similar records: "fetch", "add", "update" or "remove".  
+// that makes sense on a set of similar records: "fetch", "add", "update" or "remove".  There
+// is also a fifth DataSource Operation, "custom", which is intended for arbitrary server
+// operations that are more complex than a fetch of some records, or an update to a single
+// record.
 // <P>
 // Each DataSource operation has specific request and response data, for example, in the
 // "fetch" DataSource operation, the request data is expected to be search criteria, and the
@@ -3883,7 +4073,7 @@ isc.InstantDataApp.addMethods({
 // If you are using +link{group:serverDataIntegration,server-side data integration} with the
 // SmartClient Java server, see the +docTreeLink{javaServerReference,Java Server Reference} for
 // information about how DataSource Requests arrive on the server (specifically
-// com.isomophic.datasource.DSRequest) and how to provide responses 
+// com.isomorphic.datasource.DSRequest) and how to provide responses 
 // (specifically com.isomorphic.datasource.DSResponse.setData()).
 // <P>
 // If you are using +link{group:clientDataIntegration,client-side data integration} to directly
@@ -3917,6 +4107,15 @@ isc.InstantDataApp.addMethods({
 // an Object
 // </ul>
 //
+// <b>custom</b>
+// <ul>
+// <li>Request data: whatever the custom operation requires
+// <li>Response data: custom operations can return whatever they like, including nothing.  
+// Custom operations are like RPC calls in this respect - the exchanged data is unstructured, 
+// so it is up to you to make sure the client and server agree.  Note also that, because of
+// this unstructured data exchange, cache synchronization does not work with custom operations.
+// </ul>
+//
 // @title DataSource Operations
 // @treeLocation Client Reference/Data Binding
 // @visibility external
@@ -3929,222 +4128,567 @@ isc.InstantDataApp.addMethods({
 // retrieve chunks of data rather than new HTML pages, and update your visual components in
 // place rather than rebuilding the entire user interface.
 // <P>
-// SmartClient supports two general classes of client-server operations:
-// +link{DSRequest,DSRequests} (DataSource Requests) and +link{RPCRequest}s (Remote Procedure
-// Call Requests).  DataSource requests are for manipulating structured data described by
-// +link{DataSource,DataSources}.  RPCRequests are a low-level, very flexible mechanism for
-// custom client-server communications.  In an nutshell, RPCRequests:
+// <b>DataSources</b>
+// <p>
+// First you must create +link{class:DataSource,DataSources} that describe the objects from
+// your object model that will be loaded or manipulated within your application.  All of 
+// SmartClient's most powerful functionality builds on the concept of a DataSource, and because 
+// of SmartClient's databinding framework (see +link{DataBoundComponent}), it's as easy to 
+// create a DataSource that can configure an unlimited number of components as it is to 
+// configure a single component.
+// <P>
+// For background information on how to create DataSources, +link{DataBoundComponent, bind}
+// components to DataSources and initiate +link{DSRequest}s, please see the <em>Data 
+// Binding</em> chapter of the <em>SmartClient Quickstart Guide</em>.
+// <P>
+// <b>Data Integration</b>
+// <P>
+// DataSources provide a data-provider agnostic API to SmartClient Visual Components that 
+// allow them to perform the 4 CRUD operations (<b>C</b>reate, <b>R</b>etrieve, 
+// <b>U</b>pdate, <b>D</b>elete).  By "agnostic" we mean that the implementation details - 
+// the nuts and bolts of how a given DataSource actually retrieves or updates data - are 
+// unknown to bound SmartClient components.  One effect of this is that DataSources are 
+// "pluggable": they can be replaced without affecting the User Interface.
+// <p>
+// When a visual component, or your own custom code, performs a CRUD operation on a DataSource,
+// the DataSource creates a +link{DSRequest} (DataSource Request) representing the operation.
+// "Data Integration" is the process of fulfilling that DSRequest by creating a corresponding
+// +link{DSResponse} (DataSource Response), by using a variety of possible approaches to 
+// connect to the ultimate data provider.  
+// <p>
+// There are two main approaches to integrating DataSources with your server technology: 
+// <ul>
+// <li><b>Server-side integration</b>: DataSource requests from the browser arrive as Java 
+// Objects on the server. You deliver responses to the browser by returning Java Objects. The
+// various server-side integration possibilities are discussed later in this article.</li>
+// <li>+link{clientDataIntegration,Client-side integration}: DataSource requests arrive as 
+// simple HTTP requests which your server code receives directly (in Java, you use the 
+// Servlet API or .jsps to handle the requests). Responses are sent as XML or JSON which you 
+// directly generate.</li>
+// </ul>
+// The possible approaches are summarized in the diagram below. Paths 2, 3 and 4 are 
+// client-side integration approaches, and path 1 includes all server-side integration 
+// approaches. 
+// <p>
+// <img src="skin/ClientServerIntegration.png" width="866px" height="495px">
+// <p>
+// SmartClient supports, out of the box, codeless connectivity to various kinds of common data
+// providers, including SQL and Hibernate.  SmartClient also provides functionality and tools
+// for accelerated integration with broad categories of data providers, such as Java
+// Object-based persistence mechanisms (JPA, EJB, Ibatis, in-house written systems), and REST 
+// and WSDL web services in XML or JSON formats.  Ultimately, a DataSource can be connected to 
+// anything that is accessible via HTTP or HTTPS, and also to in-browser persistence engines 
+// such as +externalLink{http://gears.google.com,Google Gears}.
+// <p>
+// <b>Choosing a Data Integration Approach</b><p>
+// This section aims to help you decide which of the many possible data integration approaches
+// is best for your particular circumstances.  The recommendations given here will guide you
+// to the approach that involves the least effort.<p>
+// <img src="skin/dataIntegrationFlowchart.png" width="640px" height="300px">
+// <p>
+// <ul>
+// <li>If you have a Java server</li>
+// <ul><li>If your ultimate storage is a SQL database</li>
+//   <ul>
+//       <li>If you are already committed to Hibernate, use the Hibernate DataSource</li>
+//       <li>Otherwise, use the SQL DataSource</li>
+//       <li>Be sure to read the overview of +link{group:sqlVsJPA,SQL DataSource vs JPA} and
+//           other technologies.  If you ultimately decide not to use the SQL or 
+//           Hibernate DataSource, write a +link{group:writeCustomDataSource,custom DataSource}</li>
+//       <li>Derive DataSource definitions from existing tables using 
+//           +explorerExample{sqlWizard,Visual Builder wizards} or the Batch DataSource 
+//           Generator tool.  Or, generate tables from DataSource definitions you create by 
+//           hand</li>
+//   </ul>
+//     <li>If your ultimate storage is not SQL, write a 
+//         +link{group:writeCustomDataSource,custom DataSource}</li>
+//     <li>Whether or not your storage is SQL, add business logic either declaratively in the 
+//         DataSource definition, via +link{class:DMI}, or any combination of the two:
+//   <ul><li>The &lt;criteria&gt; and &lt;values&gt; properties of an +link{class:OperationBinding}
+//           allow you to dynamically set data values at transaction-processing time, using 
+//           built-in +link{group:velocitySupport,Velocity support}</li>
+//       <li>Override the <code>validate()</code> method of the DataSource to provide extra
+//           custom validations - just call <code>super</code> to obtain the list of errors 
+//           derived from SmartClient validations, then add to that list as required with your
+//           own custom code</li>
+//       <li>Override the <code>execute()</code> method of the DataSource to add extra processing
+//           either before or after the SmartClient processing</li>
+//       <li>Use +link{attr:DSRequestModifier.value,Transaction Chaining} to dynamically set
+//           data values according to the results of earlier transactions</li>
+//       <li>For SQL DataSources, use +link{group:customQuerying,SQL Templating} to change, 
+//           add to or even completely replace the SQL sent to the database, and to implement
+//           special query requirements</li>
+//       <li>For Hibernate DataSources, use +link{attr:OperationBinding.customHQL,custom HQL queries}
+//           to implement special query requirements</li>
+//   </ul>
+//         Read more about the server-side request processing flow and how to customize it in
+//         +link{group:serverDataIntegration,the server integration overview}.
+// </ul>
+// </ul>
+// <ul>
+// <li>If you do not have a Java server</li>
+//   <ul><li>If you are not obliged to use a pre-existing network protocol, use the 
+//           +link{class:RestDataSource}</li>
+//       <li>Otherwise, use +link{clientDataIntegration,client-side data integration} features
+//           to create a custom client-side DataSource that adapts the DataSource protocol to 
+//           your existing services</li>
+//   </ul>
+// </ul>
+// <p><br>
+// <b>RPCs: Unstructured Server Communication</b>
+// <P>
+// SmartClient also supports "unstructured" client-server operations.  These 
+// +link{RPCRequest}s (Remote Procedure Call Requests) are a low-level, very flexible 
+// mechanism for custom client-server communications.  In an nutshell, RPCRequests:
 // <ul>
 // <li> may contain arbitrary data
 // <li> are always initiated by custom code (a call to +link{RPCManager.send()}), and have
 // their responses handled by custom code (the callback passed to <code>send()</code>)
 // </ul>
 // <P>
-// DSRequests:
-// <ul>
-// <li> contain data that follows the +link{group:dataSourceOperations,DataSource protocol},
-// which reflect the 4 basic operations on stored records: fetch, update, create, remove.
-// <li> are initiated by +link{DataBoundComponent,DataBoundComponents} in response to user
-// actions, and have their responses automatically managed (for example, 
-// +link{ResultSet,cache management} and 
-// +link{DynamicForm.saveData(),validation error handling}).  DSRequests can also be
-// initiated manually and have their responses handled with custom code.
-// </ul>
-// See the +link{RPCManager} documentation for further information on RPCRequests - the
-// remainder of this document focuses on integrating DataSource operations with your server.
+// RPCRequests are relatively rare.  Most client-server communications are better done in a 
+// structured fashion using a +link{DSRequest} (DataSource Request).  Note that <em>any</em>
+// RPCRequest can alternatively be framed as a +link{method:dataSource.fetchData,DataSource fetch}; 
+// depending on the circumstances, this may be more convenient.
 // <P>
-// <b>DataSource Creation</b>
-// <p>
-// First you must create +link{class:DataSource,DataSources} that describe the objects from
-// your object model that will be loaded or manipulated within your application.  All of ISC's
-// most powerful functionality builds on the concept of a DataSource, and because of ISC's 
-// databinding framework (see +link{DataBoundComponent}), it's as easy to create a
-// DataSource that can configure an unlimited number of components as it is to configure a
-// single component.
-// <P>
-// There are a number of options for creating DataSources; for early prototyping, creating a
-// DataSource by hand in either JavaScript or XML is simplest (this is covered under 
-// +link{group:dataSourceDeclaration,DataSource declaration}).  Later on, you can pursue one of
-// many +link{metadataImport,metadata import} strategies for automatically leveraging
-// your existing metadata.
-// <p>
-// Once you have a DataSource, you can bind a +link{interface:DataBoundComponent} such as a 
-// +link{class:ListGrid} to it, call one of the 
-// +link{group:dataBoundComponentMethods,DataBound Component Methods} on it, such as
-// +link{method:ListGrid.fetchData()}, the ListGrid will send a background HTTP request to the
-// server asking for data.  You can set the log category "RPCManager" to DEBUG threshold to see
-// the outbound request and the server's response.
-// <P>
-// In this case, the ListGrid is sending a DataSource operation request of type "fetch".  To
-// fulfill it, you will need to provide a set of matching records in one of many possible
-// formats.
-// <P>
-// At this point your code is just a handful of lines (this example shows a DataSource created
-// in JavaScript):
-// <pre>
-//     DataSource.create({
-//         ID:"employees",
-//         fields:[ 
-//             ... 
-//         ]
-//     });
-//     ListGrid.create({
-//         ID:"myGrid",
-//         dataSource:"employees"
-//     });
-//     myGrid.fetchData();
-// </pre>
-// If you now bind a +link{class:DynamicForm} to your DataSource, you can use the 
-// +link{method:DynamicForm.editSelectedData()} and +link{method:DynamicForm.saveData()}
-// methods to cause the client to submit "update" operations.  For both "update" and "add"
-// operations, the DSRequest object you receive will have inbound data that is expected to be
-// committed to your data model.  
-// <P>
-// <b>Data Integration</b>
-// <P>
-// There are two main approaches to integrating DataSources with your server technology:
-// <ul>
-// <li> +link{group:serverDataIntegration,Server-side integration}: DataSource requests from
-// the browser arrive as Java Objects on the server.  You deliver responses to the browser by
-// returning Java Objects.
-// <li> +link{group:clientDataIntegration,Client-side integration}: DataSource requests arrive
-// as simple HTTP requests which your server code receives directly (in Java, you use the
-// Servlet API or .jsps to handle the requests).  Responses are sent as XML or JSON which you
-// directly generate.  
-// </ul>
-// Note that using WSDL-described web services is also considered a client-side integration
-// approach, although in this case it is typical to use extensive third-party web service
-// libraries such as +externalLink{http://ws.apache.org/axis/,Apache Axis} to provide Java
-// bindings.
-// <P>
-// The possible approaches are summarized in the diagram below.  Paths 2, 3, and 4 are
-// client-side integration approaches, and path 1 includes all server-side integration
-// approaches.
-// <P>
-// <img src="${isc.DocViewer.instance.referenceRoot}skin/ds_bindings.png" width=763 height=475>
-// <P>
-// All of these integration options can be used in parallel within the same application.  For
-// example, an application that typically talks to a Java backend may contact Yahoo's
-// JSON-based search services to get related search results, or integrate with SalesForce
-// applications via the AppForce WSDL-described web service.
-// <P>
-// If you cannot install the SmartClient Server or must integrate with a pre-existing web
-// service, then you must pursue +link{group:clientDataIntegration,client-side integration}.
-// Otherwise there are several factors to consider:
-//
-// <ul>
-//
-// <li> With an existing Java backend, the fastest integration approach is
-// +link{group:serverDataIntegration,server-side integration} using 
-// +link{class:DMI,Direct Method Invocation (DMI)}.  Given 
-// a Java method that returns a Collection of POJOs, a short XML declaration will achieve
-// data loading.</li>
-//
-// <li> If you are building an 
-// +externalLink{http://www.google.com/search?q=SOA+architecture,SOA Architecture}, and some of
-// the services that your SmartClient application needs to contact could be shared with other
-// kinds of clients, consider the WSDL- or XML-based
-// +link{group:clientDataIntegration,Client-Side Integration}.</li>
-//
-// <li> The SmartClient server accelerates Java integration and provides various useful
-// facilities, including the broadest possible browser support, server-push, and network
-// performance enhancements.  See the +link{group:iscServer,SmartClient Server Summary} for
-// details.</li>
-//
-// </ul>
+// See the +link{RPCManager} documentation for further information on RPCRequests.
 // 
 // @title Client-Server Integration
 // @treeLocation Concepts
 // @visibility external
 //<
 
+//> @groupDef writeCustomDataSource
+// Out of the box, and with no code to write, SmartClient supports SQL and Hibernate for 
+// persistence.  For other Java-based persistence systems, such as EJB, JPA, or systems
+// proprietary to your company, you write a custom DataSource class in Java.  In most cases, it
+// is possible to write a single, generic DataSource class that provides access to all data
+// that is a available from a given persistence mechanism; for example, a single DataSource
+// class can typically be written for accessing all Entity Beans available via EJB.
+// <p>
+// Note that a majority of the features of the SmartClient Server framework apply even when
+// using your own persistence mechanism.  As with the features supported by SmartClient's
+// browser-based visual components, SmartClient's server-side features rely only on the 
+// concept of a DataSource and not on the details of the ultimate persistence mechanism.  Hence
+// they are usable with a custom DataSource regardless of the final data provider.
+// <p>
+// We provide a complete working example of a custom DataSource in the SmartClient Feature
+// Explorer; you can see it in action +explorerExample{ormDataSource,here}.  This example 
+// "ormDataSource" is an adaptor for Hibernate which supports the 4 CRUD operations, 
+// data paging, server-side sort and filter, and which participates correctly in 
+// +link{ResultSet,cache synchronization}.  The code required is minimal, and the approaches
+// taken generalize to any ORM system.  Studying the Java source code for this DataSource -
+// which is available in the "ORMDataSource.java" tab in the example linked to above - is the
+// best way to get a start on implementing your own custom DataSource.
+// <p>
+// <ul>
+// <li><code>ORMDataSource</code> extends <code>BasicDataSource</code>.
+// <li><code>ORMDataSource</code> is primarily an implementation of four key methods:
+//     <code>executeFetch</code>, <code>executeAdd</code>, <code>executeUpdate</code> and 
+//     <code>executeRemove</code>.  All the logic related to the actual CRUD data operation
+//     takes place in one of these methods.  This is the recommended approach.</li>
+// <li>The class also implements the <code>execute</code> method.  This is an override of the
+//     method that is actually called by the framework, and as such is an appropriate place to
+//     set up shared objects that will be used in more than one CRUD operation, and to perform
+//     shared pre- and post-processing.  As you can see, the example is setting up a Hibernate
+//     session and transaction, and then calling <code>super.execute</code> - this calls back
+//     into the framework and ultimately leads to the appropriate data operation method being
+//     called.</li>
+// <li>Note how each of the <code>executeXxx</code> methods conforms to the 
+//     +link{dataSourceOperations,DataSource protocol}.  To take <code>executeFetch</code> as 
+//     an example, note how it:
+//     <ul><li>Retrieves the criteria for the fetch from the supplied <code>DSRequest</code></li>
+//         <li>Implements logic to obey the <code>startRow</code>, <code>endRow</code> and 
+//             <code>batchSize</code> values.  This is only necessary for a DataSource that 
+//             intends to support automatic data paging.</li>
+//         <li>Retrieves <code>sortByFields</code> from the supplied <code>DSrequest</code>, 
+//             and uses that value to change the order of the resultset.  This is only 
+//             necessary for a DataSource that intends to support server-side sorting.</li>
+//         <li>Populates <code>startRow</code>, <code>endRow</code> and <code>totalRows</code>
+//             on the <code>DSResponse</code>.</li>
+//         <li>Populates the <code>DSResponse</code>'s <code>data</code> member with the list of 
+//             objects retrieved by the Hibernate call.</li>
+//     </ul><br>
+//     These are the only parts of this method that are of significance as far as SmartClient 
+//     is concerned - the rest of the method is concerned with communicating with the 
+//     data provider, which is of no interest to SmartClient as long as the method conforms to
+//     the DataSource protocol for a "fetch" operation.</li>
+// </ul>
+// <p><br>
+// <b>The DataSource descriptor</b>
+// <p>
+// Once your custom DataSource is implemented, you need to to create a descriptor for each 
+// instance of the DataSource.  As noted above, it is generally possible to write one custom 
+// DataSource class that is capable of handling all data access for a particular persistence 
+// mechanism.  DataSource descriptors, on the other hand, are written per entity.
+// <p>
+// A DataSource descriptor is an XML file with the special suffix <code>.ds.xml</code>.  The 
+// descriptor for a custom DataSource is, for the most part, identical to the descriptor for 
+// a built-in DataSource: it is the central place where you describe the DataSource instance
+// to the system - its fields, validations, security constraints, special data operations, 
+// transaction chaining expressions and so on (see the +link{class:DataSource,DataSource docs} 
+// for full details).
+// <p>
+// One property that is always required for a custom DataSource is 
+// +link{attr:DataSource.serverConstructor,serverConstructor}.  This fully-qualified class 
+// name tells SmartClient what to instantiate when data operations for this DataSource arrive
+// on the server - in other words, it is how you tell SmartClient to use your custom class.  
+// In the +explorerExample{ormDataSource,ORM DataSource example}, on the 
+// <code>ormDataSource_country</code> tab, you will see how we use this property to tie the
+// <code>ormDataSource_country</code> DataSource <em>instance</em> to the 
+// <code>ormDataSource</code> DataSource <em>implementation</em>.
+// <p>
+// Finally, if your data model is based on Javabeans, or on POJOs that broadly follow the 
+// Javabean conventions (basically, if they have private state variables accessible via public 
+// getters and setters), SmartClient can automatically generate basic DataSource definitions 
+// for your beans that will only need minimal change (ie, specifying a 
+// <code>serverConstructor</code>) to be fully operational.  Both the 
+// +explorerExample{javabeanWizard,Visual Builder Javabean Wizard} and the Batch DataSource 
+// Generator can create DataSource descriptors from existing beans.
+// <p>
+// <b>Server framework features relevant to custom DataSources</b>
+// <P>
+// The vast majority of the SmartClient Server framework's key features are not specific to the
+// built-in SQL and Hibernate connectors, and still apply even when using a custom persistence
+// mechanism.  See +link{group:featuresCustomPersistence,this overview} of which features apply
+// when using a custom persistence mechanism and how best to leverage those features.
+//
+// @title Integrating the SmartClient Server framework with custom Java persistence logic
+// @treeLocation Concepts
+// @visibility external
+//<
+
+//> @groupDef featuresCustomPersistence 
+// The vast majority of the SmartClient Server framework's key features are not specific to the
+// built-in SQL and Hibernate connectors, and still apply even when using a custom persistence
+// mechanism.
+// <P>
+// See the listing below of major features and how to apply them with custom persistence:
+// <p>
+// <b>Server Data Binding:</b> Using the SmartClient Server framework means that the starting
+// point for connecting to custom persistence logic is a clean Java API.  SmartClient provides
+// Java <code>DSRequest</code> and <code>DSResponse</code> objects with all of the methods
+// necessary to handle data paging, sorting, validation error reporting, and other features.
+// In most cases, you can fulfill a DSResponse by simply returning one of your Java
+// business objects rather than worrying about how to encode objects to XML or JSON.
+// Communication with the browser is automatically handled with an efficient, compressed
+// protocol.  
+// +explorerExample{ormDataSource,Custom DataSource example}, 
+// +explorerExample{DMI,DMI example}
+// <p>
+// <b>Data Selection (No DTOs):</b> When using a DataSource, Java data you return in your
+// <code>DSResponse</code> is automatically trimmed to just the fields declared in the
+// DataSource before delivery to the browser (see
+// +link{DataSource.dropExtraFields,dropExtraFields}).  This eliminates the need to create 
+// redundant +externalLink{http://en.wikipedia.org/wiki/Data_transfer_object,Data Transfer Objects} 
+// to express the list of fields that need to be delivered to the UI - the DataSource already
+// has this information, and can serve two purposes by both configuring UI components and
+// trimming relevant data, from a single definition.
+// <P>
+// Furthermore, DataSources can extract specific fields from complex nested 
+// object graphs via XPath expressions, for both loading and saving of data.
+// +explorerExample{flattenedBeans,XPath Binding example}
+// <p>
+// <b>Server Validation:</b> Both client and server validation are driven from declarations in
+// a single DataSource definition.  You already have a need to declare validators to
+// drive SmartClient's client-side validation; when you use the SmartClient Server framework
+// you get automatic server-side enforcement of the same validation rules, without the need to
+// write any additional code.
+// +explorerExample{serverValidation,Server Validation example}
+// <p>
+// <b>Queuing:</b> Queuing allows multiple data load or save requests from different UI 
+// components to be transparently combined into a single HTTP request with guaranteed in-order
+// execution.  The type of DataSource handling each request is not important, so queuing will
+// work with your custom DataSource; in fact, a single queue could contain operations to be 
+// handled by many different types of DataSource.  
+// +explorerExample{transactionsFolder,Queuing examples}
+// <p>
+// <b>Transaction Chaining:</b> allows one request in a queue of operations to incorporate
+// values from previously executed requests in the same queue.  This allows a series of
+// dependent operations - such as fetching a value from one DataSource to be used in a query on
+// another - to be defined with simple declarations right in the DataSource definition, with no
+// need to write a custom Java class to manually pass data between the different operations.
+// Since Transaction Chaining works strictly in terms of DataSource requests and responses and
+// knows nothing about the underlying persistence mechanism, it works with any persistence
+// strategy.
+// <p>
+// <b>Java / JS Reflection:</b> Any Java object can be delivered to the browser as a JavaScript 
+// object, and vice versa.  As a developer of a custom DataSource, you do not need to concern 
+// yourself with dealing with translations to and from JSON or XML; you work directly with
+// native Java objects.  For example, a method you write to fulfill a "fetch" operation can
+// simply return a <code>Collection</code> of Java beans; the SmartClient Server framework would 
+// transparently handle converting this into a matching Javascript structure.
+// +explorerExample{masterDetail,Saving nested objects example}
+// <p>
+// <b>Visual Builder:</b> The DataSource Wizards in Visual Builder are pluggable; we provide
+// wizards for SQL and Hibernate DataSources, and it is easy to write a new wizard to integrate 
+// your custom DataSource into Visual Builder.  +explorerExample{sqlWizard,SQL Wizard screenshots},
+// +explorerExample{hibernateWizard,Hibernate Wizard screenshots}
+// <p>
+// <b>Batch DataSource Generator:</b> If the persistence scheme you are implementing your 
+// custom DataSource for is based on collections of Javabeans, the Batch DataSource Generator 
+// can generate DataSource definition files for instances of your custom DataSource.  This is
+// out of the box behavior, but you can also alter and extend the DataSource Generator to suit 
+// your exact needs - we supply the source and it has been specifically designed to be easy 
+// to modify.
+// <p>
+// <b>Batch Uploader:</b> A user interface for end-to-end batch upload of data as a pre-built, 
+// customizable component.  This component - like any SmartClient databound component - only
+// cares that a DataSource is a DataSource, so custom DataSources will work just like built-in
+// ones.  +explorerExample{batchUpload,Batch Uploader example}
+// <p>
+// <b>File Upload:</b> Single and multiple file uploads can be handled as a normal DataSource 
+// operation, including normal handling of validation errors. Optional automatic storage to SQL 
+// (no server code required) means you can upload to SQL tables for holding files, which can be
+// related to Java Objects by id (eg, a User's uploaded files). 
+// +explorerExample{upload,File Upload example}
+// <p>
+// <b>Export:</b> Allows any grid component to export its current dataset in CSV, XML or JSON
+// format.  This feature works by issuing the DataSource with an ordinary "fetch", and then 
+// changing the <code>DSResponse</code> to send back an import file rather than a resultset.
+// Accordingly, this just works with custom DataSources.  +explorerExample{export,Export example}
+// <p>
+// <b>HTTP Proxy:</b> The HTTP Proxy allows an application to access web services hosted on 
+// remote servers which are not normally accessible to web applications due to the 
+// +externalLink{http://www.google.com/search?q=same+origin+policy,"same origin policy"}).
+// This is a general feature of the SmartClient Server framework that does not directly apply
+// to DataSources.  +explorerExample{rssFeed,HTTP Proxy example}
+// <p>
+// <b>Lightweight Persistence / Reporting:</b> Even while using a custom DataSource to connect
+// to a custom ORM system, you can still make use of the SQL DataSource for simple storage-only
+// entities where an object-based representation is a waste of time.  You can also do
+// this for reporting scenarios that don't correspond to the object model.
+//
+// @title Using SmartClient Server framework with custom persistence logic
+// @treeLocation Concepts
+// @visibility external
+//<
+
+
+//> @groupDef sqlVsJPA
+// If you are free to choose which persistence mechanism your application will use, you should
+// consider using the SmartClient SQL DataSource instead of a more heavyweight, bean-based 
+// solution.  This article discusses the advantages of doing so.
+// <p>
+// <b>Simplicity</b>
+// <p>
+// With the SmartClient SQL DataSource, simple CRUD connectivity can be set up via a 
+// +explorerExample{sqlWizard,wizard} and requires zero server side code.  Only a DataSource 
+// descriptor (.ds.xml file) needs to exist; this descriptor can be generated by the wizard 
+// or created by hand.  The descriptor actually serves double duty by also providing the 
+// configuration for UI components - in other words, this is information that you would need 
+// to express anyway.
+// <p>
+// Semi-technical product managers, testers, business analysts and IT staff who have no
+// familiarity with Java can easily comprehend DataSource definitions and even customized
+// SQL queries, allowing them to go further with prototyping efforts, provide more specific
+// feedback and capture more relevant diagnostics when reporting issues.
+// <p>
+// This level of simplicity is lost when using more heavyweight systems.  JPA / EJB 
+// best practices indicate creation of a bean class for every domain object, as well as 
+// related "services" or "session beans", DTOs 
+// (+externalLink{http://en.wikipedia.org/wiki/Data_Transfer_Object,Data Transfer Objects}) and 
+// other unnecessary scaffolding.  Ibatis avoids some of this scaffolding, but requires every 
+// SQL query to be written by hand.  In contrast the SQL DataSource supports basic CRUD queries
+// out of the box.
+// <p>
+// <b>Performance</b>
+// <p>
+// Systems like JPA work nicely when dealing with a single object at a time, but enterprise
+// applications routinely work with lists or trees of objects that draw data from multiple
+// tables.  In these situations, it's trivial to express an efficient SQL query for retrieving
+// the desired results (as shown in +explorerExample{largeValueMap,this example}).  Fetching the
+// same data using getter methods on Java Beans often leads to nightmare performance scenarios
+// (such as 3 or more separate SQL queries per object retrieved).
+// <P>
+// Trying to "trick" the persistence system into generating efficient queries doesn't make
+// sense - this just leads to a far more complex and fragile solution that now requires deep
+// knowledge of how the ORM system generates SQL as well as SQL itself. 
+// <P>
+// SQLDataSource allows you to directly write SQL when it makes sense, and 
+// +link{attr:DataSource.beanClassName,to use beans} when object oriented approaches are
+// clearer and simpler.  When you do write SQL directly, you override just the parts of the
+// query that you need to change - you still leverage SQLDataSource's ability to generate
+// cross-database SQL for complex search criteria, efficient data paging and sorting, even in a
+// complex reporting query (see +explorerExample{dynamicReporting,this example}).
+// <p>
+// <b>Portability</b>
+// <p>
+// SmartClient DataSources provide cross-database portability like JPA and other solutions.
+// However, DataSources can also be replaced with an entirely different integration strategy or
+// entirely different server platform, such as a SOA architecture where the browser contacts
+// WSDL web services directly.  The clear data requirements definition represented by a
+// DataSource makes such drastic technology changes much easier with the SQL DataSource than
+// with any other technology.
+// <p>
+// <b>Power</b>
+// <p>
+// The SQL DataSource has out of the box support for server-side advanced filtering without
+// the need to write any code (see the 
+// +explorerExample{filterBuilderBracket,SQL Advanced Filtering example}), and SmartClient
+// provides +link{class:FilterBuilder,pre-built user interfaces for filtering}.  The effort
+// required to develop similar functionality with another persistence mechanism would vary from 
+// substantial to spectacular.
+// <p>
+// You can leverage advanced, automatic SQL generation, such as advanced filter criteria, 
+// GROUP BY and ORDER BY clauses, and selection of row ranges, even in very heavily customized
+// queries.  The +explorerExample{dynamicReporting,Dynamic Reporting example} shows this.
+// <p>
+// With the SQL DataSource and Transaction Chaining, you can chain together multiple SQL 
+// queries, or a mixture of SQL queries and other data access, with simple declarations right 
+// in the DataSource, as +explorerExample{queuedAdd,this example} demonstrates.
+// <p>
+// Because you write the SQL, you can use database-specific features when absolutely 
+// necessary.  Features such as query optimizer hints or stored procedures are thus accessible
+// but, importantly, are within the same processing model used for all other data access.
+// <p>
+// <b>Security</b>
+// <p>
+// Because the central DataSource definition expresses all the available operations, how they
+// are performed and who has access to them, things are clear and simple.  It's much easier to 
+// understand and audit a DataSource definition than a slew of Java classes.
+// <p>
+// There is no information leakage from server to client with the SQL DataSource.  All 
+// server-side declarations, such as SQL templates, are automatically stripped out of the 
+// DataSource definition before the browser sees it.
+// <p>
+// Custom SQL in a SmartClient SQL DataSource is protected from SQL injection attacks.  It is
+// impossible for a developer to write a SQL template that is vulnerable to SQL injection 
+// without going through the +link{group:velocitySupport,$rawValue} feature, a rarely used
+// feature that is very prominently flagged in the documentation as requiring special care.
+// Other ORM systems tend to require hand-coded SQL queries for advanced use cases such as
+// reporting; these hand-written queries are where most security holes appear.  By providing a
+// safe environment for SQL customizations, SQL DataSource removes these risks.
+//
+// @title SQL DataSource vs JPA, EJB, Ibatis and other technologies
+// @treeLocation Concepts
+// @visibility external
+//<
+
+
 //> @groupDef serverDataIntegration
 // Server Data Integration means:
 // <ul>
-// <li> You +link{iscInstall,install} the +link{group:iscServer,SmartClient Java
-// Server} into any J2SE/J2EE environment
-// <li> You +link{group:dataSourceDeclaration,create DataSources} in either XML or JavaScript,
+// <li> You +link{iscInstall,install} the 
+//      +link{group:iscServer,SmartClient Java Server Framework} into any J2SE/J2EE
+//      environment, including any existing web application
+// <li> You +link{group:dataSourceDeclaration,create DataSources} via an XML declaration,
 // possibly on-the-fly from +link{group:metadataImport,existing metadata}.  
-// <li> When you bind +link{dataBoundComponent,databinding-capable UI components} to these
-// DataSources, the +link{DSRequest,DataSource requests} issued by these components will be
-// transmitted to the server using a proprietary HTTP-based protocol, and the DataSource
-// responses likewise sent back via a proprietary protocol
-// <li> You will use SmartClient server APIs to receive the request data as Java Objects, and
-// you will provide response data as Java Objects
+// <li> Server communication for components bound to these DataSources is handled
+// automatically with a highly efficient, compressed protocol.  You work with clean Java APIs
+// instead of dealing with the details of XML or JSON over HTTP.
+// <li> You can use built-in connectors for SQL, Hibernate and other common data providers
+// without writing any code, or you can easily build your own connectors in Java.
+// <li> Whether using the built-in connectors or custom connectors, declarations in your
+// DataSource control a large set of server features that can make common types of business
+// logic entirely declarative
 // </ul>
 // This approach is in contrast to 
-// +link{group:clientDataIntegration,Client-side Data Integration}, which does not require the
-// SmartClient server, and in which client-side DataSources are configured to directly send and
-// receive HTTP messages containing XML, JSON or other content.
+// +link{group:clientDataIntegration,Client-side Data Integration} in which client-side
+// DataSources are configured to send and receive HTTP messages containing XML, JSON
+// or other content.
 // <P>
-// <B>Handling DataSource Requests</B>
+// <B>Server-side Request Processing</B>
 // <P>
 // Client-side +link{DataBoundComponent,DataBoundComponents} will send
-// +link{DSRequest,DSRequests} to the ISC server as background communications transparent to
-// the user.  Integrating SmartClient's DataSource layer with your data model is a matter of
+// +link{DSRequest,DSRequests} to the SmartClient Server as background communications transparent
+// to the user.  Integrating SmartClient's DataSource layer with your data model is a matter of
 // handling these DSRequests and sending back DSResponses, in order to fulfill the 4 basic
 // operations of the +link{group:dataSourceOperations,DataSource Protocol}.
 // <P>
-// There are two approaches for routing inbound dsRequests to your business logic:
-// <dl>
-// <dt>RPCManager dispatch</dt>
-// <dd>inbound requests are handled by a single dispatcher implemented as a Java servlet or
-// .jsp.  The +link{RPCManager} is used to retrieve requests and provide responses</dd>
-// <dt>+link{DMI,Direct Method Invocation}</dt>
-// <dd>XML declarations route requests to existing business logic methods.  Inbound request
-// data is adapted to method parameters, and method return values are delivered as
-// responses</dd>
-// </dl>
-// <P>
-// Which approach you use is largely a matter of preference.  Direct Method Invocation (DMI)
-// may allow simple integration without writing any SmartClient-specific server code.
-// RPCManager dispatch integration provides an earlier point of control, allowing logic that
-// applies across different DataSource operations to be shared more easily.
-// <P>
-// Whether using RPCManager dispatch or DMI request routing, you must return data which, 
-// translated to JavaScript via the rules described in com.isomorphic.js.JSTranslater.toJS(),
-// matches the +link{group:dataSourceOperations,response data required for the operationType}.
-// <P>
-// For example, for a "fetch" request, your return data should translate to an Array of
-// JavaScript objects.  Your backend may be capable of returning data in a number of ways - you
-// should compare each format you can readily retrieve against the capabilities of the
-// JSTranslater.  Common options are to pass an XML document fragment or a Collection of Java
-// Beans/POJOs directly to DSResponse.setData().
+// Out of the box, SmartClient is set up to route all DSRequests through a special servlet
+// called <code>IDACall</code>.  Requests that go through <code>IDACall</code> have the 
+// following lifecycle:
+// <ul>
+// <li>The overall HTTP request is received by the IDACall servlet.  SmartClient supports 
+// queuing of transactions, so each HTTP request might contain multiple DSRequests.</li>
+// <li>IDACall sets up an instance of <code>RPCManager</code> to manage the processing of
+// the entire queue of transactions.  For every DSRequest in the queue, this RPCManager:</li>
+//   <ul>
+//   <li>Validates the DSRequest</li>
+//   <li>Sends the DSRequest through +link{DMI} - in other words, your code - if this is 
+//       configured in the DataSource.  As described later in this section, your code can
+//       perform some custom logic here: either completely fulfilling the request, or
+//       alternatively modifying the request and causing the default
+//       processing of the request to continue</li>
+//   <li>Calls the DataSource's <code>execute</code> method to obtain a DSResponse.</li>
+//   </ul>
+// <li>Having processed all requests, the RPCManager now serializes all the DSResponses 
+// and sends them back to the browser as a single HTTP response</li>
+// </ul>
 // <p>
-// For "update" and "add" DataSource requests, the inbound data is intended to be permanently
-// stored.  If you are using a DataSource specified in XML format, you can run the validators
-// you declared in the DataSource by calling the DSRequest.validate() method.  Assuming the
-// declared validation is passed, you can run custom validation logic, if any, and finally
-// create or update objects in your object model.  If you are using Beans/POJOs, the method
-// DataSource.applyProperties(map, bean) is an easy way to apply the validated values to an
-// Object tree or XML structure.
+// This basic request handling flow can be customized at a number of points:
+// <ul>
+// <li>If you need an overarching authentication service, this is best implemented using 
+// <a href=http://java.sun.com/products/servlet/Filters.html>servlet Filters</a> to intercept
+// unauthenticated requests before they reach the <code>IDACall</code> servlet</li>
+// <li>If you are not using one of the built-in persistence mechanisms (SQL and Hibernate), 
+// hook into the <code>IDACall</code> flow by 
+// +link{writeCustomDataSource,writing a custom DataSource}.  This approach lets you write and 
+// maintain the minimal amount of custom code, while taking full advantage of
+// DataSource-agnostic features of the SmartClient Server, like validation, queuing,
+// transaction chaining, support for Velocity templating, and so on.</li>
+// <li>Custom validation can be added by writing a custom DataSource (extending SQLDataSource
+// or HibernateDataSource if appropriate) and overriding its <code>validate()</code> method, 
+// as described +link{DataSource.serverConstructor,here}.</li>
+// <li>General custom business logic can be added in a number of ways, both declaratively and
+// programmatically:</li>
+// <ul>
+//   <li>The &lt;criteria&gt; and &lt;values&gt; properties of an +link{class:OperationBinding} 
+//       allow you to dynamically set data values at transaction-processing time, using 
+//       built-in +link{group:velocitySupport,Velocity support}</li>
+//   <li>Override the <code>execute()</code> method of the DataSource to add extra processing
+//       before and/or after the SmartClient processing</li>
+//   <li>Use +link{attr:DSRequestModifier.value,Transaction Chaining} to dynamically set data values 
+//       according to the results of earlier transactions
+//   <li>For SQL DataSources, use +link{group:customQuerying,SQL Templating} to change, add 
+//       to or even completely replace the SQL sent to the database, including calling
+//       stored procedures</li>
+//   <li>Use +link{class:DMI,Direct Method Invocation} to call directly into your own Java 
+//       classes.  As described in the DMI discussion linked to above, DMI calls can be used 
+//       in conjunction with normal <code>DSRequest</code> process flow, thus enabling you
+//       to add custom logic to built-in DataSources without having to create your own 
+//       overridden versions of them</li>
+// </ul><br>
+// <li>If you need to use a Front Controller servlet for some other reason than authentication -
+// for example, you are using Spring, Struts, or some other similar system which requires that 
+// all requests go through some particular servlet - just call 
+// <code>RPCManager.processRequest()</code> within your Spring Controller, Struts Action, or 
+// whatever the equivalent is in the framework in use.
+// <p>
+// However, note carefully that taking this approach is often a sign that the SmartClient 
+// architecture has not been correctly understood.  SmartClient is architected for 
+// <em>client-server</em> data communication, as opposed to early web MVC frameworks which 
+// do everything on the server.  In particular, it is absolutely incorrect to represent every 
+// individual DataSource operation - or even every DataSource - as a separate Struts Action 
+// or Spring Controller, because this implies different URLs for different operations.  All 
+// DataSource operations should go through a single URL in order to allow 
+// +link{class:RPCManager,transaction queuing} - see these 
+// +explorerExample{transactionsFolder,Queuing examples}.</li>
+// </ul>
 // <P>
 // For more information on the DMI subsystem, see the +link{DMI} class and the 
-// +externalLink{/examples/server_integration/#customDataSourceIntegrationDMI,DMI example} in
-// the SDK.
+// +explorerExample{DMI,DMI example} in the Feature Explorer.
 // <P>
 // Note that, as you continue to integrate your prototype with your backend, you can use a
 // mixture of DataSources that have been fully integrated with your backend and DataSources
-// that are either running in "client-only" mode (see +link{group:clientOnlyDataSources}) or
-// that use ISC's built-in SQL connectivity (see +link{group:sqlDataSource}).
+// that are running in "client-only" mode (see +link{group:clientOnlyDataSources}).
 // <P>
-// <b>RPCManager dispatch</b>
+// <b>Important methods for handling DataSource requests</b>
 // <P>
-// The basic flow of logic for handling DataSource requests using RPCManager dispatch is:
+// The basic flow of logic for handling DataSource requests is:
 // <P>
-// <table class="normal" border=1>
+// <table class="normal" border=1 width="700">
 // <tr>
-// <td>1. Get current list of requests from the client.</td>
-// <td>rpcManager.getRequests()</td>
-// </tr>
-//
-// <tr>
-// <td>2. Determine operation type (Fetch, Add, Update, Remove) for a single request.</td>
+// <td>1. Determine operation type (Fetch, Add, Update, Remove) for a single request.  Not 
+// necessary if you follow the recommendations for 
+// +link{group:writeCustomDataSource,writing a custom DataSource} and provide your 
+// implementation via <code>executeFetch(), executeAdd()</code>, et al.</td>
 // <td>dsRequest.getOperationType()</td>
 // </tr>
 //
 // <tr>
-// <td>3. Get inbound values (Add, Update) and/or criteria (Fetch, Update, Remove) for this
+// <td>2. Get inbound values (Add, Update) and/or criteria (Fetch, Update, Remove) for this
 // request.</td>
 // <td>dsRequest.getFieldValue()<br>
 // dsRequest.getValues()<br> 
@@ -4152,25 +4696,20 @@ isc.InstantDataApp.addMethods({
 // </tr>
 //
 // <tr>
-// <td>4. Business logic, validation, calls to data and service tiers... anything you can code.
+// <td>3. Business logic, validation, calls to data and service tiers... anything you can code.
 // </td>
 // <td><b>execute custom logic</b></td>
 // </tr>
 //
 // <tr>
-// <td>5. Set status and data for the response.</td>
+// <td>4. Set status and data for the response.</td>
 // <td>dsResponse.setStatus()<br>
 // dsResponse.setData()</td>
-// </tr>
-//
-// <tr>
-// <td>6. Send response to the client.</td>
-// <td>rpcManager.send()</td>
 // </tr>
 // </table>
 // <P>
 // For more information, see the +link{RPCManager,RPCManager documentation}, and the 
-// +externalLink{/examples/server_integration/#customDataSourceIntegration,RPCManager example}. 
+// +explorerExample{ormDataSource,Custom ORM DataSource example}. 
 //
 // @title Server DataSource Integration
 // @treeLocation Concepts/Client-Server Integration
@@ -4196,7 +4735,7 @@ isc.InstantDataApp.addMethods({
 // containing all your DataSource definitions, to be loaded by your application via a normal
 // &lt;SCRIPT SRC&gt; tag.  For a static transform targetting XML format, you will want to
 // produce a series of .ds.xml files and place them in the directories expected by the ISC
-// server (see +link{group:dataSourceDeclaration,DataSource Declaration}).  Staticly generated
+// server (see +link{group:dataSourceDeclaration,DataSource Declaration}).  Statically generated
 // XML DataSources can be delivered to the browser as a single .js file via a .jsp containing
 // several +link{loadDSTag,<code>loadDS</code> tags}.
 // <P>
@@ -4223,7 +4762,7 @@ isc.InstantDataApp.addMethods({
 // <P>
 // Metadata available via Java's "reflection" APIs allows a basic DataSource to be generated
 // from Java beans.  Sample Java code can be found in
-// <code>examples/server_integraton/DataSourceGenerator.java</code>.  See also the last section
+// <code>examples/server_integration/DataSourceGenerator.java</code>.  See also the last section
 // on this page for an automatic option for generating DataSource definitions via Reflection.
 // <P>
 // <b>Other XML formats</b>
@@ -4238,8 +4777,8 @@ isc.InstantDataApp.addMethods({
 // <P>
 // <b>Database Schema, Hibernate mappings or Java class definitions</b>
 // <P>
-// <em><b>Note: This is an Enterprise feature.</b>  It is not available to users of the LGPL or
-// Pro versions of SmartClient.  Please see the <a href=http://smartclient.com/licensing>
+// <em><b>Note: This is an Enterprise feature.</b>  It is not available to users of the LGPL,
+// Pro or Power Editions of SmartClient.  Please see the <a href=http://smartclient.com/licensing>
 // licensing page</a> for details.</em>
 // <p>
 // If you have existing database tables, Hibernate classes or Java POJOs that follow the Javabean

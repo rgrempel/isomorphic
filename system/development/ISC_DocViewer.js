@@ -2,33 +2,29 @@
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to
@@ -40,7 +36,7 @@
 if(window.isc&&window.isc.module_Core&&!window.isc.module_DocViewer){isc.module_DocViewer=1;isc._moduleStart=isc._DocViewer_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'DocViewer load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime')
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM
-else isc._preLog=[isc._pTM]}isc.defineClass("DocCookieState").addProperties({init:function(){isc.ClassFactory.addGlobalID(this);if(!this.cookieName){this.logError("You must set the 'cookieName' property");return}
+else isc._preLog=[isc._pTM]}isc.definingFramework=true;isc.defineClass("DocCookieState").addProperties({init:function(){isc.ClassFactory.addGlobalID(this);if(!this.cookieName){this.logError("You must set the 'cookieName' property");return}
 if(!isc.Page.isLoaded()){isc.Page.setEvent("load",this.getID()+".pageLoaded()")}else{this.load();this.delayCall("processCallback")}},pageLoaded:function(){this.load();this.processCallback()},processCallback:function(){if(this.onload){this.fireCallback(this.onload,["state","data"],[this,this.data])}},load:function(){var _1=isc.Cookie.get(this.cookieName);this.logDebug("loaded: "+_1)
 if(_1){try{var _2=new Function("return "+_1);this.data=_2()}catch(e){this.logWarn("state cookie corrupt, clearing out and defaulting state.");this.clear()}}
 if(!this.data)this.data=isc.clone(this.defaultData);return this.data},canUpdate:function(){return isc.Page.isLoaded()},store:function(_1){if(!this.canUpdate())return;if(!_1&&!this.data)return;if(_1)this.data=_1;if(!this.disableCookieStore){var _2=isc.Comm.serialize(this.data);this.logDebug("storing: "+_2+" - length: "+_2.length);isc.Cookie.set(this.cookieName,_2,this.cookiePath,this.cookieDomain,this.cookieExpiration)}},add:function(_1){if(!this.canUpdate())return;if(!this.data)this.data={};isc.addProperties(this.data,_1);this.store()},clear:function(){if(!this.canUpdate())return;this.data=null;isc.Cookie.clear(this.cookieName)},reset:function(){if(!this.canUpdate())return;this.data=isc.clone(this.defaultData);this.store()},getStoredSize:function(_1){if(!_1)_1=this.data;if(!_1)return 0;return isc.Comm.serialize(_1).length}});isc.defineClass("DocFilterField","Canvas");isc.A=isc.DocFilterField.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.height=24;isc.A.overflow="hidden";isc.B.push(isc.A.initWidget=function(){this.Super("initWidget",arguments);var _1=isc.StretchImg.create({autoDraw:false,left:2,top:2,height:20,width:200,src:"[ISO_DOCS_SKIN]/images/DocFilterField/filterfield.png",canHover:true,hoverHeight:1,prompt:"Filter by name (filters as you type)",vertical:false,items:[{width:18,name:"start"},{width:"*",name:"stretch"},{width:7,name:"end"}]});this.form=isc.FormLayout.create({autoDraw:false,left:2,top:3,height:20,width:290,colWidths:[172,"*"],styleName:"filterForm",cellPadding:0,cellSpacing:0,cellBorder:0,fields:[{name:this.fieldName,textBoxStyle:"searchField",height:16,width:"*",showTitle:true,titleOrientation:"right",title:"Filter results"}]},this.formProps);this.addChild(_1);this.addChild(this.form)}
@@ -67,7 +63,7 @@ if(!_9){for(var j=0;j<_6.length;j++){_2=_6[j];if(_2.startsWith(_7))continue;for(
 _6[j]=_2}
 _2=_6.join(isc.emptyString)}}
 this.docPreview.setContents(_2)}
-,isc.A.keyPress=function(_1,_2){if(_1.keyName.length>1)return;var _3=0;var _4=this.getSelectedRecord();if(_4)_3=this.data.indexOf(_4)+1;var _5=this.shortcutField;var _6;for(var i=_3;i<this.data.getLength();i++){var _8=this.data.get(i);var _9=_8[this.shortcutField];if(_9==null)continue;if(_9.startsWith(_1.keyName.toLowerCase())||_9.startsWith(_1.keyName))
+,isc.A.keyPress=function(_1,_2){if(_1.keyName==null||_1.keyName.length>1)return;var _3=0;var _4=this.getSelectedRecord();if(_4)_3=this.data.indexOf(_4)+1;var _5=this.shortcutField;var _6;for(var i=_3;i<this.data.getLength();i++){var _8=this.data.get(i);var _9=_8[this.shortcutField];if(_9==null)continue;if(_9.startsWith(_1.keyName.toLowerCase())||_9.startsWith(_1.keyName))
 {_6=_8;break}}
 if(!_6){for(var i=0;i<_3-1;i++){var _8=this.data.get(i);var _9=_8[this.shortcutField];if(_9==null)continue;if(_9.startsWith(_1.keyName.toLowerCase())||_9.startsWith(_1.keyName))
 {_6=_8;break}}}
@@ -389,38 +385,34 @@ return _10}},this.docTreeProperties);var _12=isc.VLayout.create({ID:"leftPane",d
 ,isc.A.$48h=function(){this.$48l=isc.DocNavBar.create({autoDraw:false,height:30,layoutMargin:3,membersMargin:3,overflow:"hidden",docViewer:this});isc.DocNavBar.instance=this.$48l;this.$48o=isc.Canvas.create({ID:"viewArea",autoDraw:false,backgroundColor:"#606060",overflow:"hidden"});var _1=isc.VLayout.create({ID:"rightPane",autoDraw:false,backgroundColor:"#606060",width:"*",overflow:"hidden",members:[this.$48l,this.$48o]});return _1}
 ,isc.A.showPrefsDialog=function(){if(!this.$48q)this.$48q=isc.DocPrefsDialog.create({autoDraw:false,docViewer:this});this.$48q.show()}
 ,isc.A.showHelpDialog=function(){this.$46t("group:docViewerHelp",true)}
-);isc.B._maxIndex=isc.C+20;isc._moduleEnd=isc._DocViewer_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('DocViewer module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'DocViewer'.");}
+);isc.B._maxIndex=isc.C+20;isc._moduleEnd=isc._DocViewer_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('DocViewer module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'DocViewer'.");}
 
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to

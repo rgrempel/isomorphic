@@ -1,6 +1,6 @@
 <DataSource ID="ResultSet" inheritsFrom="List">
     <fields>
-        <field name="dataSource" type="string"/>
+        <field name="dataSource" type="string" idAllowed="true"/>
         <field name="dropCacheOnUpdate" type="boolean"/>
         <field name="fetchDelay" type="integer"/>
         <field name="fetchMode" type="enum">

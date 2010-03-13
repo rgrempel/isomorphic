@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -50,14 +50,14 @@ var libs =
         "widgets/Rangebar",            	// graphical rangebar widget
         //<Rangebar
 		"widgets/Toolbar",				// collection of buttons
-		"widgets/ToolStrip",			// toolbar replacement
-
 		//"widgets/Border",				// platform-independent border
 		"widgets/ImgButton",			// image with button behaviors
-		"widgets/StretchImgButton",		// stretch image with button behaviors		
+		"widgets/StretchImgButton",		// stretch image with button behaviors			
 		//"widgets/ImgTab",				// stretch image with tab behaviors
 		//"widgets/TabBar",				// collection of tabs
 		
+		"widgets/ToolStrip",			// a narrow strip with a mixed set of controls
+
         //>SectionStack
         "widgets/SectionStack",         // container similar to Outlook left-hand Nav (subclass of Layout, uses Label)
         //<SectionStack

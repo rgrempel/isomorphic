@@ -10,4 +10,9 @@
 		<field name="autoCalculateSizes" type="boolean" visibility="internal"/>
 		<field name="cacheImageSizes" type="boolean" visibility="internal"/>
 	</fields>
+    
+    <methods>
+        <method name="click" basic="true"/>
+        <method name="doubleClick" basic="true"/>
+    </methods>
 </DataSource>

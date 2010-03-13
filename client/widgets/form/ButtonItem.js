@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -48,6 +48,12 @@ isc.ButtonItem.addProperties({
     //      @visibility external
 	//<
 	//baseStyle:null,
+
+    //>	@attr	buttonItem.icon     (SCImgURL : null : IR)
+    // Optional icon image to display on the button for this item.  See +link{button.icon}.
+    // @visibility external
+	//<
+    //icon :  null
     
     //>	@attr	buttonItem.titleStyle       (CSSStyleName : null : IRW)
 	//  Optional CSS class to apply to the button title.
@@ -103,6 +109,7 @@ isc.ButtonItem.addProperties({
 	//<
     buttonDefaults : {
         click : function () { return this.canvasItem.handleClick(); },
+        doubleClick : function () { return this.canvasItem.handleDoubleClick(); },
         getTitle : function () { return this.canvasItem.getTitle(); }
     },
 
@@ -114,11 +121,6 @@ isc.ButtonItem.addProperties({
 	//<
     //buttonProperties : null
     
-    // specific pass-throughs common for buttons:
-    //>	@attr	buttonItem.icon     (SCImgURL : null : IRA)
-    //  Optional icon image to display on the button for this item.
-	//<
-    //icon :  null
    
     
 });
@@ -194,7 +196,22 @@ isc.ButtonItem.addMethods({
         if (this.canvas != null && this._passthroughProps[propertyName]) {
             this.canvas.setProperty(propertyName, value)
         }
-    }
+    },
+    handleClick : function () {
+        if (this.editingOn) {
+            if (isc.VisualBuilder && isc.VisualBuilder.titleEditEvent == "click") this.editClick();
+            return false;
+        }
+        return this.Super("handleClick", arguments);      
+    },
+    handleDoubleClick : function () {
+        if (this.editingOn) {
+            if (isc.VisualBuilder && isc.VisualBuilder.titleEditEvent == "doubleClick") this.editClick();
+            return false;
+        }
+        return this.Super("handleDoubleClick", arguments);      
+    } 
+
     //<EditMode
     
     

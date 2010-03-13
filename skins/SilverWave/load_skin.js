@@ -102,6 +102,9 @@ with (theWindow) {
         autoFit: true,
         autoFitDirection: isc.Canvas.HORIZONTAL
     });
+    isc.IButton.markAsFrameworkClass();
+    isc.IAutoFitButton.markAsFrameworkClass();
+
 
     isc.ImgButton.addProperties({
         showFocused: true,
@@ -484,6 +487,23 @@ with (theWindow) {
             iconHeight:7
         });
     }
+    if (isc.IMenuButton) {
+        isc.IMenuButton.addProperties({
+            src:"[SKIN]button/button.png",
+            height:22,
+            width:100,
+            capSize:7,
+            vertical:false,
+            titleStyle:"buttonTitle",
+            showFocused:true,
+            showFocusedAsOver:false,
+            
+            menuButtonImage:"[SKIN]menu_button.gif",
+            menuButtonImageUp:"[SKIN]menu_button_up.gif",
+            iconWidth:7,
+            iconHeight:7
+        });
+    }
 
 
 //----------------------------------------
@@ -643,6 +663,13 @@ with (theWindow) {
             autoFitDirection: isc.Canvas.BOTH
         }
     })}
+    // Native FILE INPUT items are rendered differently in Safari from other browsers
+    // Don't show standard textbox styling around them as it looks odd
+    if (isc.UploadItem && isc.Browser.isSafari) {
+        isc.UploadItem.addProperties({
+            textBoxStyle:"normal"
+        });
+    }
 
 
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -113,7 +113,7 @@ isc.TabSet.addProperties({
 
     //> @attr tab.ID (identifier : null : IRW)
     // Optional ID for the tab, which can later be used to reference the tab.
-    // APIs requiring a referenct a tab will accept the tabs ID 
+    // APIs requiring a reference to a tab will accept the tabs ID 
     // [including  +link{tabSet.selectTab()}, +link{tabSet.updateTab()}, +link{tabSet.removeTab()}].<br>
     // The ID will also be passed to the +link{tabSet.tabSelected()} and +link{tabSet.tabDeselected()}
     // handler functions, if specified.
@@ -154,7 +154,8 @@ isc.TabSet.addProperties({
     // Determines whether this tab should show an icon allowing the user to dismiss the tab by
     // clicking on it directly. The URL for this icon's image will be derived from 
     // +link{tabSet.closeTabIcon} by default, but may be overridden by explicitly specifying
-    // +link{tab.closeIcon}.<br>
+    // +link{tab.closeIcon}.
+    // <P>
     // If unset, this property is derived from +link{tabSet.canCloseTabs}
     // @visibility external
     // @example closeableTabs
@@ -249,9 +250,18 @@ isc.TabSet.addProperties({
     //> @attr tabSet.canCloseTabs (boolean : null : IRW)
     // Should tabs in this tabSet show an icon allowing the user to dismiss the tab by
     // clicking on it directly. May be overridden for individual tabs by setting 
-    // +link{tab.canClose}.<br>
+    // +link{tab.canClose}.
+    // <P>
     // The URL for this icon's image will be derived from  +link{tabSet.closeTabIcon} by 
     // default, but may be overridden by explicitly specifying +link{tab.closeIcon}.
+    // <P>
+    // <b>Note</b>: Currently, tabs can only show a single icon, so a closable tab will show
+    // the close icon only even if +link{tab.icon} is set.  To work around this, add the icon
+    // as an HTML &lt;img&gt; tag to the +link{tab.title} property, for example:
+    // <pre>
+    //    title : "<span>" + isc.Canvas.imgHTML("myIcon.png") + " Tab Title</span>"
+    // </pre>
+    //
     // @see TabSet.closeClick()
     // @visibility external
     //<
@@ -322,10 +332,13 @@ isc.TabSet.addProperties({
     //<    
     showTabPicker:true,
     
-    // tabBarControls will be displayed in a layout. Make this an autoChild for potential
-    // customization 
-    tabBarControlsConstructor:"Layout",
-    tabBarControlsDefaults:{},
+    //> @attr tabSet.tabBarControlLayout (AutoChild : null : IR)
+    // +link{AutoChild} of type +link{Layout} that holds the +link{tabBarControls} as well as
+    // the built-in controls such as the +link{showTabPicker,tab picker menu}.
+    // @visibility external
+    //<
+    tabBarControlLayoutConstructor:"Layout",
+    tabBarControlLayoutDefaults:{},
     
     //>Animation
     //> @attr   tabSet.animateTabScrolling  (boolean : true : [IR])
@@ -469,6 +482,13 @@ isc.TabSet.addProperties({
     // @group tabBarScrolling
     //<
     
+    //> @attr tabSet.scrollerProperties (Object : null : [IR])
+    // Properties set here override those supplied by default when creating
+    // the scroller control.
+    // @group tabBarScrolling
+    //<
+    
+    
     //> @attr tabSet.symmetricPickerButton (boolean : true : [IR])
     // If this TabSet is showing a +link{tabSet.showTabPicker,tab picker button}, this
     // property determines whether the +link{tabSet.pickerButtonHSrc} and
@@ -536,6 +556,12 @@ isc.TabSet.addProperties({
     //<    
     pickerButtonVSrc:"[SKIN]vpicker.gif",    
     
+    //> @attr tabSet.tabPickerProperties (Object : null : [IR])
+    // Properties set here override those supplied by default when creating
+    // the picker control.
+    // @group tabBarScrolling
+    //<
+
 	// PaneContainer
 	// ----------------------------------------------------------------------------------------
 
@@ -596,6 +622,17 @@ isc.TabSet.addProperties({
     // @visibility external
 	//<
 	paneContainerOverflow:isc.Canvas.AUTO,
+
+    //> @method tabSet.setPaneContainerOverflow()
+    // Update +link{paneContainerOverflow} after creation.
+    //
+    // @param newOverflow (Overflow) new overflow setting
+    // @visibility external
+    //<
+    setPaneContainerOverflow : function (newOverflow) {
+        this.paneContainerOverflow = newOverflow;
+        if (this.paneContainer) this.paneContainer.setOverflow(newOverflow);
+    },
     
     //> @attr tabSet.symmetricEdges (boolean : true : IR)
     // If this tabSet will +link{tabSet.showPaneContainerEdges,show edges} for the paneContainer,
@@ -617,7 +654,7 @@ isc.TabSet.addProperties({
     //> @type EdgeSizes
     // Object used to specify custom edge sizes or offsets.
     // Specified as an object where <code>defaultSize</code> will map to the default edge size or 
-    // offset for the canvsa (+link{canvas.edgeSize}, or +link{canvas.edgeOffset} and
+    // offset for the canvas (+link{canvas.edgeSize}, or +link{canvas.edgeOffset} and
     // <code>top</code>, <code>left</code>, <code>right</code> and
     // <code>bottom</code> will map to the
     // +link{edgedCanvas.edgeTop,edgeTop}/+link{edgedCanvas.edgeOffsetTop,edgeOffsetTop}, 
@@ -633,7 +670,7 @@ isc.TabSet.addProperties({
     // If this tabSet will +link{tabSet.showPaneContainerEdges,show edges} for the paneContainer,
     // and +link{tabSet.symmetricEdges} is set to false, the <code>leftEdgeSizes</code>, 
     // <code>rightEdgeSizes</code>, <code>topEdgeSizes</code> and <code>bottomEdgeSizes</code> 
-    // propertes allow the sizes of edges for the paneContainer to be customized depending on
+    // properties allow the sizes of edges for the paneContainer to be customized depending on
     // the +link{tabSet.tabBarPosition}.
     // <P>
     // The attribute should be specified an +link{type:EdgeSizes,edgeSizes map}, specifying the
@@ -660,7 +697,7 @@ isc.TabSet.addProperties({
     // If this tabSet will +link{tabSet.showPaneContainerEdges,show edges} for the paneContainer,
     // and +link{tabSet.symmetricEdges} is set to false, the <code>leftEdgeOffsets</code>, 
     // <code>rightEdgeOffsets</code>, <code>topEdgeOffsets</code> and <code>bottomEdgeOffsets</code> 
-    // propertes allow the offsets of edges for the paneContainer to be customized depending on
+    // properties allow the offsets of edges for the paneContainer to be customized depending on
     // the +link{tabSet.tabBarPosition}.
     // <P>
     // The attribute should be specified an +link{type:EdgeSizes,edgeSizes map}, specifying the
@@ -741,6 +778,8 @@ initWidget : function () {
     this.createPanes();
 },
 
+
+tabBarConstructor:isc.TabBar,
 
 //>	@method	tabSet.makeTabBar()	(A)
 //	Instantiates a tabBar for this tabSet, and then adds it as a child of
@@ -836,7 +875,7 @@ makeTabBar : function () {
 	
 	// create tabBar and add as child.  NOTE: make available as this.tabBar as well since it's
     // declared as an autoChild
-	this.tabBar = this._tabBar = isc.TabBar.create(tabBarProperties);
+	this.tabBar = this._tabBar = this.tabBarConstructor.create(tabBarProperties);
     this.addChild(this._tabBar);
 },
 
@@ -1198,6 +1237,10 @@ addTabs : function (newTabs, position) {
         this.selectedTab = this.getTabNumber(oldSelectedTab);
     }
     
+    //>EditMode
+    this.addTabsEditModeExtras(newTabs);
+    //<EditMode
+    
     return position;
 },
 
@@ -1299,6 +1342,10 @@ removeTabs : function (tabs, dontDestroy) {
     // Necessary in case the removed tabs get rid of clipping of the tab-bar
     // Delay required as layout reflow is asynch
     this.delayCall("fixLayout", 0);
+    
+    //>EditMode
+    this.removeTabsEditModeExtras();
+    //<EditMode
 
 },
 
@@ -1309,11 +1356,26 @@ removeTabs : function (tabs, dontDestroy) {
 // @return (boolean) true if tab is closeable
 //<
 canCloseTab : function (tab) {
-    if (!isc.isAn.Object(tab)) tab = this.getTabObject(tab);
+    tab = this.getTabObject(tab);
     if (tab && tab.canClose != null) return tab.canClose;
     return this.canCloseTabs;
 },
 
+//> @method tabSet.setCanCloseTab()
+// Sets +link{tab.canClose} to the boolean parameter "canClose".  If "canClose" is null, this
+// will have the effect of causing this tab to fall back to +link{tabSet.canCloseTabs}
+// @param tab (int | ID | Tab) tab to set
+// @param canClose (boolean) new value for the tab's canClose property, or null to clear it
+//<
+setCanCloseTab : function (tab, canClose) {
+    tab = this.getTabObject(tab);
+    var liveTab = this.getTab(tab);
+    tab.canClose = canClose;
+    var liveTabProperties = isc.addProperties({}, tab, {canClose: canClose});
+    if (liveTab) {
+        liveTab.setProperties(this.getTabBar().getCloseIconProperties(liveTabProperties));
+    }
+},
 
 _tabIconClick : function(tab) { 
     var shouldClose = this.canCloseTab(tab);
@@ -1329,10 +1391,16 @@ _tabIconClick : function(tab) {
 // tab.
 // <P>
 // Default implementation will remove the tab from the tabSet via +link{removeTab()}.
+//
 // @param tab (Tab) tab to close
 // @visibility external
 //<
 closeClick : function (tab) {
+    // if "onCloseClick" exists, allow it to cancel the default behavior
+    
+    if (this.onCloseClick && (this.onCloseClick(tab) == false)) {
+        return;
+    }
     this.removeTab(tab);
 },
 
@@ -1578,8 +1646,8 @@ fixLayout : function () {
     if (showControls) {
         // Force clipping so we can scroll the tb as expected
         // Required even if we were already showing the scroller - we may have resized
-        if (vertical) tb.setHeight(this.getViewportHeight() - this._controlLayout.getHeight());
-        else tb.setWidth(this.getViewportWidth() - this._controlLayout.getWidth());
+        if (vertical) tb.setHeight(this.getViewportHeight() - this.tabBarControlLayout.getHeight());
+        else tb.setWidth(this.getViewportWidth() - this.tabBarControlLayout.getWidth());
     } else {
         tb.resizeTo(vertical ? null : "100%", vertical ? "100%" : null);
     }
@@ -1622,7 +1690,7 @@ shouldShowControl : function (control) {
             if (otherControl == "tabScroller" || otherControl == "tabPicker") continue;
             if (this.shouldShowControl(otherControl)) {
                 if (!isc.isA.Canvas(otherControl)) otherControl = this.getControl(otherControl);
-                otherControlSize += vertical ? otherControl.getHeight() : otherControl.getWidth();
+                otherControlSize += vertical ? otherControl.getVisibleHeight() : otherControl.getVisibleWidth();
             }
         }
         
@@ -1742,7 +1810,7 @@ getControl : function (control) {
             
                     return false;
                 }
-            });
+            }, this.scrollerProperties);
         }
             
         return this.scroller;
@@ -1768,7 +1836,7 @@ getControl : function (control) {
                 height:(vertical ? tabPickerSize : (this.tabBarThickness - this._tabBar.baseLineThickness)),
                 width:(vertical ? (this.tabBarThickness - this._tabBar.baseLineThickness) : tabPickerSize),
                 click:"this.tabSet.showTabPickerMenu()"
-            });
+            }, this.tabPickerProperties);
         }
             
         return this.tabPicker;
@@ -1782,6 +1850,9 @@ getControl : function (control) {
                    " to a valid control. Not displaying.");
     return null;
 },
+
+// For autoTest: if we are showing tabBarControlLayout, access it directly by name
+namedLocatorChildren:["tabBarControlLayout"],
 
 // Method to actually show the controlLayout if required.
 // If no controls are to be displaye this method falls through to hideControls()
@@ -1803,23 +1874,29 @@ showControls : function () {
         // At this point the control should be a pointer to a canvas -
         // Ensure the layout is showing, and that the control shows up in the right spot
 
+        var controlLayout = this.tabBarControlLayout;
         // controls should all be housed in a layout
-        if (!this._controlLayout) {
+        if (!controlLayout) {
             // create the tabBarControls as an autoChild
-            this._controlLayout = this.createAutoChild("tabBarControls",
-                                    {tabSet:this, styleName:this.tabBar.styleName,
+            this.tabBarControlLayout = controlLayout =
+                                    this.createAutoChild("tabBarControlLayout",
+                                    {styleName:this.tabBarControlLayoutDefaults.styleName ||
+                                               this.tabBar.styleName,
                                      // if a control is resized while visible, ensure the tabSet 
                                      // is notified so it can keep us right-aligned in the tab-bar
-                                     childResized:function () {
+                                     childResized : function () {
                                          this.Super("childResized", arguments);
-                                         this.tabSet._controlLayoutChildResized();
+                                         this.creator._controlLayoutChildResized();
                                      },
                                      vertical:vertical
+                                     
+                                     // For autoTest APIs
+                                     ,locatorParent:this
                                     });
         }
         
-        if (this._controlLayout.getMemberNumber(control) != visibleControlIndex) {
-            this._controlLayout.addMember(control, visibleControlIndex);
+        if (controlLayout.getMemberNumber(control) != visibleControlIndex) {
+            controlLayout.addMember(control, visibleControlIndex);
         }
         visibleControlIndex ++;
         
@@ -1827,14 +1904,14 @@ showControls : function () {
         controlSize += vertical ? control.getVisibleHeight() : control.getVisibleWidth();
     }
     
-    if (this._controlLayout && this._controlLayout.members) {
+    if (controlLayout && controlLayout.members) {
         // remove any members of the controlLayout beyond the end of the current set of visible
         // controls
         var membersToRemove = [];
-        for (var i = visibleControlIndex; i < this._controlLayout.members.length; i++) {
+        for (var i = visibleControlIndex; i < controlLayout.members.length; i++) {
             membersToRemove.add(i);
         }
-        this._controlLayout.removeMembers(membersToRemove);
+        controlLayout.removeMembers(membersToRemove);
         // Note: we're not destroying these members, just deparenting them
     }
     
@@ -1855,6 +1932,10 @@ showControls : function () {
     // baseLine will not extend underneath the controls).
     // Therefore if we are showing the controlLayout, create a new baseLine image to
     // sit below it so the baseLine extends beyond the (truncated) tabs in the tab-bar.
+    // Note that we're not destroying the existing tab-bar baseline
+    // (set up via tabBar.makeBaseline) - we're essentially duplicating it with some different
+    // defaults and adding it to a different position in the DOM.
+    
     
     if (!this._tabBarBaseLine) {
         var tb = this._tabBar;
@@ -1889,7 +1970,7 @@ showControls : function () {
                                         this.getWidth(), tb.baseLineThickness);
     }
     
-    if (!this._controlLayout.isVisible()) this._controlLayout.show();    
+    if (!controlLayout.isVisible()) controlLayout.show();    
     // Always position the baseLine behind the tabBar so we only see the edge that protrudes
     // past the end of the tabs.
     this._tabBarBaseLine.moveBelow(tb);
@@ -1931,13 +2012,13 @@ placeControlLayout : function (controlSize) {
         height = tbThickness;
     }
 
-    this._controlLayout.setRect(left, top, width, height);
-    if (!this.children.contains(this._controlLayout)) this.addChild(this._controlLayout);
+    this.tabBarControlLayout.setRect(left, top, width, height);
+    if (!this.children.contains(this.tabBarControlLayout)) this.addChild(this.tabBarControlLayout);
 
 },
 
 _controlLayoutChildResized : function () {
-    var layout = this._controlLayout;
+    var layout = this.tabBarControlLayout;
     if (!layout || !layout.isDrawn() || !layout.isVisible()) return;
     var controlSize = 0;
     for (var i = 0; i < layout.members.length; i++) {
@@ -1950,7 +2031,7 @@ _controlLayoutChildResized : function () {
 
 // Hide the controlLayout and special tabBarBaseLine that displayes underneath it.
 hideControls : function () {
-    if (this._controlLayout && this._controlLayout.isVisible()) this._controlLayout.hide();
+    if (this.tabBarControlLayout && this.tabBarControlLayout.isVisible()) this.tabBarControlLayout.hide();
     if (this._tabBarBaseLine && this._tabBarBaseLine.isVisible()) this._tabBarBaseLine.hide();
 },
 
@@ -2080,7 +2161,11 @@ _tabSelected : function (tab) {
     var tb = this._tabBar;
     // leave the second param as null - tab bar will automatically scroll to appropriate
     // position
-    tb.scrollTabIntoView(tabNum, null, this.animateTabScrolling);
+    var tabSet = this;
+    tb.scrollTabIntoView(tabNum, null, this.animateTabScrolling, 
+        function() {
+            if (isc.isA.Function(tabSet.tabScrolledIntoView)) tabSet.tabScrolledIntoView();
+        });
 },
 
 //>	@method	tabSet._tabDeselected(tab)	(A)
@@ -2118,7 +2203,7 @@ getSelectedTab : function () {
 //<
 getSelectedTabNumber : function () {
     if (!isc.isA.Number(this.selectedTab)) this.selectedTab = this.getTabNumber(this.selectedTab);
-    // If the specifed selectedTabNum doesn't correspond to a tab don't return it.
+    // If the specified selectedTabNum doesn't correspond to a tab don't return it.
     if (!this.tabs || !this.tabs[this.selectedTab]) return -1;
     return this.selectedTab;
 },
@@ -2152,14 +2237,17 @@ getTabBar : function () {
     return this._tabBar;
 }
 
+
+// Edit Mode ----------------------------------------------------------------
+//
 });
 
 
 isc.TabSet.registerStringMethods({
     //>	@method	tabSet.tabSelected()
-    //  Notification fired when a tab is selected. Note that this will only fire if 
+    // Notification fired when a tab is selected. Note that this will only fire if 
     // this tabSet is drawn. If a tab is selected before <code>TabSet.draw()</code> 
-    // is called, the <code>tabSelected()</code> notificaiton will fire on 
+    // is called, the <code>tabSelected()</code> notification will fire on 
     // <code>draw()</code>
     // @param tabNum (number) number of the tab
     // @param tabPane (Canvas) pane for this tab
@@ -2182,7 +2270,19 @@ isc.TabSet.registerStringMethods({
     
     
     // getPaneContainerEdges - documented by default implementation
-    getPaneContainerEdges:""
+    getPaneContainerEdges:"",
+    
+    //> @method tabSet.onCloseClick()
+    // When +link{canCloseTabs} is set, this notification method fired when the user clicks 
+    // the "close" icon for a tab.
+    // Return false to cancel default behavior of removing the tab from the TabSet
+    // @param tab (Tab) the tab to be removed
+    // @return (boolean) return false to suppress removal of the tab
+    // @visibility sgwt
+    //<
+    
+    onCloseClick : "tab"
+    
 });
 
 isc.defineClass("PaneContainer", "VLayout").addMethods({
@@ -2190,7 +2290,7 @@ isc.defineClass("PaneContainer", "VLayout").addMethods({
     // pane container or its children (via bubbled handleKeyPress events)
     // ctrl+tab - move one pane forward (or back to the first pane)
     // ctrl+shift+tab - move one pane back
-    // (This is the Windows behaviour - see Windows control panel)
+    // (This is the Windows behavior - see Windows control panel)
     
     handleKeyPress : function (event, eventInfo) {
         if (event.keyName == "Tab" && event.ctrlKey) {

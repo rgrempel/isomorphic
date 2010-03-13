@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -31,7 +31,7 @@
 // @visibility external
 //<
 
-isc.ClassFactory.defineClass("Window", "VLayout");
+isc.ClassFactory.defineClass("Window", "Layout");
 
 //> @groupDef body
 // Things related to the body subobject of Window
@@ -88,6 +88,9 @@ isc.Window.addProperties({
     layoutMargin:2,                          
     membersMargin:2,                          
 
+    // set orientation to vertical by default
+    orientation: "vertical",
+    
     // Dragging
     // ---------------------------------------------------------------------------------------
 	
@@ -95,7 +98,7 @@ isc.Window.addProperties({
 	dragStartDistance:1,
 
 	//>	@attr	window.canDragReposition		(boolean : true : IRW)
-	// if true, this Window may be moved around by the user by dragging on the Window header.  
+	// If true, this Window may be moved around by the user by dragging on the Window header.  
     // Note that if the header is not showing, the Window can't be drag-repositioned regardless
     // of this setting.
     // @see window.showHeader
@@ -126,7 +129,7 @@ isc.Window.addProperties({
 
 	//>	@attr	window.canDragResize	(boolean : false : IRW)
 	// Can the window be drag-resized? If true the window may be drag resized from its edges,
-    // and if showing, via the resiszer icon in the footer.
+    // and if showing, via the resizer icon in the footer.
     // @see window.showResizer
     // @group dragging, resizing
     // @visibility external
@@ -212,7 +215,7 @@ isc.Window.addProperties({
 
     //>	@attr	window.autoCenter		(boolean : autoCenter : [IRW])
     //      If true, this Window widget will automatically be centered on the page when shown.
-    //      If false, it will show up in the last position it was placed (either programatically,
+    //      If false, it will show up in the last position it was placed (either programmatically,
     //      or by user interaction).
     //  @group  appearance, location
     //  @visibility external
@@ -366,7 +369,7 @@ isc.Window.addProperties({
     contentLayout:"vertical",
 
     //>	@attr	window.autoSize (boolean : false : [IRW])
-	//			If true, the window is resize automatically to accommodate the contents
+	//			If true, the window is resized automatically to accommodate the contents
 	//			of the body, if they would otherwise require scrolling.
     //      @visibility external
 	//		@group	appearance
@@ -477,8 +480,13 @@ isc.Window.addProperties({
     // <P>
     // By embedding a Canvas directly in this list you can add arbitrary additional controls to
     // the header, for example, an additional button (eg return to dock) or a DynamicForm with
-    // various kinds of input controls.  Tip: custom controls need to set layoutAlign:"center"
-    // to appear vertically centered.
+    // various kinds of input controls.  
+    // <P>
+    // Note that having added controls to headerControls, you can still call APIs directly on
+    // those controls to change their appearance, and you can also show() and hide() them if
+    // they should not be shown in some circumstances.
+    // <P>
+    // Tip: custom controls need to set layoutAlign:"center" to appear vertically centered.
     //
     // @visibility external
     // @example windowHeaderControls
@@ -542,7 +550,7 @@ isc.Window.addProperties({
     // <li>styleName- defaults to <code>"windowHeaderText"</code> and specifies the css style
     // that is used  to render the +link{Window.title} text.
     // </ul>
-    // You can override the the above propertites by calling +link{Class.changeDefaults()}.
+    // You can override the the above properties by calling +link{Class.changeDefaults()}.
     // 
 	// @group	appearance, headerLabel
     // @visibility external
@@ -592,7 +600,7 @@ isc.Window.addProperties({
     // <li>src - defaults to <code>"[SKIN]/Window/minimize.gif"</code> and specifies the image
     // for the headerIcon.
     // </ul>
-    // You can override the the above propertites by calling +link{Class.changeDefaults()}.
+    // You can override the the above properties by calling +link{Class.changeDefaults()}.
     //
     //	@group	appearance, header
     //  @visibility external
@@ -664,7 +672,14 @@ isc.Window.addProperties({
 		height:14,
         layoutAlign:"center",
 		src:"[SKIN]/Window/minimize.gif",	
-		click:function () { this.creator.minimize();return false }
+		click:function () {
+            // If onMinimizeClick exists, allow it to cancel default behavior
+            
+            if (!this.creator.onMinimizeClick || (this.creator.onMinimizeClick() != false)) {   
+                this.creator.minimize();
+            }
+            return false 
+        }
 	},
     
     //> @attr   window.minimized    (boolean : false : [IRW])
@@ -705,7 +720,7 @@ isc.Window.addProperties({
     
     //> @attr   window.minimizeTime     (number : null : [IRWA])
     // If this window is minimizeable, and animateMinimize is true, what should the duration of 
-    // the minize / maximize be (in ms)? If unset defaults to <code>canvas.animationTime</code>.
+    // the minimize / maximize be (in ms)? If unset defaults to <code>canvas.animationTime</code>.
     // @visibility animation
     // @group  appearance, header, animation
     // @example windowMinimize
@@ -735,7 +750,12 @@ isc.Window.addProperties({
 		height:14,						
 		src:"[SKIN]/Window/restore.gif",		
         layoutAlign:"center",
-		click:function () { this.creator.restore();return false }
+		click:function () { 
+            if (!this.creator.onRestoreClick || (this.creator.onRestoreClick() != false)) {
+                this.creator.restore();
+            }
+            return false
+        }
 	},		
              
 	// MaximizeButton
@@ -768,7 +788,12 @@ isc.Window.addProperties({
 		height:14,						
 		src:"[SKIN]/Window/maximize.gif",		
         layoutAlign:"center",
-		click:function () { this.creator.maximize();return false }
+        click:function () { 
+            if (!this.creator.onMaximizeClick || (this.creator.onMaximizeClick() != false)) {
+                this.creator.maximize();
+            }
+            return false
+        }
 	},	
 
 
@@ -776,7 +801,8 @@ isc.Window.addProperties({
 	// ------------------------------------------------------------------------------------------
 
     //> @attr window.footer (AutoChild : null : R)
-    // Optional footer for the window, providing space for a resizer and status bar.
+    // Optional footer for the window, providing space for controls such as the resizer and 
+    // status bar.
     // @visibility external
     //<
 	
@@ -798,8 +824,34 @@ isc.Window.addProperties({
     // @group  appearance, footer
     // @visibility external
     //<
-	footerHeight:18,	
-										
+	footerHeight:18,
+
+    //> @attr window.footerControls (Array of String : (see below) : IR)
+    // Array of members to show in the Window footer.  
+    // <P>
+    // The default value of <code>footerControls</code> is an Array of Strings listing the
+    // standard footer controls in their default order:
+    // <pre>
+    //    footerControls : ["spacer", "resizer"]
+    // </pre>
+    // As with +link{Window.headerControls}, you can override <code>footerControls</code>
+    // to change the order of standard controls in the footer. <code>"spacer"</code> is a special
+    // value which will create a +link{LayoutSpacer} in the footer bar. <code>"resizer"</code>
+    // will show the +link{window.resizer} in the footer.
+    // <P>
+    // By embedding a Canvas directly in this list you can add arbitrary additional controls to
+    // the footer.  
+    // <P>
+    // Note that the +link{window.statusBar} is not part of the set of footer controls - it is a
+    // separate canvas rendered behind all footer controls. If you include some custom status bar
+    // directly in the footerControls you may want to set +link{window.showFooter} to false.
+    // <P>
+    // Tip: custom controls need to set layoutAlign:"center" to appear vertically centered.
+    //
+    // @visibility external
+    //<
+    footerControls:["spacer", "resizer"],	
+    
 	// StatusBar settings
 	// ----------------------------------------------------------------------------------------
 
@@ -1251,12 +1303,23 @@ setTitle : function (newTitle) {
 //
 //		@param	newButtons	(array : null)	buttons for the toolbar
 //<
+
 setButtons : function (newButtons) {
+    this.logWarn("Window.setButtons() method called. This has been deprecated in " +
+        "favor of Window.setToolbarButtons()", "deprecated");
+    return this.setToolbarButtons(newButtons);
+},
+
+// Exposed at the Dialog level, where we also expose the toolbarButtons attribute
+//>	@method	dialog.setToolbarButtons()
+// Set the +link{dialog.toolbarButtons} for this dialog.
+// @param	newButtons	(array : null)	buttons for the toolbar
+// @visibility external
+//<
+setToolbarButtons : function (newButtons) {
 	this.toolbarButtons = newButtons;
 	if (this.toolbar)	this.toolbar.setButtons(newButtons);
 },
-
-
 
 
 // Footer Methods
@@ -1283,9 +1346,27 @@ makeFooter : function () {
     this.addAutoChild("footer", {height:this.footerHeight});
     
     if (!this.footer) return;
+    var controls = [];
+    for (var i = 0; i < this.footerControls.length; i++) {
+        var control = this.footerControls[i], properties = {};
+        
+        if (control == "spacer") control = isc.LayoutSpacer.create();
+        if (control == "resizer") {
+            if (!this.canDragResize) continue;
+            properties.dragTarget = this;
+        }
+        properties.visibility = this.minimized ? isc.Canvas.HIDDEN : isc.Canvas.INHERIT;
+        
+        if (isc.isA.String(control)) {
+            this.addAutoChild(control, properties, null, this.footer);
+        } else {
+            if (isc.isA.Canvas(control)) control.setProperties(properties);
+            else isc.addProperties(control, properties);
+            
+            this.footer.addMember(control);
+        }
+    }
     
-    // spacer places the resizer at the far right
-    this.footer.addMember(isc.LayoutSpacer.create());
 
     // status bar fills entire width (not a member: extends under resizer)
     // Note that this means the resizer may obscure the borders of the statusBar. This is
@@ -1294,19 +1375,17 @@ makeFooter : function () {
         height: this.footer.getHeight(),
         visibility : this.minimized ? isc.Canvas.HIDDEN : isc.Canvas.INHERIT
     });
-    // Note that we currently do not set layoutAlign:center on the resizer so it will sit
-    // at the top of the footer. Media for the resizer is currently set such that this looks
-    // right.
-    if (this.canDragResize) {
-        this.addAutoChild("resizer", {
-	    	dragTarget:this,
-            // hide initially if we're minimized
-            visibility : this.minimized ? isc.Canvas.HIDDEN : isc.Canvas.INHERIT
-        });
-        // needs to be above the statusBar
-        if (this.resizer) this.resizer.bringToFront();
-    }
+    
+    if (this.status != null) this.setStatus(this.status);
+    this.statusBar.sendToBack();
+    
 },
+
+//> @attr Window.status (string : null : IRW)
+// Text to show in the status bar of the window (if one is visible)
+// @group appearance
+// @visibility external
+//<
 
 //>	@method	Window.setStatus()  ([])
 //			Sets the text in the status bar of the window, redrawing if necessary.
@@ -1315,9 +1394,12 @@ makeFooter : function () {
 //      @visibility external
 //<
 setStatus : function (statusString) {
+    this.status = statusString;
 	if (this.statusBar == null) return;
+    if (statusString == null) statusString = "";
 	var leftPadding = (this.statusBar.leftPadding ? isc.Canvas.spacerHTML(this.statusBar.leftPadding,1) : "");
-	this.statusBar.setContents(leftPadding + statusString);
+    this.statusBar.setContents(leftPadding + statusString);
+    
 },
 
 
@@ -1805,7 +1887,8 @@ show : function (a,b,c,d) {
             this.isModal = false;
         } else {
             this.showClickMask(
-                    this.getID() + (this.dismissOnOutsideClick ? ".closeClick()" : ".flash()"), 
+                    this.getID() + (this.dismissOnOutsideClick ? ".handleCloseClick()" 
+                                                               : ".flash()"), 
                     false,
                     // Don't mask ourselves
                     
@@ -1934,7 +2017,7 @@ handleEscape : function () {
     // In this case we want the user to have to interact with the top window before
     // dismissing the window underneath it.
     if (this.isMasked()) return;
-    this.closeClick();
+    this.handleCloseClick();
 },
 
 resized : function (a,b,c,d) {
@@ -2015,9 +2098,9 @@ centerInPage : function () {
         parent = this.parentElement ? this.parentElement : isc.Page,
         left = ((parent.getWidth() - width) / 2) + parent.getScrollLeft(),
         top = ((parent.getHeight() - height) / 2) + parent.getScrollTop();
-    // Don't try to apply decimal positions
+    // Don't try to apply decimal positions, don't position top of window off-screen
     left = Math.round(left);
-    top = Math.round(top);
+    top = Math.max(Math.round(top),0);
 
     this._centering = true;
 	this.moveTo(left, top);
@@ -2163,14 +2246,17 @@ minimize : function () {
     // but disable it until the minimize is complete
     var minButton = this.minimizeButton;
     if (minButton) {
-        minButton.disable();
         minButton.addProperties(this.restoreButtonDefaults);
-        minButton.redraw();
+        minButton.markForRedraw();
     }
 
     //>Animation
     this._minimizeHeight = minimizeHeight;
     if (this.animateMinimize && this.isDrawn() && this.isVisible()) {
+        if (minButton) {
+            minButton.disable();
+            minButton.redraw();
+        }
         
         // Remember the sizing / overflow of the body for when we're done minimizing
         this._storeContentRestoreStats();
@@ -2469,14 +2555,17 @@ restore : function () {
     // but disable it until the restore is complete
     var restoreButton = (this.minimized ? this.minimizeButton : this.maximizeButton);
     if (restoreButton) {
-        restoreButton.disable();
         restoreButton.addProperties(this.minimized ? this.minimizeButtonDefaults 
                                                    : this.maximizeButtonDefaults);
-        restoreButton.redraw();
+        restoreButton.markForRedraw();                                                   
     }
     
     //>Animation
     if (this.animateMinimize && this.isDrawn() && this.isVisible()) {
+        if (restoreButton) {
+            restoreButton.disable();
+            restoreButton.redraw();
+        }
         // Note: before either animated minimize or restore we remember the 'restore' size
         // of the components (the normal drawn size) and at the end of the animation reset them
         // This is cleaner than remembering them before minimize, then resetting them after
@@ -2637,13 +2726,16 @@ maximize : function () {
     // but disable it until the maximize is complete
     var maxButton = this.maximizeButton;
     if (maxButton) {
-        maxButton.disable();
         maxButton.addProperties(this.restoreButtonDefaults);
-        maxButton.redraw();
+        maxButton.markForRedraw();
     }
     
     //>Animation
     if (this.animateMinimize && this.isDrawn() && this.isVisible()) {
+        if (maxButton) {
+            maxButton.disable();
+            maxButton.redraw();
+        }
         // maximize height and width are 100% / 100%.
         // We'll animate to the explicit size this resolves to (then set to 100% to support
         // parent resizing, etc)
@@ -2723,7 +2815,12 @@ resizeBy : function (deltaX, deltaY, animatingRect, suppressHandleUpdate, animat
 // ---------------------------------------------------------------------------------------
 
 
-_closeButtonClick : function () { return this.closeClick() },
+_closeButtonClick : function () { return this.handleCloseClick() },
+
+handleCloseClick : function () {
+    if (this.onCloseClick && this.onCloseClick() == false) return;
+    return this.closeClick();
+},
 
 //>	@method	Window.closeClick() ([])
 // Handles a click on the close button of this window. The default implementation
@@ -2742,6 +2839,40 @@ closeClick : function () {
 
 });	// END  Window.addMethods();
 
+isc.Window.registerStringMethods({
+    //> @method window.onMaximizeClick()
+    // Notification method fired when the user clicks the 'maximize' button.
+    // @return (boolean) return false to cancel the default maximize behavior
+    // @visibility sgwt
+    //<
+    
+    onMaximizeClick:"",
+    //> @method window.onMinimizeClick()
+    // Notification method fired when the user clicks the 'minimize' button.
+    // @return (boolean) return false to cancel the default minimize behavior
+    // @visibility sgwt
+    //<
+    
+    onMinimizeClick:"",
+    //> @method window.onRestoreClick()
+    // Notification method fired when the user clicks the 'restore' button.
+    // @return (boolean) return false to cancel the default restore behavior
+    // @visibility sgwt
+    //<
+    
+    onRestoreClick:"",
+    
+    //> @method window.onCloseClick()
+    // Notification method fired when the user attempts to close the window via a click on the
+    // 'close' button, click outside the window if +link{window.dismissOnOutsideClick} is true,
+    // or on escape keypress if +link{window.dismissOnEscape} is true.
+    // @return (boolean) return false to cancel the default behavior 
+    //    (firing +link{window.closeClick()})
+    // @visibility sgwt
+    //<
+    
+    onCloseClick:""
+})
 
 // If we set up the 'definePrintWindow()' method, call it now to set up the PrintWindow class
 if (isc.definePrintWindow) isc.definePrintWindow();

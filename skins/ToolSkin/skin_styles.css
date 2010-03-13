@@ -290,29 +290,44 @@
 .tCellSelectedOverDark,
 .tCellDisabled,
 .tCellDisabledDark,
+.tTallCell,
+.tTallCellDark,
+.tTallCellOver,
+.tTallCellOverDark,
+.tTallCellSelected,
+.tTallCellSelectedDark,
+.tTallCellSelectedOver,
+.tTallCellSelectedOverDark,
+.tTallCellDisabled,
+.tTallCellDisabledDark,
 .tGroupNode {
 	font-family:Arial,Bitstream Vera Sans,sans-serif; font-size:11px; text-overflow:ellipsis;
 	color:#C0C0C0;
 }
+.tTallCellDark,
 .tCellDark {
     color:#D9D9D9;
 	background-color:#262626;
 }
+.tTallCellOver,
 .tCellOver,
 .tCellOverDark {
     color:#111111;
     background:url(./images/tListGrid/row.png) repeat scroll;
 }
+.tTallCellSelected,
 .tCellSelected,
 .tCellSelectedDark {
     color:#EEEEEE;
 	background:rgb(44,88,147);
 }
+.tTallCellSelectedOver,
 .tCellSelectedOver,
 .tCellSelectedOverDark {
     color:#DDDDDD;
 	background:rgb(44,88,147) url(./images/tListGrid/row_Selected.png) repeat scroll;
 }
+.tTallCellDisabled,
 .tCellDisabled,
 .tCellDisabledDark {
 	color:#595959;
@@ -331,6 +346,10 @@
     padding: 3px; 
 }
 
+/* Multi-sort - sort-index appearing next to sort-arrows in field headers */
+.sortNumeral {
+    font-size:7px
+}
 
 /* ------------------------------------------------------------------------- */
 /* Dynamic Form Items */
@@ -353,6 +372,10 @@
 .tTextItemFocused,
 .tTextItemDisabled,
 .tTextItemError,
+.tRadioGroupItem,
+.tRadioGroupItemFocused,
+.tRadioGroupItemDisabled,
+.tRadioGroupItemError,
 .tSelectItemText,
 .tSelectItemTextError,
 .tSelectItemTextFocused,

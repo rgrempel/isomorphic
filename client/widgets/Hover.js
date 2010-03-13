@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -54,14 +54,14 @@ isc.Hover.addClassProperties({
 	//moveWithMouse:false,
     
     //>@classAttr Hover.leftOffset (number : 15 : RW)
-    // When positioining the hover canvas, this will be the default left offset from the 
+    // When positioning the hover canvas, this will be the default left offset from the 
     // mousepointer, if no explicit position was passed to the +link{Hover.show()} method
     // @visibility external
     //<
 	leftOffset:15,
 
     //>@classAttr Hover.topOffset (number : 15 : RW)
-    // When positioining the hover canvas, this will be the default top offset from the 
+    // When positioning the hover canvas, this will be the default top offset from the 
     // mousepointer, if no explicit position was passed to the +link{Hover.show()} method
     // @visibility external
     //<    
@@ -125,7 +125,7 @@ isc.Hover.addClassMethods({
 // Hover canvas partially clipped, it will be automatically modified to ensure the Hover 
 // is entirely visible.
 // @param contents (html) contents for the hover
-// @param properties (object) object containing attributes for managing the hover canvas' 
+// @param properties (Label Properties) object containing attributes for managing the hover canvas' 
 //  appearance. Valid properties include:<ul>
 //  <li>left, top, width, height
 //  <li>baseStyle

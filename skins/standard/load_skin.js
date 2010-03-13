@@ -47,12 +47,16 @@ with (theWindow) {
     // button will fall back on the CSS-based Button with this skin
 	isc.ClassFactory.defineClass("IButton", "Button");
 	isc.ClassFactory.defineClass("IAutoFitButton", "AutoFitButton");
+    isc.IButton.markAsFrameworkClass();
+    isc.IAutoFitButton.markAsFrameworkClass();
+
 
 	// ListGrid skinning	
 	if (isc.ListGrid) {										  
 		isc.ListGrid.addProperties({
 			// copy the header (.button) background-color to match when sort arrow is hidden
-			backgroundColor:"#DDDDDD"
+			backgroundColor:"#DDDDDD",
+            recordSummaryBaseStyle:"cell"
 		});
 	}
     
@@ -101,7 +105,19 @@ with (theWindow) {
             className:"toolStripLayoutDropLine"
         });
     }
-
+    
+    // Dynamic form item skinning
+    // Native FILE INPUT items are rendered differently in Safari from other browsers
+    // Don't show standard textbox styling around them as it looks odd
+    if (isc.UploadItem && isc.Browser.isSafari) {
+        isc.UploadItem.addProperties({
+            textBoxStyle:"normal"
+        });
+    }
+    // Use standard MenuButton Class for IMenuButton
+    if (isc.MenuButton && isc.IMenuButton) {
+        isc.IMenuButton = isc.MenuButton;
+    }
    
 	//
 	//  Step 4: Specify where the browser should redirect if the browser is
