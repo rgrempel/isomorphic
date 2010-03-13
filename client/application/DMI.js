@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -79,6 +79,22 @@
 // settings can be overridden by an explicit setting in +link{dataSource.dropExtraFields} which
 // in turn can be overridden by an explicit setting in +link{serverObject.dropExtraFields} (this
 // last one for DMI only since non-DMI operations don't have a serverObject context).
+// <p>
+// <u><b>DataSource DMI and regular RPCManager dispatch</b></u><br>
+// It is possible to use DMI to incorporate your own code into what is otherwise the regular 
+// process flow of an ordinary, non-DMI DataSource request.  This is particularly valuable if
+// you are using the built-in SQL or Hibernate DataSources, because it allows you to inject
+// extra functionality (validations, processing steps, messages to other systems, anything you
+// can code) into a fetch or update request that is otherwise handled for you by the SmartClient 
+// Server.
+// <p>
+// To do this, just configure an operationBinding for DMI, as described above.  Then, in your
+// server-side method, invoke <code>execute()</code> on the <code>DSRequest</code> your method
+// is passed.  If you create a DMI method that does nothing <b>but</b> invoke
+// <code>dsRequest.execute()</code>, then you have a DMI method that behaves exactly like the
+// normal RPCManager dispatch code.  Customizing "normal RPCManager dispatch code" is now a 
+// simple matter of adding logic to your DMI method.  See 
+// +explorerExample{userSpecificData,this example} of this technique in the Feature Explorer.
 // <p>
 // <u><b>RPC DMI</b></u>
 // <br>
@@ -180,7 +196,7 @@
 isc.defineClass("DMI").addClassProperties({
 
 actionURL: isc.RPCManager.actionURL,
-					
+
 //> @classMethod DMI.call()
 //
 // Calls a server-side DMI method.  At a minimum, you need to specify the appID (.app.xml
@@ -248,8 +264,9 @@ call : function (appID, className, methodName) {
         
         // don't modify user object - clone it
         var requestData = isc.clone(appID);
+
         if (requestData.requestParams) {
-            isc.addProperties(request, requestData.requestParams);
+            isc.addProperties(request, this.requestParams, requestData.requestParams);
             delete requestData.requestParams;
         }
         request.callback = requestData.callback;
@@ -294,6 +311,7 @@ call : function (appID, className, methodName) {
             dmi_method: request.data.methodName
         });
     }
+
     return isc.RPCManager.sendRequest(request);
 },
 
@@ -349,7 +367,7 @@ call : function (appID, className, methodName) {
 // UI files are located in <code>[webroot]/shared/app</code> by default.  This location is
 // changeable in <code>[webroot]/WEB-INF/classes/server.properties</code> by setting the config
 // parameter <code>project.apps</code> to the directory where your .app.xml files are located.   
-// We recommend that for prototying, at least, you use the default directory.
+// We recommend that for prototyping, at least, you use the default directory.
 //
 // @see DMI
 //
@@ -367,7 +385,8 @@ callTemplate : "(function(){var x = function (firstArg) { "
         // must be passed in as the first arg or a named call() binding where the methodName
         // will be encoded into this template
         +"var isCall = ${isCall};"
-        +"var obj = isc.addProperties({}, this.requestParams);"
+        +"var obj = {};"
+        +"obj.requestParams=this.requestParams;"
         // copy arguments to array - for some reason we can't call standard array methods on
         // the arguments object.
         +"if(isc.isAn.Object(firstArg) && arguments.length == 1){"
@@ -390,7 +409,8 @@ bind : function (appID, className, methods, requestParams) {
     if (!isc.isAn.Array(methods)) methods = [methods];
 
     // this is the class we'll be returning
-    var binding = isc.defineClass(className).addProperties({
+    requestParams = isc.addProperties({}, this.requestParams, requestParams)
+    var binding = isc.defineClass(className).addClassProperties({
         requestParams : requestParams
     });
     

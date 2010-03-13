@@ -2,33 +2,29 @@
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to
@@ -40,7 +36,7 @@
 if(window.isc&&window.isc.module_Core&&!window.isc.module_SyntaxHiliter){isc.module_SyntaxHiliter=1;isc._moduleStart=isc._SyntaxHiliter_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'SyntaxHiliter load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime')
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM
-else isc._preLog=[isc._pTM]}isc.defineClass("SyntaxHiliter").addProperties({spanStart:"<span style='",spanStartClose:"'>",spanEnd:"</span>",defaultStyle:"hiliter_default"});isc.A=isc.SyntaxHiliter.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.init=function(){this.fixedSpanLengths=this.spanStart.length+this.spanStartClose.length+this.spanEnd.length;this.spanEndLength=this.spanEnd.length}
+else isc._preLog=[isc._pTM]}isc.definingFramework=true;isc.defineClass("SyntaxHiliter").addProperties({spanStart:"<span style='",spanStartClose:"'>",spanEnd:"</span>",defaultStyle:"hiliter_default"});isc.A=isc.SyntaxHiliter.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.init=function(){this.fixedSpanLengths=this.spanStart.length+this.spanStartClose.length+this.spanEnd.length;this.spanEndLength=this.spanEnd.length}
 ,isc.A.hilite=function(_1,_2,_3,_4){var _5=this.regexps;if(!_5)return _1;var _6=[_1];for(var _7=0;_7<_5.length;_7++){var _8=_5[_7];var _9=_8.regexp;var _10=_8.cssStyles;if(!isc.isAn.Array(_10))_10=[_10];var _11=0;while(_11<_6.length){var _12=_6[_11];if(_12==null){_22+=this.fixedSpanLengths+_6[_11+2].length+_6[_11+4].length;_11+=6;continue}
 var _13=_9.exec(_12);if(_13==null){_11++;_22+=_12.length;continue}
 if(_13.length-1!=_10.length){this.logWarn("regexp: "+_9+" matched "+(_13.length-1)+" groups, but only "+_10.length+" cssStyles are defined - skipping this regexp.");_11=_6.length;continue}
@@ -59,38 +55,34 @@ if(_28.length)_29[_29.length]=_28;return _29}else{return _28}}
 ,isc.A.containsMultilineToken=function(_1){if(this.multilineTokens){for(var i=0;i<this.multilineTokens.length;i++)
 if(_1.match(this.multilineTokens[i]))return true}
 return false}
-);isc.B._maxIndex=isc.C+3;isc.defineClass("JSSyntaxHiliter","SyntaxHiliter");isc.A=isc.JSSyntaxHiliter.getPrototype();isc.A.regexps=[{regexp:/(\/\*.*?\*\/)/,cssStyles:"js_multilineComment"},{regexp:/(\/\/.*)/,cssStyles:"js_lineComment"},{regexp:/("(?:[^"\n]|\\")*")/,cssStyles:"js_doubleQuotedString"},{regexp:/('(?:[^'\n]|\\')*')/,cssStyles:"js_singleQuotedString"},{regexp:/(\/(?:\\\/|[^\/\n])+\/)/,cssStyles:"js_regex"},{regexp:/([^a-zA-Z0-9_$:]|^)(abstract|boolean|break|byte|case|char|class|const|continue|default|delete|do|dougle|else|enum|extends|final|finally|float|for|fun[c]tion|goto|if|implements|import|in|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|try|typeof|var|void|while|with)([^a-zA-Z0-9_$:]|$)/,cssStyles:[null,"js_reservedWord",null]},{regexp:/([^a-zA-Z0-9_$:]|^)(true|false|null)([^a-zA-Z0-9_$:]|$)/,cssStyles:[null,"js_nativeValue",null]},{regexp:/([a-zA-Z][a-zA-Z0-9_$]*)(\s*:)/,cssStyles:["js_label",null]}];isc.A.multilineTokens=[/(\/\*)|(\*\/)/];isc.defineClass("CSSSyntaxHiliter","SyntaxHiliter");isc.A=isc.CSSSyntaxHiliter.getPrototype();isc.A.regexps=[{regexp:/(\/\*.*?\*\/)/,cssStyles:"css_multilineComment"},{regexp:/(\/\/.*)/,cssStyles:"css_lineComment"},{regexp:/([a-zA-Z][a-zA-Z0-9_$\-]*)(\s*:)/,cssStyles:["css_label",null]}];isc.A.multilineTokens=[/(\/\*)|(\*\/)/];isc.defineClass("XMLSyntaxHiliter","SyntaxHiliter");isc.A=isc.XMLSyntaxHiliter.getPrototype();isc.A.regexps=[{regexp:/(<!\[CDATA\[.*?\]\]>)/,cssStyles:"xml_cdataBlock"},{regexp:/(<!--.*?-->)/,cssStyles:"xml_comment"},{regexp:/(\w+)(=)("(?:[^"]|\\")*")/,cssStyles:["xml_attributeName",null,"xml_attributeValue"]},{regexp:/(<\/?)([_:A-Za-z][A-Za-z0-9_.:\-]*)/,cssStyles:[null,"xml_tagName"]}];isc.A.multilineTokens=[/(<!--)|(-->)/,/(<!\[CDATA\[)|(\]\]>)/];isc._moduleEnd=isc._SyntaxHiliter_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('SyntaxHiliter module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'SyntaxHiliter'.");}
+);isc.B._maxIndex=isc.C+3;isc.defineClass("JSSyntaxHiliter","SyntaxHiliter");isc.A=isc.JSSyntaxHiliter.getPrototype();isc.A.regexps=[{regexp:/(\/\*.*?\*\/)/,cssStyles:"js_multilineComment"},{regexp:/(\/\/.*)/,cssStyles:"js_lineComment"},{regexp:/("(?:[^"\n]|\\")*")/,cssStyles:"js_doubleQuotedString"},{regexp:/('(?:[^'\n]|\\')*')/,cssStyles:"js_singleQuotedString"},{regexp:/(\/(?:\\\/|[^\/\n])+\/)/,cssStyles:"js_regex"},{regexp:/([^a-zA-Z0-9_$:]|^)(abstract|boolean|break|byte|case|char|class|const|continue|default|delete|do|dougle|else|enum|extends|final|finally|float|for|fun[c]tion|goto|if|implements|import|in|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|try|typeof|var|void|while|with)([^a-zA-Z0-9_$:]|$)/,cssStyles:[null,"js_reservedWord",null]},{regexp:/([^a-zA-Z0-9_$:]|^)(true|false|null)([^a-zA-Z0-9_$:]|$)/,cssStyles:[null,"js_nativeValue",null]},{regexp:/([a-zA-Z][a-zA-Z0-9_$]*)(\s*:)/,cssStyles:["js_label",null]}];isc.A.multilineTokens=[/(\/\*)|(\*\/)/];isc.defineClass("CSSSyntaxHiliter","SyntaxHiliter");isc.A=isc.CSSSyntaxHiliter.getPrototype();isc.A.regexps=[{regexp:/(\/\*.*?\*\/)/,cssStyles:"css_multilineComment"},{regexp:/(\/\/.*)/,cssStyles:"css_lineComment"},{regexp:/([a-zA-Z][a-zA-Z0-9_$\-]*)(\s*:)/,cssStyles:["css_label",null]}];isc.A.multilineTokens=[/(\/\*)|(\*\/)/];isc.defineClass("XMLSyntaxHiliter","SyntaxHiliter");isc.A=isc.XMLSyntaxHiliter.getPrototype();isc.A.regexps=[{regexp:/(<!\[CDATA\[.*?\]\]>)/,cssStyles:"xml_cdataBlock"},{regexp:/(<!--.*?-->)/,cssStyles:"xml_comment"},{regexp:/(\w+)(=)("(?:[^"]|\\")*")/,cssStyles:["xml_attributeName",null,"xml_attributeValue"]},{regexp:/(<\/?)([_:A-Za-z][A-Za-z0-9_.:\-]*)/,cssStyles:[null,"xml_tagName"]}];isc.A.multilineTokens=[/(<!--)|(-->)/,/(<!\[CDATA\[)|(\]\]>)/];isc._moduleEnd=isc._SyntaxHiliter_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('SyntaxHiliter module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'SyntaxHiliter'.");}
 
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to

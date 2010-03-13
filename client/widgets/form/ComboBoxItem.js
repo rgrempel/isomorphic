@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -69,10 +69,39 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // Select the first option as the default value for this ComboBoxItem. If options are derived
     // from a dataSource, the first value returned by the server will be used, otherwise the first
     // value in the valueMap. If enabled, this setting overrides +link{ComboBoxItem.defaultValue}
-    // and +link{ComboBoxItem.defaultDynamicValue}|.
+    // and +link{ComboBoxItem.defaultDynamicValue}.
     // @visibility external
     //<
     
+    //>@attr ComboBoxItem.showHintInField (boolean : null : IRWA)
+    // If showing a hint for this form item, should it be shown within the field?
+    // <P>CSS style for the hint is +link{selectItem.textBoxStyle} with the suffix
+    // "Hint" appended to it. 
+    // @group appearance
+    // @see FormItem.hint
+    // @visibility external
+    //<
+
+    //> @attr   comboBoxItem.mask
+    // Not applicable to a ComboBoxItem.
+    // @visibility  external
+    //<    
+    //> @attr   comboBoxItem.maskSaveLiterals
+    // Not applicable to a ComboBoxItem.
+    // @visibility  external
+    //<    
+    //> @attr   comboBoxItem.maskPadChar
+    // Not applicable to a ComboBoxItem.
+    // @visibility  external
+    //<    
+    //> @attr   comboBoxItem.maskPromptChar
+    // Not applicable to a ComboBoxItem.
+    // @visibility  external
+    //<    
+    //> @attr   comboBoxItem.maskOverwriteMode
+    // Not applicable to a ComboBoxItem.
+    // @visibility  external
+    //<    
     
     // Default to auto-sizing pickList
     // This means the pickList will expand to the size required to accomodate its content.
@@ -93,7 +122,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     },
     
     //>@attr ComboBoxItem.showPickerIcon    (boolean : true : [IRWA])
-    // Show the picker icon for the combo box 
+    // Show the picker icon for the ComboBox. 
     // @visibility external
     //<    
     showPickerIcon:true,
@@ -111,7 +140,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     //<
     
     //>@attr ComboBoxItem.pickerIconSrc  (SCImgURL : "[SKIN]/DynamicForm/ComboBoxItem_PickButton_icon.gif" : [IRWA])
-    // Src for the picker icon
+    // Src for the picker icon.
     // @visibility external
     //<
     pickerIconSrc:"[SKIN]/DynamicForm/ComboBoxItem_PickButton_icon.gif",
@@ -131,7 +160,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     //>@attr    ComboBoxItem.showPickListOnKeypress  (boolean : true : IRW)
     // Should the list of options be displayed whenever the user types into the 
     // the combo-box textArea, or only when the user clicks on the pick button or uses the 
-    // explicit <code>Alt+Arrow Down</code> key combo?
+    // explicit <code>Alt+Arrow Down</code> key combination?
     // @visibility comboBox
     //<
     showPickListOnKeypress:true,
@@ -384,10 +413,15 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // @include PickList.fetchData()
     //<
     
-    //> @attr ComboBoxItem.optionFilterContext (RPCRequest Properties : null : IRA)
+    //> @attr ComboBoxItem.optionFilterContext (DSRequest Properties : null : IRA)
     // @include PickList.optionFilterContext
     //<
-    
+ 
+    //> @attr ComboBoxItem.optionOperationId (string : null : [IR])
+    // @include FormItem.optionOperationId
+    // @visibility external
+    //<
+ 
     
     //> @attr ComboBoxItem.displayField (string : null : IRWA)
     // @include PickList.displayField
@@ -433,6 +467,12 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // @include PickList.pickListProperties
     // @visibility external
     //<
+
+    //> @attr   ComboBoxItem.sortField   (String or integer : null : IR)
+    // @include PickList.sortField
+    // @visibility external
+    //<
+
     
     // Default pickList interface 'filtering' basically returns every record (this is the
     // desired behavior for select items).
@@ -465,7 +505,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     //> @attr ComboBoxItem.alwaysFilterWithValue (boolean : false : [RA])
     // If set to true, the default implementation of 
     // +link{comboBoxItem.getPickListFilterCriteria()} will always add the current item's value
-    // to the any specified pickListFilterCriteria, regardless of the current value of 
+    // to any specified pickListFilterCriteria, regardless of the current value of 
     // +link{ComboBoxItem.filterWithValue}.
     // <P>
     // This was the default behavior for SmartClient version 5.6 and earlier.
@@ -473,7 +513,8 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     //<
     
     //> @method  ComboBoxItem.getPickListFilterCriteria()    (A)
-    // Returns filter criteria for options displayed for this item.  
+    // +link{group:stringMethods,StringMethod} to return filter criteria for options displayed for
+    // this item.  
     // <P>
     // The criteria returned by this method are used to decide which options should appear in
     // the drop-down +link{PickList} shown by this ComboBox.
@@ -483,10 +524,10 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // +link{comboBoxItem.textMatchStyle,textMatchStyle}.  
     // <P>
     // If the user explicitly shows the down-down pickList, via either clicking on the drop
-    // down icon or use the <i>Ctrl+Arrow Down</i> key combo, the typed in value is ignored for
-    // filtering.
+    // down icon or using the <i>Ctrl+Arrow Down</i> key combination, the typed-in value is 
+    // ignored for filtering.
     // <P>
-    // If included in the criteria, the typed in value will be included as a value for the 
+    // If included in the criteria, the typed-in value will be included as a value for the 
     // +link{ComboBoxItem.displayField,displayField} (or for the
     // +link{ComboBoxItem.valueField,valueField} if <code>this.displayField</code> is
     // unspecified).
@@ -505,7 +546,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // @visibility external
     //<
     getPickListFilterCriteria : function () {
-        var crit = {};
+        var crit = this.optionCriteria  || {};
         if (this.alwaysFilterWithValue || this.filterWithValue) {
             
             var value = this.getDisplayValue(),
@@ -596,6 +637,19 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         pickList.hide();
     },
 
+    editorEnter : function (form, item, value) {
+        // Hide in-field hint if being shown
+        this._hideInFieldHint();
+    },
+    editorExit : function (form, item, value) {
+        var undef;
+        if (this.showHintInField && 
+            (value === undef || value == null || isc.is.emptyString(value)))
+        {
+            this._showInFieldHint();
+        }
+    },
+
     // Override showPicker to ensure we have focus, and show the pick list
     showPicker : function () {
         this.focusInItem();        
@@ -645,6 +699,14 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         this._programmaticSetValue = true;
         this.invokeSuper(isc.ComboBoxItem, "setValue", newValue, a,b,c,d);
         delete this._programmaticSetValue;
+
+        // See if the in-field hint needs to be shown
+        if (!this.hasFocus && this.showHint && this.showHintInField && this.getHint()) {
+            var undef;
+            if (newValue === undef || newValue == null || isc.is.emptyString(newValue)) {
+                this._showInFieldHint();
+            }
+        }
     },
     
     // override getDefaultValue to support defaultToFirstOption
@@ -730,5 +792,6 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
 
 
 isc.ComboBoxItem.registerStringMethods({
-    dataArrived:"startRow,endRow,data"
+    dataArrived:"startRow,endRow,data",
+    getPickListFilterCriteria:""
 });

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -18,14 +18,14 @@
 //>	@class	RecordEditor
 //
 //  This is a helper class for ListGrids, used to implement showing a filterEditor row.
-//  They are created automatically by a ListGrid instance with the 'showFilterEditor' flag set to
-//  true, and used to enter criteria, which will then be used to filter the ListGrid.
+//  They are created automatically by a ListGrid instance with the 'showFilterEditor' 
+//  flag set to true, and used to enter criteria, which will then be used to filter the ListGrid.
 //
 //  RecordEditors are implemented as a subclass of ListGrid, showing no header and a single 
 //  row always drawn in the editable state, allowing the user to modify the values at any time.
-//  An "action button" is included to perform the filter action action (may also be triggered 
+//  An "action button" is included to perform the filter action (may also be triggered 
 //  by other user interactions).
-//  The List Grid that created the RecordEditor will handle sizing, positioning
+//  The List Grid that created the RecordEditor will handle sizing, positioning,
 //  scrolling, field changes/reordering etc. on the RecordEditor.
 //
 
@@ -112,7 +112,7 @@ isc.RecordEditor.addMethods({
             
             
             // We want the width to match the sourceWidget's width.  
-            // This allows the fields to align with sourceWidget's the body columns
+            // This allows the fields to align with the sourceWidget's body columns
             var source = this.sourceWidget;
             this.setWidth(source.getWidth()-(source.getLeftMargin() + source.getRightMargin()));
             
@@ -210,6 +210,11 @@ isc.RecordEditor.addMethods({
         // If we're drawn(), but we didn't have fields before this setFields call, startEditing
         // now
         var firstEditCell = this.findNextEditCell(0,0,1,true,true);
+        // If we're not showing any filterable fields, firstEditCell may be null
+        // In this case we'll just call 'startEditing' on the first cell - it will be showing
+        // a static text item so won't really be editable but ensures we show the edit form for
+        // when the user shows more fields
+        if (firstEditCell == null) firstEditCell = [0,0];
         if (this.isDrawn() && !this._editorShowing) this._startEditing(0, firstEditCell[1]);
     },
 
@@ -283,9 +288,34 @@ isc.RecordEditor.addMethods({
     // your programmatic filter.  The solution is to combine the filter editor's values with 
     // values in the existing criteria for fields we don't know about.
     performFilter : function (suppressPrompt) {
-        var criteria = this._editRowForm.getValuesAsCriteria(true),
-            oldCriteria = isc.addProperties({}, this.sourceWidget.data.criteria);
-        
+        var criteria = this._getFilterCriteria();
+
+        var context = {};
+        if (suppressPrompt) context.showPrompt = false;
+
+        // pick up textMatchStyle from LG.autoFetchTextMatchStyle
+        context.textMatchStyle = this.sourceWidget.autoFetchTextMatchStyle;
+
+        // If we're going to hit the server, build in a pause so we don't keep diving off whilst
+        // the user is typing rapidly
+        var rs = this.sourceWidget.data;
+
+        if (isc.isA.ResultSet(rs) && rs.willFetchData(criteria, context.textMatchStyle)) {            
+            this.fireOnPause("performFilter", {
+                target:this.sourceWidget, 
+                methodName:"fetchData", 
+                args:[criteria, null, context]
+            }, 
+            this.fetchDelay);
+        } else {
+            this.sourceWidget.fetchData(criteria, null, context);
+        }
+
+    },
+
+    _getFilterCriteria : function () {
+        var oldCriteria = isc.addProperties({}, this.sourceWidget.data.criteria);
+
         // If we have a field with a mapped displayField, it's possible that last time we 
         // filtered, we did so on the base field and this time we're filtering on the display
         // field - or vice versa.  If we blindly append unknown keys from last time's criteria
@@ -301,44 +331,21 @@ isc.RecordEditor.addMethods({
                 mapped.add(item.displayField);
             }
         }
-        
+
         var undef;
         for (var key in oldCriteria) {
             if (mapped.contains(key)) oldCriteria[key] = undef;
         }
-           
-            
-        for (var prop in oldCriteria) {
-            // The precise check for undefined here is necessary - if the property is defined but 
-            // null, we should be overriding any existing criteria value with null
-            if (criteria[prop] === undef) criteria[prop] = oldCriteria[prop];
-        }
-        
+
+        var criteria = isc.addProperties(
+            oldCriteria,
+            // overlay live values from the edit row form on top of the old criteria
+            // Note that the 'return nulls' param ensures we get entries back for fields with
+            // no value so we (correctly) wipe out the value in oldCriteria
+            this._editRowForm.getValuesAsCriteria(true));
+
         criteria = isc.DataSource.filterCriteriaForFormValues(criteria);
-        
-        var context = {};
-        if (suppressPrompt) context.showPrompt = false;
-        
-        // If we're going to hit the server, build in a pause so we don't keep diving off whilst
-        // the user is typing rapidly
-        var rs = this.sourceWidget.data,
-            filterData = this.sourceWidget.autoFetchAsFilter;
-
-        if (isc.isA.ResultSet(rs) && rs.willFetchData(criteria)) {
-            this.fireOnPause("performFilter", {
-                target:this.sourceWidget, 
-                methodName:(filterData ? "filterData" : "fetchData"), 
-                args:[criteria, null, context]
-            }, 
-            this.fetchDelay);
-        } else {
-            if (filterData) {
-                this.sourceWidget.filterData(criteria, null, context);
-            } else {
-                this.sourceWidget.fetchData(criteria, null, context);
-            }
-        }
-
+        return criteria;
     },
 
     // Add the record to the source widget's data object
@@ -387,8 +394,20 @@ isc.RecordEditor.addMethods({
         this.setEditValue(0, colNum, this._editRowForm.getValue(fieldName));
 
         
-        return isc.addProperties({},this.getEditValues(0));
+        //return isc.addProperties({},this.getEditValues(0));
+        var criteria = this._getFilterCriteria();
+        return criteria;
             
+    },
+
+    // A method to get the current edit-values as AdvancedCriteria
+    getValuesAsCriteria : function () {
+        var colNum = this.getEditCol(),
+            fieldName = this.getEditFieldName();
+        this.setEditValue(0, colNum, this._editRowForm.getValue(fieldName));
+
+        var criteria = this._getFilterCriteria();
+        return criteria;
     },
     
     // Inline Editor overrides:
@@ -698,6 +717,17 @@ isc.RecordEditor.addMethods({
         return this.Super("getCellAlign", arguments);
     }, 
     
+    // override getCellValue to avoid showing checkbox icons for the checkboxField
+    
+    getCellValue : function (record, recordNum, fieldNum, gridBody) {
+        var field = this.fields[fieldNum];
+        if (field && 
+            (this.isCheckboxField(field) || this.isExpansionField(field) ||
+                this.isRowNumberField(field))) 
+            return "&nbsp;"
+        return this.Super("getCellValue", arguments);
+    },
+    
     // Override rebuildForFreeze to no-op
     // We'll instead respond to our source-element's rebuild for freeze
     rebuildForFreeze : function () {
@@ -710,5 +740,3 @@ isc.RecordEditor.addMethods({
     rowDoubleClick : function () {}
 });
 //!<Deferred
-
-

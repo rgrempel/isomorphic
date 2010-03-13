@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -49,34 +49,34 @@ isc._start = new Date().getTime();
 
 // versioning - values of the form ${value} are replaced with user-provided values at build time.
 // Valid values are: version, date, project (not currently used)
-isc.version = "7.0rc2/LGPL Development Only";
-isc.versionNumber = "7.0rc2";
-isc.buildDate = "2009-05-30";
-isc.expirationDate = "${expiration}";
+isc.version = "SC_SNAPSHOT-2010-03-13/LGPL Development Only";
+isc.versionNumber = "SC_SNAPSHOT-2010-03-13";
+isc.buildDate = "2010-03-13";
+isc.expirationDate = "";
 
 // license template data
 isc.licenseType = "LGPL";
-isc.licenseCompany = "";
-isc.licenseSerialNumber = "e39b4dbdc44f0db3dcc629c987437688";
-isc.licensingPage = "http://smartclient.com/licensing";
+isc.licenseCompany = "Isomorphic Software";
+isc.licenseSerialNumber = "ISC_LGPL_NIGHTLY";
+isc.licensingPage = "http://smartclient.com/product/";
 
 isc._optionalModules = {
     SCServer: {present: "false", name: "SmartClient Server", serverOnly: true, isPro: true},
     Drawing: {present: "false", name: "Drawing Module"},
-    PluginBridges: {present: "false", name: "PluginBridges Module"},
-    RichTextEditor: {present: "false", name: "RichTextEditor Module"},
-    Calendar: {present: "${includeCalendar}", name: "Calendar Module"},
+    PluginBridges: {present: "true", name: "PluginBridges Module"},
+    RichTextEditor: {present: "true", name: "RichTextEditor Module"},
+    Calendar: {present: "true", name: "Calendar Module"},
     Analytics: {present: "false", name: "Analytics Module"},
     NetworkPerformance: {present: "false", name: "Network Performance Module"},
     // alias for NetworkPerformance
     FileLoader: {present: "false", name: "Network Performance Module"},
     RealtimeMessaging: {present: "false", name: "RealtimeMessaging Module"},
     // Enterprise Features
-    serverCriteria: {present: "${includeServerCriteria}", name: "Server Advanced Filtering", serverOnly: true, isFeature: true},
-    customSQL: {present: "${includeCustomSQL}", name: "SQL Templating", serverOnly: true, isFeature: true},
-    chaining: {present: "${includeChaining}", name: "Transaction Chaining", serverOnly: true, isFeature: true},
-    batchDSGenerator: {present: "${includeBatchDSGenerator}", name: "Batch DS-Generator", serverOnly: true, isFeature: true},
-    batchUploader: {present: "${includeBatchUploader}", name: "Batch Uploader", serverOnly: true, isFeature: true}    
+    serverCriteria: {present: "false", name: "Server Advanced Filtering", serverOnly: true, isFeature: true},
+    customSQL: {present: "false", name: "SQL Templating", serverOnly: true, isFeature: true},
+    chaining: {present: "false", name: "Transaction Chaining", serverOnly: true, isFeature: true},
+    batchDSGenerator: {present: "false", name: "Batch DS-Generator", serverOnly: true, isFeature: true},
+    batchUploader: {present: "false", name: "Batch Uploader", serverOnly: true, isFeature: true}    
 };
 isc.canonicalizeModules = function (modules) {
     if (!modules) return null;

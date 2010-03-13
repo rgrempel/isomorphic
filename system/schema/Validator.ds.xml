@@ -9,6 +9,7 @@
         <!-- used by integerRange, lengthRange, floatLimit -->
 		<max type="number"/>
 		<min type="number"/>
+		<exclusive type="boolean"/>
         <!-- used by mask -->
 		<mask type="regexp"/>
 		<transformTo type="regexp"/>
@@ -27,6 +28,15 @@
         <!-- used by substringCount -->
 		<operator type="text"/>
 		<count type="integer"/>
+
+        <!-- for conditional validators -->
+        <applyWhen type="AdvancedCriteria"/>
+        <dependentFields type="string" multiple="true"/>
+
+        <!-- custom server validator: Velocity expression -->
+        <serverCondition type="string"/>
+        <!-- custom server validator: Object invoked via DMI -->
+        <serverObject type="ServerObject"/>
 	</fields>
 </Object>
 

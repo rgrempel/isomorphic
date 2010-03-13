@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -133,7 +133,7 @@ isc.Menu.addProperties({
     // Optional target canvas for this menu. Available as a parameter to dynamic menuItem configuration
     // methods such as +link{MenuItem.checkIf}.
     // <P>
-    // If this item has any +link{menuItem.submenu,submenus} the <code>target</code> will be propogated down
+    // If this item has any +link{menuItem.submenu,submenus} the <code>target</code> will be propagated down
     // to these child menus.
     // @visibility external
     //<
@@ -141,7 +141,7 @@ isc.Menu.addProperties({
     //> @attr   menu.fields     (Array of MenuFieldID | Array of ListGridFields : null : IRWA)
     // Array of columns to show for this menu.<br>
     // Standard menu fields may be included by specifying +link{type:MenuFieldID, MenuFieldIDs}
-    // directly. Additional custom fields may be specifed as +link{ListGridField} objects.<br>
+    // directly. Additional custom fields may be specified as +link{ListGridField} objects.<br>
     // If this property is unset, default behavior will show the
     // +link{type:MenuFieldID, standard set of fields}, with the exception of any that have
     // been suppressed via +link{Menu.showIcons}, +link{Menu.showKeys} and +link{Menu.showSubmenus} 
@@ -269,10 +269,15 @@ isc.Menu.addProperties({
     // @visibility external
     // @example fullMenu
     //<
-
+    
+    //> @attr menuItem.fetchSubmenus (boolean : true : IR)
+    // If false, no submenus will be fetched for this MenuItem. This can be set globally via
+    // +link{Menu.fetchSubmenus}.
+    // @visibility external
+    //<
 
     //> @method menuItem.enableIf()
-    // Contains the condition that will enable or disable the curent menuItem. The handler must be specified
+    // Contains the condition that will enable or disable the current menuItem. The handler must be specified
     // as a function or string of script.  Return false to disable the menuItem or true to enable it
     // <p>
     // If you don't need to set this state dynamically, use +link{menuItem.enabled} instead.
@@ -291,7 +296,7 @@ isc.Menu.addProperties({
 
 
     //> @method menuItem.checkIf()
-    // Contains the condition that will check or uncheck the curent menuItem. The handler must be specified
+    // Contains the condition that will check or uncheck the current menuItem. The handler must be specified
     // as a function or string of script.  Return false to uncheck the menuItem or true to check it
     // <p>
     // If you don't need to set this state dynamically, use +link{menuItem.checked} instead.
@@ -310,7 +315,7 @@ isc.Menu.addProperties({
 
 
     //> @method menuItem.dynamicTitle()
-    // Contains the condition that will change the curent items' title when met. The handler must be specified
+    // Contains the condition that will change the current items' title when met. The handler must be specified
     // as a function or string of script.  
     // <p>
     // If you don't need to set this state dynamically, use +link{menuItem.title} instead.
@@ -329,7 +334,7 @@ isc.Menu.addProperties({
 
 
     //> @method menuItem.dynamicIcon()
-    // Contains the condition that will change the curent items' icon when met. The handler must be specified
+    // Contains the condition that will change the current items' icon when met. The handler must be specified
     // as a function or string of script.
     // <p>
     // If you don't need to set this state dynamically, use +link{menuItem.icon} instead.
@@ -711,7 +716,7 @@ isc.Menu.addProperties({
         "submenuImage","submenuDisabledImage","checkmarkImage","checkmarkDisabledImage",
         "bodyDefaults",
         
-        // actual behaviours
+        // actual behaviors
     		"itemClick",
     		"canSelectParentItems",
 
@@ -746,7 +751,14 @@ isc.Menu.addProperties({
     // automatically hidden, staying in place for further interactivity
 	// @visibility external
 	//<
-	autoDismiss:true
+	autoDismiss:true,
+    
+    //> @attr   menu.fetchSubmenus      (boolean : true : IR)
+    //  If false, submenus will not be fetched for this menu. This can be set on a per-item
+    // basis via +link{menuItem.fetchSubmenus}.
+    // @visibility external
+    //<
+    fetchSubmenus:true
 });
 
 isc.Menu.addMethods({
@@ -766,18 +778,27 @@ initWidget : function () {
 
     // Handle menus being bound to hierachichal structured datasources
     
-    if (this.dataSource != null && isc.ResultTree) {
+    if (this.dataSource != null && !this.hasFlatDataSource()) {
+    //if (this.dataSource != null && isc.ResultTree) {
         // Don't show the prompt as we load child menu data.
         var tree = this.createResultTree(null,null, {
             showPrompt:false,
             dataProperties: {autoOpenRoot: false}
         });
+        // In order to have the ability to combine hand-specified items with tree loading
+        // behavior, we must add the hand specified items as children of the tree root here.
+        if (this.items) tree.addList(this.items, tree.getRoot());
+        
         // If we're loading all the data upfront, do this now rather than on the first 
         // menu-show
         if (this.loadDataOnDemand == false) {
             tree.loadChildren(tree.getRoot(), {caller:this, methodName:"treeDataLoaded"});
         }
         this.data = tree;
+    // we have flat data, so create a resultSet instead
+    } else if (this.dataSource != null) {
+        var ds = isc.DataSource.get(this.dataSource);
+        ds.fetchData(null, {caller:this, methodName:"flatDataLoaded"});        
     }
     
     // make items a synonym for data
@@ -800,7 +821,7 @@ initWidget : function () {
 		var topLevel = this.data.getChildren(),
             mergeSingleParent = this.mergeSingleParent && !isc.isA.ResultTree(this._treeData) &&
                                 topLevel.length == 1 && this.data.hasChildren(topLevel[0]);
-                                
+                           
 		if (mergeSingleParent) {
 			var topLevelItem = topLevel[0];
 			// make a copy of the children array so we don't munge the data model
@@ -815,12 +836,13 @@ initWidget : function () {
 			copiedItem[this.childrenProperty] = null;
 			// append it to the new top-level list
 			this.data.add(copiedItem);
-			
+			     
 		// otherwise just start with the top level of the tree
 		} else {
 			
 //            this.data = topLevel
             this.data = null;
+            
 		}
 
         // submenus will be passed a treeParentNode - the node whose children this menu will
@@ -888,6 +910,18 @@ initWidget : function () {
     }
 },
 
+hasFlatDataSource : function () {
+    var ds = isc.DataSource.get(this.dataSource);
+    var names = ds.getFieldNames();
+    var hasPK = false, hasFK = false;
+    for (var i=0; i < names.length; i++) {
+        var fld = ds.getField(names[i]);
+        if (fld.primaryKey) hasPK = true;
+        if (fld.foreignKey) hasFK = true;        
+    }
+    return !(hasPK && hasFK);
+},
+
 // Override setFields - if called with custom fields set the _standardFields flag to false
 setFields : function (fields, a,b,c,d) {
     if (fields && (fields != this.fields)) {
@@ -904,6 +938,7 @@ treeDataLoaded : function () {
 },
 
 setTreeNode : function (node) {
+   
     var loadState = this._treeData.getLoadState(node);
     this._lastNode = node;
 
@@ -922,14 +957,20 @@ setTreeNode : function (node) {
 
 // called through from ResultTree whenever we get tree data from the server.
 treeDataArrived : function (node) {
+    
     delete this._loadingTreeNode;
     if (node == this._lastNode) {
         this.setData(this._treeData.getChildren(node));
+        
         // Note: only show the submenu if we're still visible - the user may have made a
         // selection before the data came back.
         if (this.masterMenu && this.masterMenu.isVisible()) 
             this.masterMenu.placeSubmenu(node, this);
     }
+},
+
+flatDataLoaded : function (dsResponse, data) {
+    this.setData(data);   
 },
 
 getEmptyMessage : function () { 
@@ -1012,7 +1053,7 @@ rowClick : function (record, rowNum, colNum) {
 // <p>
 // Calls item.click() or itemClick() for the selected item
 //		@param	item		(item | number)		pointer to or number of the item that was clicked on
-//      @param  colNum      (number)    Index of column that recieved the click. May be null if
+//      @param  colNum      (number)    Index of column that received the click. May be null if
 //                                      the item was selected via keyboard selection.
 //		@return	(boolean)	false == stop processing this event
 //<
@@ -1555,6 +1596,23 @@ getItem : function (item) {
     return isc.Class.getArrayItem(item, this.data, "name");
 },
 
+//> @method menu.setItemProperties()
+// Set arbitrary properties for a particular menu item.
+//
+// @param	item (int) index of the MenuItem
+// @param	properties (MenuItem Properties) properties to apply to the item
+// @visibility external
+//<
+// NOTE: little testing has been done on which properties can actually be set this way
+
+setItemProperties : function (item, properties) {
+    var item = this.getItem(item);
+    if (item != null) {
+        isc.addProperties(item, properties);
+    }
+    if (this.isVisible()) this.redraw();
+},
+
 //>	@method	menu.getItemNum()
 // Given a MenuItem, return it's index in the items array.
 //
@@ -1609,6 +1667,7 @@ changeSubmenu : function () {
 hasSubmenu : function (item) {
     if (!item) return false;
     if (item.submenu) return true;
+    if (this.fetchSubmenus == false || item.fetchSubmenus == false) return false;
     if (isc.isA.Tree(this._treeData)) {
         // If this is a client-only tree we can avoid showing submenus if the node
         // has no children.
@@ -1864,64 +1923,65 @@ itemIsEnabled : function (item) {
 
 _makeDynamicItemsFunction : function (){
 
-	var output = isc.SB.create();
-	
-	// if the menu has an 'enableIf' item, stick that first
-	// this way you can pre-seed the individual enableIf items with variables, etc.
-	if (this.enableIf) output.append(this.enableIf, ";");
-	
-	// iterate through the items, checking for enableif or dynamicTitle properties
-	output.append("var menu=this\r");
-	for (var i = 0; i < this.data.length; i++) {
-		var item = this.getItem(i);
-		if (!item) continue;
-	    output.append("var item=this.data[" + i + "];\r");
-		if (item.enableIf) {
+    var output = isc.SB.create();
+
+    // if the menu has an 'enableIf' item, stick that first
+    // this way you can pre-seed the individual enableIf items with variables, etc.
+    if (this.enableIf) output.append(this.enableIf, ";");
+
+    // iterate through the items, checking for enableif or dynamicTitle properties
+    output.append("var menu=this;\r");
+    for (var i = 0; i < this.data.length; i++) {
+        var item = this.getItem(i);
+        if (!item) continue;
+        output.append("var item=this.data[" + i + "];\r");
+        if (item.enableIf) {
             if (isc.isA.String(item.enableIf)) {
                 output.append("changed|=this._setItemEnabled(",i,",",item.enableIf,");\r");
             } else if (isc.isA.Function(item.enableIf)) {
                 output.append("changed|=this._setItemEnabled(",i,",this.data[",i,"].enableIf(target,menu,item));\r");
             }
         }
-		if (item.checkIf) {
+        if (item.checkIf) {
             if (isc.isA.String(item.checkIf)) {
                 output.append("changed|=this._setItemChecked(",i,",",item.checkIf,");\r");
             } else if (isc.isA.Function(item.checkIf)) {
                 output.append("changed|=this._setItemChecked(",i,",this.data[",i,"].checkIf(target,menu,item));\r");
             }
         }
-		if (item.dynamicTitle) {
+        if (item.dynamicTitle) {
             if (isc.isA.String(item.dynamicTitle)) {
                 output.append("changed|=this.setItemTitle(",i,",",item.dynamicTitle,");\r");
             } else if (isc.isA.Function(item.dynamicTitle)) {
                 output.append("changed|=this.setItemTitle(",i,",this.data[",i,"].dynamicTitle(target,menu,item));\r");
             }
         }
-		if (item.dynamicIcon) {
+        if (item.dynamicIcon) {
             if (isc.isA.String(item.dynamicIcon)) {
                 output.append("changed|=this.setItemIcon(",i,",",item.dynamicIcon,");\r");
             } else if (isc.isA.Function(item.dynamicIcon)) {
                 output.append("changed|=this.setItemIcon(",i,",this.data[",i,"].dynamicIcon(target,menu,item));\r");
             }
         }
-	}
+    }
 
-	// if nothing to do, just skip it
+    // if nothing to do, just skip it
     var updateCode = output.toString();
-	if (updateCode == "") return;
+    if (updateCode == "") return;
     output = isc.SB.create();
 
-	// add a 'redraw' command to the function
-	output.append("var target=this.target,changed=false;\r",
-			      updateCode,
-			      "if(changed&&this.isDrawn()){\r",
-			      "this.redraw('dynamic item change');\r",
-                  
-			      (isc.Browser.isIE ? "this.body.setRowStyle(0);\r" : ""),
-			      "}");
+    // add a 'redraw' command to the function
+    output.append("var target=this.target, changed=false;\r",
+        updateCode,
+        "if(changed&&this.isDrawn()){\r",
+        "this.redraw('dynamic item change');\r",
+        
+        (isc.Browser.isIE ? "this.body.setRowStyle(0);\r" : ""),
+        "}"
+    );
 
-	// create the setDynamicItems which will be called automatically before the menu is shown
-	this.addMethods({setDynamicItems:new Function(output.toString())});
+    // create the setDynamicItems which will be called automatically before the menu is shown
+    this.addMethods({setDynamicItems:new Function(output.toString())});
 },
 
 refreshRow : function () {
@@ -2328,7 +2388,7 @@ hideAllMenus : function () {
     isc.Menu._submenuQueue = {};
 	// hide the canvas clickmask (may not always be necessary, as this method is typically called 
     // from a clickMask click and the CM is autoHide true, but this allows the method to also be
-    // called programatically).
+    // called programmatically).
     // Note: the clickMask was shown when the first menu was opened, and the ID recorded on the
     // Menu class object
 	if (isc.Menu._menusClickMask) isc.EH.hideClickMask(isc.Menu._menusClickMask);

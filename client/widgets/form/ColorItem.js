@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -186,7 +186,10 @@ isc.ColorItem.addMethods({
     // @visibility external
 	//<
 	pickerColorSelected : function (color, opacity) {
-        color = this.mapValueToDisplay(color);
+        // If using a mask for color entry, the valuemap cannot be used.
+        if (!this.mask) {
+            color = this.mapValueToDisplay(color);
+        }
         this.setElementValue(color);
         this.updateValue();
 	},

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -30,7 +30,7 @@ isc.SForce.addMethods({
     // Log in to SForce service.
     // @param userName (String) username to use
     // @param password (String) password to use
-    // @param callback (Callback) callback to fire on completion.  Recieves the loginData block
+    // @param callback (Callback) callback to fire on completion.  Receives the loginData block
     //                            returned by the SForce service, as an Object, or boolean
     //                            false if login failed
     // @visibility sforce
@@ -203,7 +203,7 @@ isc.SForce.addMethods({
                 });
             }
         }
-        //this.logWarn(isc.Comm.serialize(sfSchema, true));
+        //this.logWarn(this.echoFull(sfSchema));
         return isc.SFDataSource.create({
             sfName:sfSchema.name,
             ID:ID,

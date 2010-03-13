@@ -1,6 +1,6 @@
 <DataSource	ID="TreeGrid"	Constructor="TreeGrid" inheritsFrom="ListGrid">
 	<fields>
-		<field name="fields"			type="ListGridField"  multiple="true"/>
+		<field name="fields"			type="TreeGridField"  multiple="true"/>
 		<field name="data"			type="Tree"/>
         <field name="dataProperties" type="ResultTree"/>
         <field name="initialData"       type="List"/>
@@ -56,7 +56,11 @@
         <field name="cantDragIntoChildMessage" type="string"/>
 
         <!-- visualBuilder: enable databinding on this component -->
-		<field name="dataSource"		type="DataSource"/>
+		<field name="dataSource"		type="DataSource" idAllowed="true"/>
+
+        <!-- suppress inapplicable ListGrid settings from appearing in Visual Builder -->
+        <field name="canGroupBy" type="boolean" basic="false"/>
+        <field name="showFilterEditor" type="boolean" basic="false"/>
 	</fields>
     <groups>
         <group>treeField</group>
@@ -68,4 +72,11 @@
         <group>sorting</group>
         <group>editing</group>
     </groups>
+    
+    <methods>
+        <method name="nodeClick" basic="true" />
+        <method name="leafClick" basic="true" />
+        <method name="folderClick" basic="true" />
+    </methods>
+    
 </DataSource>

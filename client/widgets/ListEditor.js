@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -27,7 +27,7 @@ isc.ListEditor.addProperties({
     // Whether to allow inline editing in the grid.  
     // <P>
     // If enabled, the form will show as a modal dialog instead of being displayed side by side
-    // with the grid, to prevent ambiguous simultanous editing within both the grid and form.
+    // with the grid, to prevent ambiguous simultaneous editing within both the grid and form.
     // This mode is suitable for rapid entry/update of records where few properties are
     // normally set.
     //
@@ -44,13 +44,13 @@ isc.ListEditor.addProperties({
     //< 
     vertical:false,
 
-    // List subcomponent
+    // Grid subcomponent
     // ---------------------------------------------------------------------------------------
-    listDefaults:{
-        _constructor:isc.ListGrid,
+	gridConstructor: isc.ListGrid,
+    gridDefaults:{
         editEvent:"click",
         listEndEditAction:"next",
-        autoParent:"listLayout",
+        autoParent:"gridLayout",
         selectionType:isc.Selection.SINGLE,
         recordClick:"this.creator.recordClick(record)",
         editorEnter:"if (this.creator.moreButton) this.creator.moreButton.enable()",
@@ -68,9 +68,9 @@ isc.ListEditor.addProperties({
 
     // List Buttons
     // ---------------------------------------------------------------------------------------
-    listButtonsDefaults:{
+    gridButtonsDefaults:{
         _constructor:isc.HLayout,
-        autoParent:"listLayout",
+        autoParent:"gridLayout",
         height:10, width:10, layoutMargin:6, membersMargin:10,
         overflow:isc.Canvas.VISIBLE
     },
@@ -78,14 +78,14 @@ isc.ListEditor.addProperties({
     newButtonTitle:"New",
     newButtonDefaults:{
         _constructor:isc.AutoFitButton,
-        autoParent:"listButtons",
+        autoParent:"gridButtons",
         click:"this.creator.newRecord()"
     },
 
     moreButtonTitle:"More..",
     moreButtonDefaults:{
         _constructor:isc.AutoFitButton,
-        autoParent:"listButtons",
+        autoParent:"gridButtons",
         click:"this.creator.editMore()",
         disabled:true
     },
@@ -93,7 +93,7 @@ isc.ListEditor.addProperties({
     removeButtonTitle:"Remove",
     removeButtonDefaults:{
         _constructor:isc.AutoFitButton,
-        autoParent:"listButtons",
+        autoParent:"gridButtons",
         click:"this.creator.removeRecord()"
     },
 
@@ -118,7 +118,7 @@ isc.ListEditor.addProperties({
     saveButtonDefaults:{
         _constructor:isc.AutoFitButton,
         autoParent:"formButtons",
-        click:"this.creator.saveRecord()"
+        click:"this.creator.saveRecord();"
     },
 
     cancelButtonTitle:"Cancel",
@@ -137,11 +137,11 @@ isc.ListEditor.addProperties({
 
     // Sublayouts
     // ---------------------------------------------------------------------------------------
-    listLayoutDefaults : {
+    gridLayoutDefaults : {
         _constructor:isc.VLayout
     },
 
-    listButtonsOrientation:"left",
+    gridButtonsOrientation:"left",
 
     formLayoutDefaults : {
         _constructor:isc.VLayout,
@@ -162,40 +162,46 @@ isc.ListEditor.addProperties({
         if (isc._traceMarkers) arguments.__this = this;
 
     	if (!this.readyToDraw()) return this;
-     
-        // don't show the edit button by default if we're not allowing inline editing, since
+
+        return this.Super("draw", arguments);
+    },
+    
+    initWidget : function () {
+        this.Super("initWidget", arguments);
+        // don't show the edit button by default if we're allowing inline editing, since
         // just clicking triggers editing
         if (!this.inlineEdit) this.showMoreButton = this.showMoreButton || false;
-   
-        this.addAutoChildren(this.listGroup);
+
+        this.addAutoChild("gridLayout");
+		this.addAutoChild("grid", { _constructor: this.gridConstructor } );
+        this.addAutoChildren(this.gridButtonsGroup);
         this.addAutoChildren(this.formGroup);
         
-        return this.Super("draw", arguments);
     },
 
     formGroup : [
         "formLayout", "form", "formButtons", "saveButton", "cancelButton", "resetButton"
     ],
-    listGroup : [
-        "listLayout", "list", "listButtons", "newButton", "moreButton"
+    gridButtonsGroup : [
+        "gridButtons", "newButton", "moreButton"
     ],
 
     configureAutoChild : function (child, childName) {
         if (isc.isA.Button(child)) child.title = this[childName + "Title"];
 
-        if (child == this.list) {
+        if (child == this.grid) {
             child.dataSource = this.dataSource;
             child.fields = this.fields;
             child.saveLocally = this.saveLocally;
             child.canEdit = this.inlineEdit;
         }
 
-        if (this.listButtonsOrientation == isc.Canvas.RIGHT) {
+        if (this.gridButtonsOrientation == isc.Canvas.RIGHT) {
             // place buttons to right of list
-            if (child == this.listLayout) child.vertical = false;
+            if (child == this.gridLayout) child.vertical = false;
             if (child == this.formLayout) child.vertical = false;
             // stack buttons vertically
-            if (child == this.listButtons) child.vertical = true;
+            if (child == this.gridButtons) child.vertical = true;
             if (child == this.formButtons) child.vertical = true;
         }
 
@@ -206,7 +212,7 @@ isc.ListEditor.addProperties({
         if (this.inlineEdit) {
             if (child == this.formLayout) child.visibility = isc.Canvas.HIDDEN;
         } else {
-            if (child == this.listLayout) child.showResizeBar = true;
+            if (child == this.gridLayout) child.showResizeBar = true;
         }
     },
 
@@ -215,27 +221,27 @@ isc.ListEditor.addProperties({
 
     setDataSource : function (dataSource, fields) {
         this.dataSource = dataSource || this.dataSource;
-        if (this.list != null) {
-            this.list.setDataSource(dataSource, fields);
+        if (this.grid != null) {
+            this.grid.setDataSource(dataSource, fields);
             this.form.setDataSource(dataSource, fields);
         }
     },
     setData : function (data) {
 
         if (data == null) data = [];
-    
+
         if (data.dataSource) this.setDataSource(data.dataSource);
-        if (this.list != null) {
-            this.list.setData(data);
+        if (this.grid != null) {
+            this.grid.setData(data);
             this.form.clearValues();
         } else {
-            isc.addProperties(this.listDefaults, {data:data});
+            isc.addProperties(this.gridDefaults, this.gridProperties || {}, {data:data});
         }
     },
     getData : function () {
         // on a getData call, always save the current edit to the dataSet before returning
-        if (this.inlineEdit) this.list.endEditing();
-        return this.list.getData();
+        if (this.inlineEdit) this.grid.endEditing();
+        return this.grid.getData();
     },
 
     // Button / Menu actions
@@ -250,12 +256,12 @@ isc.ListEditor.addProperties({
     showList : function () {
         if (this.inlineEdit) {
             this.formLayout.animateHide({effect:"wipe", startFrom:"R"});
-            this.listLayout.animateShow({effect:"wipe", startFrom:"R"});
+            this.gridLayout.animateShow({effect:"wipe", startFrom:"R"});
         }
     },
     showForm : function () {
         if (this.inlineEdit) {
-            this.listLayout.animateHide({effect:"wipe", startFrom:"R"});
+            this.gridLayout.animateHide({effect:"wipe", startFrom:"R"});
             this.formLayout.animateShow({effect:"wipe", startFrom:"R"});
         }
     },
@@ -271,7 +277,7 @@ isc.ListEditor.addProperties({
             if (ok) {
                 _this.currentRecord = record;
                 if (!_this.inlineEdit) _this.form.editRecord(record);
-                _this.form.setValues(isc.addProperties({}, _this.list.getSelectedRecord()));
+                _this.form.setValues(isc.addProperties({}, _this.grid.getSelectedRecord()));
             }
         }
 
@@ -282,11 +288,11 @@ isc.ListEditor.addProperties({
     },
 
     getEditRecord : function () {
-        var editRowNum = this.list.getEditRow();
+        var editRowNum = this.grid.getEditRow();
         if (editRowNum != null) {
-            return this.list.getEditedRecord(editRowNum);
+            return this.grid.getEditedRecord(editRowNum);
         } else {
-            return isc.addProperties({}, this.list.getSelectedRecord());
+            return isc.addProperties({}, this.grid.getSelectedRecord());
         }
     },
 
@@ -298,13 +304,13 @@ isc.ListEditor.addProperties({
     },
 
     newRecord : function () {
-        if (this.inlineEdit) return this.list.startEditingNew();
+        if (this.inlineEdit) return this.grid.startEditingNew();
         
         var _this = this;
 
         var proceed = function (ok) {
             if (ok) {
-                _this.list.deselectAllRecords();
+                _this.grid.deselectAllRecords();
                 _this.showForm();
                 _this.form.editNewRecord();
             }
@@ -319,7 +325,7 @@ isc.ListEditor.addProperties({
     // remove record context click
     removeRecord : function () {
         this.form.clearValues();
-        this.list.removeSelectedData();
+        this.grid.removeSelectedData();
     },
     saveRecord : function () {
         if (!this.form.validate()) return false;
@@ -328,18 +334,18 @@ isc.ListEditor.addProperties({
         this.showList(); 
 
         if (this.form.saveOperationType == "add") { // new record
-            this.list.addData(values);
+            this.grid.addData(values);
         } else {
             // if inline editing is occurring just apply the values as editValues.  We can't
             // count on updateData() because we may have edited a new row that doesn't have a
             // primary key
-            if (this.inlineEdit && this.list.getEditRow() != null) {
-                var rowNum =this.list.getEditRow();
+            if (this.inlineEdit && this.grid.getEditRow() != null) {
+                var rowNum =this.grid.getEditRow();
                 
-                if (this.list.data[rowNum] != null) this.list.updateData(values)
-                else this.list.setEditValues(rowNum, values);
+                if (this.grid.data[rowNum] != null) this.grid.updateData(values)
+                else this.grid.setEditValues(rowNum, values);
             } else {
-                this.list.updateData(values);
+                this.grid.updateData(values);
             }
         }
         

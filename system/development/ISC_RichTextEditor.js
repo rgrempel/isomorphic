@@ -2,33 +2,29 @@
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to
@@ -40,13 +36,13 @@
 if(window.isc&&window.isc.module_Core&&!window.isc.module_RichTextEditor){isc.module_RichTextEditor=1;isc._moduleStart=isc._RichTextEditor_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'RichTextEditor load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime')
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM
-else isc._preLog=[isc._pTM]}isc.ClassFactory.defineClass("RichTextCanvas","Canvas");isc.A=isc.RichTextCanvas;isc.A.FULL="full";isc.A.unsupportedErrorMessage="Rich text editing not supported in this browser";isc.A=isc.RichTextCanvas.getPrototype();isc.A.editable=true;isc.A.canSelectText=true;isc.A.canFocus=true;isc.A.$kn=false;isc.A.overflow=isc.Canvas.AUTO;isc.A.showCustomScrollbars=false;isc.A.fullSyntaxHiliteDelay=3000;isc.A.contents="";isc.A=isc.RichTextCanvas;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.supportsRichTextEditing=function(){var _1=((isc.Browser.isSafari&&isc.Browser.safariVersion>=312)||(isc.Browser.isIE)||(isc.Browser.isMoz&&!isc.Browser.isCamino)||isc.Browser.isOpera);return _1}
+else isc._preLog=[isc._pTM]}isc.definingFramework=true;isc.ClassFactory.defineClass("RichTextCanvas","Canvas");isc.A=isc.RichTextCanvas;isc.A.FULL="full";isc.A.unsupportedErrorMessage="Rich text editing not supported in this browser";isc.A=isc.RichTextCanvas.getPrototype();isc.A.editable=true;isc.A.canSelectText=true;isc.A.canFocus=true;isc.A.$kn=false;isc.A.overflow=isc.Canvas.AUTO;isc.A.showCustomScrollbars=false;isc.A.fullSyntaxHiliteDelay=3000;isc.A.contents="";isc.A=isc.RichTextCanvas;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.supportsRichTextEditing=function(){var _1=((isc.Browser.isSafari&&isc.Browser.safariVersion>=312)||(isc.Browser.isIE)||(isc.Browser.isMoz&&!isc.Browser.isCamino)||isc.Browser.isOpera);return _1}
 );isc.B._maxIndex=isc.C+1;isc.A=isc.RichTextCanvas.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$9z="<BR>";isc.A.$10j="Enter";isc.A.ignoreKeys=["Arrow_Up","Arrow_Down","Arrow_Left","Arrow_Right","Ctrl","Alt"];isc.B.push(isc.A.initWidget=function(){if(!isc.RichTextCanvas.supportsRichTextEditing()){var _1=isc.RichTextCanvas.unsupportedErrorMessage;this.logError(_1)}
 if(this.overflow!=isc.Canvas.AUTO){this.logWarn('RichTextCanvas class currently only supports an overflow property of "auto"');this.overflow=isc.Canvas.AUTO}
 this.Super("initWidget",arguments)}
 ,isc.A.$rw=function(){if(this.$22y()){var _1;if(this.$ks){_1="-moz-scrollbars-none";this.$r3=true}else{_1=this.$nz}
 return _1}else return this.Super("$rw",arguments)}
-,isc.A.getInnerHTML=function(){if(this.$22y()){return this.getIFrameHTML()}
+,isc.A.getInnerHTML=function(){if(this.$22y()&&!this.isPrinting){return this.getIFrameHTML()}
 return this.getContents(true)}
 ,isc.A.$22y=function(){return isc.Browser.isMoz||isc.Browser.isSafari}
 ,isc.A.getIFrameHTML=function(){var _1=isc.Browser.isSafari,_2=_1?isc.Page.getBlankFrameURL():null,_3=this.getContentFrameWidth()+isc.px,_4=this.getContentFrameHeight()+isc.px,_5=["<IFRAME STYLE='margin:0px;padding:0px;border:0px;width:",_3,";height:",_4,";'",(_1||true?" src='"+isc.Page.getURL("[HELPERS]empty.html")+"'":null)," ONLOAD='",this.getID(),".$22z();'"," ID='",this.getIFrameID(),"'></IFRAME>"];return _5.join(isc.emptyString)}
@@ -186,7 +182,7 @@ return true}
 ,isc.A.boldSelection=function(){this.$230("bold")}
 ,isc.A.italicSelection=function(){this.$230("italic")}
 ,isc.A.underlineSelection=function(){this.$230("underline")}
-,isc.A.showClipboardDisabledError=function(){var _1="Your browser does not allow web pages to access the clipboard programatically.";isc.warn(_1)}
+,isc.A.showClipboardDisabledError=function(){var _1="Your browser does not allow web pages to access the clipboard programmatically.";isc.warn(_1)}
 ,isc.A.copySelection=function(){if(this.$230("copy")==false)this.showClipboardDisabledError()}
 ,isc.A.cutSelection=function(){if(this.$230("cut")==false)this.showClipboardDisabledError();}
 ,isc.A.pasteOverSelection=function(){if(this.$230("paste")==false)this.showClipboardDisabledError()}
@@ -206,7 +202,7 @@ return true}
 return-1},changed:isc.RichTextEditor.$232,getBrowserSpellCheck:function(){return this.parentElement.getBrowserSpellCheck()}})}
 ,isc.A.richEditorSupported=function(){return!(isc.Browser.isSafari||isc.Browser.isOpera)}
 ,isc.A.getBrowserSpellCheck=function(){return this.browserSpellCheck}
-,isc.A.$234=function(){this.addAutoChild("toolbar",{top:0,left:0,width:"100%",height:this.toolbarHeight,overflow:isc.Canvas.VISIBLE,backgroundColor:this.toolbarBackgroundColor});for(var i=0;i<this.controlGroups.length;i++){if(i>0)
+,isc.A.$234=function(){this.addAutoChild("toolbar",{top:0,left:0,shouldPrint:false,width:"100%",height:this.toolbarHeight,overflow:isc.Canvas.VISIBLE,backgroundColor:this.toolbarBackgroundColor});for(var i=0;i<this.controlGroups.length;i++){if(i>0)
 this.toolbar.addMember(this.$235());var _2=this[this.controlGroups[i]];if(!_2){this.logWarn("Unable to find countrol group '"+this.controlGroups[i]+"'. This group should be specified as an array of "+"control names, but is not present");continue}
 for(var j=0;j<_2.length;j++){this.addAutoChild(_2[j],{canFocus:false,isControl:true,controlName:_2[j],layoutAlign:isc.Canvas.CENTER},this.defaultControlConstructor,this.toolbar)}}}
 ,isc.A.$235=function(){if(!this.$236)this.$236={autoDraw:false,width:12,height:"100%",src:this.toolbarSeparatorSrc};return isc.Img.create(this.$236)}
@@ -239,38 +235,34 @@ _2.defaultControlConstructor=this.defaultControlConstructor;this.canvas=_2;this.
 ,isc.A.getValue=function(){if(this.canvas)this.updateValue();return this.Super("getValue",arguments)}
 ,isc.A.updateValue=function(){if(!this.canvas)return
 var _1=this.canvas.getValue();return this.$10y(_1)}
-);isc.B._maxIndex=isc.C+5;isc._moduleEnd=isc._RichTextEditor_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('RichTextEditor module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'RichTextEditor'.");}
+);isc.B._maxIndex=isc.C+5;isc._moduleEnd=isc._RichTextEditor_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('RichTextEditor module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'RichTextEditor'.");}
 
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to

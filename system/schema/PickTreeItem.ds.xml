@@ -1,7 +1,7 @@
 <DataSource	ID="PickTreeItem" inheritsFrom="CanvasItem" Constructor="PickTreeItem">
 	<fields>
         <field name="buttonDefaults"    type="Canvas"   propertiesOnly="true"/>
-        <field name="dataSource"        type="string"/>
+        <field name="dataSource"        type="string" idAllowed="true"/>
         <field name="valueTree"         type="Tree"/>
         <field name="loadDataOnDemand"  type="boolean"/>
         <field name="canSelectParentItems" type="boolean"/>

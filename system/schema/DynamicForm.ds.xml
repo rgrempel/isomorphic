@@ -9,8 +9,10 @@
 		<field name="fields" 			type="FormItem" multiple="true" propertiesOnly="true"/>
 
         <!-- layout -->
-		<field name="numCols" 			type="positiveInteger" title="Number of Columns"/>
-		<field name="colWidths" 		type="measure" multiple="true" editorType="ArrayItem"/>
+		<field name="numCols" xmlAttribute="true" type="positiveInteger" title="Number of Columns" basic="true"/>
+		<field name="colWidths" xmlAttribute="true" title="Column Widths" type="measure" multiple="true"
+               editorType="ArrayItem" basic="true" />
+		<field name="overflow" xmlAttribute="true" type="overflowEnum" basic="true"/>	
 		<field name="cellPadding" 		type="positiveInteger" title="Cell Padding"/>
 		<field name="cellSpacing" 		type="positiveInteger" title="Cell Spacing" visibility="internal"/>
 		<field name="minColWidth" 		type="positiveInteger"/>
@@ -44,7 +46,7 @@
 		</field>
 
         <!-- titling -->
-		<field name="titleOrientation"  type="string" title="Title Orientation">
+		<field name="titleOrientation"  type="string" title="Title Orientation" basic="true">
             <valueMap left="left" top="top" right="right"/>
         </field>
 		<field name="titlePrefix" 		type="HTML" title="Title Prefix"/>
@@ -52,7 +54,7 @@
 		<field name="titleSuffix" 		type="HTML" title="Title Suffix"/>
 		<field name="rightTitleSuffix"  type="HTML" title="Right Title Suffix"/>
 		<field name="titleWidth" 		type="measure"/>
-		<field name="wrapItemTitles" type="boolean" />        
+		<field name="wrapItemTitles" type="boolean" basic="true"/>        
 		<field name="hiliteRequiredFields" type="boolean" title="Highlight Required Fields"/>
 		<field name="requiredTitlePrefix" type="HTML" title="Required Title Prefix"/>
 		<field name="requiredTitleSuffix" type="HTML" title="Required Title Suffix"/>
@@ -87,7 +89,8 @@
                inapplicable="true"/>
 
         <!-- visualBuilder: enable databinding on this component -->
-		<field name="dataSource"		type="DataSource" hidden="false"/>
+		<field name="dataSource"		type="DataSource" hidden="false" idAllowed="true"/>
+        <field name="selectionComponent" type="Canvas" hidden="true"/>
 
         <field name="longTextEditorThreshold" type="positiveInteger" title="Long Text Editor Threshold"/>
         <field name="longTextEditorType"      type="string" title="Long Text Editor Type"/>
@@ -124,8 +127,11 @@
                 icon="[SKINIMG]/actions/save.png"/>
         <method action="true" title="Set Values" name="setValues"
                 icon="[SKINIMG]/actions/forward.png"/>
+        <method action="true" title="Clear Values" name="clearValues"
+                icon="[SKINIMG]/actions/undo.png"/>
         <method action="true" title="Reset Values" name="reset" 
                 icon="[SKINIMG]/actions/first.png"/>
+        <method action="true" title="Reset Values" name="itemChanged" basic="true"/>
     </methods>
 
 </DataSource>

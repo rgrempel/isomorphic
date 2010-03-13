@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -108,6 +108,7 @@ isc.addMethods(isc.isA, {
     //  implementation of this method as it guarantees the programmer can work with properties of 
     //  the object as with a standard Object returned by "new Object()".
     _$object:"object",
+    _$String :"String",
 	Object : function (object) {
         if (object == null) return false;
         
@@ -121,6 +122,11 @@ isc.addMethods(isc.isA, {
                 return (type == 8 || type == 7 || type == 3 || type == 2);
             }
         }
+
+        // Workaround for a core GWT bug
+        // http://code.google.com/p/google-web-toolkit/issues/detail?id=4301
+        if (object.Class != null && object.Class == this._$String) return false;
+
         
         if (typeof object == this._$object) {
             if (isc.Browser.isIE && isc.isA.Function(object)) return false;
@@ -152,7 +158,18 @@ isc.addMethods(isc.isA, {
         }
         return true;
     },
-
+    
+	//>	@classMethod isA.emptyArray()
+	//
+	// Is <code>object</code> an Array with no items?
+    //
+	//	@param	object	(object)	object to test
+	//	@return			(boolean)	true == <code>object</code> is an empty array
+	//	@visibility external
+	//<
+    emptyArray : function (object) {
+        return isc.isAn.Array(object) && object.length == 0;
+    },
 
 	//>	@classMethod	isA.String()
 	//
@@ -172,6 +189,11 @@ isc.addMethods(isc.isA, {
         if (object.constructor && object.constructor.__nativeType != null) {
             return object.constructor.__nativeType == 4;
         }
+
+        // Workaround for a core GWT bug
+        // http://code.google.com/p/google-web-toolkit/issues/detail?id=4301
+        if (object.Class != null && object.Class == this._$String) return true;
+
         return typeof object == "string";
 	},
 
@@ -295,7 +317,7 @@ isc.addMethods(isc.isA, {
                 // sort of pseudo date object, which returns bad values from getYear(), etc.
                 object.getDate && isc.isA.Number(object.getDate()) 
     },
-
+    
 	//>	@classMethod	isA.RegularExpression()
 	//
 	//	Is <code>object</code> a Regular Expression (RegExp) object?
@@ -430,7 +452,8 @@ isc.addMethods(isc.isA, {
     // want to be clobberred when the class method is defined
     
     _customClassIsA:{
-        SelectItem:true
+        SelectItem:true,
+        Time:true
     },
     
     // SelectItem IsA Overrides   
@@ -453,7 +476,13 @@ isc.addMethods(isc.isA, {
         var itemClass = item.getClass();
         return ((itemClass == isc.SelectItem || itemClass == isc.NativeSelectItem) 
                 && item.isSelectOther);
+    },
+    
+    // SmartClient stores Times in JavaScript Date objects so make isA.Time a synonym for isA.Date
+    Time : function (object) {
+        return isc.isA.Date(object);
     }
+
 });
 
 

@@ -1,9 +1,9 @@
 <DataSource	ID="DetailViewer" inheritsFrom="Canvas" Constructor="DetailViewer">
 	<fields>
-		<field name="data"				type="DetailViewRecord"	 multiple="true"/>
+		<field name="data"				type="DetailViewRecord"	 multiple="true" />
 		<field name="fields"			type="DetailViewerField"  multiple="true"/>
 		<field name="fieldIdProperty"	type="string" />
-		<field name="recordsPerBlock"	type="positiveInteger" />
+		<field name="recordsPerBlock"	type="positiveInteger" basic="true"/>
 		<field name="blockSeparator"	type="HTML" />
 		<field name="cellPadding"		type="positiveInteger" visibility="internal"/>
 		<field name="showBorder"		type="boolean" visibility="internal" />
@@ -25,13 +25,15 @@
         <field name="dateFormatter" type="string"/>
 
         <!-- visualBuilder: enable databinding on this component -->
-		<field name="dataSource"		type="DataSource" hidden="false"/>
+		<field name="dataSource"		type="DataSource" hidden="false" idAllowed="true"/>
 
         <!-- mark superclass fields as not relevant -->
         <field name="children" inapplicable="true"/>
         <field name="peers" inapplicable="true"/>
         
-        <field name="wrapValues" type="boolean"/>
+        <field name="wrapLabel" type="boolean" basic="true"/>
+        <field name="wrapValues" type="boolean" basic="true"/>
+		<field name="overflow" xmlAttribute="true" type="overflowEnum" basic="true"/>	
     </fields>
 
     <methods>

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -49,6 +49,9 @@ isc.addGlobal("timestamp", isc.timeStamp);
 Date.prototype.Class = "Date";
 Date.Class = "Date";
   //<DEBUG 
+
+
+isc.Date = Date;
 
 
 isc.addProperties(Date, {
@@ -104,12 +107,13 @@ compareDates : function (a, b) {
 // the second date is greater.
 //  @param  date1   (date)  first date to compare
 //  @param  date2   (date)  second date to compare
-//  @return (number)    0 if equal, -1 if first date &gt; second date, 1 if second date &gt; first date
+//  @return (number)    0 if equal, -1 if first date &gt; second date, 1 if second date &gt;
+//                      first date.  Returns false if either argument is not a date
 // @visibility external
 //<
 compareLogicalDates : function (a, b) {
-    if (a == b) return true;
-    if (!isc.isA.Date(a) || !isc.isA.Date(b)) return false;
+    if (a == b) return 0; // same date instance
+    if (!isc.isA.Date(a) || !isc.isA.Date(b)) return false; // bad arguments, so return false
 	var aYear = a.getFullYear(),
 	    aMonth = a.getMonth(),
 	    aDay = a.getDate(),
@@ -199,7 +203,7 @@ mapDisplayFormatToInputFormat : function (displayFormat) {
 },
 
 //>	@classMethod	Date.parseInput()
-// Parse a date passed in as a string, returning the approprate date object.
+// Parse a date passed in as a string, returning the appropriate date object.
 //		@group	dateFormatting
 //
 //		@param	dateString  (string)	date value as a string
@@ -219,7 +223,10 @@ mapDisplayFormatToInputFormat : function (displayFormat) {
 //  @visibility external
 //<
 
-parseInput : function (dateString, format, centuryThreshold, suppressConversion) {
+
+parseInput : function (dateString, format, centuryThreshold, suppressConversion,
+                        useCustomTimezone) 
+{
 
     if (isc.isA.Date(dateString)) return dateString;
 
@@ -233,7 +240,9 @@ parseInput : function (dateString, format, centuryThreshold, suppressConversion)
     // If the format passed in is the name of a function on the Date class, or an
     // explicit function, assume its a parser and call it directly
     if (isc.isA.Function(Date[format])) format = Date[format];
-    if (isc.isA.Function(format)) return format(dateString, centuryThreshold);
+    if (isc.isA.Function(format)) {
+        return format(dateString, centuryThreshold, suppressConversion, useCustomTimezone);
+    }
 
     // use the helper method _splitDateString() to get an array of values back
     // (representing year / month / day, etc.)
@@ -251,25 +260,71 @@ parseInput : function (dateString, format, centuryThreshold, suppressConversion)
             array[0] = year;
         }
         
-        var newDate = new Date(array[0], array[1], array[2], array[3], array[4], array[5]);
-        if (!suppressConversion) return newDate;
+        var hours = array[3],
+            minutes = array[4],
+            seconds = array[5];
         
-        // If the 'suppressConversion' flag was passed, we will want to return null to indicate
-        // we were passed an invalid date if the values passed in had to be converted
-        // (For example a month of 13 effecting the year, etc)
-        if (newDate == null) return null;
-        var isValid = (newDate.getFullYear() == array[0] &&
-                       newDate.getMonth() == array[1] &&
-                       newDate.getDate() == array[2] &&
-                       (array[3] == null || newDate.getHours() == array[3]) &&
-                       (array[4] == null || newDate.getMinutes() == array[4]) &&
-                       (array[5] == null || newDate.getSeconds() == array[5])
-                       );                       
-        return isValid ? newDate : null;        
+        array[3] = hours = parseInt(hours || 0, 10);
+        array[4] = minutes = parseInt(minutes || 0, 10);
+        array[5] = seconds = parseInt(seconds || 0, 10);
+        
+        var newDate;
+        if (!useCustomTimezone) {
+            newDate = new Date(array[0], array[1], array[2], hours,minutes,seconds);
+                       
+            if (!suppressConversion) return newDate;
+            
+            // If the 'suppressConversion' flag was passed, we will want to return null to indicate
+            // we were passed an invalid date if the values passed in had to be converted
+            // (For example a month of 13 effecting the year, etc)
+            var isValid = (newDate.getFullYear() == array[0] &&
+                           newDate.getMonth() == array[1] &&
+                           newDate.getDate() == array[2] &&
+                           (array[3] == null || newDate.getHours() == array[3]) &&
+                           (array[4] == null || newDate.getMinutes() == array[4]) &&
+                           (array[5] == null || newDate.getSeconds() == array[5])
+                           );
+            return (isValid ? newDate : null);
+        } else {
+            
+            // We need a date where the UTCTime is set such that when we apply our
+            // custom timezone offset we get back the local time.
+            // Do this by creating a new date with UTC time matching this custom display time
+            // and then shifting that date by the inverse of our display timezone offset.
+            newDate = new Date(Date.UTC(array[0], array[1], array[2],
+                                          array[3], array[4], array[5]));
+                                          
+            // If the 'suppressConversion' flag was passed, we will want to return null to indicate
+            // we were passed an invalid date if the values passed in had to be converted
+            // (For example a month of 13 effecting the year, etc)
+            // Easiest to check this against the date before we apply the offset to correct for
+            // our timezone           
+            if (suppressConversion) {
+                var isValid = (newDate.getUTCFullYear() == array[0] &&
+                               newDate.getUTCMonth() == array[1] &&
+                               newDate.getUTCDate() == array[2] &&
+                               (array[3] == null || newDate.getUTCHours() == array[3]) &&
+                               (array[4] == null || newDate.getUTCMinutes() == array[4]) &&
+                               (array[5] == null || newDate.getUTCSeconds() == array[5])
+                               );
+                if (!isValid) newDate = null;
+            }
+            if (newDate != null) {
+                newDate._applyTimezoneOffset(
+                    -isc.Time.UTCHoursDisplayOffset, -isc.Time.UTCMinutesDisplayOffset
+                );
+            }
+            return newDate;
+        }
         
     } else {
         return null;
     }
+},
+
+
+parseDateTime : function (dateString, format, centuryThreshold, suppressConversion) {
+    return this.parseInput(dateString,format,centuryThreshold,suppressConversion,true);
 },
 
 // Parse a date or datetime value from a dataset or specified in code.
@@ -289,15 +344,13 @@ parseSchemaDate : function (value) {
     // - result[8] would be the optional milliseconds including the ".", whereas
     //   result[9] is just the numeric part
     //   results[10] is the timezone - either "Z" (zulu time or GMT) or +/- HH:MM
-    var result = value.match(
-         /(\d{4})[\/-](\d{2})[\/-](\d{2})([T ](\d{2}):(\d{2}):(\d{2}))?(\.(\d+))?([+-]\d{2}:\d{2}|Z)?/);
+    var result = value.match(/(\d{4})[\/-](\d{2})[\/-](\d{2})([T ](\d{2}):(\d{2}):(\d{2}))?(\.(\d+))?([+-]\d{2}:\d{2}|Z)?/);
            
-     //isc.Log.logWarn("isDate: '" + value + "', regex match: " + result);
+    //isc.Log.logWarn("isDate: '" + value + "', regex match: " + result);
 
     if (result == null) return null;
             
     
-
     var dateValue;
     // NOTE: pass only the relevant arguments as Moz does not like being passed nulls
     
@@ -308,12 +361,14 @@ parseSchemaDate : function (value) {
                                       result[5], result[6], result[7]));
     } else {
         var ms = result[9];
+        
         // XML Schema says any number of fractional digits can be specified.  new Date() is
         // expecting a whole number of milliseconds (and further precision would be ignored).
         // Multiply by a power of ten based on the number of digits provided, such that ".9"
         // becomes 900 and ".98367" becomes 984.
         if (ms.length != 3) {
-            ms = Math.round(parseInt(ms) * Math.pow(10,3-ms.length));
+            var multiplier = Math.pow(10,3-ms.length);
+            ms = Math.round(parseInt(ms,10) * multiplier);
         }
         //isc.Log.logWarn("ms is: " + ms);
         
@@ -325,9 +380,11 @@ parseSchemaDate : function (value) {
         var HM = result[10].split(":"),
             H = HM[0],
             negative = H && H.startsWith("-"),
-            H = parseInt(H),
-            M = parseInt(HM[1]),
-            dateTime = dateValue.getTime();
+            M = HM[1];
+        H = parseInt(H, 10);
+        M = parseInt(M, 10);
+        var dateTime = dateValue.getTime();
+
         
         // Note no need to account for negative on hours since the "+" or "-" prefix was picked up
         // in parseInt
@@ -513,6 +570,30 @@ setShortDisplayFormat : function (format) {
     }
 },
 
+//> @classMethod Date.setShortDatetimeDisplayFormat()
+//  Set the default short format for datetime values. After calling this method, subsequent calls to 
+// +link{Date.toShortDateTime()} will return a string formatted according to this format 
+// specification. Note that this will be the standard datetime format used by
+// SmartClient components.
+// <P>
+// The <code>format</code> parameter may be either a +link{DateDisplayFormat} string, or 
+// a function. If passed a function, this function will be executed in the scope of the Date
+// and should return the formatted string.
+// <P>
+// Initial default format is <code>"toUSShortDateTime"</code>.
+//
+// @group	dateFormatting
+// @param	format	(DateDisplayFormat | function)	new formatter
+// @example dateFormat
+// @example customDateFormat
+// @visibility external
+//<
+setShortDatetimeDisplayFormat : function (format) {
+    if (isc.isA.Function(Date.prototype[format]) || isc.isA.Function(format)) {    
+        Date.prototype._shortDatetimeFormat = format;
+    }
+},
+
 //>!BackCompat 2005.11.3
 // -- Older depracated synonym of setNormalDisplayFormat  
 //>	@classMethod		Date.setFormatter()
@@ -648,8 +729,8 @@ getShortDayNames : function (length) {
 //> @classAttr Date.weekendDays (Array of int : [0, 6] : IR)
 // Days that are considered "weekend" days.   Values should be the integers returned by the
 // JavaScript built-in Date.getDay(), eg, 0 in Sunday and 6 is Saturday.  Override to
-// accomodate different workweeks such as Saudi Arabia (Saturday -> Wednesday) or Israel 
-// (Sunday -> Thurday).
+// accommodate different workweeks such as Saudi Arabia (Saturday -> Wednesday) or Israel 
+// (Sunday -> Thursday).
 //
 // @visibility external
 //<
@@ -657,8 +738,8 @@ getShortDayNames : function (length) {
 //>	@classMethod		Date.getWeekendDays()	
 // Return an array of days that are considered "weekend" days. Values will be the integers 
 // returned by the JavaScript built-in Date.getDay(), eg, 0 in Sunday and 6 is Saturday. 
-// Override +link{date.weekendDays} to accomodate different workweeks such as Saudi Arabia 
-// (Saturday -> Wednesday) or  Israel (Sunday -> Thurday).
+// Override +link{date.weekendDays} to accommodate different workweeks such as Saudi Arabia 
+// (Saturday -> Wednesday) or  Israel (Sunday -> Thursday).
 //		@group	dateFormatting 
 //                                  
 //		@return		(int[])	array of weekend days
@@ -679,12 +760,14 @@ getWeekendDays : function () {
 isc.addMethods(Date.prototype, {
 
 //>	@method		date.duplicate()	(A)
-//      Copy the value of this date into a new Date() object for independant manipulation
+//      Copy the value of this date into a new Date() object for independent manipulation
 //  @visibility external
 //<
 duplicate : function () {
     var newDate = new Date();
     newDate.setTime(this.getTime());
+	newDate.logicalDate = this.logicalDate;
+    newDate.logicalTime = this.logicalTime;
     return newDate;
 },
 
@@ -784,7 +867,7 @@ getWeek : function() {
 // "toNormalDate()" / "toShortDate()" and "parseInput()" as normal.
 
 //>	@method		date.toDateStamp()
-//			Return this date in the format:
+//			Return this date in the format (UTC timezone):
 //				<code><i>YYYYMMDD</i>T<i>HHMMSS</i>[Z]</code>
 //		@group	dateFormatting
 //		@return					(string)	formatted date string
@@ -811,16 +894,19 @@ toDateStamp : function () {
 // @visibility external
 //<
 // This method is used by our data components such as ListGrid to display long format dates.
-toNormalDate : function (formatter) {
+// @param useCustomTimezone (boolean) If true, format the date using the timezone
+//  setDefaultDisplayTimezone() rather than the native browser locale. Not supported for
+//  all formatters.
+toNormalDate : function (formatter, useCustomTimezone) {
     
     
     if (!formatter) formatter = this.formatter;    
     // fire the formatter in the scope of this date, so date is available as 'this'
 
     if (isc.isA.Function(formatter)) {
-        return formatter.apply(this)
+        return formatter.apply(this, [useCustomTimezone])
     } else if (this[formatter]) {
-        return this[formatter]();
+        return this[formatter](useCustomTimezone);
     }
 },
 
@@ -829,14 +915,39 @@ toNormalDate : function (formatter) {
 // <code>setShortDisplayFormat()</code> method.
 // @group   dateFormatting
 // @param format (DateDisplayFormat) Optional Format for the date returned 
+// @param useCustomTimezone (boolean) If true, format the date using the timezone set via
+//  Time.setDefaultDisplayTimezone() rather than the native browser locale.
 // @return  (string) formatted date string
 // @visibility external
 //<
-toShortDate : function (formatter) {
+toShortDate : function (formatter, useCustomTimezone) {
     if (!formatter) formatter = this._shortFormat;
-    if (isc.isA.Function(formatter)) return formatter.apply(this);
-    else if (isc.isA.Function(this[formatter])) return this[formatter]();
+    if (isc.isA.Function(formatter)) return formatter.apply(this, [useCustomTimezone]);
+    else if (isc.isA.Function(this[formatter])) return this[formatter](useCustomTimezone);
+    
+    isc.logWarn("Date.toShortDate() specified formatter not understood:" + formatter);
+    return this.toUSShortDate();
+                
 },
+
+
+//>	@method date.toShortDateTime()
+// Returns the datetime as a formatted string using the format set up via the 
+// <code>setShortDatetimeDisplayFormat()</code> method.
+// @group   dateFormatting
+// @param format (DateDisplayFormat) Optional Format for the date returned 
+// @param useCustomTimezone (boolean) If true, format the date using the timezone
+//  Time.setDefaultDisplayTimezone() rather than the native browser locale. This is the
+//  default behavior within SmartClient components for datetime fields.
+// @return  (string) formatted date string
+// @visibility external
+//<
+
+toShortDateTime : function (formatter, useCustomTimezone) {
+    if (!formatter) formatter = this._shortDatetimeFormat;
+    return this.toShortDate(formatter, useCustomTimezone);
+},
+
 
 //>	@method date.setDefaultDateSeparator
 // Sets a new default separator that will be used when formatting dates. By default, this
@@ -867,15 +978,56 @@ _$MDY:"MDY",
 _$DMY:"DMY",
 _$YMD:"YMD",
 _$MDY:"MDY",
+
+// _applyTimezoneOffset()
+// shift a date by some arbitrary number of hours/minutes
+// third parameter allows you to specify the starting date time [result of date.getTime()] 
+// to offset from
+_applyTimezoneOffset : function (hourOffset, minuteOffset, dateTime) {
+    if (dateTime == null) dateTime = this.getTime();
+    if (isc.isA.Number(hourOffset)) dateTime += (3600000 * hourOffset);
+    if (isc.isA.Number(minuteOffset)) dateTime += (60000 * minuteOffset);
+    this.setTime(dateTime);
+},
+
+// _getTimezoneOffsetDate()
+// This is a helper method - given a date with a certain UTC time, apply an explicit timezone
+// offset to return a date where the UTC time is offset by the specified hours/minutes.
+// We'll use this when formatting dates for display in arbitrary local times [so we can't just
+// use the native browser local timezone methods like getHours()]
+
+_getTimezoneOffsetDate : function (hourOffset, minuteOffset) {
+    var offsetDate = Date._timezoneOffsetDate;
+    if (offsetDate == null) offsetDate = Date._timezoneOffsetDate = new Date();
+    
+    offsetDate._applyTimezoneOffset(hourOffset, minuteOffset, this.getTime());
+    return offsetDate;
+    
+},
+
 // _toShortDate()
 // Internal method to give us a shortDate - either DD/MM/YYYY, MM/DD/YYYY or YYYY/MM/DD.
 // this will be passed "MDY" / "DYM" / etc. as a format parameter.
-_toShortDate : function (format) {
+// useCustomTimezone parameter: use the hour and minute offset specified by
+// Time.setDefaultDisplayTimezone() rather than the native browser local timezone
+_toShortDate : function (format, useCustomTimezone) {
+    
     var template = this._shortDateTemplate,
-        month = this.getMonth()+1,
-        day = this.getDate(),
-        year = this.getFullYear(),
-        monthIndex, dayIndex, yearIndex;
+        month,day,year;
+    
+    if (!useCustomTimezone) {
+        month = this.getMonth()+1;
+        day = this.getDate();
+        year = this.getFullYear();
+    } else {
+        var offsetDate = this._getTimezoneOffsetDate(
+                            isc.Time.UTCHoursDisplayOffset, isc.Time.UTCMinutesDisplayOffset);
+        month = offsetDate.getUTCMonth() + 1;
+        day = offsetDate.getUTCDate();
+        year = offsetDate.getUTCFullYear();
+    }
+    
+    var monthIndex, dayIndex, yearIndex;
         
     if (format == this._$MDY) {
         monthIndex = 0;
@@ -896,7 +1048,7 @@ _toShortDate : function (format) {
         monthIndex = format.indexOf("M")*5;
     }
         
-    // Note: each number has 4 slots so it can accomodate a full year
+    // Note: each number has 4 slots so it can accommodate a full year
     // For month/day - if we need a leading zero, fill the first slot with it
     // Use fillNumber to fill 3 slots even though we have a max of 2 digits to ensure
     // the last slot gets cleared out if it was populated by a year already.
@@ -916,10 +1068,25 @@ _toShortDate : function (format) {
 //		@return					(string)	formatted date string
 //  @visibility external
 //<
-toUSShortDate : function () {
-    return this._toShortDate(this._$MDY);
+toUSShortDate : function (useCustomTimezone) {
+    return this._toShortDate(this._$MDY, useCustomTimezone);
 },
 
+// _toShortTime - returns the time portion of the date in HH:MM
+
+_timeTemplate:[null,null],
+_toShortTime : function (useCustomTimezone) {
+    if (!useCustomTimezone) {
+        var timeTemplate = this._timeTemplate;
+        timeTemplate[0] = this.getHours().stringify();
+        timeTemplate[1] = this.getMinutes().stringify();
+        return timeTemplate.join(":");
+    } else {
+        // allow the Time class to apply the default display timezone offset
+        
+        return isc.Time.toShortTime(this, "toShortPadded24HourTime");
+    }
+},
 
 //>	@method		date.toUSShortDateTime()
 //  Return this date in the format: <code>MM/DD/YYYY HH:MM</code>
@@ -928,10 +1095,8 @@ toUSShortDate : function () {
 //		@return					(string)	formatted date string
 //  @visibility external
 //<
-toUSShortDateTime : function () {
-    return (this.toUSShortDate() + " " +
-            this.getHours().stringify() + ":" +
-            this.getMinutes().stringify());
+toUSShortDateTime : function (useCustomTimezone) {
+    return this.toUSShortDate(useCustomTimezone) + " " + this._toShortTime(useCustomTimezone);
 },
 
 
@@ -941,8 +1106,8 @@ toUSShortDateTime : function () {
 //		@return					(string)	formatted date string
 //      @visibility external
 //<
-toEuropeanShortDate : function () {
-    return this._toShortDate(this._$DMY);
+toEuropeanShortDate : function (useCustomTimezone) {
+    return this._toShortDate(this._$DMY, useCustomTimezone);
 },
 
 //>	@method		date.toEuropeanShortDateTime()
@@ -951,10 +1116,9 @@ toEuropeanShortDate : function () {
 //		@return					(string)	formatted date string
 //      @visibility external
 //<
-toEuropeanShortDateTime : function () {
-    return (this.toEuropeanShortDate() + " " +
-            this.getHours().stringify() + ":" +
-            this.getMinutes().stringify());
+toEuropeanShortDateTime : function (useCustomTimezone) {
+    return this.toEuropeanShortDate(useCustomTimezone) + " " +
+            this._toShortTime(useCustomTimezone);
 },
 
 //> @method date.toJapanShortDate()
@@ -963,8 +1127,8 @@ toEuropeanShortDateTime : function () {
 // @return (string) formatted date string
 // @visibility external
 //<
-toJapanShortDate : function () {
-    return this._toShortDate(this._$YMD);
+toJapanShortDate : function (useCustomTimezone) {
+    return this._toShortDate(this._$YMD, useCustomTimezone);
 },
 
 //>	@method		date.toJapanShortDateTime()
@@ -973,10 +1137,8 @@ toJapanShortDate : function () {
 //		@return					(string)	formatted date string
 //      @visibility external
 //<
-toJapanShortDateTime : function () {
-    return (this.toJapanShortDate() + " " +
-            this.getHours().stringify() + ":" +
-            this.getMinutes().stringify());
+toJapanShortDateTime : function (useCustomTimezone) {
+    return this.toJapanShortDate(useCustomTimezone) + " " + this._toShortTime(useCustomTimezone);
 },
 
   
@@ -1000,15 +1162,93 @@ _serialize : function () {
 },
 
 
+//> @groupDef dateFormatAndStorage
+// The SmartClient system has the following features for handling Date and Time type values
+// within DataSources and databound components.
+// <P>
+// DataSources and databound components may define fields of type <code>date</code>,
+// <code>time</code>, or <code>datetime</code>.
+// <P>
+// Fields of type +link{type:FieldType,date} are considered to be logical Dates. System wide
+// formatting for dates may be controlled via the +link{Date.setNormalDisplayFormat()} and
+// +link{Date.setShortDisplayFormat()} methods.  Components also support applying custom display
+// formats for specific date fields, typically achieved via the <code>dateFormatter</code> or
+// <code>field.displayFormat</code> attributes.
+// <P>
+// On the client date type fields are stored as JavaScript Date objects. When formatted for display
+// to the user, they are typically displayed without any time information.
+// <P>
+// When communicating with a non SmartClient server via an "xml" DataSource, date field
+// values in requests will be serialized out as logical date information only (omitting time)
+// in the standard truncated
+// <a target=_blank href="http://www.w3.org/TR/xmlschema-2/#dateTime">XML Schema date format</a> -
+// <code>YYYY-MM-DD</code>.
+// Date values received from the server in responses are expected to be in the same format, though
+// if time information is included in the returned date-string it will be understood. 
+// This matches the default date serialization behavior for "json" dataSources, though dates may
+// also be communicated as a JavaScript date instantiation string 
+// (EG: <code>new Date(1238792738633)</code>). See +link{JSONEncoder.dateFormat}.
+// <P>
+// Fields of type +link{type:FieldType,datetime} are dates with full time information. System wide formatting
+// for datetimes may be controlled via the +link{Date.setShortDatetimeDisplayFormat()} method, or
+// at a component level by <code>datetimeFormatter</code> or <code>field.displayFormat</code>
+// attributes. DateTimes willbe displayed to the user in local time as set up via 
+// +link{Time.setDefaultDisplayTimezone()}. Note that if not explicitly set, this will default
+// to the browser native timezone.
+// <P>
+// On the client datetime type fields are stored as JavaScript Date objects. 
+// When communicating with a non SmartClient server via an "xml" DataSource, datetime field
+// values in requests will be serialized out as full datetimes in UTC using the standard
+// <a target=_blank href="http://www.w3.org/TR/xmlschema-2/#dateTime">XML Schema date format</a> -
+// <code>YYYY-MM-DDTHH:MM:SS</code>.
+// Date values received from the server in responses are expected to also be in XML Schema date
+// format - and assumed to be in UTC time unless an explicit timezone offset is specified on
+// the datetime string (EG:<code>2006-01-10T12:22:04-04:00</code>).
+// As with dates, "json" format dataSources use the same XML Schema format by default but may
+// use JavaScript date instantiation strings instead.
+// <P>
+// Fields of type +link{type:FieldType,time} are logical time values. These are stored on the client as
+// JavaScript date objects, but only the time information is displayed to the user.
+// Time formatting is handled by the +link{Time} class APIs. By default times are displayed to users
+// in the display timezone set up via +link{Time.setDefaultDisplayTimezone()} [if not explicitly
+// set, defaults to native browser local time].<br>
+// When communicating with a non SmartClient server via an "xml" DataSource, time field
+// values in requests will be serialized out as full times in UTC using the standard
+// <a target=_blank href="http://www.w3.org/TR/xmlschema-2/#dateTime">XML Schema date / time
+// format</a> - <code>HH:MM:SS</code>. Note that the flag +link{DataSource.serializeTimeAsDatetime}
+// may be set to serialize all times as full datetimes rather than just time strings.
+// Time values received from the server in responses are expected to be in the same format, in UTC,
+// or with an explicit timezone offset specified (for example <code>"22:01:45-01:00"</code>)
+// <P>
+// When communicating with the SmartClient server fields of type <code>date</code>,
+// <code>datetime</code> and <code>time</code> are all automatically translated to Java date objects
+// on the server side. 
+//
+// @title Date and Time Format and Storage
+// @treeLocation Concepts
+// @visibility external
+//<
+
+
 _xmlSerialize : function (name, type, namespace, prefix) {
 	return isc.Comm._xmlValue(name, this.toSchemaDate(), 
-                              type || (this.logicalDate ? "date" : "datetime"), 
+                              type || (this.logicalDate ? "date" : 
+                                        (this.logicalTime &&
+                                        !isc.DataSource.serializeTimeAsDatetime ? "time" : "datetime")), 
                               namespace, prefix);
 },
 
-toSchemaDate : function (logicalDate) {
+// logicalType parameter - option to specify "date" vs "datetime" vs "time" which impacts
+// how this date instance should be serialized out.
+// Alternatively logicalDate / logicalTime attributes may be hung onto the date objet
+// directly.
+// Used by DataSources when serializing dates out
+toSchemaDate : function (logicalType) {
     // logical date values have no meaningful time
-    if (logicalDate || this.logicalDate) {
+    // Note that they also have "no meaningful timezone" - we display native browser locale time
+    // to the user and when we serialize to send to the server we serialize in that same
+    // local timezone.
+    if ((logicalType == "date") || this.logicalDate) {
         return isc.SB.concat(
 			this.getFullYear().stringify(4),
 			"-",
@@ -1017,6 +1257,17 @@ toSchemaDate : function (logicalDate) {
 			this.getDate().stringify(2)
         );
     };
+    
+    // logical times are serialized as truncated schema strings (HH:MM:SS) by default
+    if ((!isc.DataSource || !isc.DataSource.serializeTimeAsDatetime) && 
+        (logicalType == "time" || this.logicalTime))
+    {
+        return isc.SB.concat(
+            this.getUTCHours().stringify(2),":", 
+            this.getUTCMinutes().stringify(2), ":", 
+            this.getUTCSeconds().stringify(2)
+        );
+    }
 
     // represent date time values in UTC
     return isc.SB.concat(
@@ -1207,6 +1458,7 @@ if (!Date.prototype.formatter) Date.prototype.formatter = "toLocaleString"
 
 // set the standard toShortDate() formatter to US Short Date
 if (!Date.prototype._shortFormat) Date.setShortDisplayFormat("toUSShortDate");
+if (!Date.prototype._shortDatetimeFormat) Date.setShortDatetimeDisplayFormat("toUSShortDateTime");
 
 //>	@method		date.iscToLocaleString()   (A)
 // Customizeable toLocaleString() type method.

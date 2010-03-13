@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -142,7 +142,7 @@ _xmlSerialize : function (name, object, prefix, context) {
 	// detect infinite loops by checking if we've seen this object before.
     // disambiguate between true loops vs the same leaf object being encountered twice
     // (such as a simple Array containing two Strings which appears in two spots).  Only
-    // consider this a loop if the preceding occurence of the object was some parent of
+    // consider this a loop if the preceding occurrence of the object was some parent of
     // ours.  
 	var prevPath = isc.JSONEncoder._serialize_alreadyReferenced(context.objRefs, object);
 	if (prevPath != null && context.objPath.contains(prevPath)) {
@@ -311,6 +311,9 @@ _xmlSerializeObject : function (name, object, objPath, objRefs, prefix, isRoot) 
 	for (var key in object) {
 
 		if (key == null) continue;
+
+        
+		if (key == isc.gwtRef) continue;
 
         // XML identifiers can't start with $ (parser crashes)
         if (key.startsWith('$')) continue;

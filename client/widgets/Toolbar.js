@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -396,6 +396,7 @@ setupButtonFocusProperties : function () {
           !focusButton.isVisible() ) && this.buttons.length > 0) 
     {
         this._updateFocusButton(this.members[0])
+        focusButton = this._currentFocusButton;
     }
 
     
@@ -414,6 +415,7 @@ setupButtonFocusProperties : function () {
         if (button != focusButton &&
             (button.tabIndex == null || button._autoTabIndex)) 
         {
+            
             //this.logWarn("updating tab index of: " + button + " to " + defaultTabIndex);
             this._setButtonTabIndex(button, defaultTabIndex)
         }
@@ -422,9 +424,10 @@ setupButtonFocusProperties : function () {
 
 
 _updateFocusButton : function (newFocusButton) {
-
     // Bail if the current focus button was passed in
-    if (this._currentFocusButton == newFocusButton) return;
+    if (this._currentFocusButton == newFocusButton) {
+        return;
+    }
     
     // Update the accessKey for the current focus button unless it has / had an explicitly
     // specified accessKey
@@ -459,7 +462,6 @@ _updateFocusButton : function (newFocusButton) {
             this._setButtonAccessKey(oldFocusButton, null)
         }
     }
-
     this._currentFocusButton = newFocusButton;
 },
 
@@ -472,7 +474,8 @@ _setTabIndex : function (a,b,c,d) {
     if (this.tabWithinToolbar) {
         var buttons = this.getButtons();
         for (var i = 0; i < buttons.length; i++) {
-            if (buttons[i].tabIndex == null || buttons[i]._autoTabIndex) 
+            if (buttons[i].tabIndex == null || buttons[i]._autoTabIndex ||
+                buttons[i]._toolbarManagedTabIndex) 
                 this._setButtonTabIndex(buttons[i], this.getTabIndex())
         }
     // otherwise use _updateFocusButton to update the tab index of the focus button only (other
@@ -541,6 +544,8 @@ setButtons : function (newButtons) {
 
 	// now create actual button widgets
     if (this.buttons == null) this.buttons = [];
+
+    var newMembers = [];
 	for (var i = 0; i < this.buttons.length; i++) {
         var button = this.buttons[i];
 
@@ -549,8 +554,7 @@ setButtons : function (newButtons) {
         // fire itemClick, have associated panes, allow managed resize, etc.
         if (!isc.isA.Canvas(button)) button = this.makeButton(button);
                 
-        // NOTE: use explicit position so that an existing member will be moved
-        this.addMember(button, i);
+        newMembers[newMembers.length] = button;
 
         if (isc.isA.StatefulCanvas(button)) {
             var actionType = button.getActionType();
@@ -573,6 +577,7 @@ setButtons : function (newButtons) {
             }
         }
     }
+    this.addMembers(newMembers, 0);
 
     if (this.canResizeItems) this.setResizeRules();
     // Set up the tab indexes for the buttons, and the accessKey for the focus button
@@ -604,7 +609,11 @@ makeButton : function (button) {
     // be allowed on members and will bubble to the Toolbar
     
     button.canDrag = this.canReorderItems || this.canDragSelectItems || this.canRemoveItems;
-    button.canDragResize = this.canResizeItems;
+
+    // don't override canDragResize to true on the button if it's been explicitly turned off
+    button.canDragResize = (button.canDragResize != null ? 
+        button.canDragResize && this.canResizeItems : this.canResizeItems);
+
     // toolbar allows things to be dropped on it (currently no default behavior for what happens
     // on drop)
     button.canAcceptDrop = this.canAcceptDrop;
@@ -802,7 +811,9 @@ setCanResizeItems : function (canResizeItems) {
     var buttons = this.getButtons();
     if (!buttons) return;
     for (var i = 0; i < buttons.length; i++) {
-        buttons[i].canDragResize = canResizeItems;
+        var item = buttons[i];
+        item.canDragResize = (item.canDragResize != null ? 
+            item.canDragResize && canResizeItems : canResizeItems);
     }
     this.setResizeRules();
 },
@@ -922,7 +933,7 @@ buttonDeselected : function (button) {
 
 
 //>	@method	toolbar.itemClick() ([A])
-//	Called when one of the buttons recieved a click event
+//	Called when one of the buttons receives a click event
 //		@group	event handling
 //		@param	item		(button)		pointer to the button in question
 //		@param	itemNum		(number)		number of the button in question
@@ -1200,7 +1211,7 @@ dragResizeMemberStop : function () {
 	return EH.STOP_BUBBLING;
 },
 
-// resize an item programatically
+// resize an item programmatically
 resizeItem : function (itemNum, newSize) {
     // resize the item
     var item = this.members[itemNum];

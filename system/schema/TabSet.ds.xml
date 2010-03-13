@@ -19,13 +19,13 @@
         <field name="useSimpleTabs"         type="boolean" visibility="internal"/>
         <field name="simpleTabBaseStyle"    type="cssClass" visibility="internal"/>
         
-        <field name="canCloseTabs"  type="boolean" />
+        <field name="canCloseTabs"  type="boolean" basic="true"/>
         <field name="closeTabIcon"  type="string" />
         <field name="destroyPanes" type="boolean" />
 
         <!-- not currently for on the fly setting in vBuilder -->
-		<field name="tabBarPosition"		type="sideEnum" hidden="true"/>
-		<field name="tabBarAlign"			type="sideEnum" hidden="true"/>
+		<field name="tabBarPosition"		type="sideEnum" /> 
+		<field name="tabBarAlign"			type="sideEnum" />
 
 		<field name="tabBarThickness"		type="positiveInteger"/>
 		<field name="selectedTab"			type="positiveInteger"/>

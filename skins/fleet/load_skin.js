@@ -43,6 +43,15 @@ with (theWindow) {
     // button will fall back on the CSS-based Button with this skin
 	isc.ClassFactory.defineClass("IButton", "Button");
 	isc.ClassFactory.defineClass("IAutoFitButton", "AutoFitButton");
+    isc.IButton.markAsFrameworkClass();
+    isc.IAutoFitButton.markAsFrameworkClass();
+
+	
+	// Have IMenuButton be just a synonym for IMenuButton
+	if (isc.MenuButton) {
+	    isc.ClassFactory.defineClass("IMenuButton", "MenuButton");
+	    isc.IMenuButton.markAsFrameworkClass();
+    }
     
 	// ListGrid skinning	
 	if (isc.ListGrid) {										  
@@ -84,6 +93,13 @@ with (theWindow) {
     if (isc.SpinnerItem) {
         isc.SpinnerItem.addProperties({
             textBoxStyle:"comboBoxItem"
+        });
+    }
+    // Native FILE INPUT items are rendered differently in Safari from other browsers
+    // Don't show standard textbox styling around them as it looks odd
+    if (isc.UploadItem && isc.Browser.isSafari) {
+        isc.UploadItem.addProperties({
+            textBoxStyle:"normal"
         });
     }
 

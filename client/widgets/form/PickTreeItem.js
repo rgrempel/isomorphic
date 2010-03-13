@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -119,7 +119,7 @@ isc.PickTreeItem.addProperties({
     
 
     //> @attr PickTreeItem.emptyMenuMessage   (string : "No items to display" : IRA)
-    // This message will be displayed as a singled, disabled option in any empty menu/submenu
+    // This message will be displayed as a single, disabled option in any empty menu/submenu
     // created from this item's data tree.
     // @visibility external
     // @example pickTree
@@ -143,6 +143,8 @@ isc.PickTreeItem.addMethods({
 
         
     },
+    
+    buttonConstructor:"TreeMenuButton",
     
     // Override _createCanvas to set up a TreeMenuButton as this item's canvas
     _createCanvas : function () {
@@ -177,7 +179,7 @@ isc.PickTreeItem.addMethods({
         
         // Use 'addAutoChild' - this will handle applying the various levels of defaults
         this.canvas = this.addAutoChild("button", dynamicButtonProperties, 
-                                        isc.TreeMenuButton, this.container);
+                                        this.buttonConstructor, this.container);
         // set autoDestroy to true so the button gets destroyed when this item gets destroyed
         this.autoDestroy = true;                                        
         this.Super("_createCanvas", arguments);
@@ -298,6 +300,22 @@ isc.PickTreeItem.addMethods({
 
     }
 
+});
+
+
+
+//>	@class	IPickTreeItem
+// Subclass of +link{PickTreeItem} which shows an +link{IMenuButton} rather than a
+// simple +link{MenuButton} as it's main button.
+//
+// @treeLocation Client Reference/Forms/Form Items
+// @visibility external
+//<
+isc.defineClass("IPickTreeItem", "PickTreeItem");
+isc.IPickTreeItem.addProperties({
+        // This is actually ITreeMenuButton. TreeMenuButton and ITreeMenuButton are 
+        // currently unexposed.
+        buttonConstructor:"ITreeMenuButton"
 });
 
 }

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -731,7 +731,21 @@ isc.EventHandler.addClassProperties(
 	
     
 
-    
+    //>PluginBridges
+    // if there are backMask-requring elements on the page, should we show/hide the backMask on the
+    // dragMoveTarget on intersect or just show it all the time?
+    //
+    // Running intersection tests on every dragMove is expensive, so this is disabled.  Note
+    // however, that these intersection tests are required to force correct repainting of
+    // Applets obscured by drag and drop in realtime.  But that only happens on older JDKs and
+    // can greatly slow down the browser.  See notes in Applet.repaintOnDragStop() for more info.
+    dynamicBackMask: false,
+
+    // don't bother to compute what may require backmasking, just always show the backMask.
+    // Also useful if the page contains items that require backmasking but that SmartClient
+    // doesn't know about - e.g custom iframes.
+    alwaysBackMask: false,
+    //<PluginBridges
 
     //>	@classAttr	isc.EventHandler.dragTrackerDefaults (object literal : _lookup_ : IA)
 	//		Default properties for the drag tracker.
@@ -868,6 +882,40 @@ handleUnload : function (DOMevent) {
 	return result;
 },
 
+//> @groupDef keyboardEvents
+// SmartClient allows keybaord events to be captured at the page level via 
+// +link{isc.Page.registerKey()} or +link{Page.setEvent()} or at the widget level
+// via +link{canvas.keyDown()}, +link{canvas.keyPress()}, and +link{canvas.keyUp}.
+// <P>
+// Details about the key events can be retrieved via static methods on the EventHandler class
+// including +link{isc.EventHandler.getKey()}, +link{isc.EventHandler.getKeyEventCharacter()} and
+// +link{isc.EventHandler.getKeyEventCharacterValue()}.
+// <P>
+// As with other SmartClient event handling code, returning <code>false</code> will suppress the
+// default native browser behavior.<br>
+// <b>Note:</b> browsers do not allow cancellation of some keys' default behaviors.
+// These cases vary by browser, and wherever native cancellation is supported, returning false
+// from your event handler should be sufficient to suppress the behavior.
+// <br>
+// Some specific cases where default behavior cancellation is not always possible include:
+// <ul><li>Some function keys (<code>f1, f3, f5,</code> etc) which trigger native browser behavior.
+//         [These can be suppressed in Internet Explorer and Mozilla Firefox but not in some other
+//          browsers such as Safari / Chrome, etc]</li>
+//     <li>Some accelerator key combos such as <code>Alt+f3</code></li>
+//     <li>The "Meta" key (the <code>Windows</code> / <code>Apple</code> key to show OS level menu)
+//     </li>
+// </ul>
+// If you do want to include functionality for these keys in your application, we'd recommend 
+// testing against your expected users' browser types. It is also worth considering whether by
+// changing the functionality of these standard browser keys you may provide an unexpected 
+// user experience (for example a user may press "f5" in an attempt to reload the application
+// and be surprised by this triggering some alternative functionality in your application).
+//
+// @treeLocation Concepts
+// @visibility external
+// @title Keyboard Events
+//<
+
 
 
 
@@ -879,7 +927,7 @@ handleUnload : function (DOMevent) {
 // called directly by DOM
 _$f10:"f10",
 _$Escape:"Escape",
-_handleNativeKeyDown : function (DOMevent) {
+_handleNativeKeyDown : function (DOMevent, fromOnHelp) {
 	// Some browsers (like Mac IE) have problems dealing with events fired before the page finishes loading.
 	//	Just skip key event processing if the page hasn't loaded yet.
     //!DONTCOMBINE
@@ -897,7 +945,11 @@ _handleNativeKeyDown : function (DOMevent) {
     
     // Get the details of the event (stored in EH.lastEvent)
     EH.getKeyEventProperties(DOMevent);
-    
+
+    if (isc.Browser.isIE && lastEvent.keyName == this._$f1 && !fromOnHelp) {
+        
+        return;
+    }
     
     var syntheticKeypressFired = false,
         returnVal = true;
@@ -907,8 +959,9 @@ _handleNativeKeyDown : function (DOMevent) {
         syntheticKeypressFired = true;
         
         
-    } else returnVal = EH.handleKeyDown(DOMevent);
-
+    } else {
+        returnVal = EH.handleKeyDown(DOMevent);
+    }
     
     EH._keyDownKeyName = lastEvent.keyName;
             
@@ -920,8 +973,10 @@ _handleNativeKeyDown : function (DOMevent) {
        ) 
     {
         returnVal = EH.handleKeyPress(DOMevent);
-    }    
-
+    }
+    if (returnVal == false) {
+        this.cancelKeyEvent(DOMevent);
+    }
     return returnVal;
 },
 
@@ -989,7 +1044,10 @@ _handleNativeKeyUp : function (DOMevent) {
         
     
     if (EH._keyDownKeyName == EH.lastEvent.keyName) {
-        if (EH.handleKeyPress(DOMevent) == false) return false;
+        if (EH.handleKeyPress(DOMevent) == false) {
+            this.cancelKeyEvent(DOMevent);
+            return false;
+        }
     }
     
     var returnVal = EH.handleKeyUp(DOMevent)
@@ -1070,7 +1128,31 @@ _handleNativeKeyPress : function (DOMevent) {
     
         
     var returnVal = EH.handleKeyPress(DOMevent);
+    if (returnVal == false) {
+        this.cancelKeyEvent(DOMevent);
+    }
     return returnVal;
+
+},
+
+// cancelKeyEvent
+// Fired when a key event handler returns false
+// We use this to suppress native key event handling behavior where returning false from 
+// the native event isn't sufficient.
+
+_IECanSetKeyCode:{keydown:true,  keyup:true, keypress:true},
+cancelKeyEvent : function (DOMevent) {
+    
+    
+    if (isc.Browser.isIE || isc.Browser.isSafari) {
+        if (this._IECanSetKeyCode[DOMevent.type]) {
+            
+            try {
+                DOMevent.keyCode = 0;
+            } catch (e) {
+            }
+        }
+    }
 
 },
 
@@ -1098,7 +1180,6 @@ handleKeyPress : function (nativeEvent, scEventProperties) {
 
 	// call the global keyPress event (Set up via Page.setEvent("keyPress",...) )
 	if (isc.Page.handleEvent(lastEvent.keyTarget, eventType) == false) return false;
-    
     // If eventHandledNatively returns true don't fire widget level handlers, or allow 
     // registered keys to fire their actions.
 	// NOTE: in IE, this will return the key number so we pass that value on
@@ -2124,6 +2205,8 @@ handleClick : function (target, eventType) {
         returnVal = false;
 
     // don't fire click if the Canvas target changed between mouseDown and mouseUp
+    // or when the target is the body of a menu (otherwise the menu will not register the click
+    // when the menu is within a window)
     } else if (!EH.stillWithinMouseDownTarget()) {
         returnVal = false;
         
@@ -2621,7 +2704,59 @@ handleDragStart : function (){
 	}
 
 
+    //>PluginBridges
     
+    var backmaskTarget = EH.dragMoveTarget ? EH.dragMoveTarget : EH.dragTarget;
+    if ((isc.Browser.isIE || isc.Browser.isMoz) && EH.dragAppearance != EH.OUTLINE
+        // already backmasked or should never be backMasked
+        && !(backmaskTarget._isBackMask || backmaskTarget.neverBackMask)) 
+    {
+        if (EH.alwaysBackMask) {
+            this._showBackMask(backmaskTarget);
+        } else {            
+            var burnThroughElements = [];
+
+            
+            if (isc.BrowserPlugin) {
+                var pluginInstances = isc.BrowserPlugin.instances;
+                for (var i = 0; i < pluginInstances.length; i++) {
+                    var pluginInstance = pluginInstances[i];
+                    if (pluginInstance.isVisible()
+                        && (backmaskTarget.parentElement == null    
+                            || backmaskTarget.parentElement.contains(pluginInstance, true)))
+                    {
+                        burnThroughElements.add({instance: pluginInstance, 
+                                                 rect: pluginInstance.getPageRect()});
+                    }
+                }
+            }
+    
+            
+            if (isc.Browser.isIE && isc.Browser.minorVersion >= 5.5 && isc.NativeSelectItem) {
+                var selectItems = isc.NativeSelectItem.instances;
+                for (var i = 0; i < selectItems.length; i++) {
+                    var selectItem = selectItems[i];
+                    if (selectItem.isVisible() 
+                        && (backmaskTarget.parentElement == null 
+                            || backmaskTarget.parentElement.contains(selectItem.containerWidget, true)))
+                    {
+                        burnThroughElements.add({instance: selectItem, rect: selectItem.getPageRect()});
+                    }
+                }
+            }
+
+            // if dynamicBackMask is false and we have elements that we could intersect with that
+            // require backMasking, just show the backMask
+            if(burnThroughElements.length > 0 && EH.dynamicBackMask === false) 
+            {
+                this._showBackMask(backmaskTarget);
+            } else {
+                // set up the cache so that handleDragMove can do fast intersect tests
+                EH._burnThroughElementsCache = burnThroughElements;
+            }
+        }
+    }
+    //<PluginBridges
 
     
 	EH.showEventMasks((EH.dragOperation == EH.DRAG_RESIZE));
@@ -2731,7 +2866,39 @@ handleDragMove : function () {
 	EH.dropTarget = EH.getDropTarget(event);
     isc._useBoxShortcut = false;
     
+    //>PluginBridges
     
+
+    if (EH._burnThroughElementsCache && EH.dynamicBackMask) {
+        var showBackMask = false;    
+        var backmaskTarget = EH.dragMoveTarget ? EH.dragMoveTarget : EH.dragTarget;
+        var backmaskTargetRect = backmaskTarget.getRect();
+
+        for (var i = 0; i < EH._burnThroughElementsCache.length; i++) {
+            var burnThroughElement = EH._burnThroughElementsCache[i];
+            if (isc.Canvas.rectsIntersect(burnThroughElement.rect, backmaskTargetRect)) 
+            {
+                EH._lastBurnThroughElement = burnThroughElement.instance;
+                showBackMask = true;
+                break;
+            }
+        }
+
+        // Applet/IFrame layering workaround - see doc in Applet.repaintIfRequired()
+        if (EH._lastBurnThroughElement) {
+            if (EH._lastBurnThroughElement.repaintIfRequired) EH._lastBurnThroughElement.repaintIfRequired();
+        }
+
+        if (showBackMask) {
+            this._showBackMask(backmaskTarget);
+        } else {
+            this._hideBackMask(backmaskTarget);
+            delete EH._lastBurnThroughElement;
+        }
+    } else if (isc.BrowserPlugin) {
+        isc.BrowserPlugin.handleDragMoveNotify();
+    }
+    //<PluginBridges
 
 	// if a dragMoveAction has been set, call it now
 	if (EH.dragMoveAction) EH.dragMoveAction();
@@ -2886,7 +3053,12 @@ handleDragStop : function () {
         delete this.dragTracker;
     }
 
-    
+    //>PluginBridges
+    var backmaskTarget = EH.dragMoveTarget ? EH.dragMoveTarget : EH.dragTarget;
+    this._hideBackMask(backmaskTarget);
+
+    if (EH._burnThroughElementsCache) delete EH._burnThroughElementsCache;
+    //<PluginBridges
 
 	// if there is a dropTarget, 
     var dropTarget = EH.dropTarget;
@@ -3758,14 +3930,24 @@ bubbleEvent : function (target, eventType, eventInfo, targetIsMasked) {
     while (target) {
         // never fire an event for a destroyed widget
         if (target.destroyed) break;
+        var nextTarget = null;
 
 		// go up the eventParent or parentElement chain, using an eventProxy if one is defined
         // NOTE: calculate the next target here, because parent hierarchy might change during
         // event handling (eg clear() self when tearing off from a Layout), but the former
         // parent should still receive the event that happened within it.
         
-		var nextTarget = (target.eventParent || target.parentElement);
+        // Allow only key events or only mouse events to be bubbled up the control heirarchy
+        // by specifying keyEventParent or mouseEventParent respectively.
+        if (target.mouseEventParent && eventType.startsWith("mouse")) {
+            nextTarget = target.mouseEventParent;
+        } else if (target.keyEventParent && eventType.startsWith("key")) {
+            nextTarget = target.keyEventParent;    
+        } else {
+            nextTarget = (target.eventParent || target.parentElement);
+        }
 		if (nextTarget && nextTarget.eventProxy) nextTarget = nextTarget.eventProxy;
+
 
         if (target[eventHandlerName] != null) {
             method = eventHandlerName;
@@ -3833,6 +4015,7 @@ bubbleEvent : function (target, eventType, eventInfo, targetIsMasked) {
             }
 		}
 
+        
         if (target.bubbleEvents == false ||
             (target.bubbleMouseEvents == false && EH.isMouseEvent(eventType))) 
         {
@@ -3842,6 +4025,16 @@ bubbleEvent : function (target, eventType, eventInfo, targetIsMasked) {
                               "' which does not allow bubbling");
             }
             return true;
+        } else if (isc.isAn.Array(target.bubbleMouseEvents)) {
+            // target.bubbleMouseEvents is an array of event-names to suppress bubbling for
+            if (target.bubbleMouseEvents.contains(eventType)) {
+                if (logBubble) {
+                    this.logDebug("Bubbling for event '" + eventType + 
+                                  "' stopped by '" + target + 
+                                  "' which does not allow bubbling");
+                }
+                return true;
+            }
         }
 
         target = nextTarget;
@@ -3998,6 +4191,29 @@ handleSelectionChange : function (event) {
     
     // We could return false here to cancel the selection change 
     return true;
+},
+
+// native "onhelp" event - IE only
+// This occurs when the user hits the f1 key and appears to be the only way to 
+// cancel the native help dialog in response to f1 keypress in IE
+// Handle this event by firing a synthetic keyPress event, allowing the user to return false
+// and suppress the native behavior
+
+handleNativeHelp : function () {
+    
+    // call any native handler that we may have clobbered (manually for speed)
+    
+    if (this._documentOnHelp) {
+        if (this._documentOnHelp() == false) return false;
+    }
+    if (this._windowOnHelp) {
+        if (this._windowOnHelp() == false) return false;
+    }
+    
+    // allow 'handleNativeKeyDown' to actually fire developer defined keyDown and keyPress
+    // handlers, and if they return false, we'll return false here, killing the native onhelp 
+    // behavior.
+    return isc.EH._handleNativeKeyDown(window.event, true);
 },
 
 // native ondragstart (IE only event).
@@ -4691,13 +4907,22 @@ captureEvents : function (wd) {
         this.captureEvent(document, "onkeydown", EH.KEY_DOWN, EH._handleNativeKeyDown);
         this.captureEvent(document, "onkeypress", EH.KEY_PRESS, EH._handleNativeKeyPress);
         this.captureEvent(document, "onkeyup", EH.KEY_UP, EH._handleNativeKeyUp);
+        
 	}
 	
-	// for IE only, capture the 'ondragstart' event
+	// IE specific events
 	if (isc.Browser.isIE) {
+        // ondragStart
         this._windowDragStart = wd.ondragstart;
         this._documentDragStart = document.ondragstart;
         document.ondragstart = wd.ondragstart = EH.handleNativeDragStart;
+        
+        // onhelp (invoked from f1 keypress only). See comments about keypress handling/cancelling
+        // native behavior for why we capture this.
+        this._windowOnHelp = wd.onhelp;
+        this._documentOnHelp = document.onhelp;
+        document.onhelp = wd.onhelp = EH.handleNativeHelp;
+        
         
 	}
     
@@ -4735,7 +4960,9 @@ releaseEvents : function (wd) {
     // special case for ondragstart which never went through captureEvents and got added to
     // our _documentEventHandlers map
     if (isc.Browser.isIE) {
-        document.ondragstart = null;
+        document.ondragstart = wd.onhelp =null;
+        // ditto for onhelp
+        document.onhelp = wd.onhelp = null;
     }
     
     delete this._documentEventHandlers;
@@ -4960,12 +5187,10 @@ useSyntheticRightButtonEvents : function () {
 //>	@classMethod	isc.EventHandler.getKeyEventCharacterValue()
 //          Returns the numeric characterValue reported by the browser.
 //          Only available on keyPress events, and only for character (or ascii control) keys
-//
-//		@group	keyboardEvents
-//		@param	[event]	(SC Event)  Event to get character value for.
-//                                  Default is to use isc.EventHandler.lastEvent.
-//		@return			(number)	ASCII number for the key pressed	
-//  @visibility eventhandler
+// @return (integer) Numeric character value reported by the browser 
+//                  (ASCII value of the key pressed)
+// @group	keyboardEvents
+//  @visibility external
 //<
 getKeyEventCharacterValue : function (event) {
 	return (event || this.lastEvent).characterValue;
@@ -4973,13 +5198,11 @@ getKeyEventCharacterValue : function (event) {
 
 //>	@classMethod	isc.EventHandler.getKeyEventCharacter()
 //			Return the character for the current key being pressed.
-//			Note that this is only set reliably for keyboard events.
-//                                  
+//			Note that this is only set reliably for keyPress events on character keys.
+//                  
+// @return (string) Character the user entered. May be null for non-character keys. 
 //		@group	keyboardEvents
-//		@param	[event]	(SC Event)  Event to return character from.
-//                                  Default is to use isc.EventHandler.lastEvent.
-//		@return			(char)		Key character
-//      @visibility eventhandler
+//      @visibility external
 //<
 getKeyEventCharacter : function (event) {
 	return String.fromCharCode(this.getKeyEventCharacterValue(event));
@@ -5368,13 +5591,17 @@ _determineKeyEventCharacterValue : function (DOMevent) {
      }
      return (DOMevent.which || DOMevent.keyCode || null);
 },
-
+_$f1:"f1",
+_$help:"help",
 determineEventKeyName : function(DOMevent) {
     if (DOMevent == null) return;
     var keyCode = DOMevent.keyCode,
         which = DOMevent.which,
         EH = isc.EH,
         type = EH.getKeyEventType(DOMevent.type);
+    
+    // In IE we get have an onhelp handler tripped by f1 keypress only
+    if (DOMevent.type == this._$help) return this._$f1;
         
     //this.logWarn("determineEventKeyName(): key properties to determine event: " +
     //             "keyCode:" + keyCode + 
@@ -5435,7 +5662,13 @@ determineEventKeyName : function(DOMevent) {
         if (code != null && code != 0) {        
             
             if (this.getWindow().event.ctrlKey) {
-                return (isc.EH._charsetValueToKeyNameMap[code] || isc.EH._getKeyNameFromCtrlCharValue(code));
+                var keyName = isc.EH._charsetValueToKeyNameMap[code];
+                if (keyName == null) {
+                    
+                    if (code == 10) keyName = "Enter";
+                    else keyName = isc.EH._getKeyNameFromCtrlCharValue(code);
+                }
+                return keyName;
             }
 
             
@@ -6240,7 +6473,17 @@ hideClickMask : function (ID) {
             if (delayedFocus) {     
                 this._delayedFocusTarget = focusCanvas;
             } else {
-                focusCanvas.focus();
+                // We've seen an "Unexpeced call to method or property access with the
+                // following stack in IE:
+                // Canvas.setFocus(_1=>true) Canvas.focus()
+                // EventHandler?.hideClickMask(_1=>"isc_globalPrompt") 
+                // Canvas.hideClickMask(_1=>undef) Window.clear(_1=>undef, _2=>undef, _3=>undef, _4=>undef) [a]Dialog.clearMessage() anonymous()           
+                // RPCManager.doClearPrompt(_1=>Obj) RPCManager.$528(_1=>23) 
+                //
+                // so encase in try/catch block
+                try {
+                    focusCanvas.focus();
+                } catch (e) {}
             }
         }
     }

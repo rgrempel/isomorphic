@@ -1,7 +1,7 @@
 <DataSource ID="MasterDetail"   inheritsFrom="VLayout"  Constructor="MasterDetail">
 	<fields>
         <field name="detailDataSource" type="DataSource"/>
-        <field name="dataSource" type="DataSource" inapplicable="false" hidden="false"/>
+        <field name="dataSource" type="DataSource" inapplicable="false" hidden="false" idAllowed="true"/>
         
         <!-- mark superclass fields as not relevant -->
         <field name="children" inapplicable="true"/>

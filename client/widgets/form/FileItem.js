@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -143,6 +143,7 @@ isc.FileItem.addProperties({
     
     _createCanvas : function () {
         this.canvas = isc.DynamicForm.create({
+            
             autoDraw:false,
             // suppress redraws as much as possible - redraw == killing the item value.
             _redrawWithParent:false,
@@ -156,7 +157,9 @@ isc.FileItem.addProperties({
                 return this.Super("getSaveOperationType", arguments);
             },
             items:[
-                {targetItem:this, type:"upload", name:this.getFieldName(), showTitle:false,
+            {targetItem:this, type:"upload", 
+                width:this.width, height:this.height,
+                name:this.getFieldName(), showTitle:false,
                     saveValue : function (a,b,c,d) {
                         this.Super("saveValue", arguments);
                         this.targetItem.saveValue(a,b,c,d);
@@ -184,5 +187,18 @@ isc.FileItem.addProperties({
             this.logWarn("Cannot programatically set the value of an upload field due to security restraints");
             return;        
         } 
+    },
+    
+    setWidth : function (width) {
+        if (this.canvas) {
+            this.canvas.items[0].setWidth(width);
+        }
+        this.Super("setWidth", arguments);
+    },
+    setHeight : function (height) {
+        if (this.canvas) {
+            this.canvas.items[0].setHeight(height);
+        }
+        this.Super("setHeight", arguments);
     }
 });

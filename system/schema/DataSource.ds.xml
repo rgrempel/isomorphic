@@ -117,6 +117,14 @@ Validator.ds.xml
         <useLocalValidators type="boolean"/>
         <autoDeriveTitles type="boolean"/>
         <qualifyColumnNames type="boolean"/>
+        <validateRelatedRecords type="boolean"/>
+
+        <!-- Security -->
+        <requiresAuthentication type="boolean"/>
+        <requiresRoles type="boolean"/>
+        <requires type="string" />
+        <!-- Return results in a Javabean instead of a map (SQL DataSources only) -->
+        <beanClassName type="string"/>
         
     </fields>
 </Object>

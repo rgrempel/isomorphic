@@ -77,6 +77,11 @@
     background-color:#FFFFD0; border:1px solid #808080; padding:5px;
 }
 
+/* group label */
+.groupLabel {
+    font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black;
+    padding-left:5px; padding-right:5px;
+}
 /*============================================================
     2) Button
 		button.baseStyle
@@ -669,36 +674,56 @@
 /*------------------------------------------------------------
 		listGrid.baseStyle
 ------------------------------------------------------------*/
-.cell {
+     
+.cell,
+.specialCol,
+.gridSummaryCell {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black; background-color:#FFFFFF;
     text-overflow:ellipsis;
     border-top:1px solid white;
     border-bottom:1px solid white;
 }
+.specialCol {
+    font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black; background-color:#EEEEEE;
+    text-overflow:ellipsis;
+    border-top:1px solid #E0E0E0;
+    border-bottom:1px solid #E0E0E0;
+}
+.specialColOver,
 .cellOver {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black; background-color:#EFEFEF;
     text-overflow:ellipsis;
     border-top:1px solid #CFCFCF;
     border-bottom:1px solid #8F8F8F;
 }
+.specialColSelected,
 .cellSelected {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black; background-color:#A9B2CA;
     text-overflow:ellipsis;
     border-top:1px solid #A9B2CA;
     border-bottom:1px solid #A9B2CA;
 }
+.specialColSelectedOver,
 .cellSelectedOver {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black; background-color:#99A2BA;
     text-overflow:ellipsis;
     border-top:1px solid #79829A;
     border-bottom:1px solid #59627A;
 }
-.cellDisabled {
+.cellDisabled, 
+.specialColDisabled,
+.gridSummaryCellDisabled {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:#666666;
     background-color:#FFFFFF; text-overflow:ellipsis;
     border-top:1px solid #FFFFFF;
     border-bottom:1px solid #FFFFFF;
 }
+
+.gridSummaryCell,
+.gridSummaryCellDisabled {
+    font-weight:bold
+}
+
 /* Styles for ListGrid cells (alternate color bands) */
 .cellDark {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black; background-color:#EEEEEE;
@@ -744,6 +769,10 @@
     padding: 3px; 
 }
 
+/* Multi-sort - sort-index appearing next to sort-arrows in field headers */
+.sortNumeral {
+    font-size:7px
+}
 
 /*============================================================
 	12) ToolStrip
@@ -1445,6 +1474,7 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 .calMonthOtherDayBlankOverDark {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
     color:#444444;
+    border-bottom:1px solid #a0a0a0; border-right:1px solid #a0a0a0;
     background-color: #E6E6E6;
 }
 

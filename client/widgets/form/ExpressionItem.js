@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -85,10 +85,11 @@ isc.ExpressionItem.addMethods({
                 item._updateValue(binding);
             }
         });
-        menu.moveTo(this.getIconLeft(this.icons[1]) + this.actionIconWidth,
-                    this.getIconTop(this.icons[1]) + this.actionIconHeight
-                    - this.containerWidget.getScrollTop());
+        // Need to draw the menu first or placeNear() might not have the correct dimensions
         menu.show();
+        var iconRect = this.getIconPageRect(this.icons[1]); 
+        menu.placeNear(iconRect[0] + this.actionIconWidth, 
+                       iconRect[1] + this.actionIconHeight - this.containerWidget.getScrollTop());
     }
 
     

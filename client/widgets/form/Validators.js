@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -28,8 +28,8 @@
 // property.  Validators that need not be run on the server can also be specified for a
 // specific +link{class:FormItem} or +link{class:ListGridField}.
 // <p>
-// ISC supports a powerful library of +link{class:ValidatorTypes} which have identical behavior
-// on both the client and the server.  
+// SmartClient supports a powerful library of +link{type:ValidatorType,ValidatorTypes} which
+// have identical behavior on both the client and the server.  
 // <p> 
 // Beyond this, custom validators can be defined on the client and custom validation logic
 // added on the server.  Note that the <code>regexp</code> and <code>mask</code> validator
@@ -39,21 +39,43 @@
 // Custom validators can be reused on the client by adding them to the global validator list,
 // via the +link{classMethod:Validator.addValidator()} method.
 //
+// @serverDS allowed
 // @visibility external
-// @see ValidatorTypes
+// @see ValidatorType
 // @treeLocation Client Reference/Forms
 //<
  
-//> @attr validator.type                       (ValidatorTypes : null : [IR])
+//> @attr validator.type (ValidatorType : null : IR)
 // Type of the validator.
 // <p>
-// This can be one of the built-in +link{class:ValidatorTypes}, or the string "custom" to define
-// a custom validator.
+// This can be one of the built-in +link{type:ValidatorType}, the string "custom" to define
+// a custom validator, or the string "serverCustom" to define a server-only custom validator.
+//
+// @serverDS allowed
 // @visibility external
 //<
 
+//> @attr validator.applyWhen (AdvancedCriteria : null : IRA)
+// Used to create a conditional validator based on +link{AdvancedCriteria,criteria}.
+// The criteria defines when the validator applies. The form current values or ListGrid record
+// is used as reference for the criteria. If the criteria matches the validator will be
+// processed. Otherwise the validator is skipped and assumed valid.
+// <p>
+// To use an <code>applyWhen</code> criteria the form or grid must use a +link{DataSource}.
+// @serverDS allowed
+// @visibility external
+//<
+
+//> @attr validator.dependentFields (Array of String : null : IRA)
+// User-defined list of fields on which this validator depends. Primarily used for validators
+// of type "custom" but can also be used to supplement +link{validator.applyWhen} criteria.
+// @serverDS allow
+// @visibility external
+// @see validator.applyWhen
+//<
+
 //> @method validator.condition() 
-// For a validator that is not one of the built-in +link{class:ValidatorTypes}, a function or
+// For a validator that is not a built-in +link{type:ValidatorType}, a function or
 // String expression to evaluate to see if this validator passes or fails.
 // <p>
 // Because the validator declaration itself is passed as a parameter to
@@ -76,24 +98,106 @@
 // @param validator (Validator) Validator declaration from eg
 //                              +link{DataSourceField.validators}.
 // @param value     (any)       value to validate
+// @param record (object) Field values for record being validated.
 // @return (boolean) whether the value passed validation.  True for passed, false for fail.
 //                              
 //
+// @serverDS allowed
 // @visibility external
 //<
 
 
+//> @attr validator.serverCondition (VelocityExpression : null : IR)
+// For validators of type "serverCustom" only: an expression in the Velocity Template Language
+// that will run on the server.  see +link{group:velocitySupport} for an overview of Velocity
+// support within SmartClient.
+// <P>
+// Server-side custom validators have the following variables available:
+// <ul>
+// <li><b>dataSources</b> - The list of all DataSources, accessible by name (so, for example, 
+//     <code>$dataSources.supplyItem</code> refers to the <code>supplyItem</code> DataSource
+//     object).</li>
+// <li><b>dataSource</b> - The current DataSource</li>
+// <li><b>record</b> - The DataSource record being validated, if available</li>
+// <li><b>value</b> - The value of the field</li>
+// <li><b>validator</b> - The config of this validator, presented as a <code>Map</code></li>
+// <li><b>field</b> - The field (as a <code>DSField</code> object)</li>
+// <li><b>util</b> - A <code>com.isomorphic.util.DataTools</code> object, giving you access to
+//               all of that class's useful helper functions</li>
+// </ul>
+// Server-side custom validators also have access to the standard set of context variables that
+// come from the Servlet API.  However, be aware that if you write conditions that depend upon 
+// these variables, you preclude your Validator from being used in the widest possible variety 
+// of circumstances; for example, in a command-line process.  Rather, it will be tied to 
+// operating in the context of, say, an <code>HttpSession</code>.  
+// <P>
+// Given the above caveat, the following context variables are also available:
+// <ul>
+// <li><b>servletRequest</b> - The associated <code>HttpServletRequest</code></li>
+// <li><b>session</b> - The associated <code>HttpSession</code></li>
+// <li><b>httpParameters</b> - This variable gives you access to the parameters <code>Map</code>
+//         of the associated <code>HttpServletRequest</code>; it is an alternate form of 
+//         <code>$servletRequest.getParameter</code></li>
+// <li><b>requestAttributes</b> - This variable gives you access to the attributes <code>Map</code> 
+//         of the associated <code>HttpServletRequest</code>; it is an alternate form of 
+//         <code>$servletRequest.getAttribute</code></li>
+// <li><b>sessionAttributes</b> - This variable gives you access to the attributes <code>Map</code> 
+//         of the associated <code>HttpSession</code>; it is an alternate form of 
+//         <code>$session.getAttribute</code></li>
+// </ul>
+//
+// @serverDS only
+// @visibility external
+// @example velocityValidation
+//<
 
-//> @attr validator.errorMessage               (errorMessage : null : [IR])
+//> @attr validator.serverObject (ServerObject : null : IR)
+// For validators of type "serverCustom" only, a +link{ServerObject} declaration that allows
+// the SmartClient Server to find a Java class via a variety of possible approaches, and call a
+// method on it to perform validation.
+// <P>
+// The target object must implement a method whose first 4 arguments are:
+// <code>
+//    Object value, Map validationDefinition, String fieldName, Map record
+// </code><p>
+// You provide the name of the method to call by specifying 
+// +link{serverObject.methodName,methodName}
+// as part of the serverObject declaration.  If you do not specify a methodName, SmartClient 
+// expects to find a compliant method called "condition".
+// <P>
+// Additional arguments may be declared and are automatically supplied based on the declared
+// argument type, via +link{DMI}.  Available objects include:
+// <ul>
+// <li><b>DataSource</b> - the DataSource where this validator is declared, an instance of
+//                         com.isomorphic.datasource.DataSource or a subclass</li>
+// <li><b>HttpServletRequest</b> - from standard Java servlets API</li>
+// <li><b>HttpServletResponse</b> - from standard Java servlets API</li>
+// <li><b>ServletContext</b> - from standard Java servlets API</li>
+// <li><b>HttpSession</b> - from standard Java servlets API</li>
+// <li><b>RequestContext</b> - an instance of com.isomorphic.servlet.RequestContext</li>
+// <li><b>RPCManager</b> - the RPCManager associated with the transaction this validation is 
+//                         part of; an instance of com.isomorphic.rpc.RPCManager</li>
+// </ul>
+// Note that any servlet-related objects will not be available if your validator is run outside
+// of the scope of an HTTP servlet request, such as a command-line process.
+//
+// @serverDS only
+// @visibility external
+// @example dmiValidation
+//<
+
+
+//> @attr validator.errorMessage               (String : null : [IR])
 // Text to display if the value does not pass this validation check.
 // <P>
 // If unspecified, default error messages exist for all built-in validators, and a generic
 // message will be used for a custom validator that is not passed.
+// @serverDS allowed
 // @visibility external
 // @example conditionallyRequired
 //<
 
-//> @attr validator.stopIfFalse                (boolean : false : [IR])
+//> @attr validator.stopIfFalse (boolean : false : IR)
 // Normally, all validators defined for a field will be run even if one of the validators has
 // already failed.  However, if <code>stopIfFalse</code> is set, validation will not proceed
 // beyond this validator if the check fails.
@@ -102,20 +206,317 @@
 // custom validators that don't need to be robust about handling every conceivable type of
 // value.
 // 
+// @serverDS allowed
 // @visibility external
 //<
 
-//> @attr validator.clientOnly                 (boolean : false : [IR])
+//> @attr validator.stopOnError (boolean : null : IR)
+// Indicates that if this validator is not passed, the user should not be allowed to exit
+// the field - focus will be forced back into the field until the error is corrected.
+// <p>
+// This property defaults to +link{FormItem.stopOnError} if unset.
+// <p>
+// Enabling this property also implies +link{FormItem.validateOnExit} is automatically
+// enabled. If this is a server-based validator, setting this property also implies that
+// +link{FormItem.synchronousValidation} is forced on.
+// 
+// @serverDS allowed
+// @visibility external
+//<
+
+//> @attr validator.clientOnly (boolean : false : IR)
 // Indicates this validator runs on the client only.
 // <p>
 // Normally, if the server is trying to run validators and finds a validator that it can't
 // execute, for safety reasons validation is considered to have failed.  Use this flag to
 // explicitly mark a validator that only needs to run on the client.  
 // 
+// @serverDS allowed
+// @visibility external
+//<
+
+//> @attr validator.validateOnChange (boolean : null : IRW)
+// If true, validator will be validated when each item's "change" handler is fired
+// as well as when the entire form is submitted or validated. If false, this validator
+// will not fire on the item's "change" handler.
+// <p>
+// Note that this property can also be set at the form/grid or field level;
+// If true at any level and not explicitly false on the validator, the validator will be
+// fired on change - displaying errors and rejecting the change on validation failure.
+// 
+// @serverDS allowed
 // @visibility external
 //<
 
 
+
+
+//> @object validatorDefinition
+// Validator definition for a built-in +link{Validator.type}. 
+//
+// @treeLocation Client Reference/Forms/Validator
+// @visibility external
+//<
+
+//> @attr validatorDefinition.type (string : null : IR)
+// Type of the validator unique in +link{type:ValidatorType}.
+//
+// @visibility external
+//<
+//> @attr validatorDefinition.title (string : null : IR)
+// Descriptive name of the validator.
+//
+// @visibility external
+//<
+//> @attr validatorDefinition.requiresServer (boolean : false : IR)
+// Does this validator only run server-side?
+//
+// @visibility external
+//<
+
+//> @attr validatorDefinition.defaultErrorMessage (string : null : IR)
+// Default error message to be shown when validator fails validation. Can be overridden
+// for an individual validator by setting +link{validator.errorMessage}.
+//
+// @visibility external
+//<
+
+//> @method validatorDefinition.condition() 
+// Method invoked to perform the actual validation of a value.
+// <p>
+// Because the validator itself is passed as a parameter to
+// <code>condition()</code>, you can effectively parameterize the validator.  For example, to
+// create a validator that checks that the value is after a certain date:<pre> 
+//     { type:"custom", afterDate:new Date(), 
+//       condition:"value.getTime() > validator.afterDate.getTime()" }
+// </pre>
+// Note that, if a field is declared with a builtin +link{type:FieldType}, the value passed in
+// will already have been converted to the specified type, if possible.
+//
+// @param item (DataSourceField or FormItem) FormItem or DataSourceField on which this
+//                                           validator was declared.  NOTE: FormItem will not
+//                                           be available during a save performed without a
+//                                           form (eg programmatic save) or if the field 
+//                                           is not available in the form.
+// @param validator (Validator) Validator declaration from eg
+//                              +link{DataSourceField.validators}.
+// @param value     (any)       value to validate
+// @param record    (object)    Field values for record being validated.
+// @return (boolean) whether the value passed validation.  True for passed, false for fail.
+//
+// @serverDS allowed
+// @visibility external
+//<
+
+//> @method validatorDefinition.action
+// This method is called after every validation (i.e. call to
+// +link{validatorDefinition.condition}) whether it passed or failed. This allows the
+// validator perform an operation on the field based on the validation outcome.
+// <p>
+// An <code>action()</code> method is not needed to report an error message only.
+//
+// @param result    (boolean)   The result of the validator. The value will be null if
+//                              the validator was skipped because of conditional criteria.
+// @param item (DataSourceField or FormItem) FormItem or DataSourceField on which this
+//                                           validator was declared.  NOTE: FormItem will not
+//                                           be available during a save performed without a
+//                                           form (eg programmatic save) or if the field 
+//                                           is not available in the form.
+// @param validator (Validator) Validator declaration from eg
+//                              +link{DataSourceField.validators}.
+// @param component (DataBoundComponent) The DataBoundComponent holding the item such
+//                                       DynamicForm or ListGrid.
+//
+// @visibility external
+//<
+
+//> @type ValidatorType
+// Used to name a validator or reference a standard, built-in +link{validator} - see list below.
+// <p>
+// To make use of a standard validator type for a field in a DataSource, or 
+// DynamicForm instance, specify the <code>validators</code> property to an array 
+// containing a validator definition where the <code>type</code> property is set to 
+// the appropriate type.  
+// <p>
+// A custom error message can be specified for any validator type by setting the
+// <code>errorMessage</code> property on the validator definition object, and some
+// validator types make use of additional properties on the validator definition 
+// object such as <code>max</code> or <code>min</code>.
+// <p>
+// For example, to use the <code>integerRange</code> validator type:<br><br><code>
+// &nbsp;&nbsp;field:{<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;validators:[<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{type:"integerRange", min:1, max:100}<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;]<br>
+// &nbsp;&nbsp;}
+// </code>
+// <p>
+// Custom validators can be reused on the client by adding them to the global validator list,
+// via the +link{classMethod:Validator.addValidatorDefinition()} method.
+//  
+// @value isBoolean
+// Validation will fail if this field is non-empty and has a non-boolean value.
+// @value isString
+// Validation will fail if the value is not a string value.
+// @value isInteger
+// Tests whether the value for this field is a whole number.  If 
+// <code>validator.convertToInteger</code> is true, float values will be converted 
+// into integers and validation will succeed.
+// @value isFloat
+// Tests whether the value for this field is a valid floating point number.
+// @value isFunction
+// Tests whether the value for this field is a valid expression or function; if it is
+// valid, creates a +link{group:stringMethods,stringMethod} object with the value
+// and set the resultingValue to the StringMethod.
+// @value requiredIf
+// RequiredIf type validators should be specified with an <code>expression</code>
+// property set to a +link{group:stringMethods,stringMethod}, which takes three
+// parameters:<ul>
+// <li>item - the DynamicForm item on which the error occurred (may be null)
+// <li>validator - a pointer to the validator object
+// <li>value - the value of the field in question</ul>
+// When validation is performed, the expression will be evaluated (or executed) - if it
+// returns <code>true</code>, the field will be treated as a required field, so validation
+// will fail if the field has no value.
+// <p>To allow server-side enforcement, a <code>required</code> validator can be used instead.
+// Conditional criteria can be specified with the <code>applyWhen</code> property. 
+// <p>See +explorerExample{conditionallyRequired}.
+// @value matchesField
+// Tests whether the value for this field matches the value of some other field.
+// The field to compare against is specified via the <code>otherField</code> property
+// on the validator object (should be set to a field name).
+// <p>See +explorerExample{matchValue}.
+// @value isOneOf
+// Tests whether the value for this field matches any value from an arbitrary
+// list of acceptable values.  The set of acceptable values is specified via
+// the <code>list</code> property on the validator, which should be set to an array of
+// values. If validator.list is not supplied, the valueMap for the field will be used.
+// If there is no valueMap, not providing validator.list is an error.
+// @value integerRange
+// Tests whether the value for this field is a whole number within the range 
+// specified.  The <code>max</code> and <code>min</code> properties on the validator
+// are used to determine the acceptable range.
+// <p>See +explorerExample{validationBuiltins}.
+// @value lengthRange
+// This validator type applies to string values only.  If the value is a string value
+// validation will fail if the string's length falls outside the range specified by 
+// <code>validator.max</code> and <code>validator.min</code>.
+// <p>
+// Note that non-string values will always pass validation by this validator type.
+// <p>
+// Note that the <code>errorMessage</code> for this validator will be evaluated as
+// a dynamicString - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed, with <code>max</code> and <code>min</code> available as
+// variables mapped to <code>validator.max</code> and <code>validator.min</code>.
+// @value contains
+// Determine whether a string value contains some substring specified via 
+// <code>validator.substring</code>.
+// @value doesntContain
+// Determine whether a string value does <b>not</b> contain some substring specified via 
+// <code>validator.substring</code>.
+// @value substringCount
+// Determine whether a string value contains some substring multiple times.
+// The substring to check for is specified via <code>validator.substring</code>.
+// The <code>validator.operator</code> property allows you to specify how to test
+// the number of substring occurrences. Valid values for this property are
+// <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&lt;=</code>,
+// <code>&gt;</code>, <code>&gt;=</code>.
+// <p>
+// The number of matches to check for is specified via <code>validator.count</code>.
+// @value regexp
+// <code>regexp</code> type validators will determine whether the value specified 
+// matches a given regular expression.  The expression should be specified on the
+// <code>validator</code> object as the <code>expression</code> property.
+// <p>See +explorerExample{regularExpression}.
+// @value mask
+// Validate against a regular expression mask, specified as <code>validator.mask</code>.
+// If validation is successful a transformation can also be specified via the
+// <code>validator.transformTo</code> property. This should be set to a string in the
+// standard format for string replacement via the native JavaScript <code>replace()</code>
+// method.
+// <p>See +explorerExample{valueTransform}.
+// @value dateRange
+// Tests whether the value for a date field is within the range specified.
+// Range is inclusive, and is specified via <code>validator.min</code> and
+// <code>validator.max</code>, which should be specified in
+// <a target=_blank href="http://www.w3.org/TR/xmlschema-2/#dateTime">XML Schema
+// date format</a> or as a live JavaScript Date object (for client-only validators only).
+// <p>
+// Note that the <code>errorMessage</code> for this validator will be evaluated as
+// a dynamicString - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed, with <code>max</code> and <code>min</code> available as
+// variables mapped to <code>validator.max</code> and <code>validator.min</code>.
+// @value floatLimit
+// Validate a field as a valid floating point value within a value range.
+// Range is specified via <code>validator.min</code> and <code>validator.max</code>.
+// Also checks precision, specified as number of decimal places in 
+// <code>validator.precision</code>. If <code>validator.roundToPrecision</code> is set 
+// a value that doesn't match the specified number of decimal places will be rounded
+// to the nearest value that does.        
+// <p>
+// For backwards compatibility only. Use "floatRange" and/or "floatPrecision" instead.
+// @value floatRange
+// Tests whether the value for this field is a floating point number within the range 
+// specified.  The <code>max</code> and <code>min</code> properties on the validator
+// are used to determine the acceptable range.
+// <p>
+// Note that the <code>errorMessage</code> for this validator will be evaluated as
+// a dynamicString - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed, with <code>max</code> and <code>min</code> available as
+// variables mapped to <code>validator.max</code> and <code>validator.min</code>.
+// @value floatPrecision
+// Tests whether the value for this field is a floating point number with the 
+// appropriate number of decimal places - specified in <code>validator.precision</code>
+// If the value is of higher precision and <code>validator.roundToPrecision</code> 
+// is specified, the value will be rounded to the specified number of decimal places
+// and validation will pass, otherwise validation will fail.
+// @value required
+// A non-empty value is required for this field to pass validation.
+// @value readOnly
+// Change the state/appearance of this field. Desired appearance is specified via
+// the <code>fieldAppearance</code> property on the validator object. See
+// +link{type:FieldAppearance} type for choices.
+// <p>
+// If <code>fieldAppearance</code> is not specified, the default is "readOnly".
+// @value isUnique
+// Returns true if the value for this field is unique across the whole DataSource.
+// <p>
+// Validators of this type have +link{attr:ValidatorDefinition.requiresServer,requiresServer} 
+// set to <code>true</code> and do not run on the client.
+// @value hasRelatedRecord
+// Returns true if the record implied by a relation exists.  The relation can be 
+// derived automatically from the +link{attr:DataSourceField.foreignKey} attribute of 
+// the field being validated, or you can specify it manually via 
+// <code>validator.relatedDataSource</code> and <code>validator.relatedField</code>.
+// <p>
+// You can specify at DataSource level that this validator should be automatically 
+// applied to all fields that specify a +link{attr:DataSourceField.foreignKey,foreignKey} -
+// see +link{attr:DataSource.validateRelatedRecords}.
+// <p>
+// Validators of this type have +link{attr:ValidatorDefinition.requiresServer,requiresServer} 
+// set to <code>true</code> and do not run on the client.
+// <p>
+// Note that this validation is generally unnecessary for data coming from a UI.  The 
+// typical UI uses a +link{class:SelectItem} or +link{class:ComboBoxItem} with an 
+// +link{FormItem.optionDataSource,optionDataSource} for user entry, such that the user 
+// can't accidentally enter a related record if that doesn't exist, and a typical SQL 
+// schema will include constraints that prevent a bad insert if the user attempts to 
+// circumvent the UI.  The primary purpose of declaring this validation explicitly is 
+// to provide clear, friendly error messages for use cases such as +link{class:BatchUploader}, 
+// where values aren't individually chosen by the user. See also the example
+// +explorerExample{hasRelatedValidation,Related Records}.
+// @value serverCustom
+// Custom server-side validator that either evaluates the Velocity expression provided in 
+// +link{Validator.serverCondition,serverCondition} (see +explorerExample{velocityValidation})
+// or makes DMI call to +link{Validator.serverObject,serverObject} to evaluate condition
+// (see +explorerExample{dmiValidation}).
+// <p>
+// Validators of this type have +link{attr:ValidatorDefinition.requiresServer,requiresServer} 
+// set to <code>true</code> and do not run on the client.
+//
+// @visibility external
+//<
+        
 // NOTE ON DEFAULT ERROR MESSAGES:
 // If the validator doesn't have an error message, set the defaultErrorMessage property on the
 // object to distinguish it from an error message set by the user (errorMessage property).
@@ -123,6 +524,17 @@
 // the validation result, and the validator parameters aren't modified.
 
 isc.ClassFactory.defineClass("Validator");
+
+isc.Validator.addProperties({
+
+//> @attr validator.serverOnly (boolean : null : IR)
+// Indicates this validator runs on the server only.
+// 
+// @serverDS only
+// @visibility external
+//<
+
+});
 
 // These need to be constants to allow the built-in validators to be i18n'd.  NOTE: it would be
 // nice to move these definitions closer to the relevant validator, but note that some
@@ -178,7 +590,7 @@ isc.Validator.addClassProperties({
     //  returns false.
     // @group i18nMessages    
     //<    
-    notAnIdentifier: "Identifiers must start with a letter, underscore or $ character," +
+    notAnIdentifier: "Identifiers must start with a letter, underscore or $ character, " +
                     "and may contain only letters, numbers, underscores or $ characters.",
                     
     //>@classAttr   Validator.notARegex (string : "Must be a valid regular expression." : [IRA])
@@ -195,7 +607,7 @@ isc.Validator.addClassProperties({
     //<    
     notAColor:"Must be a CSS color identifier.",
 
-    //>@classAttr   Validator.mustBeLessThan (string : "Must be no more than ${max}" : [IRA])
+    //>@classAttr   Validator.mustBeLessThan (string : "Must be no more than \${max}" : [IRA])
     //  Default error message to display when standard <code>integerRange</code> type validator
     //  returns false because the value passed in is greater than the specified maximum.
     // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
@@ -206,7 +618,7 @@ isc.Validator.addClassProperties({
     //<
     mustBeLessThan:"Must be no more than ${max}", 
 
-    //>@classAttr   Validator.mustBeGreaterThan (string : "Must be at least ${min}" : [IRA])
+    //>@classAttr   Validator.mustBeGreaterThan (string : "Must be at least \${min}" : [IRA])
     //  Default error message to display when standard <code>integerRange</code> type validator
     //  returns false because the value passed in is less than the specified minimum.
     // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
@@ -217,7 +629,7 @@ isc.Validator.addClassProperties({
     //<        
     mustBeGreaterThan:"Must be at least ${min}", 
     
-    //>@classAttr   Validator.mustBeLaterThan (string : "Must be later than ${min}" : [IRA])
+    //>@classAttr   Validator.mustBeLaterThan (string : "Must be later than \${min}" : [IRA])
     //  Default error message to display when standard <code>dateRange</code> type validator
     //  returns false because the value passed in is greater than the specified minimum date.
     // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
@@ -228,7 +640,7 @@ isc.Validator.addClassProperties({
     //<        
     mustBeLaterThan:"Must be later than ${min.toShortDate()}", 
 
-    //>@classAttr   Validator.mustBeEarlierThan (string : "Must be earlier than ${max}" : [IRA])
+    //>@classAttr   Validator.mustBeEarlierThan (string : "Must be earlier than \${max}" : [IRA])
     //  Default error message to display when standard <code>dateRange</code> type validator
     //  returns false because the value passed in is less than the specified maximum date.
     // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
@@ -239,9 +651,9 @@ isc.Validator.addClassProperties({
     //<        
     mustBeEarlierThan:"Must be earlier than ${max.toShortDate()}", 
     
-    //>@classAttr   Validator.mustBeShorterThan (string : "Must be less than ${max} characters" : [IRA])
+    //>@classAttr   Validator.mustBeShorterThan (string : "Must be less than \${max} characters" : [IRA])
     // Default error message to display when standard <code>lengthRange</code> type validator
-    // returns false becaues the value passed in has more than <code>validator.max</code> characters.
+    // returns false because the value passed in has more than <code>validator.max</code> characters.
     // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
     // when the message is displayed, with <code>max</code> and <code>min</code> available as
     // variables mapped to <code>validator.max</code> and <code>validator.min</code>.
@@ -250,9 +662,9 @@ isc.Validator.addClassProperties({
     //<
     mustBeShorterThan:"Must be less than ${max} characters",
 
-    //>@classAttr   Validator.mustBeLongerThan (string : "Must be more than ${min} characters" : [IRA])
+    //>@classAttr   Validator.mustBeLongerThan (string : "Must be more than \${min} characters" : [IRA])
     // Default error message to display when standard <code>lengthRange</code> type validator
-    // returns false becaues the value passed in has fewer than <code>validator.min</code> characters.
+    // returns false because the value passed in has fewer than <code>validator.min</code> characters.
     // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
     // when the message is displayed, with <code>max</code> and <code>min</code> available as
     // variables mapped to <code>validator.max</code> and <code>validator.min</code>.
@@ -261,7 +673,7 @@ isc.Validator.addClassProperties({
     //<    
     mustBeLongerThan:"Must be more than ${min} characters",
     
-    //>@classAttr   Validator.mustBeExactLength (string : "Must be exactly ${max} characters" : [IRA])
+    //>@classAttr   Validator.mustBeExactLength (string : "Must be exactly \${max} characters" : [IRA])
     // Default error message to display when standard <code>lengthRange</code> type validator
     // has <code>validator.max</code> and <code>validator.min</code> set to the same value,
     // and returns false because the value passed is not the same length as these limits.<br>
@@ -282,9 +694,10 @@ isc.Validator.addClassProperties({
     notAMeasure:'Must be a whole number, percentage, "*" or "auto"',
     
     //>@classAttr   Validator.requiredField (string : 'Field is required' : [IRA])
-    //  Default error message to display when validation fails for a field marked as required,
-    //  or a field with a standard <code>requiredIf</code> type validator whose condition 
-    //  evaluates to true, because the field has no value.
+    // Default error message to display when validation fails for a field marked as required
+    // or with a standard <code>required</code> type validator.
+    // The message is also displayed for a field with a standard <code>requiredIf</code> type
+    // validator whose condition evaluates to true, because the field has no value.
     // @visibility external
     // @group i18nMessages    
     //<    
@@ -310,42 +723,20 @@ isc.Validator.addClassProperties({
     _$false : "false",
     _$dot:".",
 
+    //> @type FieldAppearance
+    READONLY:"readOnly",   // @value isc.Validator.READONLY Show in read-only appearance
+    HIDDEN:"hidden",       // @value isc.Validator.HIDDEN   Hide field
+    DISABLED:"disabled",   // @value isc.Validator.DISABLED Disable field
+    // @visibility external
+    //<
+
     // Actually store the standard validators on Validator._validatorFunctions
 	_validatorFunctions : {
 
-        // Create "Validators" as a pseudo class for JSDocs - documents the
-        // set of available validator types.    
-        
-        
-        //>	@class    ValidatorTypes
-        //  The set of standard validator types available on all fields.<br>
-        //  To make use of some standard validator type for a field in a DataSource, or 
-        //  DynamicForm instance, specify the <code>validators</code> property to an array 
-        //  containing a validator definition where the <code>type</code> property is set to 
-        //  the appropriate type.  
-        //  A custom error message can be specified for any validator type by setting the
-        //  <code>errorMessage</code> property on the validator definition object, and some
-        //  validator types make use of additional properties on the validator definition 
-        //  object such as <code>max</code> or <code>min</code>.<br>
-        //  For example, to make use of the <code>integerRange</code> validator type:<br><br><code>
-        //  &nbsp;&nbsp;field:{<br>
-        //  &nbsp;&nbsp;&nbsp;&nbsp;validators:[<br>
-        //  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{type:"integerRange", min:1, max:100}<br>
-        //  &nbsp;&nbsp;&nbsp;&nbsp;]<br>
-        //  &nbsp;&nbsp;}
-        //  </code><br><br>
-        //  
-        // @visibility external
-        // @treeLocation Client Reference/Forms/Validator
-        //<
-        
         // isType validators
         // ------------------------------------------------------------------------------------
 
-        //>@classAttr ValidatorTypes.isBoolean (validatorDefinition : object : IR)
-        //  Validation will fail if this field is non-empty and has a non-boolean value.
-        // @visibility external
-        //<
+        // Validation will fail if this field is non-empty and has a non-boolean value.
         isBoolean : function (item, validator, value) {
         	// skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -370,10 +761,7 @@ isc.Validator.addClassProperties({
             return false;
         },
         
-        //>@classAttr ValidatorTypes.isString (validatorDefinition : object : IR)
-        //  Validation will fail if the value is not a string value.
-        // @visibility external
-        //<
+        // Validation will fail if the value is not a string value.
         
         isString : function (item, validator, value) {
         	if (value == null || isc.isA.String(value)) return true;
@@ -382,12 +770,9 @@ isc.Validator.addClassProperties({
         	return true;
         },
         
-        //>@classAttr ValidatorTypes.isInteger (validatorDefinition : object : IR)
-        //  Tests whether the value for this field is a whole number.  If 
-        //  <code>validator.convertToInteger</code> is true, float values will be converted 
-        //  into integers and validation will succeed.
-        // @visibility external
-        //<
+        // Tests whether the value for this field is a whole number.  If 
+        // validator.convertToInteger is true, float values will be converted 
+        // into integers and validation will succeed.
         isInteger : function (item, validator, value) {
         	// skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -398,7 +783,7 @@ isc.Validator.addClassProperties({
 
         	// Note: this routine will be subject to JavaScript's rounding errors for extremely
             // large numbers (16+ digits)
-            var intValue = parseInt(value),
+            var intValue = parseInt(value,10),
                 isInteger = (value == intValue);
             
             if (validator.convertToInteger) {
@@ -423,10 +808,7 @@ isc.Validator.addClassProperties({
             }
         },
         
-        //>@classAttr ValidatorTypes.isFloat (validatorDefinition : object : IR)
-        //  Tests whether the value for this field is a valid floating point number.
-        // @visibility external
-        //<
+        // Tests whether the value for this field is a valid floating point number.
         isFloat : function (item, validator, value) {
         	if (value == null || isc.is.emptyString(value)) return true;
         	if (!validator.errorMessage) validator.defaultErrorMessage = isc.Validator.notADecimal;
@@ -459,13 +841,23 @@ isc.Validator.addClassProperties({
         	return true;
         },
         
-        // Not exposed, as developer will likely want to customize acceptable time format/
-        // parsing function.
+        
         isTime : function (item, validator, value) {
         	if (value == null || isc.is.emptyString(value) || isc.isA.Date(value)) return true;
-            if (isc.Time.parseInput(value, true) != null) return true;
+            if (!validator.errorMessage) validator.defaultErrorMessage = isc.Validator.notATime;
             
-        	if (!validator.errorMessage) validator.defaultErrorMessage = isc.Validator.notATime;
+            // Third parameter notifies the input parser that the string is in UTC time by default
+            // If an explicit timezone is included in the timeString this will be respected by
+            // parseInput
+            var dateValue = isc.Time.parseInput(value, true, true);
+            // support being passed a full datetime string as well
+            if (dateValue == null) {
+                dateValue = Date.parseSchemaDate(dateValue);
+            }
+            if (dateValue != null) {
+                validator.resultingValue = dateValue;
+                return true;
+            }
             return false;
         },
         
@@ -500,11 +892,9 @@ isc.Validator.addClassProperties({
             }
         },
         
-        //>@classAttr ValidatorTypes.isFunction     (validatorDefinition : object : IR)
-        //  Tests whether the value for this field is a valid expression or function; if it is
-        //  valid, creates a StringMethod object with the value, and set the resultingValue to
-        //  the StringMethod
-        //<        
+        // Tests whether the value for this field is a valid expression or function; if it is
+        // valid, creates a StringMethod object with the value, and set the resultingValue to
+        // the StringMethod
         isFunction :  function (item, validator, value) {
             if (value == null || isc.is.emptyString(value) || value == isc.Class.NO_OP ||
                 isc.isA.StringMethod(value))
@@ -567,121 +957,20 @@ isc.Validator.addClassProperties({
         // Generic (typeless) validators
         // ---------------------------------------------------------------------------------------
         
-        //>@classAttr ValidatorTypes.requiredIf  (validatorDefinition : object : IR)
-        //  RequiredIf type validators should be specified with an <code>expression</code>
-        //  property set to a +link{group:stringMethods,stringMethod}, which takes three
-        //  parameters:<ul>
-        //  <li>item - the DynamicForm item on which the error occurred (may be null)
-        //  <li>validator - a pointer to the validator object
-        //  <li>value - the value of the field in question</ul>
-        //  When validation is perfomed, the expression will be evaluated (or executed) - if it
-        //  returns <code>true</code>, the field will be treated as a required field, so validation 
-        //  will fail if the field has no value.
-        // @visibility external
-        // @example conditionallyRequired
-        //<
-        requiredIf : function (item, validator, value) {
-        	// CALLBACK API:  available variables:  "item,validator,value"
-        	// Convert a string callback to a function
-        	if (validator.expression != null && !isc.isA.Function(validator.expression)) {
-        		isc.Func.replaceWithMethod(validator, "expression", "item,validator,value");
-        	}
-
-        	var required = validator.expression(item,validator,value);
-
-            // Default to displaying the 'requiredField' error message.
-            if (validator.errorMessage == null) 
-                validator.errorMessage = isc.Validator.requiredField;
-        
-        	// if the item is not required, or isn't empty, return true
-        	return  !required || (value != null && !isc.is.emptyString(value));
-        },
-        
-        //>@classAttr ValidatorTypes.matchesField (validatorDefinition : object : IR)
-        //  Tests whether the value for this field matches the value of some other field.
-        //  The field to compare against is specified via the <code>otherField</code> property
-        //  on the validator object (should be set to a field name).<br>
-        //  Note this validator type is only supported for items being edited within a 
-        //  DynamicForm - it cannot be applied to a +link{ListGridField, ListGrid field}.
-        // @visibility external
-        // @example matchValue
-        //<
-        
-        matchesField : function (item, validator, value) {
-            // This will happen if the developer specifies a matches field validator on 
-            // a ListGrid field.
-            if (!item.form) {
-                this.logWarn("Validator of type 'matchesField' specified for a field with no " +
-                             "associated DynamicForm instance. Ignoring");
-                return true;
-            }
-        	// get the value of the other field
-        	var otherFieldValue = item.form.getValue(validator.otherField);
-        	// and return whether the values match
-        	return (value == otherFieldValue);
-        },
-        
-        //>@classAttr ValidatorTypes.isOneOf (validatorDefinition : object : IR)
-        // Tests whether the value for this field matches any value from an arbitrary
-        // list of acceptable values.  The set of acceptable values is specified via
-        // the <code>list</code> property on the validator, which should be set to an array of
-        // values. If validator.list is not supplied, the valueMap for the field will be used.
-        // If there is no valueMap, not providing validator.list is an error.
-
-        // @visibility external
-        //<
-        isOneOf : function (item, validator, value) {
-        	// skip empty fields
-        	if (value == null || isc.is.emptyString(value)) return true;
-
-        	// get the list of items to match against, either declared on this validator
-            // or automatically derived from the field's valueMap (item.valueMap)
-            
-            var valueMap = validator.list || (item ? (item.getValueMap ? item.getValueMap() 
-                                                                       : item.valueMap) 
-                                                   : null),
-                valueList = valueMap;
-            if (!isc.isAn.Array(valueMap) && isc.isAn.Object(valueMap)) {
-                valueList = isc.getKeys(valueMap);
-            }
-            
-            if (valueList != null) {
-    
-            	// if any item == the value, return true
-            	for (var i = 0, length = valueList.length; i < length; i++) {
-            		if (valueList[i] == value) return true;
-            	}
-            //>DEBUG
-            } else {
-                isc.Log.logWarn("isOneOf validator specified with no specified list of options " +
-                            "or valueMap - validator will always fail. " +
-                            "Field definition:" + isc.Log.echo(item), "validation");
-            //<DEBUG
-            }
-        	// otherwise, failure return false
-            if (!validator.errorMessage) {
-                validator.defaultErrorMessage = isc.Validator.notOneOf;
-            }
-        	return false;
-        },
         
         // Integer validators
         // ------------------------------------------------------------------------------------
 
-        //>@classAttr ValidatorTypes.integerRange (validatorDefinition : object : IR)
-        //  Tests whether the value for this field is a whole number within the range 
-        //  specified.  The <code>max</code> and <code>min</code> properties on the validator
-        //  are used to determine the acceptable range.
-        // @visibility external
-        // @example validationBuiltins
-        //<
+        // Tests whether the value for this field is a whole number within the range 
+        // specified.  The max and min properties on the validator
+        // are used to determine the acceptable range.
         integerRange : function (item, validator, value) {
             // If we're passed a non numeric value, just return without adding an error.
             // This is appropriate since the type of the field will probably be specified as 
             // "integer" meaning that the built in integer validator will also be present on the
             // field.
             var passedVal = value;
-            if (!isc.isA.String(value)) value = parseInt(value);
+            if (!isc.isA.String(value)) value = parseInt(value,10);
             if (isNaN(value) || value != passedVal) return true;
             
             // Allow dynamic error messages to be eval'd, with pointers to min and max values
@@ -691,14 +980,22 @@ isc.Validator.addClassProperties({
 
         
         	// if a maximum was specified, return false if we're greater than the max
-        	if (isc.isA.Number(validator.max) && value > validator.max) {
+        	if (isc.isA.Number(validator.max) && 
+                // exclusive means it's an error is value is exactly max
+                ((!validator.exclusive && value > validator.max) ||
+                 (validator.exclusive && value >= validator.max)))
+            {
         		if (!validator.errorMessage) {
         			validator.defaultErrorMessage = isc.Validator.mustBeLessThan
         		}
         		return false;
         	}
         	// if a minumum was specified, return false if we're less than the min
-        	if (isc.isA.Number(validator.min) && value < validator.min) {
+        	if (isc.isA.Number(validator.min) && 
+                // exclusive means it's an error is value is exactly min
+                ((!validator.exclusive && value < validator.min) ||
+                 (validator.exclusive && value <= validator.min)))
+            {
         		if (!validator.errorMessage) {
         			validator.defaultErrorMessage = isc.Validator.mustBeGreaterThan;
         		}
@@ -710,17 +1007,14 @@ isc.Validator.addClassProperties({
         // String validators
         // ------------------------------------------------------------------------------------
         
-        //>@classAttr ValidatorTypes.lengthRange    (validatorDefinition : object : IR)
-        //  This validator type applies to string values only.  If the value is a string value
-        //  validation will fail if the strings length falls outside the range specified by 
-        //  <code>validator.max</code> and <code>validator.min</code>.<br>
-        //  Note that non-string values will always pass validation by this validator type.<br>
-        // Note that the <code>errorMessage</code> for this validator will be evaluated as
-        // a dynamicString - text within <code>\${...}</code> will be evaluated as JS code
-        // when the message is displayed, with <code>max</code> and <code>min</code> available as
-        // variables mapped to <code>validator.max</code> and <code>validator.min</code>.
-        // @visibility external
-        //<
+        // This validator type applies to string values only.  If the value is a string value
+        // validation will fail if the strings length falls outside the range specified by 
+        // validator.max and validator.min.
+        // Note that non-string values will always pass validation by this validator type.<br>
+        // Note that the errorMessage for this validator will be evaluated as
+        // a dynamicString - text within ${...} will be evaluated as JS code
+        // when the message is displayed, with max and min available as
+        // variables mapped to validator.max and validator.min.
         lengthRange : function (item, validator, value) {
         	// skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -735,8 +1029,8 @@ isc.Validator.addClassProperties({
         
         	// get the length of the value
         	var length = value.length,
-                maxNumber = validator.max != null ? parseInt(validator.max) : null,
-                minNumber = validator.min != null ? parseInt(validator.min) : null;
+                maxNumber = validator.max != null ? parseInt(validator.max,10) : null,
+                minNumber = validator.min != null ? parseInt(validator.min,10) : null;
                 
             if (!isc.isA.Number(maxNumber)) maxNumber = null;
             if (!isc.isA.Number(minNumber)) minNumber = null;
@@ -759,11 +1053,8 @@ isc.Validator.addClassProperties({
         	return true;
         },
         
-        //>@classAttr ValidatorTypes.contains   (validatorDefinition : object : IR)
-        //  Determine whether a string value contains some substring specified via 
-        // <code>validator.substring</code>.
-        // @visibility external
-        //<
+        // Determine whether a string value contains some substring specified via 
+        // validator.substring.
         contains : function (item, validator, value) {
         	// skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -771,11 +1062,8 @@ isc.Validator.addClassProperties({
         	return value.indexOf(validator.substring) > -1;
         },
         
-        //>@classAttr ValidatorTypes.doesntContain   (validatorDefinition : object : IR)
-        //  Determine whether a string value does not contain some substring specified via 
-        // <code>validator.substring</code>.
-        // @visibility external
-        //<
+        // Determine whether a string value does not contain some substring specified via 
+        // validator.substring.
         doesntContain : function (item, validator, value) {
         	// skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -783,16 +1071,12 @@ isc.Validator.addClassProperties({
         	return value.indexOf(validator.substring) == -1;
         },
         
-        //>@classAttr ValidatorTypes.substringCount   (validatorDefinition : object : IR)
-        //  Determine whether a string value contains some substring multiple times.
-        //  The substring to check for is specified via <code>validator.substring</code>.
-        //  The <code>validator.operator</code> property allows you to specify how to test
-        //  the number of substring occurrances. Valid values for this property are
-        //  <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&lt;=</code>,
-        //  <code>&gt;</code>, <code>&gt;=</code>.<br>
-        //  The number of matches to check for is specified via <code>validator.count</code>.
-        // @visibility external
-        //<
+        // Determine whether a string value contains some substring multiple times.
+        // The substring to check for is specified via validator.substring.
+        // The <code>validator.operator</code> property allows you to specify how to test
+        // the number of substring occurrences. Valid values for this property are
+        // ==, !=, <, <=, >, >=.
+        // The number of matches to check for is specified via validator.count.
         substringCount : function (item, validator, value) {
         	// skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -823,13 +1107,9 @@ isc.Validator.addClassProperties({
         	return false;
         },
         
-        //>@classAttr ValidatorTypes.regexp (validatorDefinition : object : IR)
-        //  <code>regexp</code> type validators will determine whether the value specified 
-        //  matches a given regular expression.  The expression should be specified on the
-        //  <code>validator</code> object as the <code>expression</code> property.
-        // @visibility external
-        // @example regularExpression
-        //<
+        // regexp type validators will determine whether the value specified 
+        // matches a given regular expression.  The expression should be specified on the
+        // validator object as the expression property.
         regexp : function (item, validator, value) {
         	// skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -844,16 +1124,11 @@ isc.Validator.addClassProperties({
         	return expression.test(value);
         },
 
-        //>@classAttr ValidatorTypes.mask   (validatorDefinition : object : IR)
-        //  Validate against a regular expression mask, specified as <code>validator.mask</code>.
-        //  If validation is successful a transformation can also be specified via the
-        //  <code>validator.transformTo</code> property. This should be set to a string in the
-        //  standard format for string replacement via the native JavaScript <code>replace()</code>
-        //  method.
-        //  
-        // @visibility external
-        // @example valueTransform
-        //<
+        // Validate against a regular expression mask, specified as validator.mask.
+        // If validation is successful a transformation can also be specified via the
+        // validator.transformTo property. This should be set to a string in the
+        // standard format for string replacement via the native JavaScript replace()
+        // method.
         mask : function (item, validator, value) {
         	// skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -881,17 +1156,15 @@ isc.Validator.addClassProperties({
 
         // Dates
         // ---------------------------------------------------------------------------------------
-        //>@classAttr ValidatorTypes.dateRange    (validatorDefinition : object : IR)
         // Tests whether the value for a date field is within the range specified.
-        // Range is inclusive, and is specified via <code>validator.min</code> and
-        // <code>validator.max</code>, which should be dates.<br>
-        // Note that the <code>errorMessage</code> for this validator will be evaluated as
-        // a dynamicString - text within <code>\${...}</code> will be evaluated as JS code
-        // when the message is displayed, with <code>max</code> and <code>min</code> available as
-        // variables mapped to <code>validator.max</code> and <code>validator.min</code>.
-        //
-        // @visibility external
-        //<
+        // Range is inclusive, and is specified via validator.min and
+        // validator.max, which should be specified in "http://www.w3.org/TR/xmlschema-2/#dateTime".
+        // date format or as a live JavaScript Date object (for client-only validators only).
+        // 
+        // Note that the errorMessage for this validator will be evaluated as
+        // a dynamicString - text within ${...} will be evaluated as JS code
+        // when the message is displayed, with max and min available as
+        // variables mapped to validator.max and validator.min.
         dateRange : function (item, validator, value) {
         	if (value == null || isc.is.emptyString(value)) return true;
 
@@ -908,13 +1181,21 @@ isc.Validator.addClassProperties({
             validator.dynamicErrorMessageArguments = {validator:validator, 
                                                       max:max, 
                                                       min:min}
-            if (isc.isA.Date(min) && value.getTime() < min.getTime()) {
+            if (isc.isA.Date(min) && 
+                // exclusive means it's an error is value is exactly min
+                ((!validator.exclusive && value.getTime() < min.getTime()) ||
+                 (validator.exclusive && value.getTime() <= min.getTime())))
+            {
         		if (!validator.errorMessage) {
         			validator.defaultErrorMessage = isc.Validator.mustBeLaterThan
         		}
         		return false;
             }
-            if (isc.isA.Date(max) && value.getTime() > max.getTime()) {
+            if (isc.isA.Date(max) &&
+                // exclusive means it's an error is value is exactly max
+                ((!validator.exclusive && value.getTime() > max.getTime()) ||
+                 (validator.exclusive && value.getTime() >= max.getTime())))
+            {
         		if (!validator.errorMessage) {
         			validator.defaultErrorMessage = isc.Validator.mustBeEarlierThan;
         		}
@@ -925,14 +1206,13 @@ isc.Validator.addClassProperties({
 
         // Floats
         // ---------------------------------------------------------------------------------------
-        //>@classAttr ValidatorTypes.floatLimit   (validatorDefinition : object : IR)
         // Validate a variable as a valid floating point value, within a value range.
-        // Range is specified via <code>validator.min</code> and <code>validator.max</code>.
+        // Range is specified via validator.min and validator.max.
         // Also checks precision, specified as number of decimal places in 
-        // <code>validator.precision</code>. If <code>validator.roundToPrecision</code> is set, 
+        // validator.precision. If validator.roundToPrecision is set, 
         // a value that doesn't match the specified number of decimal places will be rounded
         // to the nearest value that does.        
-        //<
+        //
         // backcompat only, replaced by floatRange and floatPrecision
         floatLimit : function (item, validator, value) {
             var roundedValue;
@@ -964,16 +1244,13 @@ isc.Validator.addClassProperties({
             return true;
         },
         
-        //>@classAttr ValidatorTypes.floatRange     (validatorDefinition : object : IR)
-        //  Tests whether the value for this field is a floating point number within the range 
-        //  specified.  The <code>max</code> and <code>min</code> properties on the validator
-        //  are used to determine the acceptable range.<br>
-        // Note that the <code>errorMessage</code> for this validator will be evaluated as
-        // a dynamicString - text within <code>\${...}</code> will be evaluated as JS code
-        // when the message is displayed, with <code>max</code> and <code>min</code> available as
-        // variables mapped to <code>validator.max</code> and <code>validator.min</code>.
-        // @visibility external
-        //<        
+        // Tests whether the value for this field is a floating point number within the range 
+        // specified.  The max and min properties on the validator
+        // are used to determine the acceptable range.
+        // Note that the errorMessage for this validator will be evaluated as
+        // a dynamicString - text within ${...} will be evaluated as JS code
+        // when the message is displayed, with max and min available as
+        // variables mapped to validator.max and validator.min.
         floatRange : function (item, validator, value) {
             // skip empty fields
         	if (value == null || isc.is.emptyString(value)) return true;
@@ -993,7 +1270,11 @@ isc.Validator.addClassProperties({
                                                       min:validator.min}
         
         	// is the value less than the max allowable? (if specified)
-        	if (isc.isA.Number(validator.max) && floatValue > validator.max) {
+        	if (isc.isA.Number(validator.max) &&
+                // exclusive means it's an error is value is exactly max
+                ((!validator.exclusive && floatValue > validator.max) ||
+                 (validator.exclusive && floatValue >= validator.max)))
+            {
         		if (!validator.errorMessage) {
         			validator.defaultErrorMessage = isc.Validator.mustBeLessThan;
         		}
@@ -1001,7 +1282,11 @@ isc.Validator.addClassProperties({
         	}
         	
         	// is the value greater than the min allowable? (if specified)
-        	if (isc.isA.Number(validator.min) && floatValue < validator.min) {
+        	if (isc.isA.Number(validator.min) &&
+                // exclusive means it's an error is value is exactly min
+                ((!validator.exclusive && floatValue < validator.min) ||
+                 (validator.exclusive && floatValue <= validator.min)))
+            {
                 if (!validator.errorMessage) {
         			validator.defaultErrorMessage = isc.Validator.mustBeGreaterThan;
         		}
@@ -1010,14 +1295,11 @@ isc.Validator.addClassProperties({
             return true;
         },
         
-        //>@classAttr ValidatorTypes.floatPrecision     (validatorDefinition : object : IR)
-        //  Tests whether the value for this field is a floating point number with the 
-        //  appropriate number of decimal places - specified in <code>validator.precision</code>
-        //  If the value is of higher precision, if <code>validator.roundToPrecision</code> 
-        //  is specified, the value will be rounded to the specified number of decimal places
-        //  and validation will pass, otherwise validation will fail.
-        // @visibility external
-        //<        
+        // Tests whether the value for this field is a floating point number with the 
+        // appropriate number of decimal places - specified in validator.precision
+        // If the value is of higher precision, if validator.roundToPrecision 
+        // is specified, the value will be rounded to the specified number of decimal places
+        // and validation will pass, otherwise validation will fail.
         floatPrecision : function (item, validator, value) {
    
             // skip empty fields
@@ -1042,58 +1324,257 @@ isc.Validator.addClassProperties({
             
         }
         
-        
-        
-        
         // ------------------------------------------------------------------------------------    
         // END of Valiator._validatorFunctions
         // ------------------------------------------------------------------------------------    
+    },
+
+    _validatorDefinitions : {
+
+        // Generic (typeless) validators
+        // ---------------------------------------------------------------------------------------
+
+        // RequiredIf type validators should be specified with an expression
+        // property set to a stringMethod which takes three parameters:
+        //   item - the DynamicForm item on which the error occurred (may be null)
+        //   validator - a pointer to the validator object
+        //   value - the value of the field in question
+        // When validation is performed, the expression will be evaluated (or executed) - if it
+        // returns true, the field will be treated as a required field, so validation
+        // will fail if the field has no value.
+        requiredIf: {
+            type: "requiredIf",
+            title: "Conditionally required field",
+            condition : function (item, validator, value, record) {
+                // CALLBACK API:  available variables:  "item,validator,value"
+                // Convert a string callback to a function
+                if (validator.expression != null && !isc.isA.Function(validator.expression)) {
+                    isc.Func.replaceWithMethod(validator, "expression", "item,validator,value");
+                }
+    
+                var required = validator.expression(item,validator,value);
+    
+                // Default to displaying the 'requiredField' error message.
+                if (validator.errorMessage == null) 
+                    validator.errorMessage = isc.Validator.requiredField;
+            
+            	// if the item is not required, or isn't empty, return true
+            	return  !required || (value != null && !isc.is.emptyString(value));
+            }
+        },
+        
+        // Tests whether the value for this field matches any value from an arbitrary
+        // list of acceptable values.  The set of acceptable values is specified via
+        // the list property on the validator, which should be set to an array of
+        // values. If validator.list is not supplied, the valueMap for the field will be used.
+        // If there is no valueMap, not providing validator.list is an error.
+        isOneOf: {
+            type: "isOneOf",
+            title: "Is one of list",
+            condition : function (item, validator, value, record) {
+                // skip empty fields
+                if (value == null || isc.is.emptyString(value)) return true;
+
+                // get the list of items to match against, either declared on this validator
+                // or automatically derived from the field's valueMap (item.valueMap)
+                
+                var valueMap = validator.list || (item ? (item.getValueMap ? item.getValueMap() 
+                                                                           : item.valueMap) 
+                                                       : null),
+                valueList = valueMap;
+                if (!isc.isAn.Array(valueMap) && isc.isAn.Object(valueMap)) {
+                    valueList = isc.getKeys(valueMap);
+                }
+            
+                if (valueList != null) {
+                    // if any item == the value, return true
+                    for (var i = 0, length = valueList.length; i < length; i++) {
+                        if (valueList[i] == value) return true;
+                    }
+                //>DEBUG
+                } else {
+                    isc.Log.logWarn("isOneOf validator specified with no specified list of options " +
+                                "or valueMap - validator will always fail. " +
+                                "Field definition:" + isc.Log.echo(item), "validation");
+                //<DEBUG
+                }
+                // otherwise, failure return false
+                if (!validator.errorMessage) {
+                    validator.defaultErrorMessage = isc.Validator.notOneOf;
+                }
+                return false;
+            }
+        },
+        // A non-empty value is required for this field to pass validation.
+        required: {
+            type: "required",
+            title: "Required field",
+            defaultErrorMessage: isc.Validator.requiredField,
+            condition : function (item, validator, value, record) {
+                return (value != null && !isc.is.emptyString(value));
+            },
+            action : function (result, item, validator, component) {
+                // For a conditional required validator we need to set the
+                // item._required flag so field will be drawn with the correct style.
+                if (!item.required) {
+                    item._required = (result != null);
+                }
+            }
+        },
+
+        // Change the state/appearance of this field. Desired appearance is specified via
+        // the fieldAppearance property on the validator object.
+        //
+        // If fieldAppearance is not specified, the default is "readOnly".
+        readOnly: {
+            type: "readOnly",
+            title: "Set field read-only state/appearance",
+            condition : function (item, validator, value, record) {
+                return true;
+            },
+            action : function (result, item, validator, component) {
+                var fieldName = item.name;
+                if (validator.fieldAppearance == isc.Validator.HIDDEN) {
+                    if (result == true) component.hideField(fieldName);
+                    else component.showField(fieldName);
+                } else if (validator.fieldAppearance == isc.Validator.DISABLED) {
+                    if (result == true) component.disableField(fieldName);
+                    else component.enableField(fieldName);
+                } else {
+                    if (result == true) component.setFieldCanEdit(fieldName, false);
+                    else component.setfieldCanEdit(fieldName, true);
+                }
+            }
+        },
+
+        // Tests whether the value for this field matches the value of some other field.
+        // The field to compare against is specified via the otherField property
+        // on the validator object (should be set to a field name).
+        matchesField: {
+            type: "matchesField",
+            title: "Matches another field value",
+            condition : function (item, validator, value, record) {
+                if (validator.otherField == null) {
+                    isc.logWarn("matchesField validator is missing 'otherField' definition. " +
+                                "Validator forced false.");
+                    return false;
+                }
+                // do the values match?
+                return (value == record[validator.otherField]);
+            }
+        },
+        
+        // Returns true if the value for this field is unique across the whole DataSource.
+        isUnique: {
+            type: "isUnique",
+            title: "Validate field value is unique on DataSource",
+            requiresServer: true
+        },
+
+        // Returns true if the record implied by a relation exists.  The relation can be 
+        // derived automatically from the DataSourceField.foreignKey attribute of 
+        // the field being validated, or you can specify it manually via 
+        // validator.relatedDataSource and validator.relatedField.
+        //
+        // You can specify at DataSource level that this validator should be automatically 
+        // applied to all fields that specify a DataSourceField.foreignKey -
+        // see DataSource.validateRelatedRecords.
+        hasRelatedRecord: {
+            type: "hasRelatedRecord",
+            title: "Validate field value exists on a related DataSource",
+            requiresServer: true
+        },
+
+        // Evaluates the Velocity expression provided in 
+        // Validator.serverCondition on the server side.
+        serverCustom: {
+            type: "serverCustom",
+            title: "Validate field value using a custom server expression",
+            requiresServer: true
+        }
     }
+
 });
 
 
 isc.Validator.addClassMethods({
 
+    // Is the validator server-only?
+    
+    isServerValidator : function (validator) {
+    	if (validator.serverOnly) return true;
+
+        // Check whether we have a build-in validator definition of the appropriate type.
+        var validatorDefinition = this._validatorDefinitions[validator.type];
+        if (validatorDefinition != null && validatorDefinition.requiresServer) return true;
+
+        return false;
+    },
+
     // Process validator is an internal method called by
-    // DynamicForm, vauesManagers, and editable ListGrids
-    // valuesManagers to perform validation.
-    processValidator : function (item, validator, value, type) {
+    // DynamicForm, valuesManagers, and editable ListGrids
+    // to perform validation.
+    
+    processValidator : function (item, validator, value, type, record) {
     	// if the validator is server-side only, return true
     	if (validator.serverOnly) return true;
-    		
+
     	// if no type was specified, get it from the validator.type property
     	if (!type) 	type = validator.type;
     	var result = true;
         
-        // Check whether we have a standard validator of the appropriate type.
-        var validationFunction;
-        if (type != null)  validationFunction = this._validatorFunctions[type];
+        // Check whether we have a build-in validator definition of the appropriate type.
+        var validatorDefinition;
+        if (type != null)  validatorDefinition = this._validatorDefinitions[type];
     	
-    	// if we didn't find a validatorFunction, use the validator.condition if one was specified
-    	if (validationFunction == null && validator.condition) {
-    		// CALLBACK API:  available variables:  "item,validator,value"
-    		// Convert a string callback to a function
-    		if (!isc.isA.Function(validator.condition)) {
-                //>DEBUG
-                this.logDebug("Creating function for validation condition:\r" + validator.condition);
-                //<DEBUG
-    			isc.Func.replaceWithMethod(validator, "condition", "item,validator,value");
-    		}
-    		validationFunction = validator.condition;
-    	}
+        // If a validator definition was not found, check whether we have a
+        // standard validator in the old format of the appropriate type.
+        var validationFunction;
+        if (validatorDefinition == null) {
+            if (type != null)  validationFunction = this._validatorFunctions[type];
+    	
+            // if we didn't find a validatorFunction, use the validator.condition
+            // if one was specified
+            if (validationFunction == null && validator.condition) {
+                // CALLBACK API:  available variables:  "item,validator,value,record"
+                // Convert a string callback to a function
+                if (!isc.isA.Function(validator.condition)) {
+                    //>DEBUG
+                    this.logDebug("Creating function for validation condition:\r" +
+                                  validator.condition);
+                    //<DEBUG
+                    isc.Func.replaceWithMethod(validator, "condition",
+                                               "item,validator,value,record");
+                }
+                validationFunction = validator.condition;
+            }
+        } else {
+            // If validator is server-only, return successful validation for client
+            if (validatorDefinition.requiresServer == true) {
+                return true;
+            }
+            // Pull validation function from definition
+            validationFunction = validatorDefinition.condition;
+
+            // Push default error message to validator if not already set
+            if (!validator.errorMessage) {
+                validator.defaultErrorMessage = validatorDefinition.defaultErrorMessage;
+            }
+        }
     
-    	// if we found a validating function, call it 
-    	if (validationFunction != null) {
-    	    // NOTE: first clear the "resultingValue" field and suggested value of the
+        // if we found a validating function, call it 
+        if (validationFunction != null) {
+            // NOTE: first clear the "resultingValue" field and suggested value of the
             // validator, in case the validation rule decides to set it
 
             // for Array-valued fields (field.multiple=true), validate each value in the Array
-            if (item && item.multiple && isc.isAn.Array(value)) {
+            if (item && item.multiple && item.validateEachItem && isc.isAn.Array(value)) {
                 var resultingValue = [];
                 for (var i = 0; i < value.length; i++) {
-        	        delete validator.resultingValue;
+                    // Each call to validationFunction could set the resultingValue
+                    delete validator.resultingValue;
                     // NOTE: don't stop on failure
-    		        result = result && validationFunction(item, validator, value[i]);
+                    result = result && validationFunction(item, validator, value[i], record);
                     // capture each resulting value
                     resultingValue[i] = (validator.resultingValue != null ?
                                          validator.resultingValue : value[i]);
@@ -1101,18 +1582,50 @@ isc.Validator.addClassMethods({
                 // return the array value as the overall resulting value
                 validator.resultingValue = resultingValue;
             } else {
-        	    delete validator.resultingValue;
-        		result = validationFunction(item, validator, value);
+                delete validator.resultingValue;
+                result = validationFunction(item, validator, value, record);
             }
-    	//>DEBUG
-    	} else {
-    		this.logWarn("validator not understood on item: " + this.echo(item) + ":\r" + 
-                         isc.Comm.serialize(validator));
-    	//<DEBUG
-    	}
+        //>DEBUG
+        } else {
+            this.logWarn("validator not understood on item: " + this.echo(item) + ":\r" + 
+                         isc.echoFull(validator));
+        //<DEBUG
+        }
     	return result;
     },
     
+    performAction : function (result, item, validator, component) {
+        var type = validator.type;
+
+        // Check whether we have a build-in validator definition of the appropriate type.
+        var validatorDefinition;
+        if (type != null)  validatorDefinition = this._validatorDefinitions[type];
+
+        var actionFunction;
+        if (validatorDefinition != null) {
+            actionFunction = validatorDefinition.action;
+        }
+        // if we didn't find an actionFunction, use the validator.action if one was specified
+        
+        if (actionFunction == null && validator.action) {
+            // CALLBACK API:  available variables:  "result,item,validator,component"
+            // Convert a string callback to a function
+            if (!isc.isA.Function(validator.action)) {
+                //>DEBUG
+                this.logDebug("Creating function for validation action:\r" +
+                              validator.action);
+                //<DEBUG
+                isc.Func.replaceWithMethod(validator, "action",
+                                           "result,item,validator,component");
+            }
+            actionFunction = validator.action;
+        }
+        // call the action method
+        if (actionFunction != null) {
+            actionFunction(result, item, validator, component);
+        }
+    },
+
     getErrorMessage : function (validator) {
         
         var errorMessage = validator.errorMessage;
@@ -1173,7 +1686,52 @@ isc.Validator.addClassMethods({
             }
         }
     	isc.addMethods(this._validatorFunctions, newValidators);
-    }
+    },
     
+    //>@classMethod  Validator.addValidatorDefinition() (A)
+    // Add a new validator type that can be specified as +link{Validator.type} anywhere
+    // validators are declared, such as +link{DataSourceField.validators} or
+    // +link{FormItem.validators}.
+    //
+    // @param type (String) type name for the new validator
+    // @param definition (ValidatorDefinition) the validator definition
+    //
+    // @group validation
+    // @visibility external
+    // @see Validator.addValidatorDefinitions()
+    //<
+    addValidatorDefinition : function (type, definition) {
+        if (!isc.isAn.Object(definition)) {
+            isc.logWarn("Invalid validator in call to addValidatorDefinition. Ignored.");
+        }
+        var valsObject = {};
+        valsObject[type] = definition;
+        return this.addValidatorDefinitions(valsObject);
+    },
+
+    //>@classMethod  Validator.addValidatorDefinitions() (A)
+    // Add several new validator types at once, as though +link{addValidatorDefinition()}
+    // were called several times.
+    // 
+    // @group validation
+    // @param newDefinitions (object) Set of validators to add.  This parameter should
+    //      be a JavaScript object where the property names are validator type names, and the
+    //      property values are +link{validatorDefinition}s.
+    //
+    // @visibility external
+    // @see Validator.addValidatorDefinition()
+    //<
+    addValidatorDefinitions : function (newDefinitions) {
+        if (!newDefinitions || !isc.isAn.Object(newDefinitions)) return;
+
+        // Check for redefinition of validators and log warning
+        for (var type in newDefinitions) {
+            if (this._validationDefinitions[type]) {
+                isc.logWarn("addValidatorDefinitions: Validator definition already exists " +
+                            "for type " + type + ". Replacing.");
+            }
+        }
+    	isc.addProperties(this._validatorDefinitions, newDefinitions);
+    }
     
 });

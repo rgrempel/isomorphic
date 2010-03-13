@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -49,7 +49,7 @@ if (isc.ListGrid) {
 // </ul>
 // <li> +link{DataBoundComponent.dataSource,bind} a DynamicForm to the "master" DataSource 
 // <li> in the DynamicForm bound to the "master" DataSource, declare a field with
-// +link{formItem.editorType,editorType}:"MultiFieldItem" and a <code>dataSource</code>
+// +link{formItem.editorType,editorType}:"MultiFileItem" and a <code>dataSource</code>
 // property set to the ID of the "detail" DataSource
 // </ul>
 // An example "detail" DataSource for storing files is shown below.  This "detail" DataSource

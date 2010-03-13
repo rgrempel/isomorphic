@@ -11,4 +11,7 @@
 		<field name="validateOnChange" 	type="boolean" title="Validate On Change" inapplicable="true"/>
         
 	</fields>
+	
+    <substituteClasses>BlurbItem, TextItem, TextAreaItem</substituteClasses>
+	
 </DataSource>

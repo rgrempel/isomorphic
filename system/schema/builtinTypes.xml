@@ -4,12 +4,9 @@ processed by schemaless XML transform, and in fact, can't even rely on the exist
 types (since it defines them!)
 -->
 <simpleTypes>
-    <!-- note: synonyms should inheritFrom the canonical name for the type, even if the base type
-         definition is trivial, so that the equivalent of "instanceof" checks will detect them as
-         being of the same base type
-    -->
+    <!-- the most basic type, means either a simple or complete type is allowed -->
+    <any uberType="true"/>
 
-    <text validators="isString"/>
     <boolean validators="isBoolean"/>
     <!-- actually creates a Long in Java -->
     <integer validators="isInteger"/>
@@ -18,7 +15,12 @@ types (since it defines them!)
     <date validators="isDate"/>
     <time validators="isTime"/>
 
-    <!-- synonyms of basic types -->
+    <!-- synonyms of basic types 
+         note: synonyms should inheritFrom the canonical name for the type, even if the base type
+         definition is trivial, so that the equivalent of "instanceof" checks will detect them as
+         being of the same base type
+    -->
+    <text validators="isString"/>
     <string inheritsFrom="text"/>
     <int inheritsFrom="integer"/>
     <long inheritsFrom="integer"/>
@@ -134,5 +136,10 @@ types (since it defines them!)
 
     <!-- a CSS color value or color name -->
     <cssClass inheritsFrom="string"/>
+    
+    <modifier inheritsFrom="text" hidden="true" canEdit="false"/>
+    <modifierTimestamp inheritsFrom="datetime" hidden="true" canEdit="false"/>
+    <creator inheritsFrom="text" hidden="true" canEdit="false"/>
+    <creatorTimestamp inheritsFrom="datetime" hidden="true" canEdit="false"/>
     
 </simpleTypes>

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -42,7 +42,7 @@ isc.RadioGroupItem.addProperties({
     // individual button.
 	//		@group	appearance
 	//<
-	prompt:null						
+	prompt:null,
 
     //>	@attr	radioGroupItem.itemPrompt			(string : null : IRW)
 	// Mouse-over prompt for the label of this item.  Use character <code>"*"</code>
@@ -52,9 +52,32 @@ isc.RadioGroupItem.addProperties({
 	//		@group	appearance
 	//<
 	//itemPrompt:null
+    
+    //>	@attr	radioGroupItem.textBoxStyle (FormItemBaseStyle : "labelAnchor" : IRW)
+	// Base CSS class applied to the text for items within this radiogroup.
+	// @group appearance
+    // @visibility external
+	//<
+    textBoxStyle:"labelAnchor"
+    
+    //>	@attr	radioGroupItem.wrap (boolean : null : IRW)
+	// Should the text for items within this radio group wrap?
+	// @group appearance
+    // @visibility external
+	//<
 });
 
-isc.RadioGroupItem.addMethods({	
+isc.RadioGroupItem.addMethods({
+
+    // Override _useHiddenDataElement to return false
+    // we're not marked as having a data element (hasDataElement() == false) but our sub elements
+    // do have live HTML data elements, so on form submission we don't need to write out a
+    // hidden data element.
+    _useHiddenDataElement : function () {
+        return false;
+    },
+    
+	
     
 
 	//>	@method	radioGroupItem.setItems()	(A)
@@ -141,6 +164,10 @@ isc.RadioGroupItem.addMethods({
                     height:this.itemHeight, 
                     _startRow:this.vertical, 
                     
+                    // apply styling down to the items
+                    textBoxStyle: this.textBoxStyle,
+                    wrap:this.wrap,
+                    
                     
                     updateValue : function () {
                         // pass in this.value (not this.getValue() which could be null)
@@ -151,10 +178,28 @@ isc.RadioGroupItem.addMethods({
                     shouldSaveValue:false
                 }
             ;
+            // support arbitrary modification of the item via an auto-child like properties block
+            isc.addProperties(itemObj, this.itemProperties);
       
             item = this.itemCache[value+"|"+title] = isc.FormItemFactory.makeItem(itemObj);
         }       
         return item;
+    },
+    
+    //>@attr RadioGroupItem.itemProperties (RadioItem Properties : null : IR)
+    // Map of properties to apply to generated items within this RadioGroup. This allows you to 
+    // customize the generated radio items for this item.
+    // @visibility external
+    //<
+    // No need for a defaults block - the developer can just update the RadioItem class
+    
+    
+    // getItemValue is used when generating member item HTML
+    
+    getItemValue : function (item) {
+        var itemVal = item.value;
+        if (itemVal == this.getValue()) return itemVal;
+        return item.unselectedValue;
     },
 
     itemForValue : function (value) {
@@ -181,7 +226,7 @@ isc.RadioGroupItem.addMethods({
 	//		@param	value	(string)	Value of the element [Unused because it is more reliably set by setValue].
 	//		@return	(HTML)	HTML output for this element
 	//<
-	getInnerHTML : function (value) {
+	getInnerHTML : function (value) {        
 		// always call setItems() since the valueMap may have changed!
         this.setItems();
 		return this.Super("getInnerHTML", arguments);
@@ -202,11 +247,16 @@ isc.RadioGroupItem.addMethods({
 	//<
     setValue : function (newValue) {
         this._setValueCalled = true;
-    
-        // use the default value if passed null, or a value for which we don't have a sub-item
-        if (newValue == null || this.itemForValue(newValue) == null) 
-            newValue = this.getDefaultValue();
+
+        var invalidValue = (this.valueMap == null) ||
+            (isc.isAn.Array(this.valueMap) ? !this.valueMap.contains(newValue)
+                                            : !isc.propertyDefined(this.valueMap, newValue));
             
+            
+        // use the default value if passed null, or a value for which we don't have a sub-item
+        if (newValue == null || invalidValue) {
+            newValue = this.getDefaultValue();
+        }
         // "check" the appropriate sub item. 
         // If there is none, uncheck whatever is currently selected.  
         // Notes:
@@ -216,20 +266,23 @@ isc.RadioGroupItem.addMethods({
         // - Clearing out our value if we don't find the value passed in means the user setting 
         //   the value of a radio-group to anything not in the valueMap is an equivalent to
         //   setting the value to null.
-        if (this.itemForValue(newValue) != null) {
-            this.itemForValue(newValue).setValue(newValue);
-            // if the previous value is not null, update its value
+        if (this.items != null) {
+            var itemForValue = this.itemForValue(newValue);
+            if (itemForValue != null) {
+                this.itemForValue(newValue).setValue(newValue);
+                
+              
+            }
+            
+            // if the previous value is not null, clear out the prev item's value
             // Note - we assign directly to the _value property rather than calling updateValue
             // to avoid firing the change handler on that sub item
-            if (this._value != null && this._value != newValue &&
-                this.itemForValue(this._value) != null) 
-            {
-                this.itemForValue(this._value)._value = null;
+            if (this._value != null && this._value != newValue) {
+                var prevItem = this.itemForValue(this._value);
+                if (prevItem) prevItem._value = null;
             }
         }
-        else if (this._value != null && this.itemForValue(this._value) != null) {
-            this.itemForValue(this._value).setValue(null);
-        }
+
         // save the new value        
         this.saveValue(newValue);
     },

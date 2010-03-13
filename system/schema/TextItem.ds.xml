@@ -2,4 +2,7 @@
 	<fields>
 		<field name="length" type="positiveInteger" title="Length"/>
 	</fields>
+	
+    <substituteClasses>BlurbItem, StaticTextItem, TextAreaItem</substituteClasses>
+	
 </DataSource>

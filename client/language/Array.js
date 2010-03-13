@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -663,7 +663,7 @@ getValueMap : function (idField, displayField) {
         var item = this.get(i);
         // Don't attempt to pull properties from empty values / basic data types in the list.
         if (!isc.isAn.Object(item)) continue;
-        if (item && item[idField]) {
+        if (item && item[idField] != null) {
             valueMap[item[idField]] = item[displayField];
         }
     }

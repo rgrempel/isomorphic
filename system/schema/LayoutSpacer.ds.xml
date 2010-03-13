@@ -1,6 +1,9 @@
 <DataSource	ID="LayoutSpacer" inheritsFrom="Canvas" Constructor="LayoutSpacer"
             showSuperClassEvents="false">
     <fields>
+		<field name="width" type="measure" basic="true"/>	
+		<field name="height" type="measure" basic="true"/>
+
         <field name="backgroundColor" inapplicable="true"/>
         <field name="backgroundImage" inapplicable="true"/>
         <field name="backgroundRepeat" inapplicable="true"/>
@@ -37,6 +40,7 @@
 		<field name="children" inapplicable="true"/>	
     </fields>
     <groups>
+        <group>basics</group>
         <group>sizing</group>
     </groups>
 </DataSource>

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -55,7 +55,7 @@
 // <p>
 // <b>XML formatted responses:</b>
 // <P>
-// RestDataSource expects a response to like the following in response to a "fetch" request:
+// RestDataSource expects a response like the following in response to a "fetch" request:
 // <pre>
 // &lt;response&gt;
 //    &lt;status&gt;0&lt;/status&gt;
@@ -104,7 +104,7 @@
 // If a validation failure occurred on the server, the response would
 // have status set to +link{RPCResponse.STATUS_VALIDATION_ERROR} [<code>-4</code>],
 // and any validation errors could be included as per-field sub-elements of an "errors"
-// element.  For a validation error, the response is not be expected to contain any
+// element.  For a validation error, the response is not expected to contain any
 // &lt;data&gt; element.  
 // <P>
 // A response showing a validation error might look like this:
@@ -213,16 +213,18 @@
 // <P>
 // An example of an XML message might look like this:
 // <pre>
-//    &lt;data&gt;
-//        &lt;countryDS&gt;
-//            &lt;countryCode&gt;US&lt;/countryCode&gt;
-//            &lt;countryName&gt;Edited Value&lt;/countryName&gt;
-//            &lt;capital&gt;Edited Value&lt;/capital&gt;
-//            &lt;continent&gt;Edited Value&lt;/continent&gt;
-//        &lt;/countryDS&gt;
-//    &lt;/data&gt;
-//    &lt;dataSource&gt;countryDS&lt;/dataSource&gt;
-//    &lt;operationType&gt;update&lt;/operationType&gt;
+//    &lt;request&gt;
+//        &lt;data&gt;
+//            &lt;countryDS&gt;
+//                &lt;countryCode&gt;US&lt;/countryCode&gt;
+//                &lt;countryName&gt;Edited Value&lt;/countryName&gt;
+//                &lt;capital&gt;Edited Value&lt;/capital&gt;
+//                &lt;continent&gt;Edited Value&lt;/continent&gt;
+//            &lt;/countryDS&gt;
+//        &lt;/data&gt;
+//        &lt;dataSource&gt;countryDS&lt;/dataSource&gt;
+//        &lt;operationType&gt;update&lt;/operationType&gt;
+//    &lt/request&gt;
 // </pre>
 // The +link{restDataSource.operationBindings,default OperationBindings} for a RestDataSource
 // specify dataProtocol as "getParams" for the fetch operation, and "postParams" for update,
@@ -343,7 +345,7 @@ isc.RestDataSource.addProperties({
     
     //> @attr restDataSource.recordXPath (string : null : IRW)
     // For RestDataSources, by default, either the +link{RestDataSource.xmlRecordXPath} or 
-    // +link{RestDataSource.jsonRecordXPath} is used by default based on the +link{dataFormat}
+    // +link{RestDataSource.jsonRecordXPath} is used based on the +link{dataFormat}
     // setting.
     // <P>
     // Note that you can also apply record xpath binding via
@@ -363,7 +365,7 @@ isc.RestDataSource.addProperties({
     //<
     prettyPrintJSON: true,
     
-    // Overrid init to pick up these paths
+    // Override init to pick up these paths
     init : function () {
         this.recordXPath = this.recordXPath || 
                 (this.dataFormat == "xml" ? this.xmlRecordXPath : this.jsonRecordXPath);
@@ -433,12 +435,12 @@ isc.RestDataSource.addProperties({
     //<
     
     //> @attr RestDataSource.removeDataURL    (string : null : IR)
-    // dataURL for fetch type operations
+    // Custom dataURL for remove type operations
     // @visibility external
     //<
     
     //> @attr RestDataSource.sendMetaData (boolean : true : IR)
-    // Should  operation meta data be included when assmebling parameters to send 
+    // Should operation meta data be included when assmebling parameters to send 
     // to the server? If true, meta data parameters will be prefixed with the 
     // +link{RestDataSource.metaDataPrefix}.<br>
     // Applies to operations where OperationBinding.dataProtocol is set to 
@@ -448,7 +450,7 @@ isc.RestDataSource.addProperties({
     sendMetaData:true,
 
     //> @attr RestDataSource.metaDataPrefix   (string : "_" :IR)
-    // I +link{RestDataSource.sendMetaData} is true, this attribute is used to specify
+    // If +link{RestDataSource.sendMetaData} is true, this attribute is used to specify
     // the prefix to apply to 'meta data' properties when assembling parameters to send to the 
     // server.  Applies to operations where OperationBinding.dataProtocol is set to 
     // <code>"getParams"</code> or <code>"postParams"</code> only.
@@ -492,7 +494,7 @@ isc.RestDataSource.addProperties({
     // RestDataSource overrides transformRequest and handles serializing the request in the
     // appropriate format (determined by the specified
     // +link{operationBinding.dataProtocol,dataProtocol}), including the submitted
-    // +link{DSRequest.data,data} as well as the meta data parameters which may include -<br> 
+    // +link{DSRequest.data,data} as well as the meta data parameters, which may include -<br> 
     // +link{DSRequest.dataSource,dataSource},
     // +link{DSRequest.operationType,operationType}, +link{DSRequest.operationId,operationId};<br>
     // +link{DSRequest.startRow,startRow} and +link{DSRequest.endRow,endRow} (for fetches);<br>
@@ -523,14 +525,17 @@ isc.RestDataSource.addProperties({
         // "postMessage": Post data as XML serialized message
         if (protocol == "postMessage") {
             var params = {
-                dataSource:this.getID(),
-                operationType:dsRequest.operationType,
-                operationId:dsRequest.operationId,
-                startRow:dsRequest.startRow,
-                endRow:dsRequest.endRow,
-                sortBy:dsRequest.sortBy,
-                textMatchStyle:dsRequest.textMatchStyle
+                dataSource:this.getID()
             };
+
+            // omit metadata fields if they're not set on the dsRequest
+            if (dsRequest.operationType != null) params.operationType = dsRequest.operationType;
+            if (dsRequest.operationId != null) params.operationId = dsRequest.operationId;
+            if (dsRequest.startRow != null) params.startRow = dsRequest.startRow;
+            if (dsRequest.endRow != null) params.endRow = dsRequest.endRow;
+            if (dsRequest.sortBy != null) params.sortBy = dsRequest.sortBy;
+            if (dsRequest.textMatchStyle != null) params.textMatchStyle = dsRequest.textMatchStyle;
+
             if (this.sendClientContext) params.clientContext = dsRequest.clientContext;
 
             // send the componentId if present
@@ -545,7 +550,12 @@ isc.RestDataSource.addProperties({
             
             params.data = dsRequest.data;
             params.oldValues = dsRequest.oldValues;
-            
+
+            if (!dsRequest.contentType) {
+                dsRequest.contentType = (this.dataFormat == "json" ? 
+                                         "application/json" : "text/xml");
+            }
+
             if (this.dataFormat == "json") {
                 var settings = {prettyPrint: this.prettyPrintJSON};
                 return isc.JSON.encode(params, settings);
@@ -686,11 +696,16 @@ isc.RestDataSource.addProperties({
     //     return dsResponse;
     // }
     // </pre> 
+    // @param dsResponse (DSResponse) default DSResponse derived from the response data
+    // @param dsRequest (DSRequest) DSRequest object that initiated this request
+    // @param data (XMLDocument or JSON) XML document or JSON objects returned by the web
+    //                                   service
+    // @return (DSResponse) response derived 
     // 
     // @visibility external
     //<
     transformResponse : function (dsResponse, dsRequest, data) {        
-        if (dsResponse.status < 0) return dsResponse;
+        if (dsResponse.status < 0 || !data) return dsResponse;
         if (this.dataFormat == "json") {
             var rawResponse = data.response || {};
         

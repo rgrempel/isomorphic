@@ -79,6 +79,12 @@
     background-color:#FFFFD0; border:1px solid #808080; padding:5px;
 }
 
+/* group label */
+.groupLabel {
+    font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
+    padding-left:5px; padding-right:5px;
+}
+
 /*============================================================
     2) Button
 		button.baseStyle
@@ -744,38 +750,89 @@
 .cellSelectedOverDark,
 .cellDisabled,
 .cellDisabledDark,
+.gridSummaryCell,
+.gridSummaryCellDisabled,
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark,
+.specialCol,
+.specialColOver,
+.specialColSelected,
+.specialColSelectedOver,
+.specialColDisabled,
 .groupNode {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black; background-color:#FFFFFF;
     text-overflow:ellipsis;
     border-top:1px solid white;
     border-bottom:1px solid white;
 }
+.specialCol {
+    background-color:#E7E7E7;
+}
+
 .cellOver,
-.cellOverDark {
+.cellOverDark,
+.specialColOver,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark {
     background-color:#EEEEEE;
     border-top:1px solid #CCCCCC;
     border-bottom:1px solid #666666;
 }
 .cellSelected,
-.cellSelectedDark {
+.cellSelectedDark,
+.specialColSelected,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark {
     background-color:#FFE781;
     border-top:1px solid #FFE781;
     border-bottom:1px solid #FFE781;
 }
 .cellSelectedOver,
-.cellSelectedOverDark {
+.cellSelectedOverDark,
+.specialColSelectedOver,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark {
     background-color:#EFEF89;
     border-top:1px solid #CFCF69;
     border-bottom:1px solid #AFAF49;
 }
 .cellDisabled,
-.cellDisabledDark {
+.cellDisabledDark,
+.specialColDisabled,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark,
+.gridSummaryCellDisabled {
     color:#666666; background-color:#FFFFFF;
 }
-.cellDark {
+.cellDark,
+.gridSummaryCell,
+.recordSummaryCellDark {
     background-color:#F5F5F5;
     border-top:1px solid #F5F5F5;
     border-bottom:1px solid #F5F5F5;
+}
+
+.gridSummaryCell,
+.gridSummaryCellDisabled,
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
+    font-weight:bold;
 }
 
 /* for grouping */
@@ -790,6 +847,10 @@
     padding: 3px; 
 }
 
+/* Multi-sort - sort-index appearing next to sort-arrows in field headers */
+.sortNumeral {
+    font-size:7px
+}
 
 /*============================================================
 	12) ToolStrip
@@ -1513,6 +1574,7 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 .calMonthOtherDayBlankOverDark {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
     color:#444444;
+    border-bottom:1px solid #a0a0a0; border-right:1px solid #a0a0a0;
     background-color: #E6E6E6;
 }
 

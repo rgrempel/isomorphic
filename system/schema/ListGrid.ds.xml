@@ -5,6 +5,7 @@
         <field name="dataProperties" type="ResultSet"/>
 		<field name="dataPageSize" type="positiveInteger"/>
 		<field name="fields" type="ListGridField" multiple="true"/>
+		<field name="defaultFields" type="ListGridField" multiple="true" inapplicable="true" />
         
 		<field name="emptyCellValue" type="HTML"/>
 		<field name="minHeight" type="positiveInteger" visibility="internal"/>
@@ -16,8 +17,8 @@
 		<field name="fixedRecordHeights" type="boolean"/>
 		<field name="canHover" type="boolean"/>
 		<field name="showHover" type="boolean"/>
-		<field name="editByCell" type="boolean"/>
-		<field name="saveByCell" type="boolean"/>
+		<field name="editByCell" type="boolean" basic="true"/>
+		<field name="saveByCell" type="boolean" basic="true"/>
 		<field name="autoSaveEdits" type="boolean"/>
         <field name="modalEditing" type="boolean"/>
 		<field name="stopOnErrors" type="boolean"/>
@@ -49,7 +50,7 @@
 
 		<field name="wrapCells" type="boolean"/>
 		<field name="showAllRecords" type="boolean"/>
-		<field name="showFilterEditor" type="boolean"/>
+		<field name="showFilterEditor" type="boolean" basic="true"/>
         <field name="filterEditorHeight" type="positiveInteger"/>
 		<field name="filterByCell" type="boolean"/>
         <field name="filterOnKeypress" type="boolean"/>
@@ -58,7 +59,7 @@
 		<field name="cellSpacing" type="positiveInteger"/>
         -->
 		<field name="cellPadding" type="positiveInteger"/>
-		<field name="canEdit" type="boolean"/>
+		<field name="canEdit" type="boolean" basic="true"/>
 		<field name="listEndEditAction" type="enum">
             <valueMap same="same" next="next" done="done" stop="stop"/>
         </field>
@@ -83,7 +84,7 @@
 		<field name="selectOnEdit" type="boolean"/>
 
         <field name="recordEditProperty" type="string"/>
-		<field name="editEvent" type="enum">
+		<field name="editEvent" type="enum" basic="true">
 			<valueMap>
 				<value>click</value>
 				<value>doubleClick</value>
@@ -116,7 +117,7 @@
 		<field name="showRollOver" type="boolean"/>
         <field name="hoverByCell" type="boolean" visibility="internal" />
 		<field name="showHiliteInCells" type="boolean" visibility="internal"/>
-		<field name="selectionType" type="enum">
+		<field name="selectionType" type="enum" basic="true">
 			<valueMap>
 				<value>none</value>
 				<value>single</value>
@@ -125,7 +126,7 @@
 			</valueMap>
 		</field>
 		<field name="showEmptyMessage" type="boolean"/>
-		<field name="emptyMessage" type="HTML"/>
+		<field name="emptyMessage" type="HTML" basic="true"/>
 		<field name="emptyMessageStyle" type="cssClass"/>
         
         <field name="singleCellValueProperty" type="string"/>
@@ -139,10 +140,10 @@
                 <value>none</value>
             </valueMap>
         </field>
-		<field name="loadingDataMessage" type="HTML"/>
+		<field name="loadingDataMessage" type="HTML" basic="true"/>
         <field name="loadingMessage" type="HTML"/>
         <field name="loadingDataMessageStyle" type="cssClass"/>
-		<field name="canSort" type="boolean"/>
+		<field name="canSort" type="boolean" basic="true"/>
 		<field name="sortFieldNum" type="positiveInteger"/>
 		<field name="sortDirection" type="boolean"/>
 		<field name="showSortArrow" type="enum">
@@ -153,9 +154,9 @@
 				<value>both</value>
 			</valueMap>
 		</field>
-		<field name="canDragRecordsOut" type="boolean"/>
-		<field name="canAcceptDroppedRecords" type="boolean"/>
-		<field name="canReorderRecords" type="boolean"/>
+		<field name="canDragRecordsOut" type="boolean" basic="true"/>
+		<field name="canAcceptDroppedRecords" type="boolean" basic="true"/>
+		<field name="canReorderRecords" type="boolean" basic="true"/>
         <field name="dragTrackerMode" type="enum">
             <valueMap>
                 <value>none</value>
@@ -170,12 +171,12 @@
 		<field name="canFreezeFields" type="boolean"/>
 		<field name="freezeFieldText" type="string"/>
         <field name="unfreezeFieldText" type="string"/>
-        <field name="canGroupBy" type="boolean"/>
+        <field name="canGroupBy" type="boolean" basic="true"/>
         <field name="groupByText" type="string"/>
         <field name="groupIconSize" type="number"/>
         <field name="groupIndentSize" type="number"/>
         <field name="groupByMaxRecords" type="number"/>
-		<field name="dragDataAction" type="enum">
+		<field name="dragDataAction" type="enum" basic="true">
 			<valueMap>
 				<value>none</value>
 				<value>copy</value>
@@ -198,8 +199,8 @@
         
         <field name="bodyOverflow" type="overflowEnum"/>
         
-        <field name="autoFitData" type="string"/>
-        <field name="autoFitMaxRecords" type="integer"/>
+        <field name="autoFitData" type="string" basic="true"/>
+        <field name="autoFitMaxRecords" type="integer" basic="true"/>
         <field name="autoFitMaxHeight" type="integer"/>
         <field name="autoFitMaxColumns" type="integer"/>
         <field name="autoFitMaxWidth" type="integer"/>
@@ -229,7 +230,9 @@
         <field name="peers" inapplicable="true"/>
 
         <!-- visualBuilder: enable databinding on this component -->
-		<field name="dataSource"		type="DataSource" hidden="false"/>
+		<field name="dataSource"		type="DataSource" hidden="false" idAllowed="true"/>
+
+		<field name="autoFetchData"	type="boolean" basic="true"/>	
 
         <field name="autoFetchDisplayMap" type="boolean"/>
         <field name="fetchDelay" type="number"/>
@@ -237,7 +240,7 @@
         <field name="saveLocally" type="boolean"/>
         <field name="showTreeColumnPicker" type="boolean"/>
         <field name="shrinkForFreeze" type="boolean"/>
-        <field name="canRemoveRecords" type="boolean"/>
+        <field name="canRemoveRecords" type="boolean" basic="true"/>
         <field name="animateRemoveRecord" type="boolean"/>
         <field name="canPickFields" type="boolean"/>
         <field name="canAddFormulaFields" type="boolean"/>
@@ -267,12 +270,13 @@
 
     <groups>
         <group>dragging</group>
+        <group>editing</group>
+        <group>sorting</group>
+        <group>databinding</group>
         <group>cellStyling</group>
         <group>emptyMessage</group>
         <group>sizing</group>
         <group>selection</group>
-        <group>sorting</group>
-        <group>editing</group>
     </groups>
 
     <methods>
@@ -288,5 +292,6 @@
                 icon="[SKINIMG]/actions/edit.png"/>
         <method title="Start Editing New" name="startEditingNew" action="true"
                 icon="[SKINIMG]/actions/add.png"/>
+        <method name="recordClick" basic="true" />
     </methods>
 </DataSource>

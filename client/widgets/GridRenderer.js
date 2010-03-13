@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -80,15 +80,20 @@ totalRows : 0,
 //<
 //showAllRows : false,
 
-// virtualScrolling - when incremental rendering is on and we have variable record heights, standard
-// scroll height calulations can be off since we don't know the sizes of unrendered rows.
-// virtual scrolling is a mechanism that works around these differences to make scrollbars / scroll
-// area appear correct.
-virtualScrolling:true,
+//>	@attr	gridRenderer.virtualScrolling (boolean : null : [IRA])
+// When incremental rendering is switched on and there are variable record heights, the virtual
+// scrolling mechanism manages the differences in scroll height calculations due to the
+// unknown sizes of unrendered rows to make the scrollbar and viewport appear correctly.
+// <P>
+// virtualScrolling is switched on automatically when fixedRowHeights is false but you should 
+// switch it on any time there are variable record heights.
+// @visibility external
+//<
+//virtualScrolling:true,
 
 //>	@attr	gridRenderer.showAllColumns (boolean : false : [IRA])
-// Whether all columns should be drawn all at once, or only columns visible in the viewport.<br><br>
-//
+// Whether all columns should be drawn all at once, or only columns visible in the viewport.
+// <P>
 // Drawing all columns causes longer initial rendering time, but allows smoother horizontal
 // scrolling.  With a very large number of columns, showAllColumns will become too slow.
 //
@@ -108,7 +113,7 @@ virtualScrolling:true,
 // cells) which happens to be in a grid with a viewport showing only 20 or so rows.
 // Incremental rendering causes a brief "flash" during scrolling as the visible portion of the
 // dataset is redrawn, and a better scrolling experience can be obtained in this situation by
-// drawing the entire dataset up front, which in this example would have neglible effect on
+// drawing the entire dataset up front, which in this example would have negligable effect on
 // initial draw time.
 // <P>
 // <code>drawAllMaxCells:0</code> disables this features.  You may want to disable this feature
@@ -125,7 +130,7 @@ virtualScrolling:true,
 drawAllMaxCells:250,
 
 
-//>@attr    gridRenderer.canSelectProperty (string : "canSelect" : [IR])
+//>@attr    gridRenderer.recordCanSelectProperty (string : "canSelect" : [IRA])
 // If set to false on a record, selection of that record is disallowed.
 //<
 recordCanSelectProperty: "canSelect",
@@ -168,14 +173,14 @@ scrollRedrawDelay:75,
 //<
 drawAheadRatio : 1.3,
 
-//>	@attr	gridRenderer.quickDrawAheadRatio (float : 1.3 : [IRWA])
+//>	@attr	gridRenderer.quickDrawAheadRatio (float : 1.0 : [IRWA])
 // Alternative to +link{drawAheadRatio}, to be used when the user
 // is rapidly changing the grids viewport (for example drag scrolling through the grid).
 // If unspecified +link{drawAheadRatio} will be used in all cases
 // @group performance
 // @visibility external
 //<
-quickDrawAheadRatio:1.3,
+quickDrawAheadRatio:1.0,
    
 //>	@attr	gridRenderer.cellHeight		(number : 20 : [IRW])
 // The default height of each row in pixels.
@@ -370,6 +375,7 @@ emptyCellValue:"&nbsp;",
 //fastCellUpdates:false,
 
 
+
 // Standard Canvas settings
 // --------------------------------------------------------------------------------------------
 overflow:"auto",
@@ -423,8 +429,13 @@ initWidget : function () {
         this.showAllRows = true;
         this.showAllColumns = true;
     }
-    
-    
+
+    // turn virtualScrolling on if it's unset and we have variable-height rows
+    if (!this.fixedRowHeights && this.virtualScrolling == null) this.virtualScrolling = true;
+    // default for virtualScrolling is now null, so if it's been turned on, also turn 
+    // fixedRowHeights off so that virtualScrolling has an effect
+    //if (this.fixedRowHeights && this.virtualScrolling) this.fixedRowHeights = false;
+
     if (!this.fixedRowHeights && !this.showAllRows) {
         
         
@@ -476,7 +487,7 @@ getEmptyMessageHTML : function (startCol,endCol) {
     // Always ensure the empty message fills the viewport.
     // Respect flag to match the empty message size to the specified field widths - 
     // if the specified field sizes exceed the viewport size, expand the empty message
-    // to accomodate it.
+    // to accommodate it.
     var width = this.getInnerWidth(),
         extraWidth = 0;
     if (this.expandEmptyMessageToMatchFields && this._fieldWidths) {
@@ -760,7 +771,6 @@ scrollToRatio : function (vertical, ratio,a,b) {
     
     this._targetRow = rowNum;
     this._rowOffset = rowOffset;
-
     this._scrollToTargetRow();
 
     // if scrolling to that position makes us dirty, setup to scroll to the indicated target
@@ -872,6 +882,7 @@ _scrollToTargetRow : function () {
     
     this._scrollHeight = null;
     this.scrollTo(null, scrollTop);
+    
     this._literalScroll = false;
 
     // stop reporting last requested scroll ratio since we've now scrolled to match the
@@ -902,6 +913,7 @@ scrollTo : function (left, top, cssScroll,d) {
     var needRedraw = (this._needRowRedraw() || this._needColumnRedraw());
 
     if (needRedraw) {
+
         
         if (this.scrollRedrawDelay == 0) {
             this.markForRedraw("scrolled");
@@ -1023,7 +1035,7 @@ _updateInnerHTML : function (a,b,c,d) {
     }
 },
 
-// in cacheDOM mode, this is called in lieue of normal redraw
+// in cacheDOM mode, this is called in lieu of normal redraw
 drawVisibleChunks : function () {
     // figure out what undrawn chunks are visible and draw them
     var visibleRows = this.getVisibleRows(),
@@ -1124,12 +1136,22 @@ startRowAnimation : function (show, startRow, endRow, callback, speed, duration,
                                     );
         return;
     }
+    
 
     // redraw, placing an entire subtable with the rows to be animated inside a single row, and
     // measure the size of the rows we're going to reveal or hide
     
+    
+    // When doing a 'slide-in' animation, we have to write out every row to be revealed since
+    // they'll all scroll past the user's nose.
+    // Have a check for this being a huge number of rows so we don't hit performance issues
+    // generating this initial HTML!
+    if ((endRow-startRow) > this.maxAnimateSlideInRows) slideIn = false;
+    // set up the this._slideInAnimationRows attribute - this allows us to determine
+    // whether we need to write out every row in the fragment
+    this._slideInAnimationRows = slideIn;
     var fragmentHeight = this._initializeShowHideRow(show, startRow, endRow, callback, fromListGrid);
-
+    
     // Use animateRowHeight to grow or shrink the height
     this.animateRowHeight(this._animatedShowStartRow, 
                          // NOTE: animate all the way down to zero, so there is no lurch
@@ -1138,6 +1160,11 @@ startRowAnimation : function (show, startRow, endRow, callback, speed, duration,
                          {target:this, methodName:"_rowShowComplete"}, 
                          speed, duration, effect, slideIn);
 },
+
+// maximum number of rows to be animated into view using a 'slide' animation
+// this kind of animation requires every row be rendered so we limit this to ensure
+// we don't hit a performance roadblock writing out thousands of records' HTML!
+maxAnimateSlideInRows:100,
 
 
 // Helper to start delayed row animation
@@ -1331,7 +1358,6 @@ animateRowHeight : function (rowNum, toHeight, callback, speed, duration, effect
         if (change < 0) change = 0 - change;
         
         duration = Math.round((change / speed) * 1000);
-        
         // Don't let the animation exceed a maximum
         if (duration > this.animateRowsMaxTime) duration = this.animateRowsMaxTime;
     }
@@ -1344,6 +1370,7 @@ animateRowHeight : function (rowNum, toHeight, callback, speed, duration, effect
         _slideIn:slideIn,
         _fromList:fromListGrid
     }
+
     effect = (effect || this._$none);
     if (this.logIsInfoEnabled("animation")) {
         this.logInfo("starting row animation, duration: " + duration + ", effect: " + effect, 
@@ -1481,7 +1508,7 @@ getTableHTML : function (colNum, startRow, endRow) {
         if (this.virtualScrolling) {
            // never show all rows? this._isVirtualScrolling = !showingAllRows;
            this._isVirtualScrolling = !showingAllRows && !this.fixedRowHeights;
-            
+
         }
         // if we've stopped virtual scrolling, clean up those pointers
         if (!this._isVirtualScrolling) {
@@ -1504,19 +1531,21 @@ getTableHTML : function (colNum, startRow, endRow) {
             viewportEnd = drawRect[1] +1;
     
         //>Animation
-        // We don't know what the fragment is used for, so we can't skip returning rows in
-        // most cases. 
-        // If we are writing out content for an animation row (content will be shrunk or 
-        // grown to indicate an animated add/remove of rows), and all the rows are 
-        // (and will be) out of the viewport we can just write out a big spacer.
-        // Otherwise we have to return HTML for the full set of rows (no spacers even for rows
-        // that will end up offscreen) since we may be sliding them into view in which case 
-        // they will all scroll past the user. We can't check this._rowAnimationInfo._slideIn
-        // here as it won't have been set up yet.
+        // A common use of table fragments is animating folder open/close, where we write out
+        // a bunch of child rows and animate them into view.
+        // In this case if we're scrolling the rows into view and we're inside the viewport,
+        // each of the rows will be seen by the user so we can't skip writing any content
+        // as we don't want to show blank spacers to the user.
         if (this._writingAnimatedShowRows) {
             // All off the bottom or the top - just draw a big spacer so the scrollbar adjusts
             if (viewportTop > endRow || viewportEnd < startRow) {
                 startRow = endRow;
+            } else {
+                if (!this._slideInAnimationRows) {
+                    startRow = Math.max(startRow,viewportTop);
+                    endRow = Math.min(endRow,viewportEnd);
+                }
+                
             }
         }
         //<Animation
@@ -1574,7 +1603,8 @@ getTableHTML : function (colNum, startRow, endRow) {
         totalHorizontalWidth = this._fieldWidths.sum()
         
         //this.logWarn("column pads: " + [leftColPad, rightColPad] + " type:" + padType);
-        padType = (this.cacheDOM || isc.Browser.isIE || isc.Browser.isSafari ? "margin" : "padding");
+        padType = (this.cacheDOM || (isc.Browser.isIE && !isc.Browser.isIE8) ? "margin" : "padding");
+        //padType = "padding";
     }
 
     // total size of the table we're drawing (NOTE: may be larger or smaller than the body
@@ -1678,9 +1708,13 @@ getTableHTML : function (colNum, startRow, endRow) {
             // get style we'll use on the first record, used for sizing calculations
             firstRecordStyle = this._getFirstRecordStyle();
     
-        if ((isc.Browser.isSafari || isc.Browser.isIE) && isc.Browser.isStrict) {
+        if (isc.Browser.isStrict && (isc.Browser.isSafari || isc.Browser.isIE)) {
             
-            hPad = this._getCellHBorderPad();
+            if ((isc.Browser.isIE && !isc.Browser.isIE8) ||
+                (isc.Browser.isSafari && isc.Browser.safariVersion < 530)) 
+            {
+                hPad = this._getCellHBorderPad();
+            }
             
             
             vPad = (this.fixedRowHeights ? 0 : this.cellPadding * 2);
@@ -1864,7 +1898,7 @@ getTableHTML : function (colNum, startRow, endRow) {
             // If we're drawing the record as a single cell, figure out which cells it's spanning
             
             var singleCellSpan = drawRecordAsSingleCell ?      
-                                    this._getSingleCellSpan(record,startCol,endCol) : null;
+                                    this._getSingleCellSpan(record,rowNum,startCol,endCol) : null;
             
             //if (skipCount > 0) {
             //    this.logWarn("rowSpan start rows for row: " + rowNum + 
@@ -2138,6 +2172,7 @@ getTableHTML : function (colNum, startRow, endRow) {
                       perCell + "ms per cell, " + 
                       perSecond + " cells per second), " + 
                       "spacerHeights: [" + [startSpacerHeight, endSpacerHeight] + "], " +
+                      "left/right pad: [" + [leftColPad, rightColPad] + "], " +
                       singleCells + " single cell rows",
                       "gridHTML"); 
     }
@@ -2161,7 +2196,7 @@ getCellAlign : function (record, field, rowNum, colNum) {
 // draw record as single cell does not always span the entire row - in the ListGrid, if we have
 // a checkbox field we want to show it on records even where singleCellValue is true
 // startCol / endCol passed in are the start/end cols we're currently rendering
-_getSingleCellSpan : function (record, startCol, endCol) {
+_getSingleCellSpan : function (record, rowNum, startCol, endCol) {
     return [startCol, endCol];
 },
 
@@ -2347,7 +2382,6 @@ _getMinHeightCSSText : function (record, rowNum) {
     
     var height = (rowNum != null ? this.getRowHeight(record, rowNum) : this.cellHeight),
         IE = isc.Browser.isIE, strict = isc.Browser.isStrict;
-
     
     if (strict && (IE || isc.Browser.isSafari)) height -= this._vPad;
     
@@ -2418,6 +2452,7 @@ getCellValue : function (record, rowNum, colNum) {
 // NOTE: in order to create a valid grid, you must either provide a totalRows value or implement
 // getTotalRows()
 //
+// @return (number)
 // @see attr:totalRows
 // @visibility external
 //<
@@ -2536,7 +2571,6 @@ getRowHeight : function (record, rowNum) {
 
 updateHeightForEmbeddedComponents : function (record, rowNum, height) {    
     if (record && record._embeddedComponents) {
-
         height += this._getExtraEmbeddedComponentHeight(record, rowNum);
     }
     return height;
@@ -2551,9 +2585,8 @@ _getExtraEmbeddedComponentHeight : function (record, rowNum) {
 
         // mark the component with the row it currently appears in
         if (rowNum != null) component._currentRowNum = rowNum;
-
         if (component.embeddedPosition == this._$within) continue;
-
+        
         // expand the row so that the appears under the normal cells
         var componentHeight = component.getVisibleHeight();
         if (componentHeight > maxComponentHeight) maxComponentHeight = componentHeight;
@@ -2613,14 +2646,6 @@ getCellRowSpan : function (rowNum, colNum) {
 // most uses an embedded component changes row number (eg ListGrid sort, TreeGrid
 // expand/collapse), so we'd need the caller to tell us about rowNum changes.
 // 
-// Bugs:
-// - embedded components should probably never bubble mouse events
-// - removing a record doesn't automatically destroy the associated component (though it will
-//   be hidden)
-// - need better handling of components that overflow their cell or table, or need to clip
-//   them automatically.  Current, can't scroll to show an offscreen component.
-// - tab order across multiple embedded components that show form items is semi-random (based
-//   on insertion order instead of row order)
 
 
 // Method to actually attach a component to a record
@@ -2672,7 +2697,7 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
     // Make the record hang onto the component
     record._embeddedComponents.add(component);
     
-    // add the record to the list of embedded components.
+    // add the component to the list of embedded components.
     if (this._embeddedComponents == null) this._embeddedComponents = [];
     this._embeddedComponents.add(component);
     
@@ -2694,16 +2719,27 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
 
     // add it as a child (which will force a draw, and give us a size) - hide it first so it
     // doesn't appear and then get moved into place
+    // temporarily suppress adjustOverflow while we do this so we don't show huge
+    // scrollbars if the thing is sized to 100% wide or tall
     if (component.parentElement != this) {
+        var wasSuppressingAO = this._suppressAdjustOverflow; 
+        this._suppressAdjustOverflow = true;
         component.hide();
         this.addChild(component);
+        if (wasSuppressingAO == null) delete this._suppressAdjustOverflow;
     }
 
     // if the embedded component resizes vertically, redraw so the row becomes the right size
-    if (position == this._$expand) {
+    if (position != this._$within) {
         this.observe(component, "resized", 
                  "if(deltaY!=null&&deltaY!=0)observer.markForRedraw('embedded component resized')");
+    // If positioned within the cell, respond to resized (EG adjustOverlow) by
+    // repositioning so snapTo continues to work...
+    } else {
+        this.observe(component, "resized", 
+                 "observer.placeEmbeddedComponent(observed)");
     }
+
      
     // don't redraw the component when the grid redraws, otherwise we'll be redrawing embedded
     // components continually during scrolling.  NOTE: it may be that this should be the
@@ -2711,12 +2747,17 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
     component.__oldRedrawWithParent = component._redrawWithParent;
     component._redrawWithParent = false;   
 
-    // prevent bubbling of mouse events while the component is embedded.  Without this,
+    // prevent bubbling of most mouse events while the component is embedded.  We still want 
+    // mouseWheel events to bubble or it feels like scrolling is broken when embeddedComponents
+    // scroll under the mouse.  We prevent other events because otherwise,
     // cellClick, recordClick et al will fire while the component is embedded, which is usually
     // wrong.
     component._origBubbleMouseEvents = component.bubbleMouseEvents;
-    if (!component.bubbleMouseEvents) component.bubbleMouseEvents = false;
-    
+    if (!component.bubbleMouseEvents) {
+        // prevent most mouse events from bubbling
+        component.bubbleMouseEvents = ["mouseDown", "mouseUp", "click", "doubleClick", "contextClick"];
+    }
+
     // If the component is going to expand the row we'll need a redraw
     // Also, if we don't know the rowNum / colNum for the record, this will get picked up at redraw
     // time
@@ -2724,10 +2765,9 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
     if (moveOnly && (rowNum == -1 || colNum == -1)) {     
         moveOnly = false;
     }
-    
     if (moveOnly) {
         this.placeEmbeddedComponent(component);
-    } else {        
+    } else {
         // redraw, which will draw the row at the new height and place the component
         this.markForRedraw("added embedded component");
     }
@@ -2747,8 +2787,7 @@ updateEmbeddedComponentCoords : function (components, record, rowNum, colNum) {
 // Ideally this would only be called on sort, dataChanged, etc -- currently being called
 // on every body redraw (may impact performance when incremental scrolling, for example)
 placeEmbeddedComponent : function (component) {
-    var rowNum = component._currentRowNum; 
-
+    var rowNum = component._currentRowNum;
     if (rowNum == null || rowNum < this._firstDrawnRow || rowNum > this._lastDrawnRow) {
         // row is no longer drawn - clear component
         
@@ -2761,13 +2800,13 @@ placeEmbeddedComponent : function (component) {
         colNum = component._currentColNum,
         topOrigin = this.getRowTop(rowNum),
         leftOrigin = colNum != null ? this.getColumnLeft(colNum) : 0,
-        width = colNum != null ? this.getColumnWidth(colNum) : this._fieldWidths.sum();
+        width = (colNum != null && colNum >= 0) ? this.getColumnWidth(colNum) : this._fieldWidths.sum();
 
     if (position == this._$within) {
         // Respect "snapTo" if specified
         // *Note: we are suppressing standard canvas percent sizing and snap-to behavior
         // so we can explicitly size / position based on cell coordinates
-        var snapTo = component.snapTo || "TL",
+        var snapTo = this.getEmbeddedComponentSnapTo(component, record, rowNum, colNum),
             snapEdge = component.snapEdge || snapTo;
            
         // figure out sizes before placing!
@@ -2802,21 +2841,104 @@ placeEmbeddedComponent : function (component) {
         // float at the bottom of the row, rather than the top 
         topOrigin += this.cellHeight;
         component.moveTo(leftOrigin, topOrigin);
-        if (colNum != null) component.setWidth(width);
-        // Not clear what we should do with the ZIndex by default
-        // component.bringToFront();
-    }
         
-    if (!component.isDrawn()) component.draw();
-    if (!component.isVisible()) {            
-        if (this.shouldAnimateEmbeddedComponent(component)) {
-            component.animateShow();
-        } else {
-            component.show();
+        // Note that setWidth() may adjust the visibleHeight of the component.
+        
+        
+//        if (colNum != null) {
+            component.setWidth(width);
+            
+//        }
+    }
+
+    var showing = this.isDrawn();
+    if (showing && !component.isDrawn()) component.draw();
+    
+    // at this point we can measure the component to see if it forces vertical expansion of the
+    // row
+    // Note that the row's height as written into the dom is set via getRowHeight() which already
+    // checks the 'visibleHeight' of all embedded components, so the cases we're catching here are
+    // if the visibleHeight was misreported before this method ran.
+    // We've seen this happen when the component overflows its specified size, specifically:
+    //  - if the setWidth() call above caused an already drawn component to reflow and overflow
+    //    vertically in a different manner
+    //  - if the component was scrolled out of view and clear()'d [cleared components return
+    //    specified height from adjustOverflow], and scrolling back into view is draw()ing it again.
+    //
+    // Note: We observe the 'resized' method of the embedded component, so when resizing due
+    // to the component size changing (such as adjustOverflow from the setWidth call above)
+    // we get a markForRedrawCall() which in turn runs '_placeEmbeddedComponents()' and resizes/
+    // repositions all embedded components.
+    
+    
+    // If we're currently in the process of redrawing however, we'll be marked as dirty so this
+    // if resized trips here in response to the above setWidth or draw(), markForRedraw will have
+    // no effect - catch this case (via an isDirty() check) and explicitly size the
+    // row to the new desired height.
+    // NOTE: when we redraw we run through '_placeEmbeddedComponents' which positions/sizes
+    // all embedded components. We do this in rowNum order, so if there are subsequent embedded
+    // components rendered into the grid these should get shifted down automatically if a row
+    // above them is expanded by this method.
+    
+    
+    if (position != this._$within) {
+        var redrawing = this.isDirty(),
+            expectedRowHeight = this.getRowHeight(record,rowNum);
+
+        if (redrawing && (expectedRowHeight != this.getRowSize(rowNum))) {
+            this.setRowHeight(rowNum, expectedRowHeight, record);
+            // refreshing the content ensures we re-write the spacer, which causes the
+            // content to top-align properly
+            this.refreshRow(rowNum);
+        }
+   
+    }
+    if (showing) {
+        if (!component.isVisible()) {            
+            if (this.shouldAnimateEmbeddedComponent(component)) {
+                component.animateShow();
+            } else {
+                component.show();
+            }
         }
     }
+    
     this.updateEmbeddedComponentZIndex(component);
     
+},
+
+
+alignSnapToMap:{
+    left:{
+        top:"TL",
+        center:"L",
+        bottom:"BL"
+    },
+    right:{
+        top:"TR",
+        center:"R",
+        bottom:"BR"
+    },
+    center:{
+        top:"T",
+        center:"C",
+        bottom:"B"
+    }
+},
+
+
+getEmbeddedComponentSnapTo : function (component, record, rowNum, colNum) {
+    if (component.snapTo != null) return component.snapTo;
+    if (colNum == null) {
+        return "TL"
+    }
+    
+    var align = this.getCellAlign(record, this.fields[colNum], rowNum, colNum) || "center",
+        valign = this.getCellVAlign(record, this.fields[colNum], rowNum, colNum) || "center";
+
+    var result = this.alignSnapToMap[align][valign];
+    //this.logWarn("result:"+ result);
+    return result;
 },
 
 // should this embeddedComponent animate show? 
@@ -2827,7 +2949,23 @@ shouldAnimateEmbeddedComponent : function (component) {
 // update the zindex of embedded components. Overridden at the LG level by default
 updateEmbeddedComponentZIndex : function (component) {
 },
+ 
+getEmbeddedComponent : function (record, colNum) {
+    // support specifying rowNum instead
     
+    if (isc.isA.Number(record)) record = this.getCellRecord(record, 0);
+
+    var components = record._embeddedComponents;
+    if (components == null) return;
+
+    var component = null;
+
+    if (isc.isA.Number(colNum)) 
+        component = components.find({_currentColNum: colNum, _embedBody: this.getID()});
+    
+    return component;
+},
+
 removeEmbeddedComponent : function (record, component, suppressRedraw) {
     
     // support specifying rowNum instead
@@ -2838,8 +2976,12 @@ removeEmbeddedComponent : function (record, component, suppressRedraw) {
     if (components == null) return;
 
     // support specifying component by colNum
-    if (isc.isA.Number(component)) component = components.find("_currentColNum", component);
-    
+    if (isc.isA.Number(component)) 
+        component = components.find({_currentColNum: component, _embedBody: this.getID()});
+        
+    if (!component) // a single expansion component
+        component = components.find({ _embedBody: this.getID() });
+
     if (!components.contains(component)) return;
 
     if (this.isObserving(component, "resized")) {
@@ -2847,7 +2989,7 @@ removeEmbeddedComponent : function (record, component, suppressRedraw) {
     }
     record._embeddedComponents.remove(component);
     if (record._embeddedComponents.length == 0) record._embeddedComponents = null;
-    this._embeddedComponents.remove(component);
+    if (this._embeddedComponents) this._embeddedComponents.remove(component);
 
     // reset redraw w/parent flag to original setting
     component._redrawWithParent = component.__oldRedrawWithParent;
@@ -2895,6 +3037,10 @@ _resetEmbeddedComponents : function () {
 _placeEmbeddedComponents : function () {
     var components = this._embeddedComponents;
     if (components == null) return;
+    // sort by current row num. This means we place the components in the order in which they're
+    // drawn within the table. If their heights change and they expand their containing rows, they
+    // will therefore also change the top coords of subsequent rows
+    components.sortByProperty("_currentRowNum", true);
     for (var i = 0; i < components.length; i++) {
         this.placeEmbeddedComponent(components[i]);
     }
@@ -2924,6 +3070,13 @@ getTableZIndex : function () {
 //<
 recordCustomStyleProperty:"customStyle",
 
+//> @attr gridRenderer.showSelectedStyle ( boolean : true : IRW )
+// Should the "Selected" style be applied to selected records?
+// @see gridRenderer.getCellStyle()
+// @visibility external
+//<
+showSelectedStyle:true,
+
 //>	@method	gridRenderer.getCellStyle()
 // Return the CSS class for a cell. By default this method has the following implementation:<br>
 // - return any custom style for the record (see +link{GridRenderer.recordCustomStyleProperty}) 
@@ -2931,7 +3084,7 @@ recordCustomStyleProperty:"customStyle",
 // - create a style name based on the result of +link{gridRenderer.getBaseStyle()} and the 
 //   state of the record.<br>
 // The state of the record is indicated by adding a suffix to the base style.
-// There are four independant boolean states, which are combined in the order given:
+// There are four independent boolean states, which are combined in the order given:
 // <ol>
 // <li>"Disabled" : whether the cell is disabled; enable by setting the "enabled" flag on record
 //     returned by getCellRecord
@@ -2950,6 +3103,8 @@ recordCustomStyleProperty:"customStyle",
 //     documentation on this]
 // <li>overriding this function
 // </ul>
+// <p>
+// "Selected" style can be ignored by setting +link{gridRenderer.showSelectedStyle} to false.
 //
 //		@param	record		(object)	record object for this row and column 
 //		@param	rowNum      (number)	number of the row
@@ -3033,8 +3188,14 @@ getCellStyleIndex : function (record, rowNum, colNum) {
     
 	var styleIndex = 0;     // base style
 
+    var useAlternateStyle = true;
+    if (this.grid != null) {
+        var field = this.grid.getField(this.grid.getFieldNumFromLocal(colNum, this));
+        useAlternateStyle = !field ? true : field.showAlternateStyle != false;
+    }
+
     // if alternating record styles, see if the cell is in a dark band
-    if (this.alternateRowStyles) {
+    if (this.alternateRowStyles && useAlternateStyle) {
 		var isOdd = (Math.floor(rowNum / this.alternateRowFrequency) % 2 == 1);
 		if (isOdd) styleIndex += 8;
 	}
@@ -3055,7 +3216,7 @@ getCellStyleIndex : function (record, rowNum, colNum) {
         }
     
         // if selection is enabled, see if the cell is selected
-        if (this.selectionEnabled()) {
+        if (this.showSelectedStyle && this.selectionEnabled()) {
             var isSelected = (this.canSelectCells ?     
                               this.selection.cellIsSelected(rowNum, colNum) :
                               this.selection.isSelected(record));                             
@@ -3258,7 +3419,7 @@ getTableElement : function (logicalRowNum, logicalColNum) {
 //
 //<
 _updateCellStyle : function (record, rowNum, colNum, cell, className) {
-
+    
     // get the DOM cell object if not provided
     if (cell == null) cell = this.getTableElement(rowNum, colNum);
     if (cell == null) return; // cell not currently drawn
@@ -3267,7 +3428,7 @@ _updateCellStyle : function (record, rowNum, colNum, cell, className) {
     // determine the CSS style className if not provided
     if (className == null) className = this.getCellStyle(record, rowNum, colNum);
 
-    //this.logWarn("setting: " + [rowNum, colNum] + " to className:" + className);
+//this.logWarn("setting: " + [rowNum, colNum] + " to className:" + className);
 
     if (this.fastCellUpdates) {
         
@@ -3349,7 +3510,6 @@ setRowHeight : function (rowNum, newHeight, record, className, shouldClip, insta
     ;
 
     if (!isc.isA.Number(currentSpecifiedHeight)) currentSpecifiedHeight = null;
-
     
     if ((isc.Browser.isSafari || isc.Browser.isIE) && isc.Browser.isStrict) {                    
         if (record == null) record = this.getCellRecord(rowNum, firstDrawnCol);
@@ -3435,7 +3595,7 @@ setRowHeight : function (rowNum, newHeight, record, className, shouldClip, insta
     this._clearTableCache();
         
     if (instantOverflow) {  
-        this.adjustOverflow("cell height changd");
+        this.adjustOverflow("cell height changed");
     } else {
         this._markForAdjustOverflow("cell height changed");        
     }
@@ -3459,18 +3619,20 @@ setRowHeight : function (rowNum, newHeight, record, className, shouldClip, insta
 //  @group	appearance
 //<
 _$semi:";",
+_$zeroVPadding:"padding-top:0px;padding-bottom:0px;",
+_$overflowHidden:"overflow:hidden;",
 _getCompleteCellCSSText : function (record, rowNum, colNum, className) {
     var cssText = null;
     // Make sure top and bottom padding are set to zero if fixedRowHeights is true
     
-    if (this.fixedRowHeights) cssText = "padding-top:0px;padding-bottom:0px;";
+    if (this.fixedRowHeights) cssText = this._$zeroVPadding;
     else {        
         cssText = this._getMinHeightCSSText(record,rowNum);
     }
     
     if (isc.Browser.isIE8Strict) {
-        if (cssText == null) cssText = "overflow:hidden;";
-        else cssText += "overflow:hidden;";
+        if (cssText == null) cssText = this._$overflowHidden;
+        else cssText += this._$overflowHidden;
     }
     
     // For Moz, pre-pend the width and overflow cssText
@@ -3924,13 +4086,12 @@ getRowTop : function (rowNum) {
     
     var undrawnHeight = this._getUndrawnHeight(),
         drawnHeights = this._getDrawnRowHeights();
-
+        
     if (rowNum > this._lastDrawnRow) {
         // undrawn rows after the drawn area are treated as having fixed height
         return undrawnHeight + drawnHeights.sum() + 
                     (((rowNum-1) - this._lastDrawnRow) * this.getAvgRowHeight());
     }
-
     // otherwise return the sum of heights of records 0-rowNum
     return undrawnHeight + drawnHeights.sum(0, rowNum - this._firstDrawnRow);
 },
@@ -4028,25 +4189,24 @@ _getDrawnRowHeights : function () {
             
             
             
+            var oldSafari = isc.Browser.isSafari && isc.Browser.safariVersion < 500;
+
+            
             var checkAllCellHeights = 
-                (isc.Browser.isSafari && 
+                (oldSafari &&
                     (this.fixedRowHeights == false || 
                         (this.shouldFixRowHeight != null && 
                          this.shouldFixRowHeight(this.getCellRecord(rowNum), rowNum) == false ) 
                      )
                  ),
 			    cell, safariCellArray = [];
-
-                
-            if (!isc.Browser.isSafari || 
-                (!checkAllCellHeights && isc.Browser.safariVersion >= 125)) {
+    
+            if (!oldSafari || !checkAllCellHeights) {
                 
                 cell = row.cells[row.cells.length - 1];
             } else {
-                if (isc.Browser.safariVersion >= 125) {
-                    for (var k = 0; k < row.cells.length; k++) {
-                        safariCellArray[k] = row.cells[k]
-                    }
+                for (var k = 0; k < row.cells.length; k++) {
+                    safariCellArray[k] = row.cells[k]
                 }
             } 
                 
@@ -4075,7 +4235,7 @@ _getDrawnRowHeights : function () {
 
             } else if (cell) { 
 
-                if (!isc.Browser.isSafari) {
+                if (!oldSafari) {
                     heights[rowNum] = cell.offsetHeight;
                 } else {
                     // In Safari the offsetHeight is often misreported, and can't exceed
@@ -4115,6 +4275,7 @@ _getDrawnRowHeights : function () {
 
     
     if (isc.Browser.isSafari && !isc.Page.isLoaded()) this._rowHeights = null;
+
 	return heights;
 },
 
@@ -4179,7 +4340,7 @@ getColumnSizes : function () {
 // Returns the row number of the most recent mouse event.
 //		@group	events, selection
 //
-//		@param [y] (number) optional y-coordinate to obtain row number, in lieue of the y
+//		@param [y] (number) optional y-coordinate to obtain row number, in lieu of the y
 //                        coordinate of the last mouse event
 //
 //		@return	(number)	row number, or -2 if beyond last drawn row
@@ -4233,7 +4394,7 @@ getEventRow : function (y) {
 // Returns the column number of the most recent mouse event.
 //		@group	events, selection
 //
-//		@param [x] (number) optional x-coordinate to obtain column number for, in lieue of the x
+//		@param [x] (number) optional x-coordinate to obtain column number for, in lieu of the x
 //                        coordinate of the last mouse event
 //
 //		@return	(number)	column number, or -2 if beyond last drawn column
@@ -4349,6 +4510,7 @@ getAvgRowHeight : function () {
 //>	@method	gridRenderer.getVisibleRows()
 // Get the rows that are currently visible in the viewport, as an array of 
 // [firstRowNum, lastRowNum]. If the grid contains no records, will return [-1,-1];
+// @return (Array)
 // @visibility external
 //<
 // NOTE: the viewport can extend beyond the last row or column, in which case the last row or
@@ -4412,12 +4574,13 @@ getVisibleColumns : function () {
 // lastRowNum].  
 // <P>
 // The drawn rows differ from the +link{getVisibleRows,visibleRows} because of
-// +link{drawAheadRatio,drawAhead}.  The drawn rows are the apppropriate range to consider if
+// +link{drawAheadRatio,drawAhead}.  The drawn rows are the appropriate range to consider if
 // you need to, eg, using +link{refreshCell()} to update all the cells in a column.
 // <P>
 // If the grid is undrawn or the +link{emptyMessage} is currently shown, returns
 // [null,null];
 //
+// @return (Array)
 // @visibility external
 //<
 getDrawnRows : function () { 
@@ -4551,9 +4714,7 @@ mouseMove : function (arg1, arg2) {
         if (rowChanged && this.rowOver) {
             this.rowOver(this.getCellRecord(rowNum, colNum), rowNum, colNum);
         }
-    } 
-    
-    return isc.EventHandler.STOP_BUBBLING;
+    }
 },
 
 // Support suppressing mouse/keyboard event handling at certain times.
@@ -4762,6 +4923,10 @@ selectionEnabled : function () {
     return this.selection != null;
 },
 
+canSelectRecord : function (record) {
+    return (record != null && record[this.recordCanSelectProperty] !== false);
+},
+
 //>	@method	gridRenderer.mouseDown()	([A])
 //		@group	events, selection
 //			handle a mouseDown event
@@ -4782,6 +4947,11 @@ mouseDown : function () {
     // hang onto the rowNum / colNum to see if we get a click over the same cell
     this._mouseDownRow = rowNum;
     this._mouseDownCol = colNum;
+    
+    // remember the location of the click too.
+    
+    this._mouseDownX = isc.EH.getX();
+    this._mouseDownY = isc.EH.getY();
 
     var record = this.getCellRecord(rowNum, colNum);   
 
@@ -4814,9 +4984,6 @@ _cellMouseDown : function (record, rowNum, colNum) {
 
     // perform selection
     this.selectOnMouseDown(record, rowNum, colNum);
-
-    return isc.EH.STOP_BUBBLING;
-
 }, 
 
 
@@ -4825,7 +4992,7 @@ selectOnMouseDown : function (record, rowNum, colNum) {
     if (!this.selectionEnabled()) return true;
 
     //this.logWarn("mouseDown at: " + [rowNum, colNum]);
-    if (rowNum >= 0 && colNum >= 0 && record != null && record[this.recordCanSelectProperty] !== false) {
+    if (rowNum >= 0 && colNum >= 0 && this.canSelectRecord(record)) {
         this.selection.selectOnMouseDown(this, rowNum, colNum);
     }
 
@@ -4876,8 +5043,6 @@ mouseUp : function () {
     if (returnVal == false) return returnVal;
     
     this.selectOnMouseUp(record, rowNum, colNum);
-        
-    return isc.EventHandler.STOP_BUBBLING;
     
 },
 
@@ -4906,7 +5071,6 @@ click : function () {
 
 // _rowClick - fire rowClick and cellClick handlers
 _rowClick : function (rowNum, colNum) {
-
     // Clear out old _clickRow/ _clickCol, which are now out of date.
     // [These will be set to meaningful values if the event occurred over a valid cell].
     this._clickRow = this._clickCol = null;
@@ -4920,7 +5084,17 @@ _rowClick : function (rowNum, colNum) {
     var mdR = this._mouseDownRow;
 
     // if the click occurred over a different record from the previous mousedown, just bail
-    if (rowNum != mdR) return false;
+    
+    if (rowNum != mdR) {
+        if (isc.EH.getX() == this._mouseDownX) {
+            rowNum = this._mouseDownRow;
+        } else {
+            return false;
+        }
+    }
+    if (isc.EH.getY() == this._mouseDownY) {
+        colNum = this._mouseDownCol;
+    }
     
     // record the click cell details for double-click events to check
     this._clickRow = rowNum;
@@ -4949,11 +5123,11 @@ _cellClick : function (record, rowNum, colNum) {
     // occurred over the same row as the last mousedown
     if (this._mouseDownCol != colNum) {
         // Clearing out this._clickCol avoids the possibility of the doubleClick handler firing
-        // over this cell which never recieved a first click.
+        // over this cell which never received a first click.
         this._clickCol = null;
         return;
     }
-    // update _clickCol so double clicks can determine whether they occured over the 
+    // update _clickCol so double clicks can determine whether they occurred over the 
     // same column as the previous click.
     this._clickCol = colNum;
     
@@ -4990,7 +5164,7 @@ doubleClick : function () {
     var record = this.getCellRecord(rowNum, colNum),
         handlerReturn;
     
-    // the click occured over a different col from the last click, fire a single click on
+    // the click occurred over a different col from the last click, fire a single click on
     // that cell (but not that row)
     // NOTE: this means if the user double clicks within a row, but the clicks land on different
     // columns we'll get a single click on each cell, and a double click on the row.
@@ -5036,8 +5210,6 @@ dragMove : function () {
 
     //this.logWarn("selectOnDragMove: " + [rowNum, colNum]);
     this.selection.selectOnDragMove(this, rowNum, colNum);
-    
-    return isc.EH.STOP_BUBBLING;
 },
 
 
@@ -5048,24 +5220,23 @@ noSnapDragOffset : function (dragTarget) {
     return this.snapToCells;
 },
 getHSnapPosition : function (localCoordinate, dir) {
-
     if ( ! this.snapToCells) {
         return this.Super("getHSnapPosition", arguments);
     }
     var EH = this.ns.EH,
         direction = dir || this.snapHDirection,
-        col = this.getEventColumn(localCoordinate),
-        beforeLeft = this.getColumnLeft(col),
-        beforeRight = this.getColumnLeft(col) + this.getColumnSize(col),
-        afterCol = this.getEventColumn(beforeRight + 1),
+        col = this.snapHGap ? Math.floor(localCoordinate / this.snapHGap) : this.getEventColumn(localCoordinate),
+        beforeLeft = this.snapHGap ? (col * this.snapHGap) : this.getColumnLeft(col),
+        beforeRight = this.snapHGap ? beforeLeft + this.snapHGap : this.getColumnLeft(col) + this.getColumnSize(col),
+        afterCol = this.snapHGap ? col + 1 : this.getEventColumn(beforeRight + 1),
         afterLeft;
         
     if (afterCol >= 0 ) {
-        afterLeft = this.getColumnLeft(afterCol);
+        afterLeft = this.snapHGap ? afterCol * this.snapHGap : this.getColumnLeft(afterCol);
     } else {
         afterLeft = beforeLeft;
     }
-    var halfway = beforeLeft + this.getColumnSize(col) / 2;
+    var halfway = beforeLeft + (this.snapHGap ? this.snapHGap : this.getColumnSize(col)) / 2;
 
     // Fix up for cell borders if necessary
     if (this.snapInsideBorder) {
@@ -5094,6 +5265,7 @@ getHSnapPosition : function (localCoordinate, dir) {
             }
         }
     }
+
 },
 
 getVSnapPosition : function (localCoordinate, dir) {
@@ -5118,7 +5290,7 @@ getVSnapPosition : function (localCoordinate, dir) {
         afterRow = this.snapVGap ? row + 1 : this.getEventRow(beforeBot + 1),
         afterTop;
     if (afterRow >= 0 ) {
-        afterTop = this.snapVGap ? afterRow * this.vSnapGap : this.getRowTop(afterRow);
+        afterTop = this.snapVGap ? afterRow * this.snapVGap : this.getRowTop(afterRow);
     } else {
         afterTop = beforeTop;
     }
@@ -5157,7 +5329,7 @@ getVSnapPosition : function (localCoordinate, dir) {
 
 //>	@method	gridRenderer.getColumnAutoSize()	([A])
 //	    @group	sizing, positioning
-//      Get the size this column needs to be in order to accomodate it's contents.
+//      Get the size this column needs to be in order to accommodate it's contents.
 //
 //      Can only be called after draw()
 //
@@ -5210,10 +5382,16 @@ redraw : function (a,b,c,d) {
 },
 
 modifyContent : function () {
+       
+    // resize / place embedded components before 
+    // - restoring virtual scrolling
+    // - adjusting overflow    
+    // Both of these need to know the drawn heights of rows (including E.C's)
+    this._placeEmbeddedComponents();
 
     if (this._targetRow != null) {
         
-        this._noRedraw = true;
+        this._noRedraw = true;   
         this._scrollToTargetRow();
         this._noRedraw = null;
 
@@ -5288,9 +5466,7 @@ modifyContent : function () {
     }
     this._lastTotalRows = totalRows;
     */
-    
-    // resize / place embedded components before adjusting overflow    
-    this._placeEmbeddedComponents();
+ 
 },
 
  
@@ -5462,7 +5638,9 @@ isc.GridRenderer._gridAPIs = {
     // Return the height this row should be.  Default is this.cellHeight. If
     // +link{GridRenderer.fixedRowHeights} is false, the row may be rendered taller than this
     // specified size.
-    //
+    // <P>
+    // If records will be variable height,
+    // you should switch on +link{gridRenderer.virtualScrolling, virtualScrolling}.
     // @param	record  (object)	cell record as returned by getCellRecord
     // @param	rowNum	(number)	row number
     // @return	(number)	height in pixels

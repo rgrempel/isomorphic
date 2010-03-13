@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -88,14 +88,31 @@ isc.addMethods(isc.isA, {
 isc.addMethods(isc.ClassFactory, {
 	//>	@classMethod	ClassFactory.defineClass()
 	//
-	// Create a new class, which can then be used to create instances of this object type.
+	// Create a new SmartClient class, which can then be used to create instances of this
+    // object type, via +link{Class.create()}.
     // <P>
     // The new Class is returned by <code>defineClass</code>, is available as
     // <code>isc.<i>ClassName</i></code> and is also available in global scope if not in
-    // +link{class:isc,portal mode}.
+    // +link{class:isc,portal mode}.  Typically, +link{classMethod:class.addProperties()} is then
+    // called to establish different defaults in the new class, or to add methods.  For
+    // example:
+    // <pre>
+    //    isc.defineClass("MyListGrid", "ListGrid").addProperties({
+    //        headerHeight : 40, // change default for listGrid.headerHeight
+    //
+    //        // override listGrid.recordClick
+    //        recordClick : function (viewer, record) { 
+    //           isc.say(record.description);
+    //        }
+    //    })
+    //    isc.MyListGrid.create(); // create an instance of the new class
+    // </pre>
     // <P>
-	// Also creates a new function <code>+link{isA,class:isA}.<i>ClassName()</i></code> object
-    // for identifying instances of this Class.
+    // See also +link{class.Super,Super()} for calling superclass methods.
+    // <P>
+	// NOTE: <code>isc.defineClass()</code> also creates a new function
+    // <code>+link{isA,class:isA}.<i>ClassName()</i></code> object for identifying instances of
+    // this Class.
     //
 	//	@param	className		(string)	Name for the new class.  
 	//	@param	[superClass]	(Class)		Optional SuperClass Class object or name
@@ -288,6 +305,23 @@ isc.addMethods(isc.ClassFactory, {
 		// setup the class object
 		classObject.Class = className;
 		classObject._isClassObject = true;
+		
+		// Is this a core ISC class (defined during standard SmartClient init) or is this
+		// a class added after the SC libraries have been loaded?
+		// Useful for debugging / AutoTest locator APIs
+		
+		if (isc.definingFramework == true) classObject.isFrameworkClass = true;
+		else classObject.isFrameworkClass = false;
+		if (!classObject.isFrameworkClass) {
+		    var scClass = superClass;
+		    while (scClass && !scClass.isFrameworkClass) {
+		        scClass = scClass.getSuperClass();
+		    }
+		    if (scClass) classObject._scClass = scClass.Class;
+		}
+		
+		if (!classObject._scClass) classObject._scClass = classObject.Class;
+		
         // NOTE: important that we always assign _isInterface so that concrete subclasses of
         // interfaces have _isInterface:false
 		classObject._isInterface = instancePrototype._isInterface = !!asInterface;
@@ -301,6 +335,10 @@ isc.addMethods(isc.ClassFactory, {
 		instancePrototype._classObject = classObject;
 		// this exists mostly so that instances can reference their prototype
 		instancePrototype._prototype = instancePrototype;
+		
+		// copy the scClass information across too
+		instancePrototype.isFrameworkClass = classObject.isFrameworkClass;
+		instancePrototype._scClass = classObject._scClass;
         
         // put all Classes in the special "isc" object
         isc[className] = classObject;
@@ -329,7 +367,7 @@ isc.addMethods(isc.ClassFactory, {
 
 		return classObject;
 	},
-    
+	
     
     makeIsAFunc : function (className) {
         if (this.isFirefox2 == null) {
@@ -518,7 +556,7 @@ isc.addMethods(isc.ClassFactory, {
     // is already assigned to something else a warning will be logged using the developer console,
     // and the existing reference will be replaced.
     // <P>
-    // If the object does not have an explicitly specifed ID property already, one will be
+    // If the object does not have an explicitly specified ID property already, one will be
     // automatically generated. Note that automatically generated global IDs may be reused if
     // the instance they originally referenced has been +link{Class.destroy(),destroyed}.
     // 
@@ -606,19 +644,27 @@ isc.addMethods(isc.ClassFactory, {
     _$underscore : "_",
     _joinBuffer : [],
     
+    _perClassIDs:{},
+    
     getNextGlobalID : function (object) {
-        if (object != null && isc.isA.String(object.Class)) {
-            var freed = this._freedGlobalIDs[object.Class]
+        var classString = object != null && isc.isA.String(object.Class) ? object.Class : null;
+        
+        if (classString) {
+            var freed = this._freedGlobalIDs[classString]
             if (freed && freed.length > 0) {
                 var ID = freed[freed.length-1];
                 freed.length = freed.length-1;
                 return ID;
             }
+            var idCount;
+            if (this._perClassIDs[classString] == null) this._perClassIDs[classString] = 0;
+            idCount = this._perClassIDs[classString]++;
+            
             var buffer = this._joinBuffer;
             buffer[0] = this._$isc_;
-            buffer[1] = object.Class;
+            buffer[1] = classString;
             buffer[2] = this._$underscore;
-            isc._fillNumber(buffer, this._globalObjectID++, 3, 5);
+            isc._fillNumber(buffer, idCount, 3,5);
 
             var result = buffer.join(isc.emptyString);
             return result;

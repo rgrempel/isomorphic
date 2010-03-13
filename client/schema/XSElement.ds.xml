@@ -1,1 +1,6 @@
-isc.DataSource.create({Constructor:"XSElement", inheritsFrom:"DataSource", ID:"XSElement", addGlobalId:false})
+isc.DataSource.create({
+    Constructor:"XSElement",
+    ID:"XSElement",
+    addGlobalId:false,
+    inheritsFrom:"DataSource"
+})

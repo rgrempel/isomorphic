@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -74,6 +74,17 @@ isc.TimeItem.addProperties({
     //<
     // Not clear whether we should mark this visibility external
     allowEmptyValue:true
+
+    
+    //> @attr timeItem.useMask (boolean : null : IRA)
+    // If true, a data entry mask will be enabled in the field based on the
+    // +link{TimeItem.displayFormat}.
+    // <p>
+    // Note that if a non-padded +link{TimeItem.displayFormat} is specified, it
+    // will be changed to the corresponding padded version (ex. "toShort24HourTime"
+    // will be changed to "toShortPadded24HourTime").
+    // @visibility external
+    //<
     
 });
 
@@ -94,13 +105,21 @@ isc.TimeItem.addMethods({
         if (!this.showHint) return "";
         if (this.hint != null) return this.hint;
         var formatter = this.displayFormat;
-        return (formatter == "to24HourTime" ? this.long24TimeFormat :
-                (formatter == "toTime" ? this.longTimeFormat : 
-                  (formatter == "toShort24HourTime" ? this.short24TimeFormat : 
-                    (formatter == "toShortTime" ? this.shortTimeFormat : "")
-                  )
-                )
-               );
+        switch (formatter) {
+            case "to24HourTime":
+            case "toPadded24HourTime":
+                return this.long24TimeFormat;
+            case "toTime":
+            case "toPaddedTime":
+                return this.longTimeFormat;
+            case "toShort24HourTime":
+            case "toShortPadded24HourTime":
+                return this.short24TimeFormat;
+            case "toShortTime":
+            case "toShortPaddedTime":
+                return this.shortTimeFormat;
+        }
+        return "";
     },
 	
 	//>	@method	timeItem.getDefaultValue()	(A)
@@ -119,35 +138,39 @@ isc.TimeItem.addMethods({
         return defaultValue;
 	},
     
-	//>	@method	timeItem.mapValueToDisplay()	(A)
+    //>	@method	timeItem.mapValueToDisplay()	(A)
     // Maps this items value (a date) to a formatted string to display. Uses one of the
-    // Time class's formatters to perform the conversio
-	//		@group	drawing
-	//		@param	value		(date|null)	value of this item
-	//		@return	(string)	Time value as a formatted time string
-	//<
-	mapValueToDisplay : function (value) {
+    // Time class's formatters to perform the conversion
+    // @group	drawing
+    // @param	value		(date|null)	value of this item
+    // @return	(string)	Time value as a formatted time string
+    //<
+    mapValueToDisplay : function (value) {
         if (this.allowEmptyValue && value == null) return isc.emptyString;
 
         if (!isc.isA.Date(value)) value = isc.Time.parseInput(value);
-        return isc.Time.format(value, this.displayFormat);
-	},
+        var displayValue = isc.Time.format(value, this.displayFormat);
+        displayValue = this.Super("mapValueToDisplay", displayValue);
+        return displayValue;
+    },
 	
-	//>	@method	timeItem.mapDisplayToValue()	(A)
-	//  Maps the string displayed in this item to a Date object with the appropriate time,
-    //  using the Time class's formatters.
-	//		@group	drawing
-    //		@param	value   (string)	String value stored in the form field.
-	//		@return	(date|null)	Date value to store with the appropriate time set.
-	//<
-	mapDisplayToValue : function (value) {
-        if (isc.isAn.emptyString(value) && this.allowEmptyValue) value = null;
-		else {
+    //>	@method	timeItem.mapDisplayToValue()	(A)
+    // Maps the string displayed in this item to a Date object with the appropriate time,
+    // using the Time class's formatters.
+    // @group	drawing
+    // @param	value   (string)	String value stored in the form field.
+    // @return	(date|null)	Date value to store with the appropriate time set.
+    //<
+    mapDisplayToValue : function (value) {
+        var saveValue = this.Super("mapDisplayToValue", arguments);
+        if ((saveValue == null || isc.isAn.emptyString(saveValue)) && this.allowEmptyValue) {
+            saveValue = null;
+        } else {
             // Returns a date instance
-            value = isc.Time.parseInput(value);
+            saveValue = isc.Time.parseInput(saveValue);
         }
-		return value;
-	},
+        return saveValue;
+    },
 
     // Override updateValue to ensure that the value displayed in the element matches the 
     // saved value, and is formatted correctly.
@@ -155,7 +178,9 @@ isc.TimeItem.addMethods({
         // This will map the value to a valid date
         this.Super("updateValue", arguments);
         // This will update the displayed string so its formatted correctly
-        this.setElementValue(this.mapValueToDisplay(this.getValue()));
+        if (!this.mask) {
+            this.setElementValue(this.mapValueToDisplay(this.getValue()));
+        }
     },
     
     // Override setValue() - if passed a string, map it to the appropriate date before saving
@@ -172,8 +197,72 @@ isc.TimeItem.addMethods({
              isc.Time.compareTimes(value1, value2)) return true;
             
         return false;
+    },
+
+    formatterMap: {
+        toTime:{mask:"[0-1]#:[0-6]#:[0-6]# [ap]m", formatter:"toPaddedTime"},
+        to24HourTime:{mask:"[0-2]#:[0-6]#:[0-6]#", formatter:"toPadded24HourTime"},
+
+        toPaddedTime:{mask:"[0-1]#:[0-6]#:[0-6]# [ap]m"},
+        toPadded24HourTime:{mask:"[0-2]#:[0-6]#:[0-6]#"},
+        
+        toShortTime:{mask:"[0-1]#:[0-6]# [ap]m", formatter:"toShortPaddedTime"},
+        toShort24HourTime:{mask:"[0-2]#:[0-6]#", formatter:"toShortPadded24HourTime"},
+
+        toShortPaddedTime:{mask:"[0-1]#:[0-6]# [ap]m"},
+        toShortPadded24HourTime:{mask:"[0-2]#:[0-6]#"}
+    },
+    init : function() {
+        // If a mask is to be used, configure it now.
+        if (this.useMask) {
+            var map = this.formatterMap[this.displayFormat];
+            if (!map) {
+                this.useMask = false;
+                this.mask = null;
+                this.logWarn("Mask will not be used because displayFormat " + this.displayFormat +
+                    " is not recognized");
+            } else {
+                // Map formatter to padded version if needed
+                if (map.formatter) this.displayFormat = map.formatter;
+                this.mask = map.mask;
+            }
+            if (this.mask) {
+                this.maskSaveLiterals = true;
+                this.maskOverwriteMode  = true;
+            }
+        } else if (this.mask) {
+            // Make sure user doesn't try to assign a custom mask
+            this.mask = null;
+        }
+
+        // Let TextItem do remaining initialization
+        this.Super("init", arguments);
+    },
+
+    //> @attr   timeItem.mask   (string : null : IRWA)
+    // Internal-use only for a TimeItem.
+    // @see attr:timeItem.useMask
+    // @visibility  external
+    //<    
+    //> @attr   timeItem.maskSaveLiterals   (boolean : null : IRWA)
+    // Internal-use only for a TimeItem.
+    // @see attr:timeItem.useMask
+    // @visibility  external
+    //<    
+    //> @attr   timeItem.maskOverwriteMode   (boolean : null : IRWA)
+    // Internal-use only for a TimeItem.
+    // @see attr:timeItem.useMask
+    // @visibility  external
+    //<    
+
+    //> @method timeItem.setMask ()
+    // A custom mask cannot be defined for a time item.
+    // @see attr:timeItem.useMask
+    // @visibility external
+    //<
+    setMask : function (mask) {
+        this.logWarn("setMask: custom mask ignored");
     }
-  
 
 });
 

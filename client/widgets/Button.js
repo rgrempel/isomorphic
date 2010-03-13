@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -680,8 +680,11 @@ fillInCell : function (template, slot) {
     
     var iconAtEdge = this._iconAtEdge(),
         iconCellSpace;
-    if (iconAtEdge) iconCellSpace = (this.iconWidth ? this.iconWidth : this.iconSize) 
-                                    + this.iconSpacing;
+    if (iconAtEdge) {
+        iconCellSpace = (this.iconWidth ? this.iconWidth : this.iconSize) +
+            
+            (isc.Browser.isBorderBox ? this.iconSpacing : 0)
+    }
     
     // if the icon is showing at one edge (and the text is separated from it), draw the
     // table 100% wide
@@ -996,7 +999,7 @@ _updateCanFocus : function () {
 //  @visibility external
 //<
 // defined in StatefulCanvas
-
+    
 });	// END	isc.Button.addMethods()
 
 isc.Button.registerStringMethods({

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -275,7 +275,7 @@ buttonLayoutDefaults: { _constructor: "HLayout",
 // @group formulaFields
 // @visibility external
 //<
-cancelButtonDefaults: {_constructor: "Button",
+cancelButtonDefaults: {_constructor: "IButton",
     autoParent: "buttonLayout",
     title: "Cancel",
     width: 70,
@@ -291,7 +291,7 @@ cancelButtonDefaults: {_constructor: "Button",
 // @group formulaFields
 // @visibility external
 //<
-testButtonDefaults: {_constructor: "Button", 
+testButtonDefaults: {_constructor: "IButton", 
     autoParent: "buttonLayout",
     title: "Test", 
     width: 70, 
@@ -308,7 +308,7 @@ testButtonDefaults: {_constructor: "Button",
 // @group formulaFields
 // @visibility external
 //<
-saveButtonDefaults: {_constructor: "Button", 
+saveButtonDefaults: {_constructor: "IButton", 
     autoParent: "buttonLayout",
     title: "Save", 
     width: 70, 
@@ -337,7 +337,7 @@ setValue : function (newValue) {
 //> @method formulaBuilder.setFormula()
 // Call to set the formula-string in this FormulaBuilder.
 // <P>
-// Note that calling setFormula() will update the UI, generate the formula's funtion and 
+// Note that calling setFormula() will update the UI, generate the formula's function and 
 // test it automatically.
 //
 // @param (String) The new formula-string for this builder
@@ -912,10 +912,11 @@ getUsedFields : function (formula, fields) {
 },
 
 // Get an array of those fields used in the formula-string
-getUsedFieldsFromValue : function (value, fields, component) {
+getFieldDetailsFromValue : function (value, fields, component) {
     var used = value,
         fieldIdProperty = this.getFieldIdProperty(component),
-        usedFields = [];
+        fieldDetails = { usedFields: [], missingFields: [] }
+    ;
 
     for (var key in used) {
         var item = used[key],
@@ -923,14 +924,15 @@ getUsedFieldsFromValue : function (value, fields, component) {
 
         if (!fields[fieldID]) {
             isc.logWarn("Field " + item + " is not in the list of available-fields");
+            fieldDetails.missingFields.add(item);
         } else {
             var field = isc.addProperties({}, fields[fieldID]);
             field.mappingKey = key;
-            usedFields.add(field);
+            fieldDetails.usedFields.add(field);
         }
     }
 
-    return usedFields;
+    return fieldDetails;
 },
 
 // Test the formula by generating it's function and trying to run it
@@ -996,53 +998,67 @@ getTestRecord : function (component, fields) {
     return record;
 },
 
+
 // Creates a function to wrap the calculation of a formula.  userFormula contains the
 // properties held in field.userFormula.
 generateFunction : function (userFormula, fields, component) {
 	var output = isc.SB.create(),
         formula = userFormula.text,
         fieldIdProperty = this.getFieldIdProperty(component),
-        usedFields = this.getUsedFieldsFromValue(userFormula.formulaVars, fields, component);
+        fieldDetails = this.getFieldDetailsFromValue(userFormula.formulaVars, fields, component),
+        usedFields = fieldDetails.usedFields,
+        missingFields = fieldDetails.missingFields
+    ;
 
     usedFields = usedFields.sortByProperties([ "mappingKey" ], [false]);
 
-    if (usedFields.length > 0) {
-        // script local vars for record-values
-        output.append("var ");
-        for (var i = 0; i < usedFields.length; i++) {
-            var item = usedFields.get(i);
-            if (i > 0) output.append("        ");
-            output.append(item.mappingKey, "= (record.", item[fieldIdProperty], " ? ",
-                "record.", item[fieldIdProperty], " : component ? ", 
-                "component.getSpecificFieldValue(record, '",
-                item[fieldIdProperty], "', true) : 0)");
-            output.append(i == usedFields.length - 1 ? ";" : ",", "\n");
-            if (userFormula.allowEscapedKeys) {
-                formula = formula.replaceAll("#" + item.mappingKey, item.mappingKey);
-                formula = formula.replaceAll("#{" + item.mappingKey + "}", item.mappingKey);
+    if (missingFields.length == 0) {
+        if (usedFields.length > 0) {
+            // script local vars for record-values
+            output.append("var ");
+            for (var i = 0; i < usedFields.length; i++) {
+                var item = usedFields.get(i);
+                if (i > 0) output.append("        ");
+                output.append(item.mappingKey, "= (record['", item[fieldIdProperty], "'] ? ",
+                    "record['", item[fieldIdProperty], "'] : component ? ", 
+                    "component.getSpecificFieldValue(record, '",
+                    item[fieldIdProperty], "', true) : 0)");
+                output.append(i == usedFields.length - 1 ? ";" : ",", "\n");
+                if (userFormula.allowEscapedKeys) {
+                    formula = formula.replaceAll("#" + item.mappingKey, item.mappingKey);
+                    formula = formula.replaceAll("#{" + item.mappingKey + "}", item.mappingKey);
+                }
             }
+            output.append("\n");
         }
-        output.append("\n");
-    }
 
-    // script local vars for MathFunction-pointers
-    var functions = isc.MathFunction.getRegisteredFunctions();
-    if (functions.length > 0) {
-        output.append("var functions=isc.MathFunction.getRegisteredFunctionIndex(),\n");
-        for (var i = 0; i < functions.length; i++) {
-            var item = functions.get(i);
-            output.append("        ");
-            output.append(item.name, "=", "functions.", item.name, ".jsFunction");
-            output.append(i == functions.length - 1 ? ";" : ",", "\n");
+        // script local vars for MathFunction-pointers
+        var functions = isc.MathFunction.getRegisteredFunctions();
+        if (functions.length > 0) {
+            output.append("var functions=isc.MathFunction.getRegisteredFunctionIndex(),\n");
+            for (var i = 0; i < functions.length; i++) {
+                var item = functions.get(i);
+                output.append("        ");
+                output.append(item.name, "=", "functions.", item.name, ".jsFunction");
+                output.append(i == functions.length - 1 ? ";" : ",", "\n");
+            }
+            output.append("\n");
         }
-        output.append("\n");
-    }
 
-    output.append("return ", formula, ";");
+        // If NaN, use badFormulaResultValue
+        output.append("var value=" + formula + ";" +
+            "if (isNaN(value)) return (component && component.badFormulaResultValue) || '.'; " +
+            "return value;");
+    } else {
+        this.logWarn("Formula failed due to missing fields: " + missingFields.join(", ") + ".");
+        var result = (component && component.badFormulaResultValue) || ".";
+        if (result) result = "'" + result + "'";
+        output.append("return ", result, ";");
+    }
 
 	// return the wrapped function
     var content = output.toString();
-    
+
     var func = new Function("record,component", content);
 	return func;
 
@@ -1314,6 +1330,12 @@ initWidget: function(){
 // @visibility external
 //<
 
+//> @method summaryBuilder.save()
+// @include formulaBuilder.save
+// @visibility external
+//<
+
+
 });
 
 isc.SummaryBuilder.addClassMethods({
@@ -1378,12 +1400,16 @@ testFunction : function (field, userSummary, component, usedFields){
     return result;
 },
 
+
 // Create a function to produce a summary-value according to the format-string supplied
 generateFunction : function (userSummary, fields, component) {
 	var output = isc.SB.create(),
         format = userSummary.text,
         fieldIdProperty = this.getFieldIdProperty(component),
-        usedFields = this.getUsedFieldsFromValue(userSummary.summaryVars, fields, component);
+        fieldDetails = this.getFieldDetailsFromValue(userSummary.summaryVars, fields, component),
+        usedFields = fieldDetails.usedFields,
+        missingFields = fieldDetails.missingFields
+    ;
 
     usedFields = usedFields.sortByProperties([ "mappingKey" ], [false]);
 
@@ -1399,10 +1425,14 @@ generateFunction : function (userSummary, fields, component) {
             output.append(i == usedFields.length - 1 ? ");" : "),", "\n");
             // first replace tokens in the format #{key}, then in the format #key
             format = format.replaceAll("#{" + item.mappingKey + "}", "'+" + item.mappingKey + "+'");
-	        format = format.replaceAll("#" + item.mappingKey, "'+" + item.mappingKey + "+'");
+            format = format.replaceAll("#" + item.mappingKey, "'+" + item.mappingKey + "+'");
         }
         output.append("\n");
     }
+
+    // Replace disallowed field aliases with component.missingSummaryFieldValue
+    format = format.replace(/(#({[A-Z][A-Z]?}|[A-Z][A-Z]?))/g, 
+        (component && component.missingSummaryFieldValue) || "-");
 
     // ensure the format-string is properly formed following field-token replacement
     if (format.substr(0, 2) == "'+") { // usedField starts the string (strip leading '+)
@@ -1426,6 +1456,5 @@ generateFunction : function (userSummary, fields, component) {
 
 }
 
- 
 });
 

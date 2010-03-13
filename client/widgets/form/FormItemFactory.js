@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -63,6 +63,9 @@ isc.FormItemFactory.addClassMethods({
     _$text : "text",
     _$Item : "Item",
     _$TextareaItem : "TextareaItem",
+    _$TextAreaItem : "TextAreaItem",
+    _$DatetimeItem : "DatetimeItem",
+    _$DateTimeItem : "DateTimeItem",
     _classTable : {},
     getItemClass : function (className) {
     
@@ -70,6 +73,14 @@ isc.FormItemFactory.addClassMethods({
 
         // if the className was not the literal class name of a FormItem subclass
 		if (!classObject || !isc.isA.FormItem(classObject)) {
+            
+            // catch ToolSkin subclasses of form items, like TTextAreaItem here
+            if (className != null && className.startsWith("T")) {
+                var normalClassName = className.substring(1),
+                    classObject = isc.ClassFactory.getClass(normalClassName);
+                if (isc.isA.FormItem(classObject)) return classObject;
+            }
+            
 			if (className == null) className = this._$text;
             var table = this._classTable,
                 officialName = table[className];
@@ -80,7 +91,8 @@ isc.FormItemFactory.addClassMethods({
                             className.substring(1) + this._$Item;
             }
             // synonym
-			if (officialName == this._$TextareaItem) officialName = "TextAreaItem";
+			if (officialName == this._$TextareaItem) officialName = this._$TextAreaItem;
+            if (officialName == this._$DatetimeItem) officialName = this._$DateTimeItem;
 			classObject = isc.ClassFactory.getClass(officialName);
 		}
         return classObject; // may still be null

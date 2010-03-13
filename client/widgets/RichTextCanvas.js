@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -138,7 +138,7 @@ isc.RichTextCanvas.addMethods({
     getInnerHTML : function () {
     
         // If we're writing out an IFrame with designMode:"On", return the appropriate HTML    
-        if (this._useDesignMode()) {
+        if (this._useDesignMode() && !this.isPrinting) {
             return this.getIFrameHTML();
         }
 
@@ -1696,7 +1696,7 @@ isc.RichTextCanvas.addMethods({
     //  For some browsers the clipboard functions (cut/copy/paste) are disabled by default.
     //  We catch these cases from cutSelection() / copySelection() / pasteOverSelection() and
     //  call this method to warn the user. Default behavior shows a warn dialog with the text
-    // <code>"Your browser does not allow web pages to access the clipboard programatically."</code>
+    // <code>"Your browser does not allow web pages to access the clipboard programmatically."</code>
     // May be overridden to change this behavior.
     // @visibility editor_clipboard
     //<
@@ -1705,7 +1705,7 @@ isc.RichTextCanvas.addMethods({
     // In IE all three methods are enabled and work by default.
     showClipboardDisabledError : function () {
 
-        var errorMessage = "Your browser does not allow web pages to access the clipboard programatically.";
+        var errorMessage = "Your browser does not allow web pages to access the clipboard programmatically.";
 
         // Mozilla allows you to turn on clipboard access for scripts but it's somewhat complex
         // and you can only turn it on for specific URLs

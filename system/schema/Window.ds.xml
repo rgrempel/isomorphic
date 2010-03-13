@@ -1,13 +1,22 @@
 <DataSource	ID="Window" inheritsFrom="Canvas" Constructor="Window">
 	<fields>
         <!-- Window as a whole -->
-		<field name="autoCenter" type="boolean"/>
-		<field name="isModal" type="boolean"/>
+		<field name="autoCenter" type="boolean" basic="true"/>
+		<field name="isModal" type="boolean" basic="true"/>
 		<field name="dismissOnOutsideClick" type="boolean"/>
 		<field name="dismissOnEscape" type="boolean"/>
 
+		<field name="visibility" type="visibilityEnum" basic="true"/>	
+
+        <!-- prevent generic Layout properties from showing up as basics -->
+		<field name="layoutMargin"	type="positiveInteger" basic="false"/>
+        <field name="align" type="anyAlignEnum" basic="false"/>
+        <field name="defaultLayoutAlign" type="anyAlignEnum" basic="false"/>	
+		<field name="membersMargin"	type="positiveInteger" basic="false"/>
+
+
         <!-- contents -->
-		<field name="autoSize" type="boolean"/>
+		<field name="autoSize" type="boolean" basic="true"/>
 		<field name="src" type="URL"/>
         <field name="contentsType" type="string"/>
 		<field name="contentLayout"	type="enum">
@@ -45,7 +54,7 @@
            <field name="headerIconDefaults" type="Canvas" propertiesOnly="true"/>
          
            <!-- close button --> 
-		   <field name="showCloseButton" type="boolean"/>
+		   <field name="showCloseButton" type="boolean" basic="true"/>
 		   <field name="closeButtonConstructor" type="className" visibility="internal"/>
 		   <field name="closeButtonDefaults" type="Canvas" propertiesOnly="true"/>
 

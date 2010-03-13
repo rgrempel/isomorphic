@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -419,19 +419,9 @@ isc.PopUpTextAreaItem.addMethods({
             var item = this._popUpForm.getItem("textArea");
             item.updateValue();
             var newValue = this._popUpForm.getValue("textArea");
-            // fire the change handler, and bail if the change failed validation, etc.
-            // Note: this method will call 'setValue()' to reset to the old value, or any value
-            // suggested by the validators
-            
-            if (this.handleChange(newValue, this._value) == false) return;
-            
-            // check for updates to the value performed by the change method
-            newValue = this._changeValue;
-            delete this._changeValue;
-            
             this.setElementValue(this.mapValueToDisplay(newValue));
-            // save the value
-            if (newValue != this._value) this.saveValue(newValue);
+            this._updateValue(newValue);
+          
         } else {
             return this.Super("updateValue", arguments);
         }

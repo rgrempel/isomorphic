@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -25,7 +25,7 @@
 //----------  Description  ----------\\
 //> @class Slider
 //	The Slider class implements a GUI slider widget allowing the user to select a numeric 
-//  value from within a range by dragging a visual indicicator up and down a track.
+//  value from within a range by dragging a visual indicator up and down a track.
 //	<p>
 //  The slider will generate events as the user interacts with it and changes its value.
 //  If slider.sliderTarget is specified, moving the slider thumb generates a custom
@@ -395,72 +395,9 @@ initWidget : function () {
         this.minValue = this.maxValue;
         this.maxValue = minValue;
     }
-    var specifiedWidth = this._userWidth,
-        specifiedHeight = this._userHeight;
-
-    // If the user didn't specify a width / height, default them based on which components are
-    // being shown.
-	if (this.vertical) {
-        if (specifiedWidth == null) {
-            var width = Math.max(this.thumbThickWidth, this.trackWidth);
-            if (this.showValue) width += this.labelWidth + this.labelSpacing;
-            if (this.showRange) width += this.labelWidth + this.labelSpacing;
-            //>DEBUG
-            this.logInfo("defaulting width to " + width + "px");            
-            //<DEBUG
-    		this.setWidth(width);
-        } 
-        if (specifiedHeight == null) {
-            var height = this.length;
-            if (this.showTitle) height += this.labelHeight + this.labelSpacing;
-            //>DEBUG
-            this.logInfo("no specified height on vertical Slider - defaulting to:" + height +
-                         " based on slider.length of " + this.length);
-            //<DEBUG
-            this.setHeight(height);
-        } else {
-            // if the user specifies both length and height, let height win.
-            this.length = this.getHeight();
-            if (this.showTitle) this.length -= (this.labelHeight + this.labelSpacing);            
-            //>DEBUG            
-            this.logInfo("setting slider track length to:"+ this.length 
-                        + ", based on specified height");
-            //<DEBUG
-        }
-	} else {
-        if (specifiedHeight == null) {
-            var height = Math.max(this.thumbThickWidth, this.trackWidth);
-            if (this.showValue) height += this.labelHeight + this.labelSpacing;
-            if (this.showRange) height += this.labelHeight + this.labelSpacing;
-            //>DEBUG
-            this.logInfo("defaulting height to " + height + "px");
-            //<DEBUG
-    		this.setHeight(height);
-        }
-        if (specifiedWidth == null) {
-            var width = (this.length + (this.showTitle ? this.labelWidth + this.labelSpacing: 0));
-            //>DEBUG
-            this.logInfo("no specified width on horizontal Slider - defaulting to:" + width +
-                         " based on slider.length of " + this.length);
-            //<DEBUG
-    		this.setWidth(width);
-        } else {
-            // if the user specifies both length and width let width win.
-            this.length = this.getWidth();
-            if (this.showTitle) this.length -= (this.labelWidth + this.labelSpacing);
-            //>DEBUG            
-            this.logInfo("setting slider track length to:"+ this.length 
-                        + ", based on specified width");
-            //<DEBUG
-        }
-	}
-
-	// calculate usable length and step size, in pixels, for use in ongoing calculations
-	this._usableLength = this.length-this.thumbThinWidth;
-	if (this.numValues && this.numValues > 1) {
-        this._stepSize = this._usableLength/(this.numValues-1);
-    }
-
+    
+    this.setUpSize();
+    
 	// create track and thumb
     this._createTrackLayout();
 	
@@ -485,6 +422,112 @@ initWidget : function () {
 	this.setValue(this.value, !(this.animateThumbInit==true));
 },
 
+
+// setUpSize() - sets up width/height/length (track length)
+// If width / height is explicitly specified, determine length from this
+// Otherwise determine width/height based on specified length
+setUpSize : function () {
+    var specifiedWidth = this._userWidth,
+        specifiedHeight = this._userHeight;
+
+    // If the user didn't specify a width / height, default them based on which components are
+    // being shown.
+	if (this.vertical) {
+        if (specifiedWidth == null) {
+            
+            var width = Math.max(this.thumbThickWidth, this.trackWidth);
+            // value shows on one side of the slider, range (min/max labels) show on the
+            // other side
+            if (this.showValue) width += this.labelWidth + this.labelSpacing;
+            if (this.showRange) width += this.labelWidth + this.labelSpacing;
+            
+            // Note: titleLabel width is derived from the width of the slider so no need to account
+            // for it here
+            
+            //>DEBUG
+            this.logInfo("defaulting width to " + width + "px");            
+            //<DEBUG
+    		this.setWidth(width);
+        }
+        if (specifiedHeight == null) {
+            var height = this.length;
+            
+            if (this.showTitle) height += this.labelHeight + this.labelSpacing;
+            
+            // if we show the floating value label, it can overflow beyond the 
+            // end of the track - account for this when sizing the widget so we don't 
+            // overflow by default
+            if (this.showValue && (this.labelHeight > this.thumbThinWidth)) {
+                height += (this.labelHeight-this.thumbThinWidth);
+            }
+            
+            //>DEBUG
+            this.logInfo("no specified height on vertical Slider - defaulting to:" + height +
+                         " based on slider.length of " + this.length);
+            //<DEBUG
+            this.setHeight(height);
+        } else {
+            // if the user specifies both length and height, let height win.
+            this.length = this.getHeight();
+            if (this.showTitle) this.length -= (this.labelHeight + this.labelSpacing);
+            if (this.showValue && (this.labelHeight > this.thumbThinWidth)) {
+                this.length -= (this.labelHeight-this.thumbThinWidth);
+            }            
+            //>DEBUG            
+            this.logInfo("setting slider track length to:"+ this.length 
+                        + ", based on specified height");
+            //<DEBUG
+        }
+	} else {
+        if (specifiedHeight == null) {
+            var height = Math.max(this.thumbThickWidth, this.trackWidth);
+            if (this.showValue) height += this.labelHeight + this.labelSpacing;
+            if (this.showRange) height += this.labelHeight + this.labelSpacing;
+            //>DEBUG
+            this.logInfo("defaulting height to " + height + "px");
+            //<DEBUG
+    		this.setHeight(height);
+        }
+        if (specifiedWidth == null) {
+            var width = (this.length + (this.showTitle ? this.labelWidth + this.labelSpacing: 0));
+            if (this.showValue && (this.labelWidth > this.thumbThinWidth)) {
+                width += (this.labelWidth - this.thumbThinWidth);
+            }
+            //>DEBUG
+            this.logInfo("no specified width on horizontal Slider - defaulting to:" + width +
+                         " based on slider.length of " + this.length);
+            //<DEBUG
+    		this.setWidth(width);
+        } else {
+    
+            // if the user specifies both length and width let width win.
+            this.length = this.getWidth();
+            if (this.showTitle) this.length -= (this.labelWidth + this.labelSpacing);
+            // We don't use labelWidth for the valueLabel - we use a smaller value
+            // (undocumented 'hValueWidth' on the assumption that the value will
+            // overflow if necessary)
+            if (this.showValue && (this.hValueLabelWidth > this.thumbThinWidth)) {
+                // We use a small label width for the horizontal valueLabel and
+                // allow the content to overflow if necessary
+                this.length -= (this.hValueLabelWidth - this.thumbThinWidth);
+            }
+            //>DEBUG            
+            this.logInfo("setting slider track length to:"+ this.length 
+                        + ", based on specified width");
+            //<DEBUG
+        }
+	}
+    
+
+	// calculate usable length and step size, in pixels, for use in ongoing calculations
+    
+	this._usableLength = this.length-this.thumbThinWidth;
+	if (this.numValues && this.numValues > 1) {
+        this._stepSize = this._usableLength/(this.numValues-1);
+    }
+
+},
+            
 // Override resizeBy to resize the track.
 // setWidth / setHeight / setRect et al. fall through to this method
 resizeBy : function (deltaX, deltaY) {
@@ -600,6 +643,7 @@ _createTitleLabel : function () {
 
 //------  _createValueLabel()
 // Creates, initializes, and returns a new Label widget to be the slider's dynamic value label.
+hValueLabelWidth:5,
 _createValueLabel : function () {
 	var labelLeft, labelTop, labelWidth, labelAlign, labelValign;
 	
@@ -617,8 +661,9 @@ _createValueLabel : function () {
 		labelTop = this._thumb.getTop() - this.labelHeight - this.labelSpacing;
 		labelAlign = isc.Canvas.CENTER;
 		labelValign = isc.Canvas.BOTTOM;
-        labelWidth = 5; // Specify a small size for the label, and allow it's content to
-                        // overflow.
+        // Specify a small size for the label, and allow it's content to
+        // overflow.
+        labelWidth = this.hValueLabelWidth;
 	}
 	
 	var label = isc.Label.create({
@@ -724,6 +769,17 @@ _getTrackLayoutPos : function () {
         // title always floats above a slider
         top = this.vertical ? (this.showTitle ? this.labelHeight + this.labelSpacing : 0) 
                             : (this.showValue ? this.labelHeight + this.labelSpacing: 0);
+    
+    // if the valueLabel can overflow the ends of the track (because it's wider or taller
+    // than the thumb), add padding at the start of the track to account for it.
+    // (We've already accounted for this difference when determining the track length so no
+    // need to also account for this on the end of the track)
+    if (this.showValue) {
+        if (this.vertical && (this.labelHeight > this.thumbThinWidth)) 
+            top += Math.round((this.labelHeight - this.thumbThinWidth)/2);
+        if (this.horizontal && (this.labelWidth > this.thumbThinWidth)) 
+            left += Math.round((this.labelWidth - this.thumbThinWidth)/2);
+    }                            
    
     return [left, top];
 },
@@ -908,7 +964,10 @@ _updateValueLabel : function () {
             desiredLeft = parseInt((thumb.getLeft() + thumb.getWidth()/2) - width/2);
 
         // clamp the label over the available space.
-        if (desiredLeft + width > this.getWidth()) desiredLeft = this.getWidth() - width;
+        if (desiredLeft + width > this.getWidth()) {
+            desiredLeft = this.getWidth() - width;
+            //this.logWarn("width:" + width + ", would overflow so clamping:" + desiredLeft);
+        }
         if (desiredLeft < 0) desiredLeft = 0;
         label.setLeft(desiredLeft);
     }
@@ -1106,7 +1165,7 @@ setCanFocus : function (canFocus) {
 setMinValue : function (newValue) {
     
     this.minValue = newValue;
-    this._minLabel.setContents(newValue);
+    if (this._minLabel) this._minLabel.setContents(newValue);
     this.setValue(this.minValue);
       
 },
@@ -1119,7 +1178,7 @@ setMinValue : function (newValue) {
 //<
 setMaxValue : function (newValue) {
     this.maxValue = newValue;
-    this._maxLabel.setContents(newValue);
+    if (this._maxLabel) this._maxLabel.setContents(newValue);
     this.setValue(this.minValue);
     
 },
@@ -1134,7 +1193,249 @@ setNumValues : function (newNumValues) {
     this.numValues = newNumValues;
     this._stepSize = this._usableLength/(this.numValues-1);
     this.setValue(this.minValue);
+},
+
+//> @method slider.setTitle()  
+// Sets the +link{title} of the slider
+//
+// @param newTitle (string) new title for the slider
+// @visibility external
+//<
+setTitle : function (newTitle) {
+    this._titleLabel.setContents(newTitle);
+},
+
+//> method slider.setLength()
+// Sets the +link{length} of the slider
+//
+// @param newLength (number) the new length to set the slider to
+// @visibility external
+//<
+setLength : function (newLength) {
+    this.length = newLength;
+    this.setUpSize();    
+},
+
+_refreshChildren : function () {
+    this._titleLabel.destroy();
+    this._track.destroy();
+    this._thumb.destroy();
+    this._valueLabel.destroy();
+    this._minLabel.destroy();
+    this._maxLabel.destroy();  
+    
+    this.initWidget();
+},
+
+//> @method slider.setVertical()
+// Sets the +link{vertical} property of the slider
+//
+// @param isVertical (boolean) is the slider vertical
+// @visibility external
+//<
+setVertical : function (isVertical) {
+    this.vertical = isVertical;
+    this._refreshChildren();
+},
+
+//> @method slider.setThumbThickWidth()
+// Sets the +link{thumbThickWidth} property of the slider
+//
+// @param newWidth (number) new thumbThickWidth
+// @visibility external
+//<
+setThumbThickWidth : function (newWidth) {
+    this.thumbThickWidth = newWidth;
+    this._refreshChildren();    
+},
+
+//> @method slider.setThumbThinWidth()
+// Sets the +link{thumbThinWidth} property of the slider
+//
+// @param newWidth (number) new thumbThinWidth
+// @visibility external
+//< 
+setThumbThinWidth : function (newWidth) {
+    this.thumbThinWidth = newWidth;
+    this._refreshChildren();    
+},
+
+//> @method slider.setTrackWidth()
+// Sets the +link{trackWidth} property of the slider
+//
+// @param newWidth (number) new trackWidth
+// @visibility external
+//< 
+setTrackWidth : function (newWidth) {
+    this.trackWidth = newWidth;
+    this._refreshChildren();    
+},
+
+//> @method slider.setThumbSrc()
+// Sets the +link{thumbSrc} property of the slider
+//
+// @param newSrc (string) new thumbSrc
+// @visibility external
+//< 
+setThumbSrc : function (newSrc) {
+    this.thumbSrc = newSrc;
+    this._refreshChildren();
+},
+
+//> @method slider.setTrackSrc()
+// Sets the +link{trackSrc} property of the slider
+//
+// @param newSrc (string) new trackSrc
+// @visibility external
+//< 
+setTrackSrc : function (newSrc) {
+    this.trackSrc = newSrc; 
+    this._refreshChildren();
+},
+
+//> @method slider.setTrackCapSize()
+// Sets the +link{trackCapSize} property of the slider
+//
+// @param newSize (number) new trackCapSize
+// @visibility external
+//< 
+setTrackCapSize : function (newSize) {
+    this.trackCapSize = newSize;  
+    this._refreshChildren();
+},
+
+//> @method slider.setTrackImageType()
+// Sets the +link{trackImageType} property of the slider
+//
+// @param newType (string) new trackImageType
+// @visibility external
+//< 
+setTrackImageType : function (newType) {
+    this.trackImageType = newType;
+    this._refreshChildren();    
+},
+
+//> @method slider.setShowTitle()
+// Sets the +link{showTitle} property of the slider
+//
+// @param showTitle (boolean) show the slider title?
+// @visibility external
+//< 
+setShowTitle : function (showTitle) {
+    this.showTitle = showTitle;
+    this._refreshChildren();    
+},
+
+//> @method slider.setShowRange()
+// Sets the +link{showRange} property of the slider
+//
+// @param showRange (boolean) show the slider range?
+// @visibility external
+//< 
+setShowRange : function (showRange) {
+    this.showRange = showRange;
+    this._refreshChildren();    
+},
+
+//> @method slider.setShowValue()
+// Sets the +link{showValue} property of the slider
+//
+// @param showValue (boolean) show the slider value?
+// @visibility external
+//< 
+setShowValue : function (showValue) {
+    this.showValue = showValue;
+    this._refreshChildren();    
+},
+
+//> @method slider.setLabelWidth()
+// Sets the +link{labelWidth} property of the slider
+//
+// @param labelWidth (number) new label width
+// @visibility external
+//< 
+setLabelWidth : function (labelWidth) {
+    this.labelWidth = labelWidth;
+    this._refreshChildren();    
+},
+
+//> @method slider.setLabelHeight()
+// Sets the +link{labelHeight} property of the slider
+//
+// @param newHeight (number) new label height
+// @visibility external
+//< 
+setLabelHeight : function (newHeight) {
+    this.labelHeight = newHeight;
+    this._refreshChildren();    
+},
+
+//> @method slider.setLabelSpacing()
+// Sets the +link{labelSpacing} property of the slider
+//
+// @param labelWidth (number) new label spacing
+// @visibility external
+//< 
+setLabelSpacing : function (newSpacing) {
+    this.labelSpacing = newSpacing;
+    this._refreshChildren();    
+},
+
+//> @method slider.setMaxValueLabel()
+// Sets the +link{maxValueLabel} property of the slider
+//
+// @param labelText (string) new label text
+// @visibility external
+//< 
+setMaxValueLabel : function (labelText) {
+    this._maxLabel.setContents(labelText);    
+},
+
+//> @method slider.setRoundValue()
+// Sets the +link{roundValues} property of the slider
+//
+// @param roundValues (boolean) round slider values?
+// @visibility external
+//< 
+setRoundValues : function (roundValues) {
+    this.roundValues = roundValues;
+    this._refreshChildren();    
+},
+
+//> @method slider.setRoundPrecision()
+// Sets the +link{roundPrecision} property of the slider
+//
+// @param roundPrecision (number) new round precision
+// @visibility external
+//< 
+setRoundPrecision : function (roundPrecision) {
+    this.roundPrecision = roundPrecision;
+    this._refreshChildren();    
+},
+
+//> @method slider.setFlipValues()
+// Sets the +link{flipValues} property of the slider
+//
+// @param flipValues (boolean) flip slider values?
+// @visibility external
+//< 
+setFlipValues : function (flipValues) {
+    this.flipValues = flipValues;
+    this._refreshChildren();    
+},
+
+//> @method slider.setStepPercent()
+// Sets the +link{stepPercent} property of the slider
+//
+// @param stepPercent (number) new slider step percent
+// @visibility external
+//< 
+setStepPercent : function (stepPercent) {
+    this.stepPercent = stepPercent;
+    this._refreshChildren();    
 }
+
+
 
 });
 

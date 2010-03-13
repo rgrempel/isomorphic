@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -42,8 +42,15 @@ isc.ImgTab.addProperties({
     //
     // @visibility external
 	//<
-	skinImgDir:"images/Tab/",			
-
+	skinImgDir:"images/Tab/",
+	
+	//> @attr isc.ImgTab.labelSkinImgDir (URL : "images/" : IRW)
+	// Base path for images shown within this ImgTab's label. This will be used for
+	// icons (such as the close icon) by default.
+	// @visibility external
+	//<
+	labelSkinImgDir:"images/",
+	
     //> @attr ImgTab.baseStyle (CSSStyleName : "tab" : IR)
     // @visibility external
     //<
@@ -72,12 +79,12 @@ isc.ImgTab.addProperties({
 	showRollOver:false,					
 
     //>	@attr	isc.ImgTab.showFocus    (boolean : true : IRW)
-	// Should we visibly change state when the tab recieves keyboard focus?
+	// Should we visibly change state when the tab receives keyboard focus?
     // @deprecated as of SmartClient 6.1 in favor of +link{imgTab.showFocused}
     // @visibility external
 	//<
     //>	@attr	isc.ImgTab.showFocused    (boolean : true : IRW)
-	// Should we visibly change state when the tab recieves keyboard focus?
+	// Should we visibly change state when the tab receives keyboard focus?
     // @visibility external
 	//<
 	showFocused:true,
@@ -120,14 +127,7 @@ isc.ImgTab.addProperties({
     //<EditMode
     
     initWidget : function (a,b,c,d,e,f) {    
-        // set up skinImgDir and 'vertical' properties based on this.tabBarPosition - where this
-        // tab will appear.
-	    this.skinImgDir = this.skinImgDir + this.tabBarPosition + "/";
-        this.vertical = (this.tabBarPosition == isc.Canvas.LEFT || 
-                         this.tabBarPosition == isc.Canvas.RIGHT);
-
         if (this.vertical && this.titleStyle) this.titleStyle = "v" + this.titleStyle;
-        
         return this.invokeSuper(isc.ImgTab, this._$initWidget, a,b,c,d,e,f);
     }
 });

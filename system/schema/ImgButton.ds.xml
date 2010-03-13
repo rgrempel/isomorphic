@@ -5,4 +5,8 @@
         <field name="hiliteAccessKey"   type="boolean" />
         <field name="action" type="Action" editorType="ActionMenuItem"/>        
 	</fields>
+    
+    <methods>
+        <method name="click" basic="true"/>
+    </methods>
 </DataSource>

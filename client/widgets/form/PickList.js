@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -17,7 +17,8 @@ if (isc.ListGrid) {
 
 //>	@interface  PickList
 // Interface to show a drop-down list of pickable options. Used by the +link{SelectItem} and
-// +link{ComboBoxItem} classes.
+// +link{ComboBoxItem} classes. The generated drop down list of options will be an instance of
+// +link{PickListMenu}. 
 // @treeLocation Client Reference/Forms/Form Items
 // @visibility external
 //<
@@ -25,9 +26,11 @@ if (isc.ListGrid) {
 isc.ClassFactory.defineInterface("PickList");
 
 //>	@class PickListMenu
-// Subclass of ScrollingMenu to be used by the pickList class
+// Subclass of ScrollingMenu used by FormItems which implement +link{interface:PickList} to display
+// a list of selectable options.<br>
+// Note that PickListMenu ultimately inherits from +link{class:ListGrid}.
 //  @treeLocation Client Reference/Forms/Form Items
-// @visibility internal
+// @visibility external
 //<
 
 isc.ClassFactory.defineClass("PickListMenu", "ScrollingMenu");
@@ -39,7 +42,22 @@ isc.PickListMenu.addClassProperties({
     pickListCacheLimit:50
 });
 
-isc.PickListMenu.addProperties({            
+isc.PickListMenu.addProperties({
+    
+    // explicitly doc the default pickList empty message (may be overridden by pickListEmptyMessage
+    // on a per-instance basis too)
+    //> @attr PickListMenu.emptyMessage (string : "No Items To Show" : IRW) 
+    // @include ListGrid.emptyMessage
+    // @visibility external
+    // @group i18nMessages
+    //<
+    
+    // explicitly doc dataProperties - useful to be able to customzie
+    //> @attr PickListMenu.dataProperties
+    // @include ListGrid.dataProperties
+    // @visibility external
+    //<
+    
     // Don't get fields from the DS.
     useAllDataSourceFields:false,
     
@@ -187,10 +205,9 @@ isc.PickListMenu.addMethods({
     // formatting within the pickList).
     
     _formatCellValue : function (value, record, field, rowNum, colNum) {
-        if (this.formItem.formatPickListValue) {
-            var fieldName = this.getFieldName(colNum);
-            value = this.formItem.formatPickListValue(value, fieldName, record);
-        }
+        var fieldName = this.getFieldName(colNum);
+        value = this.formItem.formatPickListValue(value, fieldName, record);
+        
         return this.Super("_formatCellValue", [value,record,field,rowNum,colNum]);
     },
     
@@ -253,17 +270,30 @@ isc.PickListMenu.addMethods({
     
     // Override dataChanged -- avoid redrawing to show temp. loading rows - wait
     // for the rows to come back from the server instead.
-    dataChanged : function () {
+    dataChanged : function (operation, record, row, lastUpdateData) {
         var data = this.data;
         if (!data) return;
         var data = this.requestVisibleRows();
         if (data && Array.isLoading(data[0])) {
             //this.logWarn("not redrawing since data still loading");
             return;
-        }        
-        return this.Super("dataChanged", arguments);
+        }
+        this.Super("dataChanged", arguments);
+        
+        // If the currently selected record changed, we should refresh our value to pick up the
+        // change.
+        var formItem = this.formItem;
+        if (record && this.getSelectedRecord() == record && formItem) {
+            var index = this.data.indexOf(record),
+                modifiedRecord = index == -1 ? null : this.data.get(index);
+            if (modifiedRecord) {
+                var fieldName = formItem.getValueFieldName();
+                formItem.setValue(modifiedRecord[fieldName]);
+            } else {
+                formItem.clearValue();
+            }
+        }
     }
-    
 });
 
 
@@ -286,7 +316,8 @@ isc.PickList.addInterfaceProperties({
     
     //> @attr PickList.emptyPickListMessage (string : null : IRWA)
     // Empty message to display in the pickList if 
-    // +link{PickList.hideEmptyPickList} is <code>false</code>. 
+    // +link{PickList.hideEmptyPickList} is <code>false</code>.
+    // @group i18nMessages
     // @visibility external
     //<
     //emptyPickListMessage:null,
@@ -317,21 +348,21 @@ isc.PickList.addInterfaceProperties({
     pickListBaseStyle : "pickListCell",
 
     //> @attr    PickList.pickListHiliteColor  (string : null : IR)
-    // If specified this color will be applied to hilighted rows in the pickList, when the
+    // If specified this color will be applied to hilited rows in the pickList, when the
     // user rolls over them.  This color will be applied on top of the "over" CSS Style 
     // specified by <code>pickListBaseStyle</code>
     //<
     //pickListHiliteColor:null,
     
     //> @attr    PickList.pickListHiliteTextColor  (string : null : IR)
-    // If specified this color will be applied to the text of hilighted rows in the pickList, 
+    // If specified this color will be applied to the text of hilited rows in the pickList, 
     // when the user rolls over them.  This color will be applied on top of the "over" CSS Style 
     // specified by <code>pickListBaseStyle</code>
     //<
     //pickListHiliteTextColor:null,
 
     // autoSizePickList
-    // If true the pick list will expand horizontally to accomodate its widest item.
+    // If true the pick list will expand horizontally to accommodate its widest item.
     // Not supported for databound lists (since the items load incrementally)
     //autoSizePickList : false,
    
@@ -351,8 +382,8 @@ isc.PickList.addInterfaceProperties({
     
     //> @attr PickList.fetchDelay (number : 200 : IRWA)
     // For a ComboBox or other pickList that accepts user-entered criteria, how many
-    // millseconds to wait after the last user keystroke before fetching data from the server.
-    // The default setting will initiate a fetch if the stops typing or pauses briefly.
+    // milliseconds to wait after the last user keystroke before fetching data from the server.
+    // The default setting will initiate a fetch if the user stops typing or pauses briefly.
     //
     // @visibility external
     //<
@@ -365,8 +396,8 @@ isc.PickList.addInterfaceProperties({
     
     // Allow low-level overriding of pickList properties
     //> @attr    PickList.pickListProperties (object : null : IR)
-    // If specified this properties block will be applied to the pickList created for this
-    // Form Item.
+    // If specified this properties block will be applied to the +link{PickListMenu,pickList}
+    // created for this Form Item.
     // @visibility external
     //<
     //pickListProperties : null,
@@ -379,6 +410,7 @@ isc.PickList.addInterfaceProperties({
     //<
     pickListHeaderHeight:22
 
+    
     // --------------------------------------------------------------------------------------
     // Data / databinding
     
@@ -399,7 +431,7 @@ isc.PickList.addInterfaceProperties({
     // with custom data set up via the advanced +link{pickList.getClientPickListData()} method.
     // <P>
     // If this property is unset, we display the +link{PickList.displayField}, if specified, 
-    // otherwise the +link{PickList.valueField}
+    // otherwise the +link{PickList.valueField}.
     // <P>
     // If there are multiple fields, column headers will be shown for each field, the
     // height of which can be customized via the +link{pickList.pickListHeaderHeight} attribute.
@@ -408,7 +440,7 @@ isc.PickList.addInterfaceProperties({
     // unlike in +link{ListGrid,listGrids}, dataSource fields marked as 
     // +link{DataSourceField.hidden,hidden:true} will be hidden by default in pickLists. To
     // override this behavior, ensure that you specify an explicit value for 
-    // +link{ListGridField.showIf,showIf}
+    // +link{ListGridField.showIf,showIf}.
     // 
     //  @see valueField
     //  @see pickList.pickListHeaderHeight
@@ -418,11 +450,11 @@ isc.PickList.addInterfaceProperties({
     //> @attr   PickList.valueIconField (string : null : IRWA) 
     // For Databound formItems, this property determines which column 
     // +link{formItem.valueIcons} should show up in for this formItem's pickList.<br>
-    // If unset valueIcons show up in the +link{pickList.displayField} column if specified, 
+    // If unset, valueIcons show up in the +link{pickList.displayField} column if specified, 
     // otherwise the +link{pickList.valueField} column.<br>
     // In most cases only the <code>displayField</code> or <code>valueField</code> will be visible.
     // This property is typically only required if custom +link{PickList.pickListFields} 
-    // have been specfied for this item. 
+    // have been specified for this item. 
     // @see FormItem.valueIcons
     // @see PickList.pickListFields
     // @visibility external
@@ -430,7 +462,7 @@ isc.PickList.addInterfaceProperties({
     
     //> @attr   PickList.pickListCriteria (Criteria : null : IRWA)
     // If this item has a databound pick-list (for example +link{PickList.optionDataSource} is
-    // set) this property can be used to provide static filter criteria when retrieving the data
+    // set), this property can be used to provide static filter criteria when retrieving the data
     // for the pickList.
     // @visibility external
     //<
@@ -478,7 +510,7 @@ isc.PickList.addInterfaceProperties({
     //<
 
     //> @attr PickList.showOptionsFromDataSource  (boolean : null : IRWA)
-    // If this item is part of a databound form, and has a specified <code>valueMap</code>
+    // If this item is part of a databound form, and has a specified <code>valueMap</code>,
     // by default we show the valueMap options in the pickList for the item.
     // Setting this property to true will ensure that the options displayed in our pickList
     // are derived from the form's <code>dataSource</code>.
@@ -486,16 +518,16 @@ isc.PickList.addInterfaceProperties({
     // @visibility external
     //<
     
-        
-    //> @attr PickList.optionFilterContext     (RPCRequest Properties : null : IRA)
+
+    //> @attr PickList.optionFilterContext     (DSRequest Properties : null : IRA)
     // If this item has a specified <code>optionDataSource</code>, and this property is
-    // not null, this will be passed to the datasource as +link{rpcRequest} properties when
+    // not null, this will be passed to the datasource as +link{dsRequest} properties when
     // performing the filter operation on the dataSource to obtain the set of options for the
     // list.
     // @visibility external
     //<
     // This gives the developer the option of specifying (for example) an operation name.
-    
+
     //> @attr   PickList.filterLocally  (boolean : false : IRA) 
     // If <code>filterLocally</code> is set for this item, and this item is showing options 
     // from a dataSource, fetch the entire set of options from the server, and use these values
@@ -508,7 +540,7 @@ isc.PickList.addInterfaceProperties({
     // @see FormItem.filterLocally
     // @visibility external
     //<
-    
+
     //> @attr PickList.filterDisplayValue (boolean : null : IRA)
     // When performing the filter on the data displayed in the pickList, for valueMapped fields,
     // should the filter criteria be compared to the raw data values in the source list, or the
@@ -519,7 +551,19 @@ isc.PickList.addInterfaceProperties({
     // @visibility internal
     //<
     
-    
+
+    //> @attr pickList.sortField (String or integer : null : IR)
+    // Specifies the field by which this item should be initially sorted.  Can be set to 
+    // either a +link{listGridField.name,field name} or the index of the field in the fields 
+    // Array. Note that if <code>sortField</code> is initially specified as a number, it will be
+    // converted to a string (field name) after the item is initialized.
+    // <P>
+    // To programmatically change sort field or direction after initialization, call +link{sort()}.
+    // @group sorting
+    // @example sort
+    // @visibility external
+    //<
+
 });
 
 
@@ -566,7 +610,7 @@ isc.PickList.addInterfaceMethods({
         if (!this.isDrawn() || (this.shouldHideEmptyPickList() && list.getTotalRows() < 1)) {
             return;
         }
-
+        
         // size and place the picklist
         this.placePickList();
         
@@ -577,6 +621,7 @@ isc.PickList.addInterfaceMethods({
             else    //<Animation 
                 this.pickList.show();
         }
+
     },
     
     //>@method  PickList.fetchData() 
@@ -584,8 +629,12 @@ isc.PickList.addInterfaceMethods({
     // Performs a fetch type operation on this item's DataSource to retrieve the set of valid
     // options for the item, based on the current +link{PickList.pickListCriteria}.
     // @param callback (callback) Callback to fire when the fetch completes. Callback will 
-    //              fire with 2 parameters: <code>item</code> a pointer to the form item and
-    //              <code>dsResponse</code> the +link{dsResponse} returned by the server.
+    //              fire with 4 parameters:<ul>
+    //  <li><code>item</code> a pointer to the form item
+    //  <li><code>dsResponse</code> the +link{dsResponse} returned by the server
+    //  <li><code>data</code> the raw data returned by the server
+    //  <li><code>dsRequest</code> the +link{dsRequest} sent to the server
+    //  </ul> 
     // @param requestProperties (dsRequest properties) properties to apply to the
     //              dsRequest for this fetch.
     // @visibility external
@@ -594,7 +643,7 @@ isc.PickList.addInterfaceMethods({
     //            cached rows and re-fetch. Pass in this parameter to suppress this behavior.
     //            Note that if the fetch operation does not hit the server (which will occur
     //            if the data is already cached), the callback will not fire
-    fetchData : function (callback, requestProperties, maintainCache) {    
+    fetchData : function (callback, requestProperties, maintainCache) {  
         if (this.getOptionDataSource() == null) {
             this.logWarn("fetchData() called for a non-databound pickList. Ignoring");
             return;
@@ -602,11 +651,14 @@ isc.PickList.addInterfaceMethods({
 
         // Store the callback passed in on the request's clientContext object.
         // This will be picked up as part of filterComplete()
-        if (callback != null) {
-            if (requestProperties == null) requestProperties = {};
+        if (requestProperties == null) requestProperties = {};
+        if (callback != null) {   
             if (requestProperties.clientContext == null) requestProperties.clientContext = {};
-            requestProperties.clientContext._callback = callback;
+            requestProperties.clientContext._callback = callback;   
         }
+        // add componentContext for developer console rpc history tab
+        
+        requestProperties.componentContext = this.form.ID + "." + this.name;
         if (!this.pickList) this.makePickList(false, requestProperties);
         else this.filterDataBoundPickList(requestProperties, !maintainCache);
     },
@@ -619,11 +671,11 @@ isc.PickList.addInterfaceMethods({
         //<DEBUG
 
         // Wherever possible, we reuse picklist menus across multiple items
-        // If explicit pickListProperties have been specified for this item, use a uniqe
+        // If explicit pickListProperties have been specified for this item, use a unique
         // pickList instead - this avoids us having to correctly apply (and then clear) freeform 
-        // properties to a shared pickList object
-        // If we're databinding we cache picklists on a per-datasource basis.
-        // If the datasource, and the specified set of fields match we reuse the list - otherwise
+        // properties to a shared pickList object.
+        // If we're databinding we cache pickLists on a per-dataSource basis.
+        // If the dataSource and the specified set of fields match, we reuse the list - otherwise
         // create a new one (rather than re-binding)
         var reusePickList = this.reusePickList();
         if (reusePickList) {
@@ -639,36 +691,20 @@ isc.PickList.addInterfaceMethods({
             // properties to allow us to reuse the list for other 
         
             // Determine desired properties from the various init params.
-            var pickListProperties = this.pickListProperties;
+            var pickListProperties = this.pickListProperties || {};
+            if (this.sortField != null) pickListProperties.sortField = this.sortField;
+            if (this.sortFieldNum != null) pickListProperties.sortFieldNum = this.sortFieldNum;
+            if (this.sortDirection != null) pickListProperties.sortDirection = this.sortDirection;
             this.pickList = isc.PickListMenu.create(
                                 // no need to set up showPickList - this is done with setFields
-                                {headerHeight:this.pickListHeaderHeight,
-                                 // Put in a 'handleDataArrived' method - this will always notify
-                                 // the current form item when the pickList gets data back
-                                 handleDataArrived : function (startRow,endRow,item) {
-                                     if (this.formItem != null && !this.formItem.destroyed) {
-                                         this.formItem.handleDataArrived(startRow,endRow,item);
-                                     }
-                                 }
-                                }, 
+                                { headerHeight:this.pickListHeaderHeight }, 
                                 pickListProperties
                             );
 
             // apply local fetchMode if 'filterLocally' was explicitly specified.
             var data = this.pickList.dataProperties || {};
             if (this.filterLocally) data.fetchMode = "local";
-            // allow ourselves to be notified when data arrives within the pickList
-            if (this.dataArrived) {
-                data.dataArrived = new Function ("startRow", "endRow", "item",
-                                          // if component is destroyed before data returns, we
-                                          // would JS error, so in the callback check that the
-                                          // component is still around before firing
-                                          // dataArrived on it.
-                                          "window."+this.pickList.getID()+"&&"+
-                                          this.pickList.getID() +
-                                          ".handleDataArrived(startRow,endRow,this)");
-            }
-               
+            
             this.pickList.dataProperties = data;
             
             // If this is a shared pickList, store it in a publically accessible place
@@ -685,7 +721,7 @@ isc.PickList.addInterfaceMethods({
     
     //>@attr pickList.cachePickListResults (boolean : true : IR)
     // For databound pickLists (see +link{pickList.optionDataSource}), by default SmartClient
-    // will cache and re-use datasets shown by picklists in an LRU (least recently used) caching
+    // will cache and re-use datasets shown by pickLists in an LRU (least recently used) caching
     // pattern.
     // <P>
     // Setting this flag to false avoids this caching for situations where it is too aggressive.
@@ -849,7 +885,14 @@ isc.PickList.addInterfaceMethods({
             // Pass this.dateFormatter through to the pickList.
             // This will ensure that date type fields are displayed the same in the
             // pickList cells as in the text box for this item if a dateFormatter is specified
-            dateFormatter:this.dateFormatter
+            dateFormatter:this.dateFormatter,
+        
+            // notify the new item whenever we get fresh data (replaces previous dataArrived
+            // implementation which would notify the previous form item)
+            dataArrived : function (startRow, endRow) {
+                this.Super("dataArrived", arguments);
+                if (this.formItem) this.formItem.handleDataArrived(startRow,endRow,this);
+            }
         });
 
         this.pickList.setProperties(pickListProperties);
@@ -860,10 +903,11 @@ isc.PickList.addInterfaceMethods({
         
         if (!this.pickList._formItems) this.pickList._formItems = {};
         this.pickList._formItems[this.getID()] = true;
-
+        
         // If we're re-using a pickList, clear it's observations on the previous form item
         // it was associated with.
         if (oldFormItem) {
+            
             if (this.pickList.isObserving(oldFormItem.containerWidget, "hide")) {
                 this.pickList.ignore(oldFormItem.containerWidget, "hide");
             }
@@ -883,6 +927,10 @@ isc.PickList.addInterfaceMethods({
             this.pickList.observe(this.containerWidget, "clear", 
                                                     "if(observer.isDrawn())observer.clear();");
         }
+        // always mark the pickList as dirty. This ensures any cell formatter set up on this
+        // item will be applied even if the data is unchanged
+        this.pickList.markForRedraw();
+        
         
     },
     
@@ -895,7 +943,7 @@ isc.PickList.addInterfaceMethods({
     // dataSource to display as options.
     // 
     // This method will return the dataSource used to populate the pickList, or null if 
-    // none specified (implies this list will derive its data from the valueMap for the item).
+    // none is specified (implies this list will derive its data from the valueMap for the item).
     // Default implementation  will return +link{pickList.optionDataSource} if specified,
     // otherwise if this is a field with a specified <code>foreignKey</code> in a databound
     // form, returns the dataSource for the <code>foreignKey</code>.
@@ -914,6 +962,7 @@ isc.PickList.addInterfaceMethods({
         // the dataSource.
         if (this.pickListFields) return this.pickListFields;
         
+        
         var displayField = this.getDisplayFieldName(),
             fieldObj;
         if (displayField != null) {
@@ -921,16 +970,17 @@ isc.PickList.addInterfaceMethods({
             fieldObj.formatCellValue = this._formatDisplayFieldCellValue
 
         } else {
-            fieldObj = {width:"*", name:this.getValueFieldName(), 
+            fieldObj = {width:"*", name:this.getValueFieldName(),
                         // apply the same valueMap to this field so the display values show up
                         // correctly
                         
                         valueMap:this.getValueMap()
                        }
-            // If an empty cell value is specified, apply it to the field as well so we show
-            // empty options with the correct title.
-            if (this.emptyDisplayValue != null) fieldObj.emptyCellValue = this.emptyDisplayValue;
         }
+        // If an empty display value is specified, apply it to the field as well so we show
+        // empty options with the correct title.
+        if (this.emptyDisplayValue != null) fieldObj.emptyCellValue = this.emptyDisplayValue;
+        
         // If we have an explicitly specified dateFormatter for this item, it will be passed to the
         // pickList but only respected for fields of type "date" there.
         // Assume this is what the user intended and default the type to "date" for the pickList
@@ -939,6 +989,12 @@ isc.PickList.addInterfaceMethods({
         if (this.dateFormatter != null) {
             fieldObj.type = "date"
         }
+        
+        // hang a flag on the field object as being auto-generated.
+        // in this case we'll assign our custom formatter to it.
+        // Otherwise the user is on their own.
+        fieldObj._isGeneratedField = true;
+        
         return [fieldObj]
     },
     
@@ -953,15 +1009,29 @@ isc.PickList.addInterfaceMethods({
         return value;
     },
     
+    formatPickListValue : function (value,fieldName,record) {
+        
+        // apply standard formatter to the value in the single generated field for
+        // standard pick lists.
+        // This handles formatters applied via simpleType as well as any
+        // 'formatValue()' method applied to this item
+        if (this.pickList.getField(fieldName)._isGeneratedField) {
+            return this._formatDataType(value);
+        }
+        return value;
+    },
+        
+    
     //> @method  PickList.getPickListFilterCriteria()  (A)
-    // Returns a set of filter criteria to be applied to the data displayed in the pickList when
-    // it is shown.
+    // +link{group:stringMethods,StringMethod} to return a set of filter criteria to be applied to
+    // the data displayed in the pickList when it is shown.
     // <P>
     // If this is a databound item the criteria will be passed as criteria to
     // +link{dataSource.fetchData()}.  Otherwise an equivalent client-side filter will be
     // performed on the data returned by +link{getClientPickListData()}.
     // <P>
-    // By default returns +link{pickList.pickListCriteria} if specified, otherwise an empty 
+    // By default combines +link{formItem.optionCriteria} with
+    // +link{pickList.pickListCriteria} if specified, otherwise an empty 
     // set of criteria so all records will be displayed.
     //
     // @return (Criteria) criteria to be used for databound or local filtering
@@ -969,7 +1039,8 @@ isc.PickList.addInterfaceMethods({
     // @example databoundDependentSelects
     //<
     getPickListFilterCriteria : function () {
-        return this.pickListCriteria || {};
+        var baseCrit = this.optionCriteria || {};
+        return isc.addProperties(baseCrit, this.pickListCriteria); 
     },
 
     // This is a helper method to return the set of 'local' options.
@@ -994,10 +1065,10 @@ isc.PickList.addInterfaceMethods({
     
     // For databound items, an explicitly specified displayField means we'll be displaying
     // values from one field of our dataSource, and returning data values from a different field.
-    // (Something like a valueMap using the resultSet from the server as a mapping object)
+    // (Something like a valueMap using the resultSet from the server as a mapping object).
     // This helper method will perform the conversion between display and data values based
     // on the pickList's data set, if necessary.
-    // Retriving the display value directly from the pickList dataSet often avoids us having to 
+    // Retrieving the display value directly from the pickList dataSet often avoids us having to 
     // run the fetchMissingValues logic in setValue() whereby we perform a fetch against the
     // dataSource when setValue() is called
     // Note that in contrast if this is a freeform data entry type field (EG a combobox)
@@ -1106,7 +1177,8 @@ isc.PickList.addInterfaceMethods({
     _getOptionsFromDataSource : function () {
         // explicit datasource
         if (this.optionDataSource) return true;
-        // derived datasource [For Comboboxes this will be non-null if the field has a foreignKey]
+        // check for auto-derived optionDataSource (this will be non-null if the field has a
+        // foreignKey or the form as a whole has a DataSource)
         if ((this.showOptionsFromDataSource || !this.valueMap) && 
             this.getOptionDataSource() != null) return true;
         return false;
@@ -1191,14 +1263,13 @@ isc.PickList.addInterfaceMethods({
     
     // getFirstOptionValue - used by SelectItem / ComboBoxItem if defaultToFirstOption is true
     getFirstOptionValue : function () {
-        
         var value;
         if (this._getOptionsFromDataSource()) {
             var pickList = this.pickList || 
                             (this.reusePickList() ? this.getSharedPickList() : null);
             if (pickList && !this._pickListNeedsRefilter(pickList)) {
-                var record = pickList.data.get(0);
                 
+                var record = pickList.data.get(0);
                 // Don't attempt to default to the loading row marker. Note that handleDataArrived
                 // already handles setting to the default value.
                 if (record == null || Array.isLoading(record)) {
@@ -1278,7 +1349,7 @@ isc.PickList.addInterfaceMethods({
     },
 
     // selectDefaultItem
-    // When the pickList is initally shown / re-filtered update the selection.
+    // When the pickList is initially shown / re-filtered update the selection.
     // For select items the current value will be selected.  
     // [Overridden by the comboBox class to always select the first record].
     
@@ -1323,8 +1394,9 @@ isc.PickList.addInterfaceMethods({
         var list = this.pickList;
         
         if (!list || list.destroyed) return;
+        var hasFocus = list.hasFocus || (list.body && list.body.hasFocus);
         var data = list.getData();
-		if (data.getLength() == 0 && list.isVisible()) {     
+		if (data.getLength() == 0 && list.isVisible() && list.isDrawn()) {     
 			// no matches, so hide the dropdown, place focus in the form item itself
             if (this.hideEmptyPickList) {
                 list.hide();
@@ -1336,10 +1408,9 @@ isc.PickList.addInterfaceMethods({
             }
 		} else {
             // if we set the flag to show the list after the filter, show it now!
-            var hasFocus = list.hasFocus || (list.body && list.body.hasFocus);
             if (this._showOnFilter) this._showPickList();
             // If the list is already showing, call placePickList to ensure it resizes to
-            // accomodate content if required.
+            // accommodate content if required.
             else if (list.isVisible() && list.isDrawn()) this.placePickList();
             
             delete this._showOnFilter;
@@ -1367,7 +1438,13 @@ isc.PickList.addInterfaceMethods({
         // the resultSet as a single parameter
         
         var callback = (request && request.clientContext ? request.clientContext._callback : null);
-        if (callback) this.fireCallback(callback, "item,dsResponse", [this, response]);
+        if (callback) {
+            this.fireCallback(
+                callback,
+                "item,dsResponse,data,dsRequest",
+                [this, response, data, request]
+            );
+        }
     },
     
     // If this item has a databound pickList, and a 'displayField',
@@ -1400,6 +1477,8 @@ isc.PickList.addInterfaceMethods({
     
     // This will only be called on a databound pickList
     filterDataBoundPickList : function (requestProperties, dropCache) {
+        if (isc._traceMarkers) arguments.__this = this;
+
         var criteria = this.getPickListFilterCriteria(),
             context = {
                 
@@ -1411,10 +1490,12 @@ isc.PickList.addInterfaceMethods({
                 
                 showPrompt:false
             };
-
-        // this.optionFilterContext - an entry point to add properties to the operation context, such
-        // as the name of a defined operation.
+        // this.optionFilterContext - an entry point to add properties to the operation context,
+        // such as the name of a defined operation.
         if (this.optionFilterContext != null) isc.addProperties(context, this.optionFilterContext);
+        
+        // respect optionOperationId if specified
+        if (this.optionOperationId != null) context.operationId = this.optionOperationId;
 
         // Additional properties to be applied to the request can be passed as a parameter.
         // This code path is used for the userVisible 'fetchData()' api
@@ -1445,10 +1526,11 @@ isc.PickList.addInterfaceMethods({
 
     // defaultToFirstOption: whenever new data arrives for the first row, default to it if 
     // our value is currently unset.
-    handleDataArrived : function (startRow,endRow,data) {        
+    handleDataArrived : function (startRow,endRow,data) {
         if (this.defaultToFirstOption && this.getValue() == null && startRow == 0) {
             this.setToDefaultValue();
         }
+       
         if (this.dataArrived) this.dataArrived(startRow,endRow,data);
     },
     //> @method PickList.dataArrived()
@@ -1456,7 +1538,7 @@ isc.PickList.addInterfaceMethods({
     // when new data arrives from the server.
     // @param startRow (number) index of first row returned by the server
     // @param endRow (number) index of last row returned by the server
-    // @param data (ResultSet) pointer this pickList's data
+    // @param data (ResultSet) pointer to this pickList's data
     // @visibility external
     //<
     dataArrived : function (startRow, endRow, data) {
@@ -1552,7 +1634,6 @@ isc.PickList.addInterfaceMethods({
                 if (!isc.isA.String(possibleMatch)) possibleMatch += "";
             
                 possibleMatch = possibleMatch.toLowerCase();
-                
                 // Remove any mismatches from the list of options
                 if ((this.textMatchStyle == this._$substring &&
                      !possibleMatch.contains(searchString)) ||
@@ -1778,4 +1859,5 @@ isc.PickList.addClassMethods({
     }
 });
 
-}
+
+} // end of if (isc.ListGrid)...

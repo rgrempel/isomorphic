@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -23,7 +23,7 @@
 // A Tree has no visual presentation, it is displayed by a +link{TreeGrid} or +link{ColumnTree}
 // when supplied as +link{treeGrid.data} or +link{columnTree.data}.
 // <P>
-// A Tree can be constructed out of a List of objects with interlinked by IDs or via explicitly
+// A Tree can be constructed out of a List of objects interlinked by IDs or via explicitly
 // specified Arrays of child objects.  See +link{attr:Tree.modelType} for an explanation of how
 // to pass data to a Tree.
 // <P>
@@ -59,30 +59,30 @@ isc.Tree.addClassProperties({
 //	@value	null/unset                      operate on both folders and leaves
 FOLDERS_AND_LEAVES:null,			
 // 	@value	"folders"                       operate on folders only, ignoring leaves
-FOLDERS_ONLY:	"folders",			
+FOLDERS_ONLY: "folders",			
 //	@value	"leaves"                        operate on leaves only, ignoring folders
-LEAVES_ONLY:	"leaves",			
+LEAVES_ONLY: "leaves",			
 //<
 
 //>	@type	LoadState
 // Trees that dynamically load nodes keep track of whether each node has loaded its children.
 //			
-// @visibility internal
-//		@group	dynamicLoading
-//	@value	isc.Tree.UNLOADED		not loaded at all (default state)
+//	@value	isc.Tree.UNLOADED		children have not been loaded and are not loading
 UNLOADED: null,						
 //	@value	isc.Tree.LOADING		currently in the process of loading
-LOADING:"loading",					
+LOADING: "loading",					
 //	@value	isc.Tree.FOLDERS_LOADED	folders only are already loaded
-FOLDERS_LOADED:"folders",			
+FOLDERS_LOADED: "folders",			
 //	@value	isc.Tree.LOADED			already fully loaded
-LOADED:"loaded",
+LOADED: "loaded",
+// @group loadState
+// @visibility external
 //<
 
 //> @type TreeModelType
 //
 // @value "parent" In this model, each node has an ID unique across the whole tree and a
-// parent ID that points to its parent.  The name of the unique ID property is can be specified
+// parent ID that points to its parent.  The name of the unique ID property can be specified
 // via +link{attr:Tree.idField} and the name of the parent ID property can be specified via
 // +link{attr:Tree.parentIdField}.  The initial set of nodes can be passed in as a list to
 // +link{attr:Tree.data} and also added as a list later via +link{method:Tree.linkNodes}.
@@ -95,11 +95,11 @@ LOADED:"loaded",
 PARENT:"parent",
 //
 // @value "children" In this model, nodes specify their children as a list of nodes.  The
-// property that holdes the children nodes is determined by +link{attr:Tree.childrenProperty}.
+// property that holds the children nodes is determined by +link{attr:Tree.childrenProperty}.
 // Nodes are not required to have an ID that is unique across the whole tree (in fact, no ID is
 // required at all).  Node names (specified by the +link{attr:Tree.nameProperty}, unique within
 // their siblings, are optional but not required.  Whether or not a given node is a folder is
-// determined by the presense of the children list (+link{attr:Tree.childrenProperty}).
+// determined by the presence of the children list (+link{attr:Tree.childrenProperty}).
 CHILDREN:"children",
 //
 // @visibility external
@@ -156,8 +156,8 @@ isFolderProperty: "isFolder",
 
 //> @attr tree.reportCollisions (boolean : true : IR)
 // If new nodes are added to a tree with modelType:"parent" which have the same
-// +link{tree.idField,id field value} as an existing node, the existing node is removed when
-// the new node is added.
+// +link{tree.idField,id field value} as existing nodes, the existing nodes are removed when
+// the new nodes are added.
 // <P>
 // If reportCollisions is true, the Tree will log a warning in the developer console about this.
 // <P>
@@ -270,7 +270,7 @@ childrenProperty:"children",
 
 //>	@attr	tree.openProperty	(string : null : IRWA)
 //
-// The property the default implementation of +link{Tree.isOpen()} consules to determine if the
+// The property consulted by the default implementation of +link{Tree.isOpen()} to determine if the
 // node is open or not.  By default, this property is auto-generated for you, but you can set
 // it to a custom value if you want to declaratively specify this state, but be careful - if
 // you display this Tree in multiple TreeGrids at the same time, the open state will not be
@@ -304,7 +304,7 @@ cacheOpenList:true,
 // If <code>modelType</code> is <code>"parent"</code>, the list that you provide will be passed 
 // to +link{method:Tree.linkNodes}, integrating the nodes into the tree.
 // <p>
-// In this case the root node may be supplied explicity via +link{Tree.root}, or auto generated,
+// In this case the root node may be supplied explicitly via +link{Tree.root}, or auto generated,
 // picking up its <code>id</code> via +link{Tree.rootValue}. Any nodes in the data with no
 // explicitly specified +link{treeNode.parentId} will be added as children to this root element.
 // <P>
@@ -347,7 +347,7 @@ cacheOpenList:true,
 // derivation works (see +link{Tree.root} for more on naming the root node).
 // <P>
 // For <code>modelType:"children"</code> trees, the data passed in will be assumed to be an 
-// array of children the tree's root node. 
+// array of children of the tree's root node. 
 //
 // @see attr:Tree.modelType
 // @see TreeNode
@@ -422,8 +422,8 @@ discaredParentlessNodes:false,
 
 //> @object TreeNode
 //
-// Every node in the tree is represented by TreeNode object which is an object literal with a
-// set or properties that configure the node.
+// Every node in the tree is represented by a TreeNode object which is an object literal with a
+// set of properties that configure the node.
 // <p>
 // When a Tree is supplied as +link{TreeGrid.data} to +link{TreeGrid}, you can also set
 // properties from +link{ListGridRecord} on the TreeNode (e.g. setting
@@ -443,13 +443,13 @@ discaredParentlessNodes:false,
 //> @attr treeNode.canDrag  (boolean : null : IRA)
 // Governs whether this node can be dragged. Only has an effect if this node is displayed in
 // a +link{TreeGrid} where +link{TreeGrid.canDragRecordsOut}, +link{TreeGrid.canReorderRecords}
-// or +link{TreeGrid.canReparentNodes} is <code>true</code>
+// or +link{TreeGrid.canReparentNodes} is <code>true</code>.
 // @visibility external
 //<
 
 //> @attr treeNode.canAcceptDrop (boolean : null : IRA)
 //
-// Governs whether dragged data (typicaly other <code>treeNode</code>s) may be dropped over
+// Governs whether dragged data (typically other <code>treeNode</code>s) may be dropped over
 // this node. Only has an effect if this node is displayed in a +link{TreeGrid} where
 // +link{TreeGrid.canAcceptDroppedRecords}, +link{TreeGrid.canReorderRecords} or 
 // +link{TreeGrid.canReparentNodes} is true.
@@ -482,7 +482,7 @@ discaredParentlessNodes:false,
 // useful.  Alternatively, if your dataset has unique ids consider providing those as
 // +link{TreeNode.id}.
 // <P>
-// If a value is provided for value of the nameProperty of a node (e.g. node.name) is not a
+// If a value provided for the nameProperty of a node (e.g. node.name) is not a
 // string, it will be converted to a string by the Tree via ""+value.
 // <p>
 // This property is also used as the default title for the node (see +link{Tree.getTitle()})
@@ -529,7 +529,8 @@ discaredParentlessNodes:false,
 
 //> @attr treeNode.parentId (String or Number : null : IR)
 //
-// For trees with modelType "parent", this property specifies unique parent ID of this node.
+// For trees with modelType:"parent", this property specifies the unique ID of this node's 
+// parent node.
 // The unique ID of a node, together with the unique ID of its parent is used by
 // +link{method:Tree.linkNodes} to link a list of nodes into a tree.
 // <p>
@@ -554,6 +555,56 @@ discaredParentlessNodes:false,
 // @visibility external
 //<
 
+//> @attr   treeNode.icon   (SCImgURL : null : [IRW])
+// This Property allows the developer to customize the icon displayed next to a node.
+// Set <code>node.icon</code> to the URL of the desired icon to display and
+// it will be shown instead of the standard +link{treeGrid.nodeIcon} for this node.<br>
+// Note that if +link{TreeNode.showOpenIcon} and/or +link{TreeNode.showDropIcon} 
+// is true for this node, customized icons for folder nodes will be appended with the 
+// +link{treeGrid.openIconSuffix} or +link{treeGrid.dropIconSuffix} suffixes on state change 
+// as with the standard +link{TreeGrid.folderIcon} for this treeGrid.  Also note that for
+// custom folder icons, the +link{treeGrid.closedIconSuffix} will never be appended.
+// <P>You can change the name of this property by setting 
+// +link{TreeGrid.customIconProperty}.
+// @group treeIcons
+// @visibility external
+//<
+
+//> @attr   treeNode.showOpenIcon (boolean : false : [IRWA])
+// For folder nodes showing custom icons (set via +link{treeNode.icon}),
+// this property allows the developer to specify on a per-node basis whether an
+// open state icon should be displayed when the folder is open.
+// Set <code>node.showOpenIcon</code> to true to show the open state
+// icons, or false to suppress this.<br>
+// If not specified, this behavior is determined by +link{TreeGrid.showCustomIconOpen}
+// for this node.
+// <P>You can change the name of this property by setting 
+// +link{TreeGrid.customIconOpenProperty}.
+// @see treeGrid.customIconProperty
+// @see treeGrid.showCustomIconOpen
+// @visibility external
+// @group treeIcons
+//<
+showOpenIcon: false,
+
+//> @attr   treeNode.showDropIcon (boolean : false : [IRWA])
+// For folder nodes showing custom icons (set via +link{treeNode.icon}),
+// this property allows the developer to specify on a per-node basis whether a
+// drop state icon should be displayed when the 
+// user drop-hovers over this folder.<br>
+// Set <code>node.showDropIcon</code> to true to show the drop state
+// icon, or false to suppress this.<br>
+// If not specified, this behavior is determined by +link{treeGrid.showCustomIconDrop}
+// for this node.
+// <P>You can change the name of this property by setting 
+// +link{TreeGrid.customIconDropProperty}.
+// @see treeGrid.customIconProperty
+// @see treeGrid.showCustomIconDrop
+// @visibility external
+// @group treeIcons
+//<
+showDropIcon: false,
+
 
 //>	@attr	tree.sortProp			(string : null : IRW)
 //		@group	openList
@@ -569,11 +620,11 @@ sortDirection: Array.ASCENDING,
 
 //>	@attr	tree.showRoot			(boolean : false : IRW)
 // Controls whether a call to +link{getOpenList()} includes the root node.  Since view
-// components such as a +link{TreeGrid} use <code>getOpenList()</code> to display the currently
+// components such as +link{TreeGrid} use <code>getOpenList()</code> to display the currently
 // visible tree, <code>showRoot</code> controls whether the root node is shown to the user.
 // <P>
 // All Trees must have a single, logical root, however, most applications want to show multiple
-// nodes at top level.  <code>showRoot:false</code>, the default setting, prevents the logical
+// nodes at the top level.  <code>showRoot:false</code>, the default setting, prevents the logical
 // root from being shown, so that the displayed tree begins with the children of root.
 // <P>
 // You can set <code>showRoot:true</code> to show the single, logical root node as the only
@@ -636,9 +687,20 @@ isc.Tree.addMethods({
 // @see group:sharingNodes
 //<
 init : function () {
-	// create a pointer to us in the global context
-	isc.ClassFactory.addGlobalID(this);
+    this.setupProperties();
     
+    // if a root wasn't specified, create one
+    this.setRoot(this.root || this.makeRoot());
+
+    // load breadth-first on init if so configured
+    if (this.loadOnInit && this.loadBatchSize >= 0) this.loadSubtree(null, null, true);
+},
+
+setupProperties : function () {
+	// make sure we have a global ID, but avoid doing this more than once as subclasses may
+    // already have set up an ID
+	if (this.ID == null || window[this.ID] != this) isc.ClassFactory.addGlobalID(this);
+
     // use a unique property for the parent link so that nodes moved between trees can't get
     // confused.  Advanced usages may still override.
     if (!this.parentProperty) this.parentProperty = "_parent_"+this.ID;
@@ -654,12 +716,6 @@ init : function () {
 
 	// set the openProperty if it wasn't set already
 	if (!this.openProperty) this.openProperty = "_isOpen_" + this.ID;
-
-    // if a root wasn't specified, create one
-    this.setRoot(this.root || this.makeRoot());
-
-    // load breadth-first on init if so configured
-    if (this.loadOnInit && this.loadBatchSize >= 0) this.loadSubtree(null, null, true);
 },
 
 destroy : function () {
@@ -678,6 +734,7 @@ makeRoot : function () {
     var root = {};
     var undef;
     if (this.idField !== undef) root[this.idField] = this.rootValue;
+    root[this.treeProperty] = this.ID;
     return root;
 },
 
@@ -795,8 +852,7 @@ isRoot : function (node) {
 setupParentLinks : function (node) {
 	// if the node wasn't passed in, use the root
 	if (!node) node = this.root;
-
-    this.nodeIndex[node[this.idField]] = node;
+    if (node[this.idField] != null) this.nodeIndex[node[this.idField]] = node;
 
 	// get the children array of the node
 	var	children = node[this.childrenProperty];
@@ -830,37 +886,24 @@ setupParentLinks : function (node) {
 
 		// if the child is a folder, call setupParentLinks recursively on the child
 		if (this.isFolder(child)) this.setupParentLinks(child);
-        else this.nodeIndex[child[this.idField]] = child; // link into the nodeIndex
+        else if (child[this.idField] != null) {
+            this.nodeIndex[child[this.idField]] = child; // link into the nodeIndex
+        }
 	}
 },
 
-// Build or add nodes to a Tree by linking records together by unique ids.
-//
-// This method handles receiving a mixture of leaf nodes and parent nodes, even out of order and
-// with any tree depth.  However, every node must have an id which is unique across all nodes,
-// not just within its siblings.
-//
-// Given a list of nodes which "point to" each other via a "parentId" property that matches a
-// parent's "idProperty", 
-// - adds all nodes to an index by ID (this.nodeIndex)
-// - adds all nodes to auto-created "children" arrays on their parents, or on this.root for root
-//   nodes
-// - marks any parent that receives children as "loaded", for load on demand (it's assumed for now
-//   that all children of a given parent are loaded at once)
-// - can automatically mark parents as folders, as they acquire children, if they aren't already so
-//   marked
-// - XXX legacy: creates the "nameProperty" that the Tree currently relies on for several things
-// NOTE: this is NOT similar to tree.setupParentLinks which assumes that there are already
-// node.children arrays.
-// XXX handle multi-column (multi-property) primary keys
-//
 //> @method tree.linkNodes()
-//
-// This method is provided as a mechanism to link new nodes into the tree of modelType
-// "parent".  This method takes a list of nodes that must contain at a minimum a unique ID
-// (keyed by +link{attr:Tree.idField}) and a parent ID (keyed by
-// +link{attr:Tree.parentIdField}).  Based on this information, the list of nodes is integrated
-// into the tree structure.
+// Adds an array of tree nodes into a Tree of +link{modelType} "parent".   
+// <P>
+// The provided TreeNodes must contain, at a minimum, a field containing a unique ID for the
+// node (specified by +link{attr:Tree.idField}) and a field containing the ID of the node's 
+// parent node (specified by +link{attr:Tree.parentIdField}).
+// <P>
+// This method handles receiving a mixture of leaf nodes and parent nodes, even out of order and
+// with any tree depth.
+// <P>
+// Nodes may be passed with the +link{childrenProperty} already populated with an Array of
+// children that should also be added to the Tree, and this is automatically handled.
 //
 // @param nodes (Array of TreeNode) list of nodes to link into the tree.
 //
@@ -868,12 +911,7 @@ setupParentLinks : function (node) {
 // @see attr:Tree.modelType
 // @visibility external
 //<
-connectByParentID : function (records, idProperty, parentIdProperty, rootValue, isFolderProperty) {
-    this.linkNodes(records, idProperty, parentIdProperty, rootValue, isFolderProperty);    
-},
-connectByParentId : function (records, idProperty, parentIdProperty, rootValue, isFolderProperty) {
-    this.linkNodes(records, idProperty, parentIdProperty, rootValue, isFolderProperty);
-},
+// NOTE: this does not handle multi-column (multi-property) primary keys
 linkNodes : function (records, idProperty, parentIdProperty, rootValue, isFolderProperty, contextNode) {
 
     if (this.modelType == "fields") {
@@ -881,64 +919,77 @@ linkNodes : function (records, idProperty, parentIdProperty, rootValue, isFolder
         return;
     }
 
-    // XXX impedance mismatch: 
-    // - Tree instances expect each node to have a children array, and think of each node as having
-    // a "nameProperty" that uniquely identifies it for the level.  A node's nameProperty should end
-    // in the delimeter ("foo/") if it's a folder.  
-    // - Our nodes do not have children arrays, and have _globally_ unique Ids (the primary key), by
-    // which they can be linked into a tree.  When dealing with mixed folder/node trees, we have a
-    // separate property "isFolderProperty" which marks something as a folder.
-    
-    // So we derive "children" arrays on the fly, and derive the tree's notion of "name" by
-    // using the primary key and adding a "/" for things marked as folders.
-
     records = records || this.data;
-    idProperty = idProperty || this.idField;
-    parentIdProperty = parentIdProperty || this.parentIdField;
-    rootValue = rootValue || this.rootValue;
-    
+    idProperty = (idProperty != null) ? idProperty : this.idField;
+    parentIdProperty = (parentIdProperty != null) ? parentIdProperty : this.parentIdField;
+    rootValue = (rootValue != null) ? rootValue : this.rootValue;
     
     var newNodes = [];
     newNodes.addList(records);
+    
+    // build a local index of the nodes passed in. this will allow us to find parents within the
+    // tree without having to do multiple array.finds (so it'll be linear time lookup)
+    var localNodeIndex = {};
+    for (var i = 0; i < newNodes.length; i++) {
+        var id = newNodes[i][idProperty];
+        if (id != null) localNodeIndex[id] = newNodes[i];
+    }
+    
     for (var i = 0; i < newNodes.length; i++) {
         var node = newNodes[i];
+        
+        // We look up parent chains and add interlinked nodes in parent order
+        // so if we already have this node in the tree, skip it
+        if (this.nodeIndex[node[idProperty]] == node) continue;
         if (node == null) continue;
-      
+        
         // Our parentId property may point to another node passed in (potentially in a chain)
         // In this case, ensure we link these parents into the tree first.
         var newParentId = node[parentIdProperty],
-            newParent = newParentId != null ? newNodes.find(idProperty, newParentId) : null,
+            newParent = newParentId != null ? localNodeIndex[newParentId] : null,
             newParents = []
         ;
         
         while (newParent != null) {
             if (newParent) newParents.add(newParent);
-            newParentId = newParent[parentIdProperty];
-            newParent = newParentId != null ? newNodes.find(idProperty, newParentId) : null;
+            newParentId = newParent[parentIdProperty];            
+            newParent = newParentId != null ? localNodeIndex[newParentId] : null;            
         }
       
-        if (newParents.length > 0) {
-            for (var ii = (newParents.length -1); ii >= 0; ii--) {                
+        if (newParents.length > 0) {            
+            for (var ii = (newParents.length -1); ii >= 0; ii--) {
+                if (this.logIsDebugEnabled(this._$treeLinking)) {
+                    this.logDebug("linkNodes running - adding interlinked parents to the tree in "+
+                        " reverse hierarchical order -- currently adding node with id:"+
+                        newParents[ii][idProperty], this._$treeLinking);
+                }                
                 this._linkNode(newParents[ii], idProperty, parentIdProperty,
                                contextNode, rootValue);
-                // blank the slot in the underlying array so we skip when iterating
-                // through the outer for-loop
-                newNodes[newNodes.indexOf(newParents[ii])] = null;
+                // at this point the parent is linked into the real tree -- 
+                // blank out the entry in the local index so other nodes linked to it do
+                // the right thing
+                delete localNodeIndex[newParents[ii][idProperty]];
             }
         }
-        
         // Actually link in this node
         this._linkNode(node, idProperty, parentIdProperty, contextNode, rootValue);
         // blank out this slot - this will avoid us picking up this node in the newParents
         // array of other nodes when it has already been added to the tree if appropriate
-        newNodes[i] = null;
+        delete localNodeIndex[node[idProperty]];
         
     }
     
-    this._markAsDirty();
+    this._clearNodeCache(true);
     this.dataChanged();
 },
 
+// old synonyms for backcompat
+connectByParentID : function (records, idProperty, parentIdProperty, rootValue, isFolderProperty) {
+    this.linkNodes(records, idProperty, parentIdProperty, rootValue, isFolderProperty);    
+},
+connectByParentId : function (records, idProperty, parentIdProperty, rootValue, isFolderProperty) {
+    this.linkNodes(records, idProperty, parentIdProperty, rootValue, isFolderProperty);
+},
 
 // _linkNode - helper to actually attach a node to our tree - called from the for-loop in linkNodes
 // returns true if the node was successfully added to the tree.
@@ -949,20 +1000,24 @@ _linkNode : function (node, idProperty, parentIdProperty, contextNode, rootValue
 
     var id = node[idProperty],
         parentId = node[parentIdProperty],
-        nullParent = (parentId == null || parentId == -1 || parentId == isc.emptyString),  
+        undef,
+        nullRootValue = (rootValue == null), 
+        // Note explicit === for emptyString comparison necessary as
+        // 0 == "", but zero is a valid identifier
+        nullParent = (parentId == null || parentId == -1 || parentId === isc.emptyString),
         parent = this.nodeIndex[parentId];
     
     if (parent) {
         if (logDebugEnabled) {
             this.logDebug("found parent " + parent[idProperty] + 
                          " for child " + node[idProperty], this._$treeLinking);
-        }
+        }        
         this._add(node, parent);
-    } else if (parentId == rootValue) {
+    } else if (!nullRootValue && parentId == rootValue) {
                  
         if (logDebugEnabled) {
             this.logDebug("root node: " + node[idProperty], this._$treeLinking);
-        }
+        }        
         // this is a root node
         this._add(node, this.root);
         
@@ -974,7 +1029,6 @@ _linkNode : function (node, idProperty, parentIdProperty, contextNode, rootValue
         } else {
             
             var defaultParent = contextNode || this.root;
-            
             // if a contextNode was supplied, use that as the default parent node for all
             // nodes that are missing a parentId - this is for loading immediate children
             // only, without specifying a parentId
@@ -984,8 +1038,7 @@ _linkNode : function (node, idProperty, parentIdProperty, contextNode, rootValue
                                         (" unable to find specified parent:" + parentId)) +
                               "- linking to default node " +
                               defaultParent[idProperty], this._$treeLinking);
-            }
-            
+            }            
             this._add(node, defaultParent);
         }
     }
@@ -1046,7 +1099,7 @@ getRoot : function () {
 
 //>	@method	tree.setRoot()
 //
-// Set the root of the tree. 
+// Set the root node of the tree. 
 //
 // @param   newRoot (TreeNode)    new root node
 // @param   autoOpen (boolean)  set to true to automatically open the new root node.
@@ -1058,7 +1111,10 @@ setRoot : function (newRoot, autoOpen) {
 	this.root = newRoot;
 
     // avoid issues if setRoot() is used to re-root a Tree on one of it's own nodes
-    if (newRoot && this.parentProperty.endsWith(this.ID)) newRoot[this.parentProperty] = null;
+    if (newRoot && isc.endsWith(this.parentProperty, this.ID)) newRoot[this.parentProperty] = null;
+
+    // make sure root points to us as it's tree
+    this.root[this.treeProperty] = this.ID;
 
     if (this.rootValue == null) this.rootValue = this.root[this.idField];
 
@@ -1109,7 +1165,7 @@ setRoot : function (newRoot, autoOpen) {
     this.setupParentLinks();
 
 	// mark the tree as dirty and note that the data has changed
-	this._markAsDirty();
+	this._clearNodeCache();
 	this.dataChanged();
 },
 
@@ -1140,6 +1196,8 @@ getCleanNodeData : function (nodeList, includeChildren) {
                 // currently hardcoded
                 propName == "_loadState" ||
                 propName == "_isc_tree" ||
+                
+                propName == "__ref" ||
                 // the openProperty and isFolderProperty are documented and settable, and if
                 // they've been set should be saved, so only remove these properties if they
                 // use the prefix that indicates they've been auto-generated (NOTE: this prefix
@@ -1231,7 +1289,7 @@ getName : function (node) {
 // </ul>
 // You can override this method to return the title of your choice for a given node.
 // <br><br>
-// To override the title for an autoconstructed tree (for example, in a databound TreeGrid),
+// To override the title for an auto-constructed tree (for example, in a databound TreeGrid),
 // override +link{method:TreeGrid.getNodeTitle} instead.
 //
 // @param node  (TreeNode) node for which the title is being requested
@@ -1367,6 +1425,10 @@ getParents : function (node) {
 //     bar
 // </pre>
 // Calling <code>tree.getLevel(bar)</code> will return <code>2</code>. 
+// <P>
+// Note +link{showRoot} defaults to false so that multiple nodes can be shown at top level.  In
+// this case, the top-level nodes still have root as a parent, so have level 1, even though
+// they have no visible parents.
 //
 // @param   node    (TreeNode)    node in question
 // @return          (number)    number of parents the node has
@@ -1404,12 +1466,12 @@ _getFollowingSiblingLevels : function (node) {
 // <li> If the +link{TreeNode} has a value for the +link{attr:Tree.isFolderProperty}
 // (+link{TreeNode.isFolder} by default) that value is returned.
 // <li> Next, the existence of the +link{attr:Tree.childrenProperty} (by default
-// +link{TreeNode.children} is checked on the +link{TreeNode}.  If the node has the children
+// +link{TreeNode.children}) is checked on the +link{TreeNode}.  If the node has the children
 // property defined (regardless of whether it actually has any children), then isFolder()
 // returns true for that node.
 // </ul>
 // <P>
-// You can override this method to provide your own intepretation of what constitutes a folder.
+// You can override this method to provide your own interpretation of what constitutes a folder.
 //
 // @param	node	(TreeNode)	node in question
 // @return			(boolean)	true if the node is a folder
@@ -1460,7 +1522,7 @@ isLeaf : function (node) {
 //>	@method	tree.isLast()	(A)
 // 		Note: because this needs to take the sort order into account, it can be EXTREMELY expensive!
 //		@group	ancestry			
-//			Return if this item is the last one in it's parents list.
+//			Return true if this item is the last one in it's parents list.
 //
 //		@param	node	(TreeNode)	node in question
 //		@return			(boolean)	true == node is the last child of its parent
@@ -1504,12 +1566,12 @@ findById : function (id) {
 //
 // Find a node within this tree using a string path or by attribute value(s).  This method can be
 // called with 1 or 2 arguments. If a single String
-// argument is supplied, the value of the argument is treated as the path to the node.  if a 
+// argument is supplied, the value of the argument is treated as the path to the node.  If a 
 // single argument of type Object is provided, it is treated as a set of field name/value 
 // pairs to search for (see +link{List.find}).
 // <br>
 // If 2 arguments are supplied, this method will treat the first argument as a fieldName, and
-// return the first node encountered where <code>node[fieldName]</code>matches the second 
+// return the first node encountered where <code>node[fieldName]</code> matches the second 
 // argument.  So for example, given this tree:
 // <pre>
 // foo
@@ -1568,10 +1630,8 @@ find : function (fieldName, value) {
     if (value !== undef) {
         // constant time lookup when we have nodeIndex
         if (fieldName == this.idField) return this.nodeIndex[value];
-
         // special-case root, which may not appear in getDescendants() depending on this.showRoot
         if (this.root[fieldName] == value) return this.root;
-
         // Use 'getDescendants()' to retrieve both open and closed nodes.
         return this.getDescendants().find(fieldName, value);
     } else {
@@ -1696,9 +1756,9 @@ findChildNum : function (parent, name) {
 // <br><br>
 // For load on demand trees (those that only have a partial representation client-side), this
 // method will return only nodes that have already been loaded from the server.  Furthermore,
-// for databound trees the return may will be a +link{class:ResultSet} rather than a simple array -
-// so it's important to access the return value using the +link{interface:List} interface
-// instead of as a native Javascript Array.
+// for databound trees the return value will be a +link{class:ResultSet} rather than a simple 
+// array - so it's important to access the return value using the +link{interface:List} 
+// interface instead of as a native Javascript Array.
 //
 // @param node (TreeNode) The node whose children you want to fetch.
 // @return (List)       List of children for the node (empty List if node is a leaf
@@ -1762,7 +1822,16 @@ getChildren : function (parentNode, displayNodeType, normalizer, sortDirection, 
 	// if a normalizer is specified, sort before returning
 	if (normalizer) {
         
-		subset.sortByProperty(this.sortProp, sortDirection, normalizer, context);
+        
+        if  (// we're not in a grouped LG OR
+                !this._groupByField || 
+            // we're not sorting on the _groupByField and this isn't a group-node OR
+                (this._groupByField != this.sortProp && parentNode != this.getRoot()) ||
+            // we're sorting the group-nodes and the sort-field IS the _groupByField
+                (this._groupByField == this.sortProp && parentNode == this.getRoot()) )
+        {
+            subset.sortByProperty(this.sortProp, sortDirection, normalizer, context);
+        }
 	}
 
 	return subset;
@@ -1823,7 +1892,7 @@ getLeaves : function (node, normalizer, sortDirection, criteria, context) {
 
 hasChildren : function (node, displayNodeType) {
 	var children = this.getChildren(node, displayNodeType);
-	return children && children.length > 0;
+	return children != null && children.length > 0;
 },
 
 //>	@method	tree.hasFolders()
@@ -1844,7 +1913,7 @@ hasFolders : function (node) {
 //  Return whether this node has any children that are leaves.
 //
 //	@param	node	(TreeNode)	node in question
-//	@return			(boolean)   true fi the node has children that are leaves
+//	@return			(boolean)   true if the node has children that are leaves
 //
 // @visibility external
 //<
@@ -1884,7 +1953,7 @@ isDescendantOf : function (child, parent) {
 // so it's important to access the return value using the +link{interface:List} interface
 // instead of as a native Javascript Array.
 //
-// @param   [node]  (TreeNode)    node in question (the root node is asumed if none specified)
+// @param   [node]  (TreeNode)    node in question (the root node is assumed if none is specified)
 // @return  (List)              List of descendants of the node.
 //
 // @visibility external
@@ -1936,11 +2005,11 @@ getDescendants : function (node, displayNodeType, condition) {
 
 //>	@method	tree.getDescendantFolders()
 //
-// Ruturns the list of all descendants of a node that are folders.  This works just like
+// Returns the list of all descendants of a node that are folders.  This works just like
 // +link{method:Tree.getDescendants}, except leaf nodes are not part of the returned list.
 // Like +link{method:Tree.getDescendants}, this method can be very slow for large trees.
 // Generally, +link{method:Tree.find} in combination with +link{method:Tree.getFolders} 
-// be much faster.
+// will be much faster.
 // <br><br>
 // For load on demand trees (those that only have a partial representation client-side), this
 // method will return only nodes that have already been loaded from the server.  Furthermore,
@@ -1948,7 +2017,7 @@ getDescendants : function (node, displayNodeType, condition) {
 // so it's important to access the return value using the +link{interface:List} interface
 // instead of as a native Javascript Array.
 //
-// @param   [node]      (TreeNode)	node in question (the root node is assumed if none specified)
+// @param   [node]      (TreeNode)	node in question (the root node is assumed if none is specified)
 // @return  (List)	    List of descendants of the node that are folders.
 //
 // @visibility external
@@ -1963,7 +2032,7 @@ getDescendantFolders : function (node, condition) {
 // +link{method:Tree.getDescendants}, except folders are not part of the returned list.
 // Folders are still recursed into, just not returned.  Like +link{method:Tree.getDescendants},
 // this method can be very slow for large trees.  Generally, +link{method:Tree.find} in
-// combination with +link{method:Tree.getLeaves} be much faster.
+// combination with +link{method:Tree.getLeaves} will be much faster.
 // <br><br>
 // For load on demand trees (those that only have a partial representation client-side), this
 // method will return only nodes that have already been loaded from the server.  Furthermore,
@@ -2068,7 +2137,7 @@ add : function (node, parent, position) {
 
     this._add(node, parent, position);
 
-	this._markAsDirty();
+	this._clearNodeCache(true);
 		
 	// call the dataChanged method
 	this.dataChanged();    
@@ -2086,7 +2155,7 @@ _reportCollision : function (ID) {
 },
 
 // internal interface, used by linkNodes, addList, and any other place where we are adding a
-// batch of new nodes to the Tree.  This implementation doesn't call _markAsDirty() or
+// batch of new nodes to the Tree.  This implementation doesn't call _clearNodeCache() or
 // dataChanged() and assumes you passed in the parent node as a node object, not a string.
 _add : function (node, parent, position) {
     var ID = node[this.idField];
@@ -2135,7 +2204,7 @@ _add : function (node, parent, position) {
     //
     // set the parentId on the node if it isn't set already
     var idField = this.idField
-    // just do this uncoditionally - it doesn't make sense for the parentId field of the child
+    // just do this unconditionally - it doesn't make sense for the parentId field of the child
     // not to match the idField of the parent.
     node[this.parentIdField] = parent[idField];
 	// link to the parent
@@ -2147,7 +2216,7 @@ _add : function (node, parent, position) {
     // if we don't do a null check there are cases where null values get added into the 
     // nodeIndex and children get added to the wrong parent, i.e. when using autoFetch and 
     // modeltype 'children' within a treegrid. 
-    if (node[idField]) this.nodeIndex[node[idField]] = node;
+    if (node[idField] != null) this.nodeIndex[node[idField]] = node;
 
     // current assumption whenever loading subtrees is that if any
     // children are returned for a node, it's the complete set, and the node is marked "loaded"
@@ -2187,13 +2256,13 @@ _add : function (node, parent, position) {
 // Add a list of nodes to some parent.
 //
 // @param   nodeList      (List of TreeNode) The list of nodes to add
-// @param	parent		(String or TreeNode)	Parent of the node being added.  You can pass
+// @param	parent		(String or TreeNode)	Parent of the nodes being added.  You can pass
 //                                          in either the +link{TreeNode} itself, or a path to
 //	                                        the node (as a String), in which case a
 //	                                        +link{method:Tree.find} is performed to find
 //	                                        the node. 
-// @param	[position]	(number)	Position of the new node in the children list. If not
-//	                                specified, the node will be added at the end of the list.
+// @param	[position]	(number)	Position of the new nodes in the children list. If not
+//	                                specified, the nodes will be added at the end of the list.
 // @return	(List)	List of added nodes.
 //
 // @see group:sharingNodes
@@ -2208,7 +2277,7 @@ addList : function (nodeList, parent, position) {
 
     this._addList(nodeList, parent, position);
 
-    this._markAsDirty();
+    this._clearNodeCache(true);
     this.dataChanged();    
 
     return nodeList;
@@ -2241,13 +2310,13 @@ move : function (node, newParent, position) {
 
 
 //>	@method	tree.moveList()
-//			Move a list of nods under a new parent.
+//			Move a list of nodes under a new parent.
 //
 //		@group	dataChanges			
 //
-//		@param	nodeList	(List of TreeNode)	list of node to move
+//		@param	nodeList	(List of TreeNode)	list of nodes to move
 //		@param	newParent	(TreeNode)	new parent node
-//		@param	[position]	(number)	position to place new node at.  
+//		@param	[position]	(number)	position to place new nodes at.  
 //										If not specified, it'll go at the end
 //<
 moveList : function (nodeList, newParent, position) {
@@ -2307,7 +2376,7 @@ remove : function (node, noDataChanged) {
         // e.g. via removeList, so consult noDataChanged flag
         if (!noDataChanged) {
     		// mark the entire tree as dirty
-	    	this._markAsDirty();
+	    	this._clearNodeCache(true);
 		    // call the dataChanged method to notify anyone who's observing it
     		this.dataChanged();
         }
@@ -2343,7 +2412,7 @@ removeList : function (nodeList) {
 		
 	// call the dataChanged method to notify anyone who's observing it
 	if (changed) {
-        this._markAsDirty();
+        this._clearNodeCache(true);
         this.dataChanged();
     }
 
@@ -2351,19 +2420,18 @@ removeList : function (nodeList) {
 },
 
 
-//
-// load and unload a node's children dynamically
-//
+// Loading and unloading of children
+// --------------------------------------------------------------------------------------------
 
 
 //>	@method	tree.getLoadState()
-//			What is the loadState of a given node?
-//		@group	loadState			
+// What is the loadState of a given folder?
 //
-//		@param	node	(TreeNode)			node in question
-//		@return			(LoadState)	state of the node
+// @param node (TreeNode) folder in question
+// @return (LoadState) state of the node
+// @group loadState			
+// @visibility external
 //<
-
 getLoadState : function (node) {
 	if (!node) return null;
 	if (!node._loadState) return this.defaultLoadState;
@@ -2371,13 +2439,13 @@ getLoadState : function (node) {
 },
 
 //>	@method	tree.isLoaded()
-//			Is a given node loaded ?
-//		@group	loadState			
+// For a databound tree, has this folder either already loaded its children or is it in the
+// process of loading them.
 //
-//	 	Also returns true if the node is currently in the process of loading
-//
-//		@param	node	(TreeNode)	node in question
-//		@return			(boolean)	node is loaded or is currently loading
+// @param node (TreeNode) folder in question
+// @return (boolean) folder is loaded or is currently loading
+// @group loadState
+// @visibility external
 //<
 isLoaded : function (node) {
     var loadState = this.getLoadState(node);
@@ -2385,10 +2453,11 @@ isLoaded : function (node) {
 },
 
 //>	@method	tree.setLoadState()
-//			Set the load state of a particular node
-//		@group	loadState			
-//		@param	node		(TreeNode)	node in question
-//		@param	newState	(string)	new state to set to
+// Set the load state of a particular node.
+// @group loadState			
+// @param node (TreeNode) node in question
+// @param newState (string) new state to set to
+// @return (boolean) folder is loaded or is currently loading
 //<
 setLoadState : function (node, newState) {
 	node._loadState = newState;
@@ -2406,15 +2475,17 @@ loadRootChildren : function (callback) {
 },
 
 //>	@method	tree.loadChildren()
-// 			Load the children of a given node.
+// Load the children of a given node.
+// <P>
+// For a databound tree this will trigger a fetch against the Tree's DataSource.
 //
-// 			This implementation does nothing other than mark the node as loaded
-//		@group	loadState			
 //
-//		@param	node	(TreeNode)	node in question
-//      @param  [callback] (callback) Optional callback (stringMethod) to fire when loading 
+// @param node	(TreeNode)	node in question
+// @param [callback] (callback) Optional callback (stringMethod) to fire when loading 
 //                      completes. Has a single param <code>node</code> - the node whose 
 //                      children have been loaded, and is fired in the scope of the Tree.
+// @group loadState			
+// @visibility external
 //<
 loadChildren : function (node, callback) {
 	if (!node) node = this.root;
@@ -2428,12 +2499,13 @@ loadChildren : function (node, callback) {
 },
 
 //>	@method	tree.unloadChildren()
-//			Unload the children of a node
-//		@group	loadState			
+// Unload the children of a folder, returning the folder to the "unloaded" state.
 //
-//		@param	node			(TreeNode)			node in question
-//		@param	[displayNodeType]	(DisplayNodeType)	Type of children to drop
+// @param node (TreeNode) folder in question
+// @group loadState			
+// @visibility external
 //<
+// NOTE internal parameter:	[displayNodeType]	(DisplayNodeType)	Type of children to drop
 unloadChildren : function (node, displayNodeType) {
     if (this.isLeaf(node)) return;
     
@@ -2464,15 +2536,15 @@ unloadChildren : function (node, displayNodeType) {
     }
 
 	// mark the tree as dirty and note that the data has changed
-	this._markAsDirty();
+	this._clearNodeCache(true);
 	this.dataChanged();
 },
 
 //>	@method	tree.reloadChildren()
-//			Reload the children of a node
-//		@group	loadState			
+// Reload the children of a folder.
 //
 // @param node (TreeNode) node in question
+// @group loadState			
 // @visibility external
 //<
 
@@ -2487,14 +2559,16 @@ reloadChildren : function (node, displayNodeType) {
 //
 
 
-// sets the dirty flag which is consulted by getOpenList()
-_markAsDirty : function () {
-	this._dirty = true;
+// clears the open node cache (used by getOpenList())
+// and optionally the all node cache (used by getNodeList()).
+_clearNodeCache : function (allNodes) {
+    if (allNodes) this._allListCache = null;
+    this._openListCache = null;
 },
 
 //>	@method	tree.isOpen()
 //
-// Is a particular node open or closed (works for leaves and folders).
+// Whether a particular node is open or closed (works for leaves and folders).
 //
 // @param	node	(TreeNode)	node in question
 // @return  (boolean)           true if the node is open
@@ -2502,7 +2576,7 @@ _markAsDirty : function () {
 // @visibility external
 //<
 isOpen : function (node) {
-	return node != null && node[this.openProperty];
+	return node != null && !!node[this.openProperty];
 },
 
 
@@ -2547,8 +2621,11 @@ getOpenFolderPaths : function (node) {
 //
 //		@param	node		(TreeNode)	node in question
 //		@param	newState	(boolean)	true == open, false == close
+//      @param  [callback] (callback) Optional callback (stringMethod) to fire when loading 
+//                      completes. Has a single param <code>node</code> - the node whose 
+//                      children have been loaded, and is fired in the scope of the Tree.
 //<
-changeDataVisibility : function (node, newState) {
+changeDataVisibility : function (node, newState, callback) {
 
 	// if they're trying to open a leaf return false
 	if (this.isLeaf(node)) return false;
@@ -2556,12 +2633,12 @@ changeDataVisibility : function (node, newState) {
 	// mark the node as open or closed
 	node[this.openProperty] = newState;
 
-	// mark the entire tree as dirty
-	this._markAsDirty();
+	// mark the open node list as dirty
+	this._clearNodeCache();
 
 	// if the node is not loaded, load it!
 	if (newState && !this.isLoaded(node)) {
-		this.loadChildren(node);
+		this.loadChildren(node, callback);
 	}
 },
 
@@ -2581,17 +2658,19 @@ toggleFolder : function (node) {
 // Open a particular node
 //
 // @param	node	(TreeNode)	node to open
-//
+// @param  [callback] (callback) Optional callback (stringMethod) to fire when loading 
+//                      completes. Has a single param <code>node</code> - the node whose 
+//                      children have been loaded, and is fired in the scope of the Tree.
 // @see ResultTree.dataArrived
 // @visibility external
 //<
-openFolder : function (node) {
+openFolder : function (node, callback) {
 	if (node == null) node = this.root;
 	
 	// if the node is not already set to the newState
 	if (!this.isOpen(node)) {			
 		// call the dataChanged method to notify anyone who's observing it
-		this.changeDataVisibility(node, true);
+		this.changeDataVisibility(node, true, callback);
 	}
 },
 
@@ -2708,13 +2787,13 @@ closeAll : function (node) {
 // Return a flattened list of nodes that are open under some parent, including the parent
 // itself.  If the passed in node is a leaf, this method returns null
 //
-// @param	node			(TreeNode)			node in question
+// @param [node]			(TreeNode)			node in question
 // @return					(List of TreeNode)      		flattened list of open nodes
 //
 // @visibility external
 //<
 
-getOpenList : function (node, displayNodeType, normalizer, sortDirection, criteria, context) {
+getOpenList : function (node, displayNodeType, normalizer, sortDirection, criteria, context, getAll) {
 	// default to the tree root
 	if (! node) node = this.root;
 
@@ -2737,7 +2816,7 @@ getOpenList : function (node, displayNodeType, normalizer, sortDirection, criter
 	if (displayNodeType != isc.Tree.LEAVES_ONLY) list[list.length] = node;
 	
 	// if this node is closed, return the list
-	if (!this.isOpen(node)) return list;
+	if (!getAll && !this.isOpen(node)) return list;
 
 	// iterate through all the children of the node
 	var children = this.getChildren(node, displayNodeType, normalizer, sortDirection, criteria, 
@@ -2761,7 +2840,8 @@ getOpenList : function (node, displayNodeType, normalizer, sortDirection, criter
         var grandChildren = child[this.childrenProperty];
 		if (grandChildren && grandChildren.length) {
 			// now concatenate the list with the descendants of the child
-			list = list.concat(this.getOpenList(child, displayNodeType, normalizer, sortDirection, criteria));
+			list = list.concat(this.getOpenList(child, displayNodeType, normalizer,
+                                                sortDirection, criteria, context, getAll));
 		} else {
 			// if we're not excluding leaves, add the leaf to the list
 			
@@ -2787,20 +2867,40 @@ getOpenList : function (node, displayNodeType, normalizer, sortDirection, criter
 //<
 _getOpenList : function () {
 	// if the _openListCache hasn't been calculated,
-	//		the tree has been marked as dirty
 	//		or we're not supposed to cache the openList
-	if (! this._openListCache || this._dirty || !this.cacheOpenList) {
+	if (! this._openListCache || !this.cacheOpenList) {
 		// recalculate the open list
 		this._openListCache = this.getOpenList(this.root, this.openDisplayNodeType,
                                                this._openNormalizer, this.sortDirection,
                                                this.openListCriteria);
-
-		// and mark as no longer dirty
-		this._dirty = false;
 	}
 	return this._openListCache;
 },
 
+//> @method tree.getNodeList()
+// Return a flattened list of all nodes in the tree.
+//<
+getNodeList : function () {
+    // if the _allListCache hasn't been calculated,
+    // or we're not supposed to cache the openList
+    if (! this._allListCache || !this.cacheAllList) {
+        // recalculate the node list
+        this._allListCache = this.getAllNodes(this.root);
+    }
+    return this._allListCache;
+},
+
+//> @method tree.getAllNodes()
+// Get all the nodes that exist in the tree under a particular node, as a flat list, in
+// depth-first traversal order.
+//
+// @params [node] optional node to start from.  Default is root.
+// @return (Array of TreeNode) all the nodes that exist in the tree
+// @visibility external
+//<
+getAllNodes : function (node) {
+    return this.getOpenList(node, null, null, null, null, null, true);
+},
 
 // List API
 // --------------------------------------------------------------------------------------------
@@ -2888,7 +2988,7 @@ sortByProperty : function (property, direction, normalizer, context) {
     this._sortContext = context;
 
 	// mark as dirty so any list who points to us will be redrawn
-	this._markAsDirty();
+	this._clearNodeCache(true);
 
 	// call the dataChanged method to notify anyone who's observing it
 	this.dataChanged();
@@ -2961,7 +3061,7 @@ loadSubtree : function (node, max, initTime) {
 
     this._loadingBatch = null;
 
-    if (count > 0) this._markAsDirty();
+    if (count > 0) this._clearNodeCache(true);
 }, 
 
 // allows loadChildren() to detect we're loading a batch of children and defer loading a folder
@@ -3011,3 +3111,184 @@ _loadToDepth : function (max, node, count, stopDepth) {
 }
 
 });	// END isc.Tree.addMethods()
+
+isc.Tree.addClassMethods({
+    // Tree Discovery
+    // ---------------------------------------------------------------------------------------
+    // utilities for discovering the tree structure of a block of data heuristically
+
+    // heuristically find a property that appears to contain child objects.
+    // Searches through an object and find a property that is either Array or Object valued.
+    // Returns the property name they were found under.
+    // mode:
+    // "any" assume the first object or array value we find is the children property
+    // "array" assume the first array we find is the children property, no matter the contents
+    // "object" assume the first object or array of objects we find is the children property
+    //          (don't allow arrays that don't have objects)
+    // "objectArray" accept only an array of objects as the children property
+    findChildrenProperty : function (node, mode) {
+        if (!isc.isAn.Object(node)) return;
+
+        if (!mode) mode = "any"; 
+
+        var any = (mode == "any"),
+            requireObject = (mode == "object"),
+            requireArray = (mode == "array"),
+            requireObjectArray = (mode == "objectArray");
+
+        for (var propName in node) {
+            var propValue = node[propName];
+            // note: isAn.Object() matches both Array and Object
+            if (isc.isAn.Object(propValue)) {
+                if (any) return propName;
+                if (isc.isAn.Array(propValue)) {
+                    // array of objects always works
+                    if (isc.isAn.Object(propValue[0])) return propName;
+                    // simple array satisfies all but "object" and "objectArray"
+                    if (!requireObject && !requireObjectArray) return propName;
+                } else {
+                    // object works only for "object" and "any" ("any" covered above)
+                    if (requireObject) return propName;
+                }
+            }
+        }
+    },
+
+    // given a hierarchy of objects with children under mixed names, heuristically discover the
+    // property that holds children and copy it to a single, uniform childrenProperty.  Label each
+    // discovered child with a configurable "typeProperty" set to the value of the property
+    // that held the children.
+    discoverTree : function (nodes, settings, parentChildrenField) {
+        if (!settings) settings = {}; // less null checks
+
+        var childrenMode = settings.childrenMode || "any";
+    
+        // scanMode: how to scan for the childrenMode
+        // "node": take each node individually
+        // "branch": scan direct siblings as a group, looking for best fit
+        // "level": scan entire tree levels as a group, looking for best fit
+        var scanMode = settings.scanMode || "branch";
+
+        // tieMode: what to do if there is more than one possible childrenProperty when using
+        // scanMode "branch" or "level"
+        // "node": continue, but pick childrenProperty on a per-node basis (will detect
+        //             mixed) 
+        // "highest": continue, picking the childrenProperty that occurred most as the single
+        //            choice
+        // "stop": if there's a tie, stop at this level (assume no further children)
+        // NOT SUPPORTED YET: "branch": if using scanMode:"level", continue but with scanMode
+        //                              "branch"
+        var tieMode = settings.tieMode || "node";
+
+            // what to rename the array of children once discovered
+        var newChildrenProperty = settings.newChildrenProperty ||
+                                  isc.Tree.getInstanceProperty("childrenProperty"),
+            typeProperty = settings.typeProperty || "nodeType",
+            // for string leaf nodes (if allowed), what property to store the string under in
+            // the auto-created object
+            nameProperty = settings.nameProperty || "name";
+
+        if (!isc.isAn.Array(nodes)) nodes = [nodes];
+
+        // go through all the nodes on this level and figure out what property occurs most
+        // often as a children property.  This allows us to handle edge cases where the
+        // property occurs sometimes as an Array and sometimes singular
+        var globalBestCandidate;
+        if (scanMode == "level" || scanMode == "branch") {
+            var candidateCount = {};
+            for (var i = 0; i < nodes.length; i++) {
+                var node = nodes[i],
+                    childrenProperty = null;
+
+                // optimization: this node was up-converted from a String, it can't have
+                // children
+                if (node._fromString) continue;
+
+                childrenProperty = this.findChildrenProperty(node, childrenMode);
+
+                if (childrenProperty == null) continue;
+
+                candidateCount[childrenProperty] = (candidateCount[childrenProperty] || 0);
+                candidateCount[childrenProperty]++;
+            }
+            var counts = isc.getValues(candidateCount),
+                candidates = isc.getKeys(candidateCount);
+
+            if (candidates.length == 0) {
+                // no children property could be found
+                return;
+            } else if (candidates.length == 1) {
+                // use the only candidate
+                globalBestCandidate = candidates[0];
+            } else if (tieMode == "node") {
+                // multiple candidates found, don't set globalBestCandidate and we will
+                // automatically go per-node
+            } else if (tieMode == "stop") {
+                return;
+            } else { // tieMode == "highest"
+                // pick highest and proceed
+                var max = counts.max(),
+                    maxIndex = counts.indexOf(max);
+                globalBestCandidate = candidates[maxIndex];
+            }
+
+            //this.logWarn("counts are: " + this.echo(candidateCount) +
+            //             ", globalBestCandidate: " + globalBestCandidate);
+        }
+
+        var allChildren = [];
+        for (var i = 0; i < nodes.length; i++) {
+            var node = nodes[i];
+
+            // default to the globalBestCandidate if there is one
+            var bestCandidate = globalBestCandidate;
+
+            if (node._fromString) continue; // can't have children
+            
+            // determine the best children property individually per node if we haven't already
+            // determined it by scanning all nodes
+            if (!bestCandidate) {   
+                bestCandidate = this.findChildrenProperty(node, childrenMode);
+                //this.logWarn("individual bestCandidate: " + bestCandidate + 
+                //             " found for node: " + this.echo(node));
+            }
+
+            // no children found
+            if (bestCandidate == null) continue;
+
+            // normalize children to an Array (even if absent, if a single bestCandidate
+            // property was determined for the level)
+            var children = node[bestCandidate];
+            if (children != null && !isc.isAn.Array(children)) children = [children];
+            else if (children == null) children = [];
+
+            // copy discovered children to the normalized childrenProperty
+            node[newChildrenProperty] = children;
+
+            // mark all children with a "type" property indicating the property they were found
+            // under.  Needed because this information is missing once we normalize all children
+            // arrays to appear under the same property name
+            for (var j = 0; j < children.length; j++) {
+                var child = children[j];
+                // if we end up with Strings in the children (valid only with childrenMode
+                // "array") auto-convert them to Objects
+                if (isc.isA.String(child)) {
+                    children[j] = child = {
+                        name:child,
+                        _fromString:true
+                    }   
+                } 
+                child[typeProperty] = bestCandidate;
+            }
+
+            // proceed with this node's children
+            if (scanMode == "level") {
+                allChildren.addAll(children);
+            } else {
+                this.discoverTree(children, settings, bestCandidate);
+            }
+        }   
+        if (scanMode == "level" && allChildren.length > 0) this.discoverTree(allChildren, settings);
+    }
+
+});

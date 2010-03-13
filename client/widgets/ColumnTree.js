@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -39,7 +39,7 @@
 //<
 
 // define us as a subclass of Layout
-isc.ClassFactory.defineClass("ColumnTree", "Layout");
+isc.ClassFactory.defineClass("ColumnTree", "Layout", "DataBoundComponent");
 
 isc.ColumnTree.addClassProperties({
 
@@ -114,8 +114,8 @@ isc.ColumnTree.addProperties({
     // @visibility external
     //<	
 
-    //>	@attr columnTree.autoFetchAsFilter       (boolean : false : IR)
-    // @include dataBoundComponent.autoFetchAsFilter
+    //>	@attr columnTree.autoFetchTextMatchStyle       (TextMatchStyle : null : IR)
+    // @include dataBoundComponent.autoFetchTextMatchStyle
     // @group databinding
     // @visibility external
     //<
@@ -150,7 +150,7 @@ isc.ColumnTree.addProperties({
     // is true for this grid, customized icons for folder nodes will be appended with the 
     // +link{openIconSuffix} suffix on state change,
     // as with the standard +link{folderIcon}.  Also note that for
-    // custom folder icons, the +link{closedIconSuffix} will never be appened.
+    // custom folder icons, the +link{closedIconSuffix} will never be appended.
     // @group treeIcons
     // @visibility external
     //<
@@ -203,7 +203,7 @@ isc.ColumnTree.addProperties({
 
     //>	@attr   columnTree.loadDataOnDemand    (boolean : null : IR)
     // For databound columnTree instances, should the entire tree of data be loaded on initial 
-    // fetch, or should each coluimn be loaded as needed. If unset the default 
+    // fetch, or should each column be loaded as needed. If unset the default 
     // ResultTree.loadDataOnDemand setting will be used.
     // @group databinding
     // @visibility external
@@ -310,7 +310,7 @@ isc.ColumnTree.addProperties({
 	wrapCells: false,
 	
 	// iconPadding - padding between the folder open/close icon and text.
-    // Make this customizeable, but not exposed - very unlikely to be modified
+    // Make this customizable, but not exposed - very unlikely to be modified
     iconPadding: 3,
 	
     
@@ -390,7 +390,11 @@ treeIsTied : function (column, node) {
 // @visibility external
 //<
 nodeSelected : function (column, node) {
+    // Give the 'onNodeSelected' handler an opportunity to suppress default handling if present
     
+    if (this.onNodeSelected != null && (this.onNodeSelected(column,node) == false)) {
+        return;
+    }
     var idx = this.getColumnIndex(node),
         isFolder = this.data.isFolder(node);
     
@@ -859,7 +863,7 @@ getColumn : function (col) {
 
 //> @method columnTree.getColumnProperties() [A]
 // Additional properties to apply to the ListGrid that will show the indicated column.
-// Returns nothing by default. This method can be overrideen to allow, for example, different 
+// Returns nothing by default. This method can be overridden to allow, for example, different 
 // styling, icons, or row heights per column.
 // @param node (TreeNode) parent node for the nodes to be shown in the column
 // @param colNum (int) index of the column
@@ -1005,5 +1009,16 @@ getSelectionObject : function (colNum) {
     
 isc.ColumnTree.registerStringMethods({
     // itemSelected - handler fired when the user changes the selection.
-    nodeSelected : "column, node"
+    nodeSelected : "column, node",
+    
+    //> @method ColumnTree.onNodeSelected()
+    // Notification method fired when a node is selected. Return false to suppress default
+    // behavior.
+    // @param column (ListGrid) The column (ListGrid instance) in which the node was selected
+    // @param node (TreeNode) The selected node
+    // @return (boolean) Return false to cancel default behavior
+    // @visibility sgwt
+    //<
+    
+    onNodeSelected : "column,node"
 })

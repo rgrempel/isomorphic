@@ -1,13 +1,14 @@
 <DataSource	ID="Label"	inheritsFrom="Button" Constructor="Label">
 	<fields>
-        <field name="contents" type="HTML"/>	
+        <field name="contents" type="HTML" basic="true"/>	
 		<field name="dynamicContents" type="boolean" defaultValue="false"/>
-		<field name="align" type="alignEnum" />	
-		<field name="valign" type="valignEnum" />
-        <field name="autoFit" type="boolean" />
+		<field name="align" type="alignEnum" basic="true"/>	
+		<field name="valign" type="valignEnum" basic="true"/>
+        <field name="autoFit" type="boolean" basic="true"/>
 		<field name="padding" type="positiveInteger" />	
-		<field name="wrap" type="boolean" />
+		<field name="wrap" type="boolean" basic="true"/>
 
+        <field name="title" inapplicable="true"/>
         <field name="peers" inapplicable="true"/>
 		<field name="children" inapplicable="true"/>	
     </fields>
@@ -17,4 +18,8 @@
         <group>sizing</group>
         <group>appearance</group>
     </groups>
+    
+    <methods>
+        <method name="click" basic="true"/>
+    </methods>
 </DataSource>

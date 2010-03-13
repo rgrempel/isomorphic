@@ -91,6 +91,13 @@
     font-family:Arial,sans-serif; font-size:11px; color:black;
     background-color:#FFFFD0; border:1px solid #808080; padding:5px;
 }
+
+/* group label */
+.groupLabel {
+    font-family:Arial,sans-serif; font-size:11px;
+    color:#333333;
+    padding-left:5px; padding-right:5px;
+}
 /*============================================================
     2) Button
 		button.baseStyle
@@ -496,6 +503,13 @@
     color:#414141;
     border-left:5px;
 }
+.imgSectionHeaderTitleDisabledopened,
+.imgSectionHeaderTitleDisabledclosed {
+font-family:Arial,sans-serif; font-size:11px; font-weight:bold;
+color:grey;
+border-left:5px;
+}
+
 /* 
 
 */
@@ -1075,20 +1089,52 @@
 .cellSelectedOverDark,
 .cellDisabled,
 .cellDisabledDark,
+.gridSummaryCell,
+.gridSummaryCellDisabled,
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark,
+.specialCol,
+.specialColOver,
+.specialColSelected,
+.specialColSelectedOver,
+.specialColDisabled,
 .groupNode {
 	font-family:Arial,sans-serif; font-size:11px; text-overflow:ellipsis;
 	color:#333333;
 }
-.cellDark {
+
+.specialCol {
     color:#333333;
 	background-color:#D7E6EC;
 }
-.cellOver {
+
+.cellDark,
+.recordSummaryCellDark {
+    color:#333333;
+	background-color:#D7E6EC;
+}
+.gridSummaryCell {
+    color:#333333;
+	background-color:#D7E6EC;
+    border-top: 1px solid #C0C0C0;
+}
+.cellOver,
+.specialColOver,
+.recordSummaryCellOver {
     color:#333333;
     /*background-color:rgb(190,215,225);*/
     background-color:rgb(159,200,232);
 }
-.cellOverDark {
+.cellOverDark,
+.recordSummaryCellOverDark {
     color:#222222;
     /*background-color:rgb(170,195,210);*/
     background-color:rgb(159,200,232);
@@ -1096,14 +1142,37 @@
 .cellSelected,
 .cellSelectedDark,
 .cellSelectedOver,
-.cellSelectedOverDark {
+.cellSelectedOverDark,
+.specialColSelected,
+.specialColSelectedOver,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark {
 	color:#FFFFFF;
     background-color:rgb(65,160,210);
 }
 .cellDisabled,
-.cellDisabledDark {
+.cellDisabledDark,
+.specialColDisabled,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
 	color:#A7C4D3;
 	background-color:#FFFFFF;
+}
+.gridSummaryCell,
+.gridSummaryCellDisabled,
+.recordSummaryCell,
+.recordSummaryCellDark,
+.recordSummaryCellOver,
+.recordSummaryCellOverDark,
+.recordSummaryCellSelected,
+.recordSummaryCellSelectedDark,
+.recordSummaryCellSelectedOver,
+.recordSummaryCellSelectedOverDark,
+.recordSummaryCellDisabled,
+.recordSummaryCellDisabledDark {
+    font-weight:bold;
 }
 
 /* for grouping */
@@ -1118,6 +1187,10 @@
     padding: 3px; 
 }
 
+/* Multi-sort - sort-index appearing next to sort-arrows in field headers */
+.sortNumeral {
+    font-size:7px
+}
 
 /*============================================================
 	12) ToolStrip
@@ -1850,6 +1923,7 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 .calMonthOtherDayBlankOverDark {
     font-family:Arial,sans-serif; font-size:11px;
     color:#444444;
+    border-bottom:1px solid #a0a0a0; border-right:1px solid #a0a0a0;
     background-color: #E6E6E6;
 }
 

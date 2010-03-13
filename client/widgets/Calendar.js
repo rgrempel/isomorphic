@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -13,42 +13,45 @@
 
 
 //>	@class	Calendar
-// The Calendar component provides several different ways for a user to view and edit a set of
-// events. Note that the <b>ISC_Calendar.js</b> module must be loaded to make use of the Calendar
-// class.
+// The Calendar component provides several different ways for a user to view and
+// edit a set of events. Note that the <b>ISC_Calendar.js</b> module must be 
+// loaded to make use of the Calendar class.
 // <P>
 // <b>CalendarEvents</b>
 // <P>
-// Events are represented as ordinary JavaScript Objects (see +link{CalendarEvent}).  The
-// Calendar expects to be able to read and write a basic set of properties on events: name,
-// startDate, endDate, description, etc, which can be stored under configurable property names
-// (see eg +link{calendar.startDateField}.
+// Events are represented as ordinary JavaScript Objects (see +link{CalendarEvent}).  
+// The Calendar expects to be able to read and write a basic set of properties 
+// on events: name, startDate, endDate, description, etc, which can be stored 
+// under configurable property names (see eg +link{calendar.startDateField}.
 // <P>
-// Much like a +link{ListGrid} manages it's ListGridRecords, the Calendar can either be passed
-// a ordinary Array of CalendarEvents or can fetch data from a DataSource.
+// Much like a +link{ListGrid} manages it's ListGridRecords, the Calendar can 
+// either be passed an ordinary Array of CalendarEvents or can fetch data from a 
+// DataSource.
 // <P>
-// If the calendar is bound to a DataSource, event changes by user action or by calling methods
-// will be saved to the DataSource.
+// If the calendar is bound to a DataSource, event changes by user action or by 
+// calling methods will be saved to the DataSource.
 // <P>
 // <b>Navigation</b>
 // <P>
-// The calendar supports a +link{calendar.weekView,WeekView}, +link{calendar.dayView,DayView}
-// and +link{calendar.monthView,MonthView} by default.  The user can navigate using back and
-// forward buttons or via an attached +link{calendar.dateChooser,DateChooser}.
+// The calendar supports a +link{calendar.weekView,WeekView}, 
+// +link{calendar.dayView,DayView} and +link{calendar.monthView,MonthView} by 
+// default.  The user can navigate using back and forward buttons or via an 
+// attached +link{calendar.dateChooser,DateChooser}.
 // <P>
 // <b>Event Manipulation</b>
 // <P>
-// Events can be created via clicking on the day, week or month views, or via the "Add Event"
-// button.  In the day and week views, the user may click and drag to create an event of a
-// specific duration.
+// Events can be created via clicking on the day, week or month views, or via the 
+// "Add Event" button.  In the day and week views, the user may click and drag 
+// to create an event of a specific duration.
 // <P>
 // Creating an event via click or click and drag pops up the
-// +link{calendar.eventDialog,EventDialog}, which provides a simple form for quick event
-// entry (only one field, the description, is required by default).  
+// +link{calendar.eventDialog,EventDialog}, which provides a simple form for 
+// quick event entry (only one field, the description, is required by default).  
 // <P>
-// A separate editor called the +link{calendar.eventEditor,EventEditor} provides an interface
-// for editing all possible properties of an event, including custom properties.  The
-// EventEditor is used whenever a pre-existing event is being edited, and can also be invoked
+// A separate editor called the +link{calendar.eventEditor,EventEditor} provides 
+// an interface for editing all possible properties of an event, including custom 
+// properties.  The EventEditor is used whenever a pre-existing event is being 
+// edited, and can also be invoked
 // by the user wherever the simpler EventDialog appears.
 // <P>
 // Events can also be programmatically +link{calendar.addEvent,added},
@@ -59,7 +62,7 @@
 // @example simpleCalendar
 // @visibility calendar
 //<
-isc.ClassFactory.defineClass("Calendar", "Canvas");
+isc.ClassFactory.defineClass("Calendar", "Canvas", "DataBoundComponent");
 
 isc.Calendar.addProperties({
 
@@ -69,12 +72,11 @@ defaultHeight: "100%",
 year:new Date().getFullYear(),		// full year number
 month:new Date().getMonth(),		// 0-11
 
-//> @attr calendar.chosenDate  (Date : 'Today' : IR)
-// The date for which events are displayed in the day, week, and month tabs of the calendar.
-// Default is today.
+//> @attr calendar.chosenDate  (Date : 'Today' : IRW)
+// The date for which events are displayed in the day, week, and month tabs of 
+// the calendar.  Default is today.
 //
 // @group date
-// @setter calendar.setChosenDate()
 // @visibility calendar
 //<
 chosenDate:new Date(),	
@@ -209,6 +211,14 @@ workdayEnd: "5:00pm",
 //<
 showWorkday: false,
 
+//> @attr calendar.workdays (Array : [1,2,3,4,5] : IR)
+// Array of days that are considered workdays when +link{showWorkday} is true
+//
+// @group workday
+// @visibility calendar
+//<
+workdays: [1, 2, 3, 4, 5],
+
 //> @attr calendar.scrollToWorkday (boolean : false : IR)
 // If set, causes the +link{workdayStart,workday hours} to be sized to fill the available space
 // in the day view and week view, and automatically scrolls these views to the start of the
@@ -303,6 +313,15 @@ eventWindowStyleField: "eventWindowStyle",
 //<
 canEditField: "canEdit",
 
+//> @attr calendar.canDragEventField  (String : "canEdit" : IR)
+// Name of the field on each +link{CalendarEvent} that determines dragability.
+//
+// @group calendarEvent
+// @visibility calendar
+// @see CalendarEvent
+//<
+canDragEventField: "canDrag",
+
 //> @attr calendar.weekEventBorderOverlap (Boolean : false : IR)
 // Augments the width of week event windows slightly to avoid duplicate adjacent borders
 // between events.
@@ -379,7 +398,7 @@ showQuickEventDialog: true,
 
 //> @groupDef allowedOperations
 // 
-// @title allowed operations
+// @title Allowed Operations
 // @visibility external
 //<
 
@@ -406,6 +425,14 @@ canEditEvents: true,
 // @visibility calendar
 //<
 canDeleteEvents: true,
+
+//> @attr calendar.canDragEvents (Boolean : true : IR)
+// If true, users can drag-reposition existing events. 
+//
+// @group allowedOperations
+// @visibility calendar
+//<
+canDragEvents: true,
 
 // Show / Hide parts of the interface
 // ---------------------------------------------------------------------------------------
@@ -454,6 +481,14 @@ showDayHeaders: true,
 // @visibility calendar
 //<
 showOtherDays: true,
+
+//> @attr calendar.showControlsBar (boolean : true : IR)
+// If false the controls bar at the top of the calendar will not be displayed. This consists 
+// of the autoChildren: +link{previousButton}, +link{nextButton}, +link{addEventButton},
+// +link{datePickerButton}
+// @visibility calendar
+//<
+showControlsBar: true,
 
 // ---------------------------------------------------------------------------------------
 
@@ -600,12 +635,12 @@ eventOverlapPercent: 10,
 // calendar.
 //
 // @group data
-// @treeLocation Optional Modules/Calendar
+// @treeLocation Client Reference/Calendar
 // @visibility calendar
 //<
 
 //> @attr calendarEvent.startDate (Date : null : IRW)
-// Date object which represents the start date of a +link{CalendarEvent}
+// Date object which represents the start date of a +link{CalendarEvent}.
 // The name of this field within the CalendarEvent can be changed via 
 // +link{Calendar.startDateField}
 //
@@ -621,7 +656,7 @@ eventOverlapPercent: 10,
 //<
 
 //> @attr calendarEvent.name (String : null : IRW)
-// String which represents name of a +link{CalendarEvent}
+// String which represents the name of a +link{CalendarEvent}
 // The name of this field within the CalendarEvent can be changed via 
 // +link{Calendar.nameField}
 //
@@ -671,8 +706,8 @@ eventOverlapPercent: 10,
 // @example fetchOperation
 //<
 
-//>	@attr calendar.autoFetchAsFilter       (boolean : false : IR)
-// @include dataBoundComponent.autoFetchAsFilter
+//>	@attr calendar.autoFetchTextMatchStyle       (TextMatchStyle : null : IR)
+// @include dataBoundComponent.autoFetchTextMatchStyle
 // @group databinding
 // @visibility external
 //<
@@ -742,18 +777,95 @@ eventOverlapPercent: 10,
 
 //> @attr calendar.timelineView (autoChild)
 // A timeline for displaying events of various types.
-// @visibility calendar
+// @visibility internal
 //<
 
 //> @attr calendar.showTimelineView (boolean : false : IRW)
 // If set to true, show the Timeline view.
-// @visibility calendar
+// @visibility internal
 //<
-
 showTimelineView: false,
 
 // only works for timeline view for now
 renderEventsOnDemand: true,
+
+//> @attr calendar.timelineGranularity (string : "day" : IR)
+// The granularity with which the timelineView will display events. Possible values are
+// "day" or "hour". 
+// @visibility internal
+//<
+timelineGranularity: "day",
+
+//> @attr calendar.timelineUnitsPerColumn (number: 1: IR)
+// How many units of +link{timelineGranularity} each cell represents.
+// @visibility internal
+//<
+timelineUnitsPerColumn: 1,
+
+// @attr calendar.canResizeTimelineEvents (boolean : false : IR)
+// Can timeline events be stretched by their left and right edges?
+// @visibility internal
+//<
+canResizeTimelineEvents: false,
+
+// @attr calendar.canEditEventType (boolean : null : IR)
+// Can we edit the event type of the event, specified by the +link{eventTypeField}?
+// If so, the event can be dragged to a different row and the +link{eventTypeField} will
+// be updated automatically.
+// @visiblity internal
+//<
+
+// @attr calendar.timelineStartDate (Date : null : IR)
+// The start date of the timeline view.
+// @visibility internal
+//<
+
+// @attr calendar.timelineEndDate (Date : null : IR)
+// The end date of the timeline view.
+// @visibility internal
+//<
+
+// @attr calendar.eventTypeData (Array of Object : null : IR)
+// The data that determines the rows of the timeline view. 
+// @visiblity internal
+//<
+
+// @attr calendar.timelineLabelFields (Array of ListgridField : null : IR)
+// An array of fields that will be displayed to the left of the timeline. These fields
+// reference the +link{eventTypeData}. 
+// @visibility internal
+//<
+
+// @attr calendar.todayBackgroundColor (String : null : IR)
+// The background color for today when +{timelineGranularity} is "day"
+// @visibility internal
+//<
+
+// @attr calendar.timelineSnapGap (Number : null : IR)
+// The snapGap of the timelineView
+// @visibility internal
+//<
+
+// @attr calendar.showTimelineEventBody (boolean : null : IR)
+// If false, the event header will take up the entire space of the event. This is usefull
+// when you want to be able to drag reposition by the entire event and not just the header.
+// @visibility internal
+//<
+
+// @attr calendar.allowEventOverlap (boolean : true : IR)
+// If false, events are not allowed to overlap when they are drag repositioned.
+// They will automatically be placed either before or after the event 
+//
+// @visibility internal
+//<
+allowEventOverlap: true,
+
+// @attr calendar.sizeEventsToGrid (boolean : true : IR)
+// if true, events will be sized to the grid, even if they start and/or end at times
+// between grid cells.
+// @visiblity internal
+//<
+sizeEventsToGrid: true,
 
 // i18n
 // ---------------------------------------------------------------------------------------
@@ -971,6 +1083,11 @@ dateDisplayDefaults : {
 
 // initial setup of the calendar
 initWidget : function () {
+    if (this.chosenDate) {
+        this.year = this.chosenDate.getFullYear();
+        this.month = this.chosenDate.getMonth();
+    }
+    if (!this.data) this.data = this.getDefaultData();
     // set hover text strings for toolbar buttons
     // can't set dynamically in defaults block, so have to do it here.
     this.previousButtonDefaults.prompt = this.previousButtonHoverText;
@@ -981,12 +1098,94 @@ initWidget : function () {
     this._setChosenWeek();
     this.createChildren();
     this._setWeekTitles();
-   
+ 
+    //if (this.dataSource) this.autoDetectFieldNames();
+ 
     if (!this.initialCriteria && this.autoFetchData) this.initialCriteria = this.getNewCriteria();
    // initialize the data object, setting it to an empty array if it hasn't been defined
-	this.setData(this.data ? null : this.getDefaultData());
+	this.setData(null);
     
     this.invokeSuper(isc.Calendar, "initWidget");
+},
+
+autoDetectFieldNames : function () {
+    this.dataSource = isc.DS.getDataSource(this.dataSource);
+
+    // pick some likely looking fields if no sensible ones are provided - wants 
+    // for some future cleverness, perhaps, pretty basic selection here
+    
+    var ds = this.dataSource,
+        fields = isc.getValues(ds.getFields()),
+        maxSize = 1024000,
+        bestField;
+
+    if (this.fieldIsMissing(this.nameField, ds)) {
+        // assume the titleField from the DS if the 
+        this.nameField = ds.getTitleField();
+    }
+    if (this.fieldIsMissing(this.descriptionField, ds)) {
+        // loop and find a string field > 255 chars and < 100k (otherwise 
+        // choose the largest under 100k)
+        fields.sortByProperties(["length"], [false]);
+
+        bestField = {length:0};
+        for (var i=0; i<fields.length; i++) {
+            var field = fields.get(i);
+            if (!field.type || field.type == "text" || field.type == "string") {
+                if (field.length > 255 && field.length < maxSize) {
+                    this.descriptionField = field.name;
+                    break;
+                } else if (field.length && field.length < maxSize && 
+                    field.length > bestField.length) {
+                    bestField = field;
+                } else if (!field.length) {
+                    if (!bestField) bestField = field;
+                } 
+            }
+        }
+        if (this.fieldIsMissing(this.descriptionField, ds) && bestField)
+            this.descriptionField = bestField.name;
+    }
+    if (this.fieldIsMissing(this.startDateField, ds)) {
+        // any date field, preferring one with "start" or "begin" in it's name        
+        bestField=null;
+        for (var i=0; i<fields.length; i++) {
+            var field = fields.get(i);
+            if ((field.type == "date" || field.type == "datetime")) {
+                if (field.name.toLowerCase().indexOf("start") >= 0 ||
+                    field.name.toLowerCase().indexOf("begin") >= 0) 
+                {
+                    this.startDateField = field.name;
+                    break;
+                } else bestField = field;
+            }
+        }
+        if (this.fieldIsMissing(this.startDateField, ds) && bestField)
+            this.startDateField = bestField.name;
+    }
+    if (this.fieldIsMissing(this.endDateField, ds)) {
+        // any date field, preferring one with "end" or "stop" in it's name
+        bestField=null;
+        for (var i=0; i<fields.length; i++) {
+            var field = fields.get(i);
+            if ((field.type == "date" || field.type == "datetime")) {
+                if (field.name.toLowerCase().indexOf("end") >= 0 ||
+                    field.name.toLowerCase().indexOf("stop") >= 0) 
+                {
+                    this.endDateField = field.name;
+                    break;
+                } else if (field.name != this.startDateField) 
+                    bestField = field;
+            }
+        }
+        if (this.fieldIsMissing(this.endDateField, ds) && bestField)
+            this.endDateField = bestField.name;
+    }
+},
+
+fieldIsMissing : function (fieldName, ds) {
+    // is a field unset or absent from the ds
+    return (!fieldName || fieldName == "" || (ds && !ds.getField(fieldName)));
 },
 
 getDefaultData : function () { return []; },
@@ -1001,7 +1200,6 @@ getDefaultData : function () { return []; },
 // @visibility calendar
 //<
 setData : function (newData) {
-    
     // if the current data and the newData are the same, bail
 	//	(this also handles the case that both are null)
 	if (this.data == newData) return;
@@ -1088,14 +1286,43 @@ getSelectedView : function () {
     }   
 },
 
+//>	@type	ViewName
+// The names of the Calendar views.
+//	@value	"day"   day view
+DAY: "day",
+//	@value	"week" week view
+WEEK: "week",	
+//	@value	"month"  month view
+MONTH: "month",	
+// @visibility external
+//<
+
+//> @attr calendar.currentViewName (ViewName : null: IRW)
+// The name of the view that should be visible initially by default.
+// @visibility external
+//<
+
 //>	@method	calendar.getCurrentViewName()
 // Get the name of the visible view. Either 'day', 'week', or 'month'.
 //
-// @return	(string)	The name of the visible view.
+// @return	(ViewName)	The name of the visible view.
 // @visibility external
 //<
 getCurrentViewName : function () {
     return this.getSelectedView().viewName;    
+},
+
+//>	@method	calendar.setCurrentViewName()
+// Sets the currently visible view
+//
+// @param viewName (ViewName) The name of the view that should be made visible.
+// @return	(ViewName)	The name of the visible view.
+// @visibility external
+//<
+setCurrentViewName : function (viewName) {
+    var tabToSelect = this.mainView.tabs.find("viewName", viewName);
+    if (tabToSelect) this.mainView.selectTab(tabToSelect);    
+    return viewName;
 },
 
 // get/setEventWindowID ensure that eventWindow-to-record mapping remains stable when databound. 
@@ -1134,59 +1361,74 @@ setEventWindowID : function (record, eventWindowID) {
 // TODO consider moving to date
 // includes start date but not end date
 getDayDiff : function (date1, date2, weekdaysOnly) {
-    // if date2 is greater, reverse dates
+     
+   // if date2 is greater, reverse dates
     var start, end;
     if (Date.compareDates(date1, date2) > 0) {
-        start = date1.duplicate();
-        end = date2.duplicate();
+        start = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+        end = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
     } else {
-        start = date2.duplicate();
-        end = date1.duplicate();
+        start = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+        end = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
     }
-    start.setHours(0);start.setMinutes(0);start.setSeconds(0);
-    end.setHours(0);end.setMinutes(0);end.setSeconds(0);
+    // convert dates to UTC to avoid incorrect calculations due to daylight savings or other
+    // timezone differences between start and end. Using date.getTimezoneOffset() should have
+    // worked as well, but didn't. 
+    // This issue is described in detail: http://www.xmission.com/~goodhill/dates/deltaDates.html
+    var endMill = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0);
+    var startMill = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0);
+    var milliDiff = endMill - startMill;
+    //isc.logWarn("getDayDiff:" + [start, end]);
     if (weekdaysOnly) {
-        var milliDiff = (end.getTime() - start.getTime());
-        var daysBetween = Math.ceil(milliDiff / (1000 * 60 * 60 * 24));
+        // using Math.ceil() was causing off-by-one-day bugs, switching to floor()
+        // seems to have fixed that
+        var daysBetween = Math.floor(milliDiff / (1000 * 60 * 60 * 24));
+        //isc.logWarn("starting days between:" + daysBetween);
         var wkEnds = Math.floor(daysBetween / 7); // # of full weekends within date range
         var weDays = Date.getWeekendDays();
         var remainder = daysBetween % 7, remainderWeekends = 0; // # of leftover days
         var dateCursor = end.duplicate();
         // iterate through the remainder days and note how many weekends there are.
         dateCursor.setDate(dateCursor.getDate() - remainder);
-        for (var i = 0; i < remainder; i++) {
-            if (weDays.contains(dateCursor.getDay())) remainderWeekends++; 
+        //isc.logWarn('datecursor start:' + dateCursor.toShortDate());
+        for (var i = 0; i < remainder; i++) {            
+            if (weDays.contains(dateCursor.getDay())) {
+                remainderWeekends++;
+                //isc.logWarn("here:" + [remainderWeekends, i, remainder, dateCursor.toShortDate()]);
+            }
             dateCursor.setDate(dateCursor.getDate() + 1);
         }
+        
         daysBetween -= ((wkEnds * 2) + remainderWeekends);
         return daysBetween;
     } else {
-        var milliDiff = (end.getTime() - start.getTime());
-        return Math.ceil(milliDiff / (1000 * 60 * 60 * 24));    
+        var daysBetween = Math.floor(milliDiff / (1000 * 60 * 60 * 24));
+        //isc.logWarn('getDayDiff:' + [start, end, milliDiff, daysBetween, minDiff, start.getTimezoneOffset(), end.getTimezoneOffset()]);
+        return daysBetween;    
     }
     
 },
 
+
 // helper method for getting the left coord of an event
 getEventLeft : function (event, isWeek) {
+   
     var grid = (isWeek ? this.weekView : this.dayView);
     var accountForLabelCol = (grid.showLabelColumn && 
             grid.labelColumnPosition == "left");
     var eLeft = accountForLabelCol ? grid.labelColumnWidth : 0;
-    // milliseconds in a day
-    var oneday = 1000 * 60 * 60 * 24;
-    
-    var weekendOffset = this.showWeekends ? 0 : oneday;
     var colSize = grid.getColumnWidth(grid.isLabelCol(0) ? 1 : 0);
     if (grid._isWeek) {
         
         var dayDiff = this.getDayDiff(event[this.startDateField], this.chosenWeekStart, 
             (this.showWeekends == false));
         //isc.logWarn('getEventLeft:' + [event.name, event.startDate.toShortDate(), 
-        //                    this.chosenWeekStart.toShortDate(),dayDiff ]);
+        //                   this.chosenWeekStart.toShortDate(),dayDiff ]);
         eLeft = (dayDiff * colSize) + (accountForLabelCol ? grid.labelColumnWidth : 0);
     }
-    
+    if (this.logIsDebugEnabled("calendar")) {
+        this.logDebug('calendar.getEventLeft() = ' + eLeft + ' for:' + isc.Log.echoFull(event), 'calendar');
+    }
     return eLeft;
 },
 
@@ -1247,7 +1489,7 @@ canEditEvent : function (event) {
 //>	@method	calendar.addEvent()
 // Create a new event in this calendar instance.
 //
-// @param	startDate		(Date)	start date of event
+// @param	startDate		(Date or Object)	start date of event, or CalendarEvent Object 
 // @param  endDate         (Date)  end date of event
 // @param  name            (String) name of event
 // @param description      (String) description of event
@@ -1257,12 +1499,21 @@ canEditEvent : function (event) {
 //<
 addEvent : function (startDate, endDate, name, description, otherFields, ignoreDataChanged) {
     if (!isc.isAn.Object(otherFields)) otherFields = {};
-    var evt = {};
-    evt[this.startDateField] = startDate;
-    evt[this.endDateField] = endDate;
-    evt[this.nameField] = name;
-    evt[this.descriptionField] = description;
-    isc.addProperties(evt, otherFields);
+    var evt;
+    if (isc.isA.Date(startDate)) {
+        evt = {};
+        evt[this.startDateField] = startDate;
+        evt[this.endDateField] = endDate;
+        evt[this.nameField] = name;
+        evt[this.descriptionField] = description;
+        isc.addProperties(evt, otherFields);
+    } else if (isc.isAn.Object(startDate)) {
+        evt = startDate;
+    } else {
+        isc.logWarn('addEvent error: startDate parameter must be either a Date or an event record (Object)');
+        return;
+    }
+
     // setup a callback closure for when theres a DS
     var self = this;
     var _finish = function (dsResponse, data, dsRequest) {
@@ -1271,14 +1522,18 @@ addEvent : function (startDate, endDate, name, description, otherFields, ignoreD
         if (isc.isAn.Array(data)) newEvt = data[0];    
         else newEvt = data;
         if (!newEvt) newEvt = evt;
+
+        if (self.logIsDebugEnabled("calendar")) {
+            self.logDebug('event added:' + this.echo(newEvt), 'calendar');
+        }
         // check all views to see if the event should be added
-        if (self._shouldRefreshDay(startDate, endDate)) {
+        if (self._shouldRefreshDay(newEvt[self.startDateField], newEvt[self.endDateField])) {
             self.dayView.addEvent(newEvt);
         }
-        if (self._shouldRefreshWeek(startDate, endDate)) {
+        if (self._shouldRefreshWeek(newEvt[self.startDateField], newEvt[self.endDateField])) {
             self.weekView.addEvent(newEvt);
         }
-        if (self._shouldRefreshMonth(startDate, endDate)) {
+        if (self._shouldRefreshMonth(newEvt[self.startDateField], newEvt[self.endDateField])) {
             self.monthView.refreshEvents();
         }
         // fire eventAdded if present
@@ -1289,9 +1544,11 @@ addEvent : function (startDate, endDate, name, description, otherFields, ignoreD
     // see commment above dataChanged about _ignoreDataChanged
     if (ignoreDataChanged) this._ignoreDataChanged = true;
     if (this.dataSource) {
-        isc.DataSource.get(this.dataSource).addData(evt, _finish);
+        isc.DataSource.get(this.dataSource).addData(evt, _finish, {componentId: this.ID});
         return;
     } else {
+        // set the one-time flag to ignore data changed since we manually refresh in _finish()
+        this._ignoreDataChanged = true;
         this.data.add(evt);
         _finish();
     }
@@ -1334,7 +1591,10 @@ removeEvent : function (event, ignoreDataChanged) {
     // see commment above dataChanged about _ignoreDataChanged
     if (ignoreDataChanged) this._ignoreDataChanged = true;
     if (this.dataSource) {
-        isc.DataSource.get(this.dataSource).removeData(event, _finish); 
+        isc.DataSource.get(this.dataSource).removeData(event, _finish, {
+            componentId: this.ID,
+            oldValues : event
+        }); 
         return;
     } else {
         this.data.remove(event);
@@ -1387,6 +1647,7 @@ updateEvent : function (event, startDate, endDate, name, description, otherField
         // fire eventChanged if present
         if (self.eventChanged) self.eventChanged(newEvt);
     }
+    
     // see commment above dataChanged about _ignoreDataChanged
     if (ignoreDataChanged) this._ignoreDataChanged = true;
     if (this.dataSource) {
@@ -1397,8 +1658,8 @@ updateEvent : function (event, startDate, endDate, name, description, otherField
         changes[this.endDateField] = endDate;
         changes[this.descriptionField] = description;
         changes[this.nameField] = name;
-        var updatedRecord = isc.addProperties({}, event, changes, otherFields); 
-        ds.updateData(updatedRecord, _finish, {oldValues : event});
+        var updatedRecord = isc.addProperties({}, event, changes, otherFields);
+        ds.updateData(updatedRecord, _finish, {oldValues: event, componentId: this.ID});
         return;
     } else {
         event[this.startDateField] = startDate;
@@ -1411,6 +1672,24 @@ updateEvent : function (event, startDate, endDate, name, description, otherField
    
 },
 
+eventsAreSame : function (first, second) {
+    if (this.dataSource) {
+        var ds = isc.DataSource.get(this.dataSource), 
+            pks = ds.getPrimaryKeyFieldNames(), 
+            areEqual = true;
+        for (var i=0; i < pks.length; i++) {
+            var pkName = pks[i];
+            if (first[pkName]!= second[pkName]) {
+                areEqual = false;
+                break;
+            }
+        }
+        return areEqual;
+    } else {
+        return (first === second);    
+    }
+},
+    
 getEventTitle : function (event) {
     return event[this.nameField];    
 },
@@ -1445,7 +1724,7 @@ getEventHoverHTML : function (event, eventWindow) {
         + event[cal.descriptionField];       
 },
 
-// trickiest case. 3 seperate cases to handle:
+// trickiest case. 3 separate cases to handle:
 // 1. event changed within chosen day
 // 2. event moved into chosen day
 // 3. event moved out of chosen day
@@ -1457,8 +1736,10 @@ _shouldRefreshDay : function (startDate, endDate) {
     if (!this.dayView) return false;
     var dayStart = new Date(this.year, this.month, this.chosenDate.getDate(),0, 0);
     var dayEnd = new Date(this.year, this.month, this.chosenDate.getDate(),23, 59);
+    // subtle change: use only startDate instead of startDate and endDate to determine if
+    // parameter range is in range so that events with end date on the next day are included. 
     if (this.dayView.body && dayStart.getTime() <= startDate.getTime() 
-        && dayEnd.getTime() >= endDate.getTime()) {
+        && dayEnd.getTime() >= startDate.getTime()) {
         return true;
     } else return false;
     
@@ -1466,8 +1747,14 @@ _shouldRefreshDay : function (startDate, endDate) {
 
 _shouldRefreshWeek : function (startDate, endDate) {
     if (!this.weekView) return false;
+    // advance end of week date by 1 minute so it falls on the first minute of the next day...
+    // this allows events to end on 12:00am of the day following the the last day of the week
+    // and fixes a bug where events created at that time weren't showing up
+    var weekEnd = this.chosenWeekEnd.duplicate();
+    weekEnd.setMinutes(weekEnd.getMinutes() + 1);
+    //isc.logWarn('_shouldRefreshWeek:' + [weekEnd, endDate]);
     if (this.weekView.body && this.chosenWeekStart.getTime() <= startDate.getTime()
-        && this.chosenWeekEnd.getTime() >= endDate.getTime()) {
+        && weekEnd.getTime() >= endDate.getTime()) {
         return true;
     } else return false;
 },
@@ -1487,6 +1774,12 @@ _shouldRefreshTimelineView : function (startDate, endDate) {
     if (this.showTimelineView) return true;
     else return false;    
 },
+
+//> @attr calendar.eventWindow (AutoChild EventWindow : null : A)
+// To display events in day and week views, the Calendar creates instance of +link{EventWindow}
+// for each event.  Use the +link{AutoChild} system to customize these windows.
+// @visibility external
+//<
 
 _getNewEventWindow : function (event) {
     var canEdit = this.canEditEvent(event);
@@ -1515,12 +1808,13 @@ _getEventsInRange : function (start, end) {
         for (var i = 0; i < this.data.getLength(); i++) { 
             
             var curr = this.data.get(i);
-          
             if (!curr[this.startDateField]) return [];
             // add the event if we're showing weekends or the date is not a weekend
             // The event won't get added only when !this.showWeekends and it is a weekend
+            // subtle change: use only startDate instead of startDate and endDate to determine if
+            // parameter range is in range so that events with end date on the next day are included.
             if (curr[this.startDateField].getTime() >= start.getTime() 
-                && curr[this.endDateField].getTime() <= end.getTime()
+                && curr[this.startDateField].getTime() <= end.getTime()
                 && (this.showWeekends || !wends.contains(curr[this.startDateField].getDay()))) {
                 results.add(curr);
             }
@@ -1824,6 +2118,15 @@ _renderEventRange : function (isWeek, start, end) {
         // catch the case where the end of the event is on 12am, which happens when an
         // event is dragged or resized to the bottom of the screen
         var eHrs = curr[this.endDateField].getHours() == 0 ? 24 : curr[this.endDateField].getHours();
+        // if the event ends on the next day, render it as ending on the last hour of the 
+        // current day
+        var spansDays = false;
+        
+        if (start.getDate() > end.getDate()) {
+            spansDays = true;
+            eHrs = 24;
+        }
+        
         var eHeight = (eHrs - curr[this.startDateField].getHours()) * (rowSize * 2)
 
         // for border overlap
@@ -1832,7 +2135,7 @@ _renderEventRange : function (isWeek, start, end) {
         if (curr[this.startDateField].getMinutes() > 0) {
             eHeight -= this._getMinutePixels(curr[this.startDateField].getMinutes(), rowSize);
         }
-        if (curr[this.endDateField].getMinutes() > 0) {
+        if (curr[this.endDateField].getMinutes() > 0 && !spansDays) {
             eHeight += this._getMinutePixels(curr[this.endDateField].getMinutes(), rowSize);
         }
         
@@ -1915,6 +2218,19 @@ setChosenDate : function (newDate) {
     
 },
 
+//> @method calendar.dateIsWorkday()
+// Should the parameter date be considered a workday? By default this method tries to find the
+// parameter date day in +link{workdays}, and returns true if found. Override this method to 
+// provide custom logic for determining workday, for example returning false on holidays.
+//
+// @param   date    (Date) date to check for being a workday
+// @return  (Boolean) true if date is a workday, false otherwise
+// @visibility Calendar
+//<
+dateIsWorkday : function (date) {
+    return this.workdays.contains(date.getDay());
+},
+
 //>	@method	calendar.adjustCriteria()
 // Gets the criteria to use when the calendar date ranges shift and the +link{calendar.fetchMode}
 // is not "all". This would be called, for example, when the next button is clicked and new 
@@ -1922,6 +2238,7 @@ setChosenDate : function (newDate) {
 // default criteria constructed by the calendar.
 //
 // @param	defaultCriteria		(Criterion)	default criteria generated by the calendar
+// @return (Criterion) modified criteria
 //
 // @visibility internal
 //<
@@ -2046,9 +2363,9 @@ draw : function (a, b, c, d) {
     
     this.invokeSuper(isc.Calendar, "draw", a, b, c, d);
     
-    //if (this.dataSource) {
-    //    this.observe(this.data, "dataArrived", "observer.dataArrived()");    
-    //}
+    if (isc.ResultSet && isc.isA.ResultSet(this.data) && this.dataSource) {
+        this.observe(this.data, "dataArrived", "observer.dataArrived(arguments[0], arguments[1])");    
+    }
     if (this.mainView.isA("TabSet")) {
         this.mainView.addChild(this.controlsBar);
         this.controlsBar.moveAbove(this.mainView.tabBar);
@@ -2071,22 +2388,22 @@ _getTabs : function () {
     if (this.showDayView != false) {
         this.dayView = this.createAutoChild("dayView", 
             { baseStyle: this.baseStyle, viewName: "day"} );
-        nTabs.add({title: this.dayViewTitle, pane: this.dayView });
+        nTabs.add({title: this.dayViewTitle, pane: this.dayView, viewName: "day" });
     }
     if (this.showWeekView != false) {
         this.weekView = this.createAutoChild("weekView", 
             {_isWeek: true, baseStyle: this.baseStyle, viewName: "week" } );
-        nTabs.add({title: this.weekViewTitle, pane: this.weekView });
+        nTabs.add({title: this.weekViewTitle, pane: this.weekView, viewName: "week" });
     }
     if (this.showMonthView != false) {
         this.monthView = this.createAutoChild("monthView", 
             {baseStyle: this.baseStyle, viewName: "month" } );
-        nTabs.add({title: this.monthViewTitle, pane: this.monthView });
+        nTabs.add({title: this.monthViewTitle, pane: this.monthView, viewName: "month" });
     }
     if (this.showTimelineView != false) {
         this.timelineView = this.createAutoChild("timelineView",
             {baseStyle: this.baseStyle, viewName: "timeline" } );
-        nTabs.add({title: this.timelineViewTitle, pane: this.timelineView });
+        nTabs.add({title: this.timelineViewTitle, pane: this.timelineView, viewName: "timeline" });
     }
     return nTabs;
 },
@@ -2103,105 +2420,117 @@ _createTabSet : function (tabsArray) {
             }
             
         } );
-        
+        // set the default tab according to currentViewName if defined
+        if (this.currentViewName) {
+            var tabToSelect = tabsArray.find("viewName", this.currentViewName);
+            if (tabToSelect) this.mainView.selectTab(tabToSelect);
+        }
     } else {
         this.mainView = tabsArray[0].pane;     
     }   
 },
 // create the content of the calendar
 createChildren : function () {
-    this.dateDisplay = this.createAutoChild("dateDisplay" );
+    
     
     // main tabbed view
     var mvTabs = this._getTabs();
  
     this._createTabSet(mvTabs);
     var tbButtonDim = 20;
-    // addEventButton
-    this.addEventButton = this.createAutoChild("addEventButton", {
-        click: function () {
-            var cal = this.creator;
-            cal.eventDialog.event = null;
-            cal.eventDialog.items[0].createFields(false);
-  
-            var sDate = new Date();
-            // if hiding weekends, find next non-weekend day
-            if (!this.showWeekends) {
-                var wends = Date.getWeekendDays();
-                for (var i = 0; i < wends.length; i++) {
-                    if (wends.contains(sDate.getDay())) sDate.setDate(sDate.getDate() + 1);
-                }
-            }
-            sDate.setMinutes(0);
-            // move event to next day if now is end of day
-            if (sDate.getHours() > 22) {
-                sDate.setDate(sDate.getDate() + 1);
-                sDate.setHours(0);
-            } // otherwise move to next hour
-            else sDate.setHours(sDate.getHours() + 1);
-            cal.eventDialog.setDate(sDate);
-            // place the dialog at the left edge of the calendar, right below the button itself
-            cal.eventDialog.setPageLeft(cal.getPageLeft());
-            cal.eventDialog.setPageTop(this.getPageTop() + this.getVisibleHeight());
-           
-            cal.eventDialog.show();
-        }
-    } );
-    
-    // datePickerButton
-    this.datePickerButton = this.createAutoChild("datePickerButton", {
-        click: function () {
-            var cal = this.creator;
-            if (this._datePicker) {
-                // redraw the datePicker, positioning is already taken care of   
-                this._datePicker.setData(cal.chosenDate);
-                this._datePicker.draw();
-            } else {
-                 this._datePicker = isc.DateChooser.create({
-                    calendar: this.creator, autoDraw: false,
-                    showCancelButton: true, autoClose: true,
-                    disableWeekends: this.creator.disableWeekends,
-                    firstDayOfWeek: this.creator.firstDayOfWeek,
-                    showWeekends: this.creator.showWeekends,
-                    // override dateClick to change the selected day
-                    dateClick : function (year, month, day) {
-                        var nDate = new Date(year, month, day);
-                        this.setData(nDate);
-                        // change the chosen date via the dateChooser
-                        this.calendar.dateChooser.dateClick(year, month, day);
-                        this.close();
+    if (this.showControlsBar != false) {
+        // dateDisplay
+        this.dateDisplay = this.createAutoChild("dateDisplay" );
+        // addEventButton
+        this.addEventButton = this.createAutoChild("addEventButton", {
+            click: function () {
+                var cal = this.creator;
+                cal.eventDialog.event = null;
+                cal.eventDialog.items[0].createFields(false);
+      
+                var sDate = new Date();
+                // if hiding weekends, find next non-weekend day
+                if (!this.showWeekends) {
+                    var wends = Date.getWeekendDays();
+                    for (var i = 0; i < wends.length; i++) {
+                        if (wends.contains(sDate.getDay())) sDate.setDate(sDate.getDate() + 1);
                     }
-                 });
-                 this._datePicker.setData(cal.chosenDate);
-                 cal.addChild(this._datePicker);
-                 
-                 this._datePicker.placeNextTo(this, "bottom", true);         
+                }
+                sDate.setMinutes(0);
+                // move event to next day if now is end of day
+                if (sDate.getHours() > 22) {
+                    sDate.setDate(sDate.getDate() + 1);
+                    sDate.setHours(0);
+                } // otherwise move to next hour
+                else sDate.setHours(sDate.getHours() + 1);
+                cal.eventDialog.setDate(sDate);
+                // place the dialog at the left edge of the calendar, right below the button itself
+                cal.eventDialog.setPageLeft(cal.getPageLeft());
+                cal.eventDialog.setPageTop(this.getPageTop() + this.getVisibleHeight());
+               
+                cal.eventDialog.show();
             }
-            
-            
-        }
-    } );
-    
-    this.previousButton = this.createAutoChild("previousButton", {});
-    
-    this.nextButton = this.createAutoChild("nextButton", {});
-    
+        } );
+        
+        // datePickerButton
+        this.datePickerButton = this.createAutoChild("datePickerButton", {
+            click: function () {
+                var cal = this.creator;
+                if (this._datePicker) {
+                    // redraw the datePicker, positioning is already taken care of   
+                    this._datePicker.setData(cal.chosenDate);
+                    this._datePicker.draw();
+                } else {
+                     this._datePicker = isc.DateChooser.create({
+                        calendar: this.creator, autoDraw: false,
+                        showCancelButton: true, autoClose: true,
+                        disableWeekends: this.creator.disableWeekends,
+                        firstDayOfWeek: this.creator.firstDayOfWeek,
+                        showWeekends: this.creator.showWeekends,
+                        // override dateClick to change the selected day
+                        dateClick : function (year, month, day) {
+                            var nDate = new Date(year, month, day);
+                            this.setData(nDate);
+                            // change the chosen date via the dateChooser
+                            this.calendar.dateChooser.dateClick(year, month, day);
+                            this.close();
+                        }
+                     });
+                     this._datePicker.setData(cal.chosenDate);
+                     cal.addChild(this._datePicker);
+                     
+                     this._datePicker.placeNextTo(this, "bottom", true);         
+                }
+                
+                
+            }
+        } );
+        
+        this.previousButton = this.createAutoChild("previousButton", {});
+        
+        this.nextButton = this.createAutoChild("nextButton", {});
+    }
     var cbMems = [];
     if (this.showPreviousButton != false) cbMems.add(this.previousButton);
-    cbMems.add(this.dateDisplay);
+    if (this.showDateDisplay != false) cbMems.add(this.dateDisplay);
     if (this.showDatePickerButton != false) cbMems.add(this.datePickerButton);
     if (this.canCreateEvents && this.showAddEventButton != false) cbMems.add(this.addEventButton);
     if (this.showNextButton != false) cbMems.add(this.nextButton);
     // set up calendar navigation controls
-    this.controlsBar = this.createAutoChild("controlsBar", { 
-        members: cbMems
-    });
+    if (this.showControlsBar != false) {
+        this.controlsBar = this.createAutoChild("controlsBar", { 
+            members: cbMems
+        });
+    }
     //if (mvTabs.length == 1) this.controlsBar.layoutAlign = "center";
     
     // date chooser
     this.dateChooser = this.createAutoChild("dateChooser", {
             disableWeekends: this.disableWeekends,
             showWeekends: this.showWeekends,
+            chosenDate: this.chosenDate, 
+            month: this.month,
+            year: this.year,
             // override dateClick to change the selected day
             dateClick : function (year, month, day) {
                 var nDate = new Date(year, month, day);
@@ -2279,7 +2608,7 @@ createChildren : function () {
                     var cal = this.calendar;
                     // set up default fields
                     var fieldList = [
-                        {name: "name", title: cal.eventNameFieldTitle, type: nameType, width: 250 },
+                        {name: cal.nameField, title: cal.eventNameFieldTitle, type: nameType, width: 250 },
                         {name: "save", title: cal.saveButtonTitle, type: "SubmitItem", endRow: false},
                         {name: "details", title: cal.detailsButtonTitle, type: "button", startRow: false,
                             click : function (form, item) {
@@ -2295,11 +2624,9 @@ createChildren : function () {
                     });
                     // set datasource then fields...other way around doesn't work
                     this.setDataSource(dialogDS);
-                    this.setFields(this.calendar.eventDialogFields ? 
-				        this.calendar.eventDialogFields.duplicate() : null);
-             
+                    this.setFields(isc.clone(this.calendar.eventDialogFields));
                 },
-               
+
                 submit : function () {
                     var cal = this.calendar,
                         evt = cal.eventDialog.event, 
@@ -2309,13 +2636,13 @@ createChildren : function () {
                     if (!this.validate()) return;
                     if (evt) { // event window clicked, so update 
                         cal.updateEvent(evt, sdate, edate, 
-                            this.getItem("name").getValue() ,evt[cal.descriptionField]
+                            this.getItem(this.calendar.nameField).getValue() ,evt[cal.descriptionField]
                             , this.getCustomValues(), true);
 
                         cal.eventDialog.hide();
                         
                     } else { // create new event
-                        cal.addEvent(sdate, edate, this.getItem("name").getValue(),
+                        cal.addEvent(sdate, edate, this.getItem(this.calendar.nameField).getValue(),
                             "", this.getCustomValues(),  true);
                         cal.eventDialog.hide();
                     }
@@ -2338,7 +2665,7 @@ createChildren : function () {
             this.setTitle(this.creator._getEventDialogTitle(startDate, endDate));
             this.currentStart = startDate;
             this.currentEnd = endDate;
-            this.items[0].getItem("name").setValue("");
+            this.items[0].getItem(this.creator.nameField).setValue("");
         },
         
         setEvent : function (event) {
@@ -2354,7 +2681,7 @@ createChildren : function () {
             this.setDate(event[this.creator.startDateField], 
                 event[this.creator.endDateField]);
             
-            theForm.getItem("name").setValue(event[this.creator.nameField]);
+            theForm.getItem(this.creator.nameField).setValue(event[this.creator.nameField]);
         },
         
         closeClick : function () {
@@ -2370,7 +2697,7 @@ createChildren : function () {
                 
                 if (!this.isDrawn()) this.draw();
                 this.Super('show');
-                this.items[0].getItem("name").focusInItem();
+                this.items[0].getItem(this.creator.nameField).focusInItem();
             } else {
                 this.creator._showEventEditor(this.event);    
             }
@@ -2412,16 +2739,15 @@ createChildren : function () {
             fieldList[5].valueMap = this.getTimeValues("minutes");
             fieldList[6].valueMap = this.getTimeValues();
             // create an internal ds and bind to it so that the default fields can be 
-            // overriden. See forms->validation->customized binding in the feature explorer
+            // overridden. See forms->validation->customized binding in the feature explorer
             var editorDS = isc.DataSource.create({
                 addGlobalId: false,
                 fields: fieldList
             });
             // only datasource then fields seems to work
             this.setDataSource(editorDS);
-            this.setFields(this.creator.eventEditorFields ? 
-				this.creator.eventEditorFields.duplicate() : null);
-        }, 
+            this.setFields(isc.clone(this.creator.eventEditorFields));
+        },
         getTimeValues : function (type, startTime) {
             if (!startTime) startTime = 0;
             var obj = {};
@@ -2636,20 +2962,24 @@ createChildren : function () {
         mainMembers.add(this.mainView);   
     // center align controlsBar
     } else {
-         
-        var controlsBarContainer = isc.HLayout.create({
-                autoDraw: false,
-                height: this.controlsBar.getVisibleHeight(),
-                width: "100%"
-        });
-        
-        controlsBarContainer.addMember(isc.LayoutSpacer.create({autoDraw:false, width:"*"}));
-        controlsBarContainer.addMember(this.controlsBar);
-        controlsBarContainer.addMember(isc.LayoutSpacer.create({autoDraw:false, width:"*"}));
-        mainMembers.add(isc.VLayout.create({
-                autoDraw:false,
-                members: [controlsBarContainer, this.mainView]
-            }));
+        if (this.showControlsBar != false) {
+             
+            var controlsBarContainer = isc.HLayout.create({
+                    autoDraw: false,
+                    height: this.controlsBar.getVisibleHeight(),
+                    width: "100%"
+            });
+            
+            controlsBarContainer.addMember(isc.LayoutSpacer.create({autoDraw:false, width:"*"}));
+            controlsBarContainer.addMember(this.controlsBar);
+            controlsBarContainer.addMember(isc.LayoutSpacer.create({autoDraw:false, width:"*"}));
+            mainMembers.add(isc.VLayout.create({
+                    autoDraw:false,
+                    members: [controlsBarContainer, this.mainView]
+                }));
+        } else {
+             mainMembers.add(this.mainView);
+        }
     }
     
     this.children.add(
@@ -2665,11 +2995,12 @@ createChildren : function () {
     this.eventEditorLayout.hide();
     
     this.setDateLabel();    
-},
+}, // end createChildren
 
 // sets the date label of the calendar. Called whenever the chosenDate or selected tab
 // changes
 setDateLabel : function () {
+    if (!this.dateDisplay) return;
     if (this.dayViewSelected()) { // day tab
        this.dateDisplay.setContents( 
        "<b>" + this.chosenDate.getShortMonthName() + " " + this.chosenDate.getDate() 
@@ -2788,6 +3119,9 @@ _showEventDialog : function (rowNum, colNum, numRows, eventWindow) {
     
     var coords = this.getSelectedView().getCellPageRect(rowNum, colNum);
     this.eventDialog.placeNear(coords[0], coords[1]);
+    // bringToFront() needs to be put on a timer, else it fails to actually bring the
+    // eventDialog to the front
+    isc.Timer.setTimeout(this.ID + ".eventDialog.bringToFront()");
 },
 
 _showEventEditor : function (event) {
@@ -2804,6 +3138,7 @@ _showEventEditor : function (event) {
     if (event) {
         this.eventEditorLayout.setEvent(event);
     } else {
+        this.eventEditor.clearValues();
         // pass any custom field values through to the event editor
         if (this.eventEditorFields) {
             this.eventEditorLayout.items[0].setCustomValues(this.eventDialog.items[0].getCustomValues());
@@ -2869,11 +3204,21 @@ _getDateFromPoint : function (rowNum, colNum) {
         retDate = rec["date" + dIndex].duplicate();
         // return midnight of the given day
         retDate.setHours(0); retDate.setMinutes(0); retDate.setSeconds(0);
+    } else if (this.timelineViewSelected()) {
+        var tlv = this.timelineView;
+        retDate = this.timelineStartDate.duplicate();
+        if (tlv.timelineGranularity == "day") {
+            retDate.setDate(retDate.getDate() + colNum);   
+        } else {
+            retDate.setHours(retDate.getHours() + colNum);   
+        }
     } else {
         return;    
     }
-    if (!this.monthViewSelected()) {
+    // consolidate logic for dealing with minutes here
+    if (this.dayViewSelected() || this.weekViewSelected()) {
         var hour, baseRowNum = rowNum, mins = 0;
+        // each row represents 1/2 hour
         if (rowNum % 2 == 1) {
             baseRowNum = rowNum - 1;
             mins = 30;
@@ -2886,8 +3231,16 @@ _getDateFromPoint : function (rowNum, colNum) {
 },
 
 // rowHeight == 30 minutes. return the number of pixels that the parameter minutes will occupy
-_getMinutePixels : function (minutes, rowHeight) {
-    return Math.round((rowHeight / 30) * minutes);        
+_getMinutePixels : function (minutes, rowHeight, viewName) {
+    if (viewName == "timeline") {
+        // for now, this will only be called when timeline granularity is set to 'hour'
+        // rowHeight is actually rowWidth in this case.
+        var rowWidth = rowHeight;
+        // divide rowWidth by 60 to get the width of each minute
+        return Math.round(rowWidth / 60) * minutes;
+    } else {
+        return Math.round((rowHeight / 30) * minutes);
+    }        
 },
 
 monthViewEventClick : function (rowNum, colNum, eventIndex) {
@@ -2909,6 +3262,7 @@ monthViewEventClick : function (rowNum, colNum, eventIndex) {
 // @param calendar (Calendar) the calendar itself
 // @param rowNum (Integer) the row number to which the parameter date belongs
 // @param colNum (Integer) the column number to which the parameter date belongs
+// @return (HTML) HTML to display
 // 
 // @group monthViewFormatting
 // @visibility calendar
@@ -2926,7 +3280,7 @@ getDayBodyHTML : function (date, events, calendar, rowNum, colNum) {
             // when clicked, call the the editEvent method of this calendar, passing the
             // row, column, and position of the event in this cell's event array
             var template  = "<a href='javascript:" + this.ID + ".monthViewEventClick(" + 
-                rowNum + "," + day + "," + i + ");' class='" 
+                rowNum + "," + colNum + "," + i + ");' class='" 
                 + this.calMonthEventLinkStyle + "'>";
                 
             retVal += template + eTime + evtArr[i][this.nameField] + "</a><br/>";
@@ -2949,6 +3303,7 @@ getDayBodyHTML : function (date, events, calendar, rowNum, colNum) {
 // @param date (Date) JavaScript Date object representing this day
 // @param events (Array of CalendarEvent) events that fall on this day
 // @param calendar (Calendar) the calendar itself
+// @return (HTML) HTML to show in the header of a day in the month view
 // 
 // @group monthViewFormatting
 // @visibility calendar
@@ -2994,6 +3349,7 @@ dayBodyClick : function (date, events, calendar, rowNum, colNum) {
 // @param calendar (Calendar) the calendar itself
 // @param rowNum (Integer) the row number to which the parameter date belongs
 // @param colNum (Integer) the column number to which the parameter date belongs
+// @return (boolean) return false to cancel the action
 //
 // @group monthViewEvents
 // @visibility calendar
@@ -3076,6 +3432,7 @@ eventRemoveClick : function () {
 // Called when an event is moved via dragging by a user.  Return false to disallow the move.
 // @param newDate (Date) new date and time that event is being moved to
 // @param event (CalendarEvent)
+// @return (boolean) return false to disallow the move.
 //
 // @group monthViewEvents
 // @visibility calendar
@@ -3089,12 +3446,21 @@ eventMoved : function () {
 // resize.
 // @param newDate (Date) new end date and time that event is being resized to
 // @param event (CalendarEvent)
+// @return (boolean) return false to disallow the resize
 //
 // @group monthViewEvents
 // @visibility calendar
 //<
 eventResized : function () {
     return true;    
+},
+
+timelineEventMoved : function () {
+    return true;    
+},
+
+timelineEventResized : function () {
+    return true;
 },
 
 // helper method, gets a valid date with respect to the eventSnapGap and starting point of 
@@ -3119,6 +3485,13 @@ getValidSnapDate : function (referenceDate, snapDate) {
     return snapDate;    
 },
 
+//> @method calendar.selectTab()
+// Fires whenever the user changes the current date, including picking a specific date or
+// navigating to a new week or month.
+//
+// @param tabnum (number) the index of the tab to select
+// @visibility calendar
+//<
 selectTab : function (tabnum) {
     if (this.mainView && this.mainView.isA("TabSet") && this.mainView.tabs.getLength() > tabnum) {
         this.mainView.selectTab(tabnum);
@@ -3173,7 +3546,20 @@ getActiveTime : function () {
     var rowNum = currView.getEventRow();
     return this._getDateFromPoint(rowNum, colNum);
              
+},
+
+//> @method calendar.setTimelineRange()
+// Sets the range over which the timeline will display events
+// @param start (date) start of range
+// @param end (date) end of range
+// @visibility external
+//<
+setTimelineRange : function (start, end, gran, units, callback) {
+    if (this.timelineView) this.timelineView.setTimelineRange(start, end, gran, units);        
+    if (callback) this.fireCallback(callback);
 }
+ 
+
 
 });
 
@@ -3292,6 +3678,7 @@ isc.DaySchedule.addProperties({
         // multiply by row height to get pixels
         var snapGap = this.creator.eventSnapGap;
         this.body.snapVGap = Math.round((snapGap / 30) * this.body.getRowSize(0));
+        this.body.snapHGap = null;
     },
     
     // To be used with calendar.scrollToWorkday 
@@ -3324,6 +3711,12 @@ isc.DaySchedule.addProperties({
         var dayNum = this.fields.get(colNum)._dayNum;
         return dayNum;
        
+    },
+    
+    getDateFromCol : function (colNum) {
+        var fld = this.fields.get(colNum);
+        var newDate = new Date(fld._yearNum, fld._monthNum, fld._dateNum);
+        return newDate;
     },
     
     isLabelCol : function (colNum) {
@@ -3462,17 +3855,30 @@ isc.DaySchedule.addProperties({
         if (this.isLabelCol(colNum)) return this.labelColumnBaseStyle;
         
         var dayNum = this._isWeek ? this.getDayFromCol(colNum) : this.creator.chosenDate.getDay();
-        var wStart = isc.Time.parseInput(this.creator.workdayStart),
-            wEnd = isc.Time.parseInput(this.creator.workdayEnd),
-            currRowTime = new Date();
         
-        currRowTime.setUTCHours(Math.floor(rowNum / 2));
-        if (rowNum % 2 == 1) currRowTime.setUTCMinutes(30);
-        else currRowTime.setUTCMinutes(0);
+        // workdayStart/end need to be based on current date and not just parsed workdayStart.
+        // this fixes an issue where parsed date could have the wrong day.
+        var wStart = this._isWeek ? this.getDateFromCol(colNum) : this.creator.chosenDate.duplicate(),//isc.Time.parseInput(this.creator.workdayStart),
+            wEnd = wStart.duplicate(),//isc.Time.parseInput(this.creator.workdayEnd),
+            currRowTime = wStart.duplicate(),
+            // TODO consider moving this into initWidget() to not parse the date for every cell
+            parsedStart = isc.Time.parseInput(this.creator.workdayStart),
+            parsedEnd = isc.Time.parseInput(this.creator.workdayEnd);
+        // need to set hours and minutes of start and end to the same as workdayStart and 
+        // workdayEnd
+        wStart.setHours(parsedStart.getHours());
+        wStart.setMinutes(parsedStart.getMinutes());
+        wEnd.setHours(parsedEnd.getHours());
+        wEnd.setMinutes(parsedEnd.getMinutes());
+        // setUTCHours() and setUTCMinutes were causing problems, so use setHours/Minutes instead
+        currRowTime.setHours(Math.floor(rowNum / 2));
+        if (rowNum % 2 == 1) currRowTime.setMinutes(30);
+        else currRowTime.setMinutes(0);
         
+        var dayIsWorkday = this.creator.dateIsWorkday(currRowTime);
         currRowTime = currRowTime.getTime();
         if (this.creator.showWorkday && wStart.getTime() <= currRowTime && currRowTime < wEnd.getTime() 
-            && !Date.getWeekendDays().contains(dayNum)) {
+            && dayIsWorkday) {
             
             return this.creator.workdayBaseStyle;        
         } else {
@@ -3502,7 +3908,7 @@ isc.DaySchedule.addProperties({
     refreshEvents : function () {
         // bail if the grid hasn't been drawn yet, or hasn't gotten data yet
         if (!this.body || !this.creator.hasData()) return;
-       
+      
         this.logDebug('refreshEvents:' + this.viewName, "calendar");
         this.clearEvents();
         var startDate, endDate, cal = this.creator;
@@ -3526,7 +3932,7 @@ isc.DaySchedule.addProperties({
     sizeEventWindow : function (eventWin) {
         var cal = this.creator, event = eventWin.event;
          // don't resize when we're dragRepositioned
-         
+        
         if (!eventWin._skipResize) {
             if (cal.eventAutoArrange) {
                 // resize, move and render all events touching the range of this event
@@ -3540,14 +3946,25 @@ isc.DaySchedule.addProperties({
                 // event is dragged or resized to the bottom of the screen
                 var eHrs = event[cal.endDateField].getHours() == 0 ? 24 
                          : event[cal.endDateField].getHours();
+                // if the event ends on the next day, render it as ending on the last hour of the 
+                // current day
+                var spansDays = false;
+                if (event[cal.endDateField].getDate() > event[cal.startDateField].getDate()) {
+                    spansDays = true;
+                    eHrs = 24;
+                }
+               
+                // each (rowSize * 2) represents one hour, so we're doing (hour diff) * (1 hour height)
                 var eHeight = (eHrs - event[cal.startDateField].getHours()) * (rowSize * 2),
-                    eWidth = colSize; 
+                    eWidth = colSize;
+                    
+                //isc.logWarn('sizeEventWindow:' + [eventWin.ID, eHrs, eHrs - event[cal.startDateField].getHours()]);
                 // for border overlap
                 if (cal.weekEventBorderOverlap && eventWin._isWeek) eWidth += 1; 
                 if (event[cal.startDateField].getMinutes() > 0) {
                     eHeight -= cal._getMinutePixels(event[cal.startDateField].getMinutes(), rowSize);
                 }
-                if (event[cal.endDateField].getMinutes() > 0) {
+                if (event[cal.endDateField].getMinutes() > 0 && !spansDays) {
                     eHeight += cal._getMinutePixels(event[cal.endDateField].getMinutes(), rowSize);
                 }
                
@@ -3601,7 +4018,7 @@ isc.DaySchedule.addProperties({
     updateEventWindow : function (event) {
         if (!this.body || !this.body.children) return;
         var arr = this.body.children, cal = this.creator;
-        if (cal.dataSource) cal._pks = cal.dataSource.getLocalPrimaryKeyFields();
+        if (cal.dataSource) cal._pks = cal.getDataSource().getLocalPrimaryKeyFields();
         for (var i = 0; i < arr.length ; i++) {
             if (isc.isAn.EventWindow(arr[i]) && this.areSame(arr[i].event, event)) {
                 // reassign event for databound update, because databound update creates
@@ -3717,9 +4134,10 @@ isc.MonthSchedule.addProperties({
             displayDate = new Date(this.creator.year, this.creator.month, 1);
         
         // go back to the first day of the week
-        while (displayDate.getDay() != this.firstDayOfWeek) {
+        while (displayDate.getDay() != this.creator.firstDayOfWeek) {
             displayDate.setDate(displayDate.getDate() - 1);    
         }
+        
         // special case when hiding weekends, can have the first row be entirely from the previous
         // month. In this case, hide the first row by adding 7 days back to the displayDate
          if (!this.creator.showWeekends) {
@@ -3983,12 +4401,18 @@ isc.MonthSchedule.addProperties({
 
 // EventWindow
 //---------------------------------------------------------------------------------------------
+//> @class EventWindow
+// Subclass of Window used to display events within a +link{Calendar}.  Customize via
+// +link{calendar.eventWindow}.
+//
+// @visibility external
+//<
 isc.ClassFactory.defineClass("EventWindow", "Window");
 
 isc.EventWindow.changeDefaults("resizerDefaults", {
     overflow:"hidden", height: 3,
     snapTo: "B", 
-    canDragResize:true, getEventEdge:function () {return "B"} 
+    canDragResize:true//, getEventEdge:function () {return "B"} 
 })
 
 isc.EventWindow.changeDefaults("headerDefaults", {
@@ -3998,6 +4422,8 @@ isc.EventWindow.changeDefaults("headerDefaults", {
 isc.EventWindow.addProperties({
     autoDraw: false,
     minHeight: 5,
+    // for timelineEvents, so they can be resized to be very small
+    minWidth: 5, 
     showHover: true, 
     canHover: true,
     hoverWidth: 200,
@@ -4019,6 +4445,10 @@ isc.EventWindow.addProperties({
     bodyColor: null,
     
     showFooter: true,
+    
+    //showBody:false,
+    //showTitle:false,
+    
     footerProperties: {overflow:"hidden", defaultLayoutAlign:"center", height: 7},
     bodyConstructor: isc.HTMLFlow,
     
@@ -4027,11 +4457,17 @@ isc.EventWindow.addProperties({
         this.headerStyle = this.baseStyle + "Header";
         if (this.calendar.showDescription != false) {
             this.bodyProperties = {contents: this.descriptionText, valign:"top", 
-                overflow: "hidden"};
+            overflow: "hidden"};
+        }
+        if (this.calendar.showEventBody == false) {
+            this.showBody = false;
+            // need to set showTitle to false so that drag reposition works
+            this.showTitle = false;
         }
         this.headerLabelProperties = {styleName: this.className + "Header"};
         
         this.Super("initWidget", arguments);
+        
     },
     
     makeFooter : function () {
@@ -4049,9 +4485,22 @@ isc.EventWindow.addProperties({
     },
     
     setDescriptionText : function (descriptionText) {
+        if (this.calendar.getDescriptionText) {
+            descriptionText = this.calendar.getDescriptionText(this.event);
+        } 
         if (descriptionText) {
-            this.descriptionText = descriptionText;
-            this.body.setContents(descriptionText);
+            if (this.body) {
+                this.descriptionText = descriptionText;
+                this.body.setContents(descriptionText);
+            } else {
+                this.descriptionText = descriptionText;
+                if (this._eventLabel) {
+                    
+                    this._eventLabel.setWidth("100%");
+                    this._eventLabel.setContents(descriptionText);    
+                }
+               
+            }
         }
     },
     
@@ -4065,6 +4514,7 @@ isc.EventWindow.addProperties({
         }
         var cal = this.calendar;
         var doDefault = cal.eventClick(this.event, this._isWeek ? "week" : "day");
+        isc.logWarn("in click");
         if (doDefault) {
             if (!cal.canEditEvent(this.event)) return;
             // handle the case when a selection is made, then an event is clicked
@@ -4128,12 +4578,19 @@ isc.EventWindow.addProperties({
     },
     
     // get event length in minutes
-    getEventLength : function () {
-        var start = this.event[this.calendar.startDateField];
-        var end = this.event[this.calendar.endDateField];
+    getEventLength : function (startDate, endDate) {
+        var start = startDate || this.event[this.calendar.startDateField];
+        var end = endDate || this.event[this.calendar.endDateField];
+        
+        var minDiff = (end.getTime() - start.getTime()) / (1000 * 60);
+        return minDiff;
+        /*
         var tot = ((end.getHours() != 0 ? end.getHours() : 24) - start.getHours()) * 60;
+        isc.logWarn("getEventLength:" + end  );
         tot = tot - start.getMinutes() + end.getMinutes();
+        
         return tot;
+        */
     },
     
     dragRepositionStart : function () {
@@ -4258,113 +4715,340 @@ isc.ClassFactory.defineClass("TimelineWindow", "EventWindow");
 
 isc.TimelineWindow.addProperties({
         
-        showFooter: false,
-        minimized: true,
-        /*
-        initWidget : function () {
-            this.Super("initWidget");    
-            this.lineImage = "";
-            this.trailingEndPointImage = "";
-            this.leadingEndPointImage = "";
+    showFooter: false,
+    // not sure why minimized:true was set, but it was preventing L,R resize handles from 
+    // working (as expected), so get rid of it.
+    //minimized: true,
+    resizeFrom: ["L", "R"],
+    
+    initWidget : function () {
+        if (this.calendar.showEventWindowHeader == false) {
+            this.showBody = false;
+            // need to set showTitle to false so that drag reposition works
+            this.showTitle = false;
             
-        },
-        */
-        dragRepositionStart : function () {
-            this._startRow = this.parentElement.getEventRow();
-            this._startCol = this.parentElement.getEventColumn();
-            var  vOffset = 0, event = this.event;
-            if (event._overlapProps && event._overlapProps.slotNum > 0)  {
-                vOffset = (event._overlapProps.slotNum - 1) * this.getVisibleHeight();
-            }
-            this.parentElement.VSnapOrigin = vOffset;
-            this.parentElement.HSnapOrigin = 0;
-            this.hideLines();
+        }
+        this.Super("initWidget");    
+        
+    },
+    
+    draw : function (a, b, c, d) {
+        this.invokeSuper(isc.TimelineWindow, "draw", a, b, c, d);
+        if (this.calendar.showEventWindowHeader == false) {
             
-            return true;    
-        },
-        /*
-        dragRepositionMove : function () {
-            isc.logWarn("move: " + [this.parentElement.getEventRow(), this._startRow]);
-            if (this.parentElement.getEventRow() != this._startRow) return false;
-            else return true;
-        },
-        */
-        dragRepositionStop : function () {
-            
-            var currRow = this.parentElement.getEventRow();
-           
-            if (currRow != this._startRow) {
+             var lbl = isc.Canvas.create({
+                    // border: "1px solid red",
+                    autoDraw:false,
+                    width: "100%",
+                    height: 0,
+                    top:0,
+                    contents: (this.descriptionText ? this.descriptionText : " ")
+            });
+            this.addMember(lbl);
+            lbl.setHeight(0);
+            lbl.setTop(0);
+            this._eventLabel = lbl;
+        }
+    },
+    
+    click : function () {
+        var cal = this.calendar;
+        var doDefault = cal.eventClick(this.event, this._isWeek ? "week" : "day");
+        isc.logWarn("in click");
+        if (doDefault) {
+            if (!cal.canEditEvent(this.event)) return;
+            // handle the case when a selection is made, then an event is clicked
+            if (this._isWeek) cal.weekView.clearSelection();
+            else cal.dayView.clearSelection();
+            var offset = cal.weekView.isLabelCol(0) ? 1 : 0;
+            var col = this._isWeek ? this.event[cal.startDateField].getDay() - 
+                cal.firstDayOfWeek + offset : offset;
+            // account for no weekends shown
+            if (this._isWeek && cal.showWeekends == false) col--;
+            var row =  this.event[cal.startDateField].getHours() * 2;
+            cal._showEventDialog(row, col, null, this);
+        }
+    },
+    
+    dragRepositionStart : function () {
+        this._startRow = this.parentElement.getEventRow();
+        this._startCol = this.parentElement.getEventColumn();
+        var  vOffset = 0, event = this.event;
+        if (event._overlapProps && event._overlapProps.slotNum > 0)  {
+            vOffset = (event._overlapProps.slotNum - 1) * this.getVisibleHeight();
+        }
+        this.parentElement.VSnapOrigin = vOffset;
+        // hmmmm shouldn't have to do this, but without this the dragMoveTarget is off.
+        // Something elsewhere could be causing that...
+        // var offsetAmmount = this.getPageLeft() - this.ns.EH.getX();
+        this.parentElement.HSnapOrigin = 0;//offsetAmmount;
+        
+        this.hideLines();
+        return true;    
+    },
+    /*
+    dragRepositionMove : function () {
+         isc.logWarn('reposMove:' + this.ns.EH.dragMoveTarget);
+        //isc.logWarn("move: " + [this.parentElement.getEventRow(), this._startRow]);
+        //if (this.parentElement.getEventRow() != this._startRow) return false;
+        //else return true;
+    },
+    */
+    // reposition steps:
+    // 1. get start and end date equivalent to dragTracker position
+    // 2. call adjustEventDates (if impl) to do any other event adjustments, e.g. make sure
+    //    event falls withing a certain range
+    // 3. if allowEventOverlap is false, adjust event further to either put event where its 
+    //    not overlapping or cancel the drop 
+    // 4. call eventMoved as a second override point to potentially cancel the drop. For example,
+    //    to make sure that date ranges enforced in adjustEventDates are still enforced after
+    //    an event has been changed so that it won't overlap another event.
+    dragRepositionStop : function () {
+        // need to do this here, else previous setting of HSnapOrigin destroys dragResize
+        // correct functionality. (see dragRepositionStart())
+        this.parentElement.HSnapOrigin = 0;
+        var currRow = this.parentElement.getEventRow(), newType;
+       
+        if (currRow != this._startRow) {
+            if (this.calendar.canEditEventType) {
+               var currTypeRec = this.calendar.eventTypeData.get(currRow);
+               newType = currTypeRec[this.calendar.eventTypeField];
+               
+            } else {
                 //this.calendar.timelineView.addLeadingAndTrailingLines(this)
                 this.showLines();
                 return false;
             }
-            
-            var currCol = this.parentElement.getEventColumn(), startCol = this._startCol, 
-                diff = currCol - startCol, cal = this.calendar, event = this.event;
-            var dates = [ event[cal.startDateField].duplicate(), event[cal.endDateField].duplicate(), 
-                 event[cal.leadingDateField].duplicate(),event[cal.trailingDateField].duplicate()];
-            // augment (or decrement if diff is negative) each date by the difference between the drag
-            // start date and the drag end date
-            dates.map(function (item,diff){item.setDate(item.getDate() + diff);}, diff);
-    
-            var otherFields = {};
-            otherFields[cal.leadingDateField] = dates[2];
-            otherFields[cal.trailingDateField] = dates[3];
-            this.calendar.updateEvent(event, dates[0], dates[1], event[cal.nameField], 
-                event[cal.descriptionField], otherFields, true);
-            // no need to showLines() here...the callback in updateEvent will call 
-            // this.updateEventWindow() which will take care of that
-            //this.calendar.timelineView.addLeadingAndTrailingLines(this);
-            
-            return true;
-        },
-        
-        destroyLines : function () {
-            if (this._lines) {
-                if (this._lines[0]) this._lines[0].destroy();
-                if (this._lines[1]) this._lines[1].destroy();
-                if (this._lines[2]) this._lines[2].destroy();
-                if (this._lines[3]) this._lines[3].destroy();
-            }
-        },
-        
-        hideLines : function () {
-            if (this._lines) {
-                if (this._lines[0]) this._lines[0].hide();
-                if (this._lines[1]) this._lines[1].hide();
-                if (this._lines[2]) this._lines[2].hide();
-                if (this._lines[3]) this._lines[3].hide();
-            }
-        },
-        
-        showLines : function () {
-            if (this._lines) {
-                if (this._lines[0]) this._lines[0].show();
-                if (this._lines[1]) this._lines[1].show();
-                if (this._lines[2]) this._lines[2].show();
-                if (this._lines[3]) this._lines[3].show();
-            }
-        },
-        
-        hide : function () {
-            this.invokeSuper(isc.TimelineWindow, "hide");
-            this.hideLines();
-        },
-        
-        show : function () {
-            this.invokeSuper(isc.TimelineWindow, "show");
-            this.showLines();    
-        },
-        
-        parentResized : function () {
-            // skip EventWindow implementation of parentResized. We shouldn't need to resize
-            // all eventWindows for this view.
-            this.invokeSuper(isc.EventWindow, "parentResized");
-            //this.Super('parentResized', arguments);
-            //this._parentView.sizeEventWindow(this);
-            
         }
         
+        var cal = this.calendar, event = this.event;
+        cal = this.calendar, event = this.event;
+        var dates = [ event[cal.startDateField].duplicate(), event[cal.endDateField].duplicate()];
+        if (event[cal.leadingDateField] && event[cal.trailingDateField]) {
+            dates.add(event[cal.leadingDateField].duplicate());
+            dates.add(event[cal.trailingDateField].duplicate());
+        }
+        
+        // step 1 find initial drop dates
+        // augment (or decrement if diff is negative) each date by the difference between the drag
+        // start date and the drag end date
+        var EH = this.ns.EH;
+        // convert dragLeft into local coords by calculating an offset based on eventWindow
+        // pageLeft - left.
+        var leftOffset = this.getPageLeft() - this.getLeft();
+        var dragLeft = EH.dragMoveTarget.getLeft() - leftOffset;
+        // convert dragTracker left to a date
+        var sDate = cal.timelineView.getDateFromPoint(dragLeft);
+        var eDate = sDate.duplicate();
+        // get enddate
+        eDate.setMinutes(eDate.getMinutes() + this.getEventLength());
+        dates[0] = sDate;
+        dates[1] = eDate;
+        // minsDiff = difference in minutes between new start date and old start date
+        var minsDiff = Math.floor((sDate.getTime() - event[cal.startDateField].getTime()) / (1000 * 60));
+        // adjust leading and trailing dates by minsDiff amount of minutes. 
+        // if event dragged behind itself, minsDiff will be negative.
+        if (event[cal.leadingDateField]) dates[2].setMinutes(dates[2].getMinutes() + minsDiff);
+        if (event[cal.trailingDateField]) dates[3].setMinutes(dates[3].getMinutes() + minsDiff);
+        
+        var otherFields = {}
+        if (newType) otherFields[cal.eventTypeField] = newType;
+        if (event[cal.leadingDateField] && event[cal.trailingDateField]) {
+            otherFields[cal.leadingDateField] = dates[2];
+            otherFields[cal.trailingDateField] = dates[3];
+        }
+        if (newType == null) newType = event[cal.eventTypeField];
+        // step 2 adjust initial drop dates, via overridden method 
+        if (cal.adjustEventTimes) {
+            var adjustedTimes = cal.adjustEventTimes(event, this, dates[0], dates[1], newType);
+            if (adjustedTimes) {
+                dates[0] = adjustedTimes[0].duplicate();
+                dates[1] = adjustedTimes[1].duplicate();
+            }
+        }
+        // step 3 adjust modified drop dates so no overlapping occurs
+        if (cal.allowEventOverlap == false) {
+            var repositionedDates = this.checkForOverlap(event, dates[0], dates[1], newType); 
+            if (repositionedDates == true) {
+                // event overlaps in such a way that dropping anywhere near this location would
+                // be impossible
+                if (cal.timelineEventOverlap) {
+                    cal.timelineEventOverlap(false, event, this, dates[0], dates[1], newType);
+                }
+                return false;   
+            } else if (isc.isAn.Array(repositionedDates)){
+               dates[0] = repositionedDates[0].duplicate();
+               dates[1] = repositionedDates[1].duplicate();
+               if (cal.timelineEventOverlap) { 
+                   cal.timelineEventOverlap(true, event, this, dates[0], dates[1], newType);
+               }
+               
+            }
+            // otherwise don't do anything, as no overlap occurred
+        }
+        // step 4 fire eventMoved notification to allow drop cancellation
+        if (!cal.timelineEventMoved(event, this, dates[0], dates[1], newType)) return false;
+        
+        // finally update event
+        //isc.logWarn('updating event:' + [dates[0], dates[1]]);
+        this.calendar.updateEvent(event, dates[0], dates[1], event[cal.nameField], 
+            event[cal.descriptionField], otherFields, true);
+        // no need to showLines() here...the callback in updateEvent will call 
+        // this.updateEventWindow() which will take care of that
+        //this.calendar.timelineView.addLeadingAndTrailingLines(this);
+        
+        return true;
+    },
+    
+    checkForOverlap : function (event, startDate, endDate, type) {
+        var  overlapTest = {}, cal = this.calendar;
+        
+        overlapTest[cal.startDateField] = startDate.duplicate();
+        overlapTest[cal.endDateField] = endDate.duplicate();
+        overlapTest[cal.eventTypeField] = type;
+        
+        var overlappingEvents = cal.timelineView.findOverlappingEvents(event, overlapTest);
+        if (overlappingEvents.length == 0) {
+            // return false, meaning no overlap detected
+            return false;
+        // for now just return if overlapping more than one event
+        } else if (overlappingEvents.length > 1) {
+            isc.logWarn("overlap detected:" + overlappingEvents.length);
+            
+            return true;
+        } else {
+            var overlapped = overlappingEvents[0];
+           
+            var startField = cal.startDateField, endField = cal.endDateField;
+            // case 1: drop event partially overlaps existing event to the left, so try to
+            // drop event to the left
+            if (Date.compareDates(startDate, overlapped[startField]) == 1 
+                && Date.compareDates(endDate, overlapped[startField]) == -1 ) {
+                // set end date to be overlapped event start date, less one minute
+                endDate = overlapped[startField].duplicate();
+                
+                //endDate.setMinutes(endDate.getMinutes() - 1);
+                // put the start date back by however many minutes the event is long
+                startDate = endDate.duplicate();
+                startDate.setMinutes(startDate.getMinutes() - this.getEventLength());
+                isc.logWarn('left overlap:' + [startDate]);
+                return [startDate, endDate];
+            // case 2: drop event partially overlaps existing event to the right, so try to
+            // drop event to the right
+            } else if (Date.compareDates(startDate, overlapped[endField]) == 1 
+                && Date.compareDates(endDate, overlapped[endField]) == -1) {
+                // set start date to be overlapped event end date, plus one minute
+                startDate = overlapped[endField].duplicate();
+                //startDate.setMinutes(startDate.getMinutes() + 1);
+                // put the start date back by however many minutes the event is long
+                endDate = startDate.duplicate();
+                endDate.setMinutes(endDate.getMinutes() + this.getEventLength());
+                isc.logWarn('rigth overlap:' + [overlapped.id, overlapped.end, startDate, endDate]);
+                return [startDate, endDate];
+            // other cases: for now don't allow drops where drop event completely encopasses 
+            // or is encompassed by another event
+            } else {
+                return true;
+            }
+           
+        }
+    },
+    
+     dragResizeStart : function () {   
+        // for drag resizing, calculate the offset (vsnaporigin) by calculating how much is left
+        // over when you divide the events bottom y coordinate by the snapVGap. This is added 
+        // to the y coordinate calculated in GR.getVSnapPosition
+        var snapOrigin = (this.getTop() + this.getVisibleHeight()) % this.parentElement.snapVGap;
+        this.parentElement.VSnapOrigin = snapOrigin; 
+       
+          
+    },
+    
+    dragResizeStop : function () {
+        var cal = this.calendar,
+        // store these so we can auto-arrange both source and target locations after the move
+        startDate,
+        endDate, 
+        EH = this.ns.EH,
+        colNum,
+        // convert dragLeft into local coords by calculating an offset based on eventWindow
+        // pageLeft - left.
+        leftOffset = this.getPageLeft() - this.getLeft(),
+        dragLeft = EH.dragMoveTarget.getLeft() - leftOffset;
+           
+        if (dragLeft == this.getLeft()) { // right side dragged
+            startDate = this.event[cal.startDateField].duplicate();
+            var dragRight = (dragLeft + EH.dragMoveTarget.getVisibleWidth());
+            endDate = cal.timelineView.getDateFromPoint(dragRight);
+            // special case: when sizing to grid on a right drag, take a columns length off the 
+            // end date, as getDateFromPoint() handles the border case as being on the next 
+            // day, which is fine for the start date but not for the end date
+            if (this.calendar.sizeEventsToGrid) {
+                var minsInACol = this.calendar.timelineView._getMinsInACell();
+                endDate.setMinutes(endDate.getMinutes() - minsInACol);
+            }
+            
+             
+        } else { // left side dragged
+            startDate = cal.timelineView.getDateFromPoint(dragLeft);
+            endDate = this.event[cal.endDateField].duplicate();
+        }
+        
+        // Added undoc'd endDate param - is necessary for Timeline items because they can be 
+        // stretched or shrunk from either end
+        if (!cal.timelineEventResized(this.event, this, startDate, endDate)) return false;
+        //this._skipResize = true;
+        //isc.logWarn('dragResizeStop:' + [startDate, endDate]);
+        cal.updateEvent(this.event, startDate, endDate,
+         this.event[cal.nameField], this.event[cal.descriptionField], null, true);
+
+    },
+    destroyLines : function () {
+        if (this._lines) {
+            if (this._lines[0]) this._lines[0].destroy();
+            if (this._lines[1]) this._lines[1].destroy();
+            if (this._lines[2]) this._lines[2].destroy();
+            if (this._lines[3]) this._lines[3].destroy();
+        }
+    },
+    
+    hideLines : function () {
+        if (this._lines) {
+            if (this._lines[0]) this._lines[0].hide();
+            if (this._lines[1]) this._lines[1].hide();
+            if (this._lines[2]) this._lines[2].hide();
+            if (this._lines[3]) this._lines[3].hide();
+        }
+    },
+    
+    showLines : function () {
+        if (this._lines) {
+            if (this._lines[0]) this._lines[0].show();
+            if (this._lines[1]) this._lines[1].show();
+            if (this._lines[2]) this._lines[2].show();
+            if (this._lines[3]) this._lines[3].show();
+        }
+    },
+    
+    hide : function () {
+        this.invokeSuper(isc.TimelineWindow, "hide");
+        this.hideLines();
+    },
+    
+    show : function () {
+        this.invokeSuper(isc.TimelineWindow, "show");
+        this.showLines();    
+    },
+    
+    parentResized : function () {
+        // skip EventWindow implementation of parentResized. We shouldn't need to resize
+        // all eventWindows for this view.
+        this.invokeSuper(isc.EventWindow, "parentResized");
+        //this.Super('parentResized', arguments);
+        //this._parentView.sizeEventWindow(this);
+        
+    }
+    
         
 }); // end TimelineWindow
 
@@ -4374,7 +5058,9 @@ isc.ClassFactory.defineClass("TimelineView", "ListGrid");
 
 isc.TimelineView.changeDefaults("bodyProperties", {
     childrenSnapToGrid: true,
-    snapToCells: true        
+    
+    snapToCells: false,
+    suppressVSnapOffset: true
 });
 
 isc.TimelineView.addProperties({
@@ -4398,50 +5084,126 @@ isc.TimelineView.addProperties({
     eventPageSize: 30,
     trailIconSize: 16,
     leadIconSize: 16,
-    scrollToToday: 5,
+    scrollToToday: false,//5,
+    
+    lineImage: "[SKINIMG]Stretchbar/hsplit_over_stretch.gif",
+    trailingEndPointImage: "[SKINIMG]actions/prev.png",
+    leadingEndPointImage: "[SKINIMG]actions/next.png",
     
     initWidget : function () {
          this.fields = [];
          if (this.creator.eventTypeField) this.eventTypeField = this.creator.eventTypeField;
-         if (this.creator.eventTypeStartDate) this.startDate = this.creator.eventTypeStartDate;
-         if (this.creator.eventTypeEndDate) this.endDate = this.creator.eventTypeEndDate;
+         if (this.creator.timelineStartDate) this.startDate = this.creator.timelineStartDate;
+         if (this.creator.timelineEndDate) this.endDate = this.creator.timelineEndDate;
          if (this.creator.renderEventsOnDemand) this.renderEventsOnDemand = this.creator.renderEventsOnDemand;
          this.cellHeight = this.eventHeight;
          this.fields = this.calcFields();
          this.data = this.creator.eventTypeData;
-         
-         
+         this._scrubDateRange();
          this.Super("initWidget");    
-        
-         
-         this.lineImage = "[SKINIMG]Stretchbar/hsplit_over_stretch.gif";
-         this.trailingEndPointImage = "[SKINIMG]actions/prev.png";
-         this.leadingEndPointImage = "[SKINIMG]actions/next.png";
-         
-         
     },
     
+    _scrubDateRange : function () {
+       var gran = this.creator.timelineGranularity;
+       if (gran == "day") {
+            this.startDate.setHours(0);
+            this.startDate.setMinutes(0);
+            this.startDate.setSeconds(0);
+            this.startDate.setMilliseconds(0);
+       } else if (gran == "hour") {
+            this.startDate.setMinutes(0);
+            this.startDate.setSeconds(0);
+            this.startDate.setMilliseconds(0);
+       } else if (gran == "minute") {
+            this.startDate.setSeconds(0);
+            this.startDate.setMilliseconds(0);
+       }
+    },
+    
+    // make sure link between eventTypeData and this.data is maintained
+    //setData : function (newData) {
+    //     this.creator.eventTypeData = newData;
+    //     this.invokeSuper(isc.TimelineView, "setData", newData);
+    //},
+    scrollTimelineTo : function (pos) {
+        this.bodies[1].scrollTo(pos);
+    },
+    
+    setEventHeight : function (newHeight) {
+        this.eventHeight = newHeight;
+        this.setCellHeight(newHeight);
+        this.refreshEvents();
+    },
+    
+    setEventWidth : function (newWidth) {
+        this.eventWidth = newWidth;
+        this.setFields(this.calcFields());
+        this.refreshEvents();
+    },
+    
+    setTimelineRange : function (start, end, timelineGranularity, timelineUnitsPerColumn) {
+        this.startDate = start.duplicate();
+        this.creator.timelineStartDate = start.duplicate();
+        this.endDate = end.duplicate();
+        this.creator.timelineEndDate = end.duplicate();
+        
+        if (timelineGranularity) this.creator.timelineGranularity = timelineGranularity;
+        if (timelineUnitsPerColumn) this.creator.timelineUnitsPerColumn = timelineUnitsPerColumn;
+        
+        isc.logWarn('setTimelineRange:' + [timelineGranularity, timelineUnitsPerColumn, this.creator.timelineGranularity, this.creator.timelineUnitsPerColumn]);
+        var flds = this.calcFields();
+        this.setFields(flds);
+        this._scrubDateRange();
+        this.refreshVisibleEvents();
+    },
+    
+    addUnits : function (date, units) {
+        if (this.creator.timelineGranularity == "day") {
+            date.setDate(date.getDate() + units);
+        } else if (this.creator.timelineGranularity == "hour") {
+            date.setHours(date.getHours() + units);    
+        } else if (this.creator.timelineGranularity == "minute") {
+            date.setMinutes(date.getMinutes() + units);    
+        }
+        return date;
+    },
     calcFields : function () {
         var newFields = [];
-         var labelCol = {
-             width: this.labelColumnWidth,
-             name: this.eventTypeField,
-             title: " ",
-             frozen: true
-         }
-         newFields.add(labelCol);
+        if (this.creator.timelineLabelFields) {
+            var fldArray = this.creator.timelineLabelFields;
+            for (var i = 0; i < fldArray.length; i++) {
+                newFields.add(fldArray[i]);    
+            }
+        } else {
+            var labelCol = {
+                 width: this.labelColumnWidth,
+                 name: this.eventTypeField,
+                 title: " ",
+                 frozen: true
+             }
+             newFields.add(labelCol);    
+        }
          // add date columns to fields
          var sDate = this.startDate.duplicate();
          var eDate = this.endDate;
          var count = 0;
+         var units = this.creator.timelineUnitsPerColumn;
          while (sDate.getTime() <= eDate.getTime()) {
+             
              var newField = isc.addProperties({
                  name: "f" + count,
                  title: this.getDayFieldTitle(sDate),
                  width: this.eventWidth
              }, this.getFieldProperties(sDate));
              newFields.add(newField);
-             sDate.setDate(sDate.getDate() + 1);
+             sDate = this.addUnits(sDate, units);
+             /*
+             if (this.creator.timelineGranularity == "day") {
+                 sDate.setDate(sDate.getDate() + 1);
+             } else {
+                sDate.setHours(sDate.getHours() + 1);    
+             }
+             */
              count++;
          }
          return newFields;
@@ -4451,12 +5213,25 @@ isc.TimelineView.addProperties({
         return null;
     },
     getDayFieldTitle : function (date) {
-        return (date.getMonth() + 1) + "/" + date.getDate();    
+        if (this.creator.timelineGranularity == "day") {
+            return (date.getMonth() + 1) + "/" + date.getDate();
+        } else {
+            var mins = date.getMinutes().toString();
+            if (mins.length == 1) mins = "0" + mins;
+            return date.getHours() + ":" + mins;    
+        }
     },
     
     draw : function (a, b, c, d) {
         this.invokeSuper(isc.TimelineView, "draw", a, b, c, d);
-        this.body.snapHGap = this.eventWidth;
+        var snapGap = this.creator.timelineSnapGap;
+        if (snapGap) {
+            this.body.snapHGap = Math.round((snapGap / 60) * this.eventWidth);
+            //this.body.snapHGap = 5;
+        } else {
+            this.body.snapHGap = this.eventWidth;    
+        }
+        
         this.body.snapVGap = this.eventHeight;
         // scroll to today if defined
         if (this.scrollToToday) {
@@ -4541,9 +5316,13 @@ isc.TimelineView.addProperties({
     },
     
     getVisibleEvents : function () {
+       
+        
         var dateRange = this.getVisibleDateRange();
         var rowRange = this.getVisibleRowRange();
         var cal = this.creator;
+        
+        //if (!this.renderEventsOnDemand) return cal.data;
         var events = cal.data;
         var results = [];
         for (var i = 0; i < events.getLength(); i++) {
@@ -4553,28 +5332,83 @@ isc.TimelineView.addProperties({
                 break;
             }
             var rangeObj = {};
-            rangeObj[cal.leadingDateField] = dateRange[0];
-            rangeObj[cal.trailingDateField] = dateRange[1];
+            // if we're not showing lead-trail lines use start-endDate fields instead to 
+            // determine overlap
+           if (event[cal.leadingDateField] && event[cal.trailingDateField]) {
+                rangeObj[cal.leadingDateField] = dateRange[0];
+                rangeObj[cal.trailingDateField] = dateRange[1];
+           } else {
+                rangeObj[cal.startDateField] = dateRange[0];
+                rangeObj[cal.endDateField] = dateRange[1];    
+           }
+            
             var eventRowIndex = this.data.findIndex(cal.eventTypeField, event[cal.eventTypeField]);
+           // isc.logWarn('eventRowIndex:' + eventRowIndex);
+            if (eventRowIndex == -1) {
+                //isc.logWarn("null eventRowIndex:" + this.echoFull(event));    
+            }
             if (this.eventsOverlap(rangeObj, event) && rowRange[0] <= eventRowIndex 
                 && eventRowIndex <= rowRange[1]) {
+                results.add(event);    
+            } /*else {
+                isc.logWarn('event not added to vis events:' + event.id);
+                isc.logWarn('dates:' + [rangeObj.start, rangeObj.end, event.start, event.end]);
+                
+            }*/
+        }
+        
+        return results;
+    },
+    
+    // realEvent is the actual event object, passed in so that we can exclude
+    // it from the overlap tests. paramEvent is an object with date fields 
+    findOverlappingEvents : function (realEvent, paramEvent) {
+        var cal = this.creator;
+        //if (!this.renderEventsOnDemand) return cal.data;
+        var events = cal.data;
+        var results = [];
+        for (var i = 0; i < events.getLength(); i++) {
+            var event = events.get(i);
+            if (!event) {
+                isc.logWarn('getVisibleEvents: potentially invalid index: ' + i);  
+                break;
+            }
+            if (cal.eventsAreSame(event, realEvent)) {
+                continue;
+            }
+            var rangeObj = {};
+            // if we're not showing lead-trail lines use start-endDate fields instead to 
+            // determine overlap
+           if (event[cal.leadingDateField] && event[cal.trailingDateField]) {
+                rangeObj[cal.leadingDateField] = paramEvent[cal.leadingDateField];
+                rangeObj[cal.trailingDateField] = paramEvent[cal.trailingDateField];
+           } else {
+                rangeObj[cal.startDateField] = paramEvent[cal.startDateField];
+                rangeObj[cal.endDateField] = paramEvent[cal.endDateField];    
+           }
+            
+            if (paramEvent[cal.eventTypeField] ==  event[cal.eventTypeField]
+                && this.eventsOverlap(rangeObj, event)) { 
+                //isc.logWarn('findOverlappingEvents:' + event.id); 
                 results.add(event);    
             }
         }
         
         return results;
     },
+    
     // refreshEvents is only called when data changes, etc. 
     // refreshVisibleEvents is called whenever the view is scrolled and only draws visible events.
     // see scrolled()
     refreshVisibleEvents : function () {
         // get visible events and add them. addEvent takes care of reclaiming and positioning
         var events = this.getVisibleEvents();
-        var eventsLen = events.length;
+        var eventsLen = events.getLength();
         this.logDebug('refreshing visible events','calendar');
         for (var i = 0; i < eventsLen; i++) {
             //if (i > 5) break;
             var event = events.get(i);
+            //isc.logWarn('refreshing event:' + event.id);
             // reset the visited flag on each event so that tagDataForOverlap code knows it can 
             // tag this event if it needs to be retagged (any time an event in the same row is 
             // changed).
@@ -4602,9 +5436,15 @@ isc.TimelineView.addProperties({
             if (a[cal.eventTypeField] < b[cal.eventTypeField]) return -1;
             else if (a[cal.eventTypeField] > b[cal.eventTypeField]) return 1;
             else {
-                if (a[sDateField] < b[sDateField]) return -1;
-                else if (a[sDateField] > b[sDateField]) return 1;
-                else return 0;
+                // allow user to cusomize the secondary sort, usefull when allEventsOverlap
+                // is true so that certain events always appear in a particular slot
+                if (cal.timelineView.secondarySort) {
+                    return cal.timelineView.secondarySort(a, b);    
+                } else {
+                    if (a[sDateField] < b[sDateField]) return -1;
+                    else if (a[sDateField] > b[sDateField]) return 1;
+                    else return 0;
+                }
             }
         } );
         var start = 0, processedEvents = [];
@@ -4618,6 +5458,7 @@ isc.TimelineView.addProperties({
         //cal.data.sort(comparator); // sort by event type, start date
         for (var i = start; i < data.getLength(); i++) {
             var event = data.get(i);
+            //isc.logWarn("tagDataForOverlap, processing:" + event.EVENT_ID);
             // stop processing if we've already processed all events w/ parameter eventType 
             if (eventType && event[cal.eventTypeField] != eventType) {
                 break;
@@ -4635,14 +5476,14 @@ isc.TimelineView.addProperties({
             //if(eventType)isc.logWarn('start processing:' + [event.assayEventId, currentOverlapTot, event.startDate]);
             for (var j = 0; j < priorOverlaps.length; j++) {
                 var overlapper = priorOverlaps[j];
-                if (this.eventsOverlap(event, overlapper)) {           
+                if (this.allEventsOverlap || this.eventsOverlap(event, overlapper)) {           
                     keepers.add(overlapper);
                     //isc.logWarn('keeping:' + overlapper.assayEventId);
                 } else {
                     // currentOverlapTot represents slots which
                     // overlapping events can fit in, and we want to keep track of that total and only reset it
                     // when we reach the end of an overlap region. We know we've reached that end when
-                    // overlapMembers hits 1. (debateable actually...)
+                    // overlapMembers hits 0. (debateable actually...)
                     overlapMembers--;
                     if (overlapMembers == 0) currentOverlapTot = 1;
                     overlapsAll = false;
@@ -4662,51 +5503,94 @@ isc.TimelineView.addProperties({
             
             for (var j = 0; j < priorOverlaps.length; j++) {
                 var overlapper = priorOverlaps[j];
+     
                 if (!overlapper._overlapProps) overlapper._overlapProps = {};
                 if (!overlapper._overlapProps.visited) {
                     // set slotNum to null for the case when an event had a prior slotNum
                     overlapper._overlapProps.slotNum = null;
-                    overlapper._overlapProps.slotNum = this.nextAvailSlot(priorOverlaps);
+                    var slotNum = this.nextAvailSlot(priorOverlaps, currentOverlapTot);
+                    // sanity check - we should be guaranteed a valid slotnum based upon the 
+                    // overlap calculations above
+                    if (slotNum < 1) {
+                        isc.logWarn("Calendar.timelineView.tagDataForOverlap, no slot for event:" 
+                            + isc.Log.echoFull(overlapper));
+                    }
+                    overlapper._overlapProps.slotNum = slotNum;
                     overlapper._overlapProps.visited = true;
                 }
                 overlapper._overlapProps.totalSlots = currentOverlapTot;
                 
-                //if(eventType)isc.logWarn('tagging:' + [overlapper.assayEventId, 
+                //isc.logWarn('tagging:' + [overlapper.EVENT_ID, 
                 //    overlapper._overlapProps.slotNum, overlapper._overlapProps.totalSlots]);
             }
             
             if (currentOverlapTot > maxTotalOverlaps) maxTotalOverlaps++;
+            //isc.logWarn('tagDataforOverlap, processed:' + event.EVENT_ID + ", " + this.echoFull(event._overlapProps));  
         }
         return processedEvents;
     },
+
       
-    nextAvailSlot : function (priorOverlaps) {
-        var start = 1;
-        
+    nextAvailSlot : function (priorOverlaps, totSlots) {
+        var slotMap = [];
+        // create an array that will that will contain 'true' if that slot index is occupied
+        // and 'false' otherwise
+        for (var i=0; i < totSlots; i++) {
+            slotMap.add(false);
+        }
+        // go through overlapping events and record the slot they occupy. 
+        // slotNum is 1-based, array is 0-based
+        for (var i = 0; i < priorOverlaps.length; i++) {
+            var event = priorOverlaps[i];
+            if (!event._overlapProps) continue;  
+            if (event._overlapProps.slotNum) slotMap[event._overlapProps.slotNum - 1] = true;
+        }
+        // find the first unocuppied slot
+        var slotNum = slotMap.indexOf(false) + 1;
+        return slotNum;
+        /* // keep this around for now for future reference
         for (var i = 0; i < priorOverlaps.length; i++) {
             var event = priorOverlaps[i];
             if (!event._overlapProps) continue;
+            isc.logWarn("in loop: " + [event.EVENT_ID, event._overlapProps.slotNum, start, priorOverlaps.length]);    
             if (event._overlapProps.slotNum == start) {
-                //isc.logWarn("in loop: " + event.assayEventId);    
+               
                 start++;
             }
             else return start;
         }
         return start;
+        */
     },
     
     eventsOverlap : function (a, b) {
-         var sDateField, eDateField, cal = this.creator;
-         if (a[cal.leadingDateField] && b[cal.leadingDateField]) sDateField = cal.leadingDateField;
-         if (a[cal.trailingDateField] && b[cal.trailingDateField]) eDateField = cal.trailingDateField;
-         if ((a[sDateField] >= b[sDateField] && a[sDateField] <= b[eDateField]) 
-            || (a[eDateField] <= b[eDateField] && a[eDateField] >= b[sDateField])
-            || (a[sDateField] <= b[sDateField] && a[eDateField] >= b[eDateField])) {
-            return true;
-        } else {
-            return false;
-        }
+        var startField, endField, cal = this.creator;
+        if (a[cal.leadingDateField] && b[cal.leadingDateField]) startField = cal.leadingDateField;
+        else startField = cal.startDateField;
          
+        if (a[cal.trailingDateField] && b[cal.trailingDateField]) endField = cal.trailingDateField;
+        else endField = cal.endDateField;
+        // when sizeEventsToGrid, count equal dates as overlapping, as events may be specified
+        // in such a way that start and end have time fields zeroed out, but should still be
+        // considered as overlapping the same zeroed out date (for example, the date represented
+        // by a column boundary. Otherwise left edge events can get dropped from rendering.
+        if (this.creator.sizeEventsToGrid) {
+             if ((a[startField] >= b[startField] && a[startField] <= b[endField]) 
+                 || (a[endField] <= b[endField] && a[endField] >= b[startField])
+                 || (a[startField] <= b[startField] && a[endField] >= b[endField])) {
+                    return true;
+             } else {
+                    return false;
+             }
+        } else {
+            if ((a[startField] > b[startField] && a[startField] < b[endField]) 
+                || (a[endField] < b[endField] && a[endField] > b[startField])
+                || (a[startField] < b[startField] && a[endField] > b[endField])) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     },
     
     compareDates : function (date1, date2, d) {
@@ -4733,39 +5617,158 @@ isc.TimelineView.addProperties({
         
     },
     
-    // ebtView sizeEventWindow()
+    getDateFromPoint : function (point, round) {
+        var retDate = this.startDate.duplicate();
+        var colWidth = this.eventWidth;
+        var minsInACol = this._getMinsInACell();
+        var minsToAdd = 0;
+        // convert point to minutes via how many column lengths are in the point
+        minsToAdd += Math.floor(point / colWidth) * minsInACol;
+        // account for the remainder, only if not rounding (see getVisibleDateRange)
+        if (!round) minsToAdd += ((point % colWidth) / colWidth) * minsInACol;
+        
+        retDate.setMinutes(retDate.getMinutes() + minsToAdd);
+        
+        return retDate;
+    },
+    
+    _getMinsInACell : function () {
+        var colUnits = this.creator.timelineUnitsPerColumn;
+        var granularity = this.creator.timelineGranularity;
+        var minsInACol;
+        var breadth = 0;
+        if (granularity == "day") {
+            var minsInADay = 24 * 60;
+            minsInACol = colUnits * minsInADay;   
+        } else if (granularity == "hour") {
+            minsInACol = colUnits * 60;    
+        } else if (granularity == "minute") {
+            minsInACol = colUnits;    
+        } 
+        return minsInACol;
+    },
+    
+    // gets the width that the event should be sized to in pixels
+    _getEventBreadth : function (eventWin) {
+        var minsInACol = this._getMinsInACell();
+        // account for events that overlap the end range of the timeline. Event breadth will
+        // be truncated to end where the timeline ends.
+        var start, end;
+        if (eventWin.event[this.creator.startDateField].getTime() < this.startDate.getTime()) {
+            start = this.startDate.duplicate();
+        } else {
+            start = eventWin.event[this.creator.startDateField];    
+        }
+        if (eventWin.event[this.creator.endDateField].getTime() > this.endDate.getTime()) {
+            end = this.endDate.duplicate();
+            // timeline actually renders one column past the specified end date, so take that
+            // into account
+            end.setMinutes(end.getMinutes() + minsInACol);
+        } else {
+            end = eventWin.event[this.creator.endDateField].duplicate();
+        }
+        var minsLen = eventWin.getEventLength(start, end);
+        var colWidth = this.eventWidth;
+        var breadth = 0;
+        var grossCols = Math.floor(minsLen / minsInACol);
+        //isc.logWarn('getEventBreadth:' + [minsLen, minsLen / 60, minsInACol, minsInACol/60, grossCols, eventWin.event.start, eventWin.event.end]);
+        // when sizing events to grid, always augment the column count by 1.
+        if (this.creator.sizeEventsToGrid) {
+            grossCols += 1;
+            
+        }
+        // first get how many columns the event spans
+        breadth += grossCols * colWidth;
+        if (this.creator.sizeEventsToGrid == false) {
+            // then add the remainder
+            breadth += Math.floor(((minsLen % minsInACol) / minsInACol) * colWidth);
+        }
+        return breadth;
+           
+    },
+    
+    getEventLeft : function (event) {
+       
+        // minDiff = difference between range start and event start in minutes
+        var minDiff = (event[this.creator.startDateField].getTime() - this.startDate.getTime()) / (1000 * 60);
+        var colWidth = this.eventWidth;
+        var minsInACol = this._getMinsInACell();
+        var eLeft = 0;
+        
+        // first get how many columns from range start the event is
+        eLeft += Math.floor(minDiff / minsInACol) * colWidth;     
+        if (this.creator.sizeEventsToGrid == false) {
+            // then add the remainder: percentage of leftover mins to minsInACol * colWidth
+            eLeft += Math.floor(((minDiff % minsInACol) / minsInACol) * colWidth);      
+        }
+        // don't let event left be < 0. Breadth will compensate for the overflow as well in 
+        // getEventBreadth
+        if (eLeft < 0) eLeft = 0;
+               
+        return eLeft;
+        
+    }, 
+    
+    // sizeEventWindow() timelineView
     sizeEventWindow : function (eventWin, forceRedraw) {        
         //var doDebug = (eventWin.event.assayEventId == 29);
         var cal = this.creator, event = eventWin.event, eWidth = this.eventWidth, 
             eHeight = this.eventHeight;
         
+        // reset style name to new event as the window may have a stylename from the event
+        // it was previously representing (recycled window)
+        var styleName = event[cal.eventWindowStyleField];
+        if (styleName) eventWin.setStyleName(styleName);
+        // set eventWindowBackgroundColor if present on event, otherwise null it out if it
+        // was there from a previous event
+        if (event.eventWindowBackgroundColor) {
+            eventWin.setBackgroundColor(event.eventWindowBackgroundColor);
+        } else {
+            // calling canvas.setBackgroundColor(null) won't work because that method exits
+            // if the param is null, so just manually set backgroundColor properties to null.
+            eventWin.backgroundColor = null;
+            if (eventWin.isDrawn()) {
+                eventWin.getStyleHandle().backgroundColor = null;
+            }
+        }
         
+        // calculate event width
+        eWidth = this._getEventBreadth(eventWin);
+        // calculate event left
+        var eLeft = this.getEventLeft(event);
+        //isc.logWarn("sizeEventWindow:" + [eWidth, eLeft]);
         eventWin.setTitle(cal.getEventTitle(event));
+       
         // force redraw to avoid having the title be stale when the event win is moved...
         // otherwise you have the old title flashing briefly when the ebtView is scrolled
         // see ebtview.addEvent
         if (forceRedraw) eventWin.redraw();
         //if (eventWin.headerLabel) eventWin.headerLabel.setContents(cal.getEventTitle(event));
         //else eventWin.setTitle(cal.getEventTitle(event));
-        var daysFromStart = cal.getDayDiff(event[cal.startDateField], this.startDate);
-        var eLeft = (daysFromStart * eWidth);// + this.labelColumnWidth;
+        
         var typeIndex = this.data.findIndex(this.eventTypeField, event[this.eventTypeField]);        
         var eTop = typeIndex * eHeight;
         
-        //if (doDebug) isc.logWarn('sizeEventWindow:' + [daysFromStart, cal.eventTypeStartDate]);
+        //if (doDebug) isc.logWarn('sizeEventWindow:' + [daysFromStart, cal.timelineStartDate]);
         this.adjustDimensionsForOverlap(eventWin, eLeft, eTop, eWidth, eHeight);
-        //eventWin.resizeTo(eWidth, eHeight);
-        //eventWin.moveTo(eLeft, eTop);
-        
+      
+        // set description after resize so percentage widths can be respected in html that may
+        // be in the description
+        if (cal.showDescription != false) {
+            eventWin.setDescriptionText(event[cal.descriptionField]);    
+        }
         
         // draw leading and trailing lines
-        this.addLeadingAndTrailingLines(eventWin);
+        if (event[cal.leadingDateField] && event[cal.trailingDateField]) {
+            this.addLeadingAndTrailingLines(eventWin);
+        }
         
     },
     
     adjustDimensionsForOverlap : function (eventWin, left, top, width, height) {
         
         var overlapProps = eventWin.event._overlapProps;
+        //isc.logWarn('adjustDimForOverlap:' + eventWin.event.EVENT_ID + this.echoFull(overlapProps));
         //overlapProps = false;
         if (overlapProps && overlapProps.totalSlots > 0) {
             
@@ -4882,6 +5885,8 @@ isc.TimelineView.addProperties({
         var icon = isc.Img.create({
             _eventWin: eventWin,
             type: type,
+           
+            //prompt:eventWin.event.EVENT_ID,
             autoDraw:false,
             _redrawWithParent: false,
             src: (type == "trail" ? this.trailingEndPointImage : this.leadingEndPointImage),
@@ -4932,7 +5937,7 @@ isc.TimelineView.addProperties({
     },
     
     clearEvents : function (start) {
-        if (!this.body || !this.body.children) return;
+        if (!this.body || !this.body.children || !this._eventBin) return;
         if (!start) start = 0;
         //isc.logWarn('clearing events');
         /*
@@ -4947,6 +5952,7 @@ isc.TimelineView.addProperties({
         }
         */
         for (var i = start; i < this._eventBin.length; i++) {
+            //isc.logWarn('hiding event:' + i);
             this._eventBin[i].hide();    
         }
     },
@@ -4997,26 +6003,36 @@ isc.TimelineView.addProperties({
             bodyProps = {height: 0, overflow:"hidden" };
             headerProps = {height: "*"};
         }
-        var eventWin =  isc.TimelineWindow.create({
+        var canDrag = (this.creator.canDragEvents == true && event[this.creator.canDragEventField] != false);
+      
+        var eventWinProps = {
             calendar: this.creator,
             _redrawWithParent: false,
-            className: styleName,
-            baseStyle: styleName,
-            canDragReposition: (this.creator.canEditEvents == true),
-            canDragResize: false,
+            styleName: styleName,
+            //baseStyle: styleName,
+            canDragReposition: canDrag,
+            canDragResize: this.creator.canResizeTimelineEvents,
+            edgeMarginSize:10,
+            //showEdges:false,
+            //edgeOpacity:0,
             showCloseButton: false,
             event: event,
             descriptionText: event[this.creator.descriptionField] || "",
             headerProperties: headerProps,
             bodyProperties: bodyProps
             
-        }); 
+        }
+        if (event.eventWindowBackgroundColor) {
+            eventWinProps.backgroundColor = event.eventWindowBackgroundColor;    
+        }
+        var eventWin =  isc.TimelineWindow.create(eventWinProps); 
+       
         this.creator.setEventWindowID(event, eventWin.ID);
+        //isc.logWarn('getNewEventWindow:' + [eventWin.ID, eventWin.canDragResize]);
         return eventWin;
     },
     
     updateEventWindow : function (event) {
-        
         if (!this.body || !this.body.children) return;
         var cal = this.creator,
             // if one event is updated, all events in the same row may need to be updated as
@@ -5029,6 +6045,7 @@ isc.TimelineView.addProperties({
             // just refresh events
             this.refreshVisibleEvents();
         } else {
+            
             for (var i = 0; i < events.length; i++) {
                 var event = events.get(i), winId = cal.getEventWindowID(event), eWin = window[winId];
                 // reset visited so tagDataForOverlap knows it can process this event if an 
@@ -5078,21 +6095,24 @@ isc.TimelineView.addProperties({
     },
     
     getVisibleDateRange : function () {
-          var sLeft = this.bodies[1].getScrollLeft();
-          var eWidth = this.eventWidth;
-          var viewPortWidth = this.getVisibleWidth() - this.labelColumnWidth;
-          var startDays = Math.floor(sLeft / eWidth);
-          var endDays = Math.floor((sLeft + viewPortWidth) / eWidth);
-          var rangeStart = this.startDate.duplicate();
-          rangeStart.setDate(rangeStart.getDate() + startDays);
-          var rangeEnd = this.startDate.duplicate();
-          rangeEnd.setDate(rangeEnd.getDate() + endDays);
-          
-          //isc.logWarn('here:' + [sLeft, viewPortWidth, startDays, endDays]);
-          return [rangeStart, rangeEnd];
+        if (!this.renderEventsOnDemand) {
+            return [this.startDate.duplicate(), this.endDate.duplicate()];    
+        }
+        
+        var startPos = this.body.getScrollLeft();
+        var endPos = startPos + this.body.getVisibleWidth();
+        // round rangeStart to the nearest column start, otherwise events that are on the left
+        // edge may not get rendered when sizeEventsToGrid is true
+        var rangeStart = this.getDateFromPoint(startPos, true);
+        var rangeEnd = this.getDateFromPoint(endPos);
+        
+        return [rangeStart, rangeEnd];
     },
     
     getVisibleRowRange : function () {
+        if (!this.renderEventsOnDemand) {
+            return [0, this.data.getLength()];    
+        }
         var sTop = this.bodies[1].getScrollTop();
         var eHeight = this.eventHeight;
         var viewPortHeight = this.bodies[1].getVisibleHeight();
@@ -5167,4 +6187,5 @@ _eventScaffolding: [
 ]
 
 });
+
 

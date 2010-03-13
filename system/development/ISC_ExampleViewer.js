@@ -2,33 +2,29 @@
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to
@@ -40,11 +36,11 @@
 if(window.isc&&window.isc.module_Core&&!window.isc.module_ExampleViewer){isc.module_ExampleViewer=1;isc._moduleStart=isc._ExampleViewer_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'ExampleViewer load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime')
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM
-else isc._preLog=[isc._pTM]}isc.defineClass("HScrollThumbLight","HScrollThumb");isc.A=isc.HScrollThumbLight.getPrototype();isc.A.hSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/hthumb.gif";isc.A.showGrip=false;isc.defineClass("VScrollThumbLight","VScrollThumb");isc.A=isc.VScrollThumbLight.getPrototype();isc.A.vSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/vthumb.gif";isc.A.showGrip=false;isc.defineClass("ScrollbarLight","Scrollbar");isc.A=isc.ScrollbarLight.getPrototype();isc.A.thumbOverlap=1;isc.A.startThumbOverlap=null;isc.A.endThumbOverlap=null;isc.A.showTrackEnds=false;isc.A.btnSize=16;isc.A.startImg={name:"start",width:"btnSize",height:"btnSize"};isc.A.cornerSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/corner.gif";isc.A.hSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/hscroll.gif";isc.A.vSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/vscroll.gif";isc.A.hThumbClass=isc.HScrollThumbLight;isc.A.vThumbClass=isc.VScrollThumbLight;isc.defineClass("EVHScrollThumb","HScrollThumb");isc.A=isc.EVHScrollThumb.getPrototype();isc.A.capSize=5;isc.A.hSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/hthumb.png";isc.A.showGrip=true;isc.A.gripLength=13;isc.A.gripBreadth=5;isc.A.backgroundColor=null;isc.A.showRollOver=false;isc.A.opacity=50;isc.A.$nt=false;isc.defineClass("EVVScrollThumb","VScrollThumb");isc.A=isc.EVVScrollThumb.getPrototype();isc.A.capSize=5;isc.A.vSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/vthumb.png";isc.A.showGrip=true;isc.A.gripLength=13;isc.A.gripBreadth=5;isc.A.backgroundColor=null;isc.A.showRollOver=false;isc.A.opacity=50;isc.A.$nt=false;isc.defineClass("EVScrollbar","Scrollbar");isc.A=isc.EVScrollbar.getPrototype();isc.A.allowThumbDownState=true;isc.A.btnSize=18;isc.A.thumbMinSize=25;isc.A.startThumbOverlap=-5;isc.A.endThumbOverlap=-2;isc.A.backgroundColor=null;isc.A.vSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/vscroll.png";isc.A.hSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/hscroll.png";isc.A.showTrackEnds=true;isc.A.trackStartSize=10;isc.A.trackEndSize=10;isc.A.startImg={name:"start",width:19,height:19};isc.A.cornerSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/corner.png";isc.A.hThumbClass=isc.EVHScrollThumb;isc.A.vThumbClass=isc.EVVScrollThumb;isc.A.showRollOver=false;isc.ImgSectionHeader.changeDefaults("backgroundDefaults",{backgroundColor:"#a0c0ff"});isc.defineClass("ExampleViewer","TabSet");isc.A=isc.ExampleViewer;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.getRefDocsURL=function(){return window.exampleTree.nodeVisibility=="sdk"?"SmartClient_Reference.html":"/docs/6.0/a/b/c/go.html"}
+else isc._preLog=[isc._pTM]}isc.definingFramework=true;isc.defineClass("HScrollThumbLight","HScrollThumb");isc.A=isc.HScrollThumbLight.getPrototype();isc.A.hSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/hthumb.gif";isc.A.showGrip=false;isc.defineClass("VScrollThumbLight","VScrollThumb");isc.A=isc.VScrollThumbLight.getPrototype();isc.A.vSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/vthumb.gif";isc.A.showGrip=false;isc.defineClass("ScrollbarLight","Scrollbar");isc.A=isc.ScrollbarLight.getPrototype();isc.A.thumbOverlap=1;isc.A.startThumbOverlap=null;isc.A.endThumbOverlap=null;isc.A.showTrackEnds=false;isc.A.btnSize=16;isc.A.startImg={name:"start",width:"btnSize",height:"btnSize"};isc.A.cornerSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/corner.gif";isc.A.hSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/hscroll.gif";isc.A.vSrc="[ISO_DOCS_SKIN]/images/explorerScrollbar/vscroll.gif";isc.A.hThumbClass=isc.HScrollThumbLight;isc.A.vThumbClass=isc.VScrollThumbLight;isc.defineClass("EVHScrollThumb","HScrollThumb");isc.A=isc.EVHScrollThumb.getPrototype();isc.A.capSize=5;isc.A.hSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/hthumb.png";isc.A.showGrip=true;isc.A.gripLength=13;isc.A.gripBreadth=5;isc.A.backgroundColor=null;isc.A.showRollOver=false;isc.A.opacity=50;isc.A.$nt=false;isc.defineClass("EVVScrollThumb","VScrollThumb");isc.A=isc.EVVScrollThumb.getPrototype();isc.A.capSize=5;isc.A.vSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/vthumb.png";isc.A.showGrip=true;isc.A.gripLength=13;isc.A.gripBreadth=5;isc.A.backgroundColor=null;isc.A.showRollOver=false;isc.A.opacity=50;isc.A.$nt=false;isc.defineClass("EVScrollbar","Scrollbar");isc.A=isc.EVScrollbar.getPrototype();isc.A.allowThumbDownState=true;isc.A.btnSize=18;isc.A.thumbMinSize=25;isc.A.startThumbOverlap=-5;isc.A.endThumbOverlap=-2;isc.A.backgroundColor=null;isc.A.vSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/vscroll.png";isc.A.hSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/hscroll.png";isc.A.showTrackEnds=true;isc.A.trackStartSize=10;isc.A.trackEndSize=10;isc.A.startImg={name:"start",width:19,height:19};isc.A.cornerSrc="[ISO_DOCS_SKIN]/images/exampleScrollbar/corner.png";isc.A.hThumbClass=isc.EVHScrollThumb;isc.A.vThumbClass=isc.EVVScrollThumb;isc.A.showRollOver=false;isc.ImgSectionHeader.changeDefaults("backgroundDefaults",{backgroundColor:"#a0c0ff"});isc.defineClass("ExampleViewer","TabSet");isc.A=isc.ExampleViewer;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.getRefDocsURL=function(){return window.exampleTree.nodeVisibility=="sdk"?"SmartClient_Reference.html":"/docs/6.0/a/b/c/go.html"}
 );isc.B._maxIndex=isc.C+1;isc.A=isc.ExampleViewer.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.suppressSkinSwitch=true;isc.A.skinSwitchTitleStyle="explorerFormTitle";isc.A.tabBarThickness=23;isc.A.scrollerButtonSize=19;isc.A.pickerButtonSize=21;isc.A.symmetricScroller=true;isc.A.symmetricPickerButton=true;isc.A.showScrollerRollOver=false;isc.A.scrollerHSrc="[ISO_DOCS_SKIN]/images/exampleTabs/top/scroll.png";isc.A.pickerButtonHSrc="[ISO_DOCS_SKIN]/images/exampleTabs/top/hpicker.png";isc.A.tabBarDefaults={styleName:"exampleTabBar",baseLineSrc:"[ISO_DOCS_SKIN]/images/exampleTabs/top/baseline.png",baseLineProperties:{backgroundColor:"transparent"},tabDefaults:{src:"[ISO_DOCS_SKIN]/images/exampleTabs/top/tab.png",items:[{name:"start",width:8,height:8},{name:"stretch",width:"*",height:"*"},{name:"end",width:28,height:28}],labelLengthPad:8,showRollOver:true,showDown:false,titleStyle:"exampleTabTitle"},stackZIndex:"firstOnTop",memberOverlap:16,layoutStartMargin:0,layoutEndMargin:10,baseLineThickness:1,baseLineCapSize:2};isc.A.symmetricEdges=false;isc.A.paneContainerClassName="normal";isc.A.paneContainerProperties={border:"0px none",showEdges:true,customEdges:null,edgeSize:2,edgeTop:1,edgeBottom:25,edgeOffsetRight:1,edgeOffsetBottom:2,backgroundColor:"transparent",edgeCenterBackgroundColor:"white",edgeImage:"[ISO_DOCS_SKIN]/images/exampleTabs/top/ts.png"};isc.A.rpcURL=isc.Page.getURL("[ISOMORPHIC]/FeatureExplorerRPC");isc.A.xmlSourceTitle="XML";isc.A.jsSourceTitle="JS";isc.A.layoutMargin=10;isc.A.membersMargin=10;isc.A.creatorName="exampleViewer";isc.A.exampleViewPaneDefaults={_constructor:"ExampleViewPane",scrollbarSize:16};isc.A.exampleSourcePaneDefaults={_constructor:"ExampleSourcePane",scrollbarSize:16};isc.A.reloadButtonDefaults={_constructor:"ImgButton",title:"Reload",showFocused:false,src:"[ISO_DOCS_SKIN]/images/refresh.png",canHover:true,prompt:"<nobr>Reload this example.</nobr>",hoverHeight:20,width:16,height:16,layoutAlign:"center",$jo:false,isMouseTransparent:true,click:"this.exampleViewer.reloadExample()"};isc.A.fullScreenCloseMessage="&nbsp;&nbsp;&nbsp;<span style='font-style:italic;color:yellow;'>[Close this window to return to example tree]</span>";isc.B.push(isc.A.initWidget=function(){this.Super("initWidget",arguments);this.haveSCServer=isc.hasOptionalModule("SCServer");this.standardViewPane=this.viewPane=this.createAutoChild("exampleViewPane");this.viewtab=this.getTab(this.addTab({title:"View",icon:"[ISO_DOCS_SKIN]/images/icon_view.png",pane:this.viewPane}));this.reloadButton=this.createAutoChild("reloadButton");this.tabBarControls=["tabScroller","tabPicker","skinSwitcher",this.reloadButton]
 if(this.url)this.loadExample(this.url)}
 ,isc.A.reloadExample=function(){this.loadExample(this.exampleConfig)}
-,isc.A.getControl=function(_1){if(_1=="skinSwitcher"){if(!this.skinSwitcher){this.skinSwitcher=isc.DynamicForm.create({autoDraw:false,viewer:this,colWidths:[40,130],padding:0,border:"0px none",width:170,cellPadding:1,items:[{name:"skin",editorType:"select",width:120,defaultValue:this.currentSkin,valueMap:{Enterprise:"Enterprise",fleet:"Fleet",TreeFrog:"TreeFrog",SilverWave:"SilverWave",BlackOps:"Black Ops",SmartClient:"Stone",Cupertino:"Cupertino",standard:"Basic"},title:"Skin",change:"form.viewer.setSkin(value)",titleStyle:this.skinSwitchTitleStyle}]})}
+,isc.A.getControl=function(_1){if(_1=="skinSwitcher"){if(!this.skinSwitcher){this.skinSwitcher=isc.DynamicForm.create({autoDraw:false,viewer:this,colWidths:[40,130],padding:0,border:"0px none",width:170,cellPadding:1,items:[{name:"skin",editorType:"select",width:120,defaultValue:this.currentSkin,valueMap:{Enterprise:"Enterprise",EnterpriseBlue:"Enterprise Blue",Graphite:"Graphite",fleet:"Fleet",TreeFrog:"TreeFrog",SilverWave:"SilverWave",BlackOps:"Black Ops",SmartClient:"Stone",Cupertino:"Cupertino",standard:"Basic"},title:"Skin",change:"form.viewer.setSkin(value)",titleStyle:this.skinSwitchTitleStyle}]})}
 return this.skinSwitcher}
 return this.Super("getControl",arguments)}
 ,isc.A.shouldShowControl=function(_1){if(_1=="skinSwitcher")return(!this.suppressSkinSwitch&&this.showSkinSwitch);return this.Super("shouldShowControl",arguments)}
@@ -151,20 +147,20 @@ this.showExample(_5,_2);_3.openFolders(_3.getParents(_4));var _8=_3.indexOf(_4);
 _5.append("</table>");return _5.toString()}
 ,isc.A.$49j=function(_1,_2){var _3=this.exampleTree;var _4=_3.data;if(!_1){_2.append("<td>&nbsp;</td>");return}
 var _5=_4.isFolder(_1)?"[ISO_DOCS_SKIN]/images/explorerTree/folder_closed.png":"[ISO_DOCS_SKIN]/images/explorerTree/gears.png";_5=isc.Page.getURL(_5);_2.append("<td>",isc.Canvas.imgHTML(_5,16,16),"&nbsp;<a href='' onclick='",this.getID(),".jumpToExample(\"",this.genExampleId(_1),"\");return false;'>",_4.getTitle(_1),"</a></td>")}
-,isc.A.genExampleId=function(_1){var _2=this.exampleTree.data.getPath(_1),_3=_1.ref!=null?_2:_1.id!=null?_1.id:_2;return _3.replace(/ /g,".")}
+,isc.A.genExampleId=function(_1){var _2=this.exampleTree.data.getPath(_1),_3=_1.id!=null?_1.id:_1.ref!=null?_1.ref:_2;return _3.replace(/ /g,".")}
 ,isc.A.hideRightPane=function(){this.exampleTree.showResizeBar=false;this.rightPane.hide()}
 ,isc.A.clearState=function(){delete this.currentExampleConfig}
-,isc.A.showExample=function(_1,_2){if(this.exampleTree.data.isFolder(_1))_1.titlePage="true";if(!_2)isc.History.addHistoryEntry(this.genExampleId(_1));this.currentExampleConfig=_1;if(_1.ref){var _3=this.exampleTree.data.findById(_1.ref);if(_3!=null){var _4=_1.description,_5=_1.title,_6=_1.requiresModules,_7=_1.ref;_3=this.exampleTree.data.getCleanNodeData(_3);isc.addProperties(_1,_3);if(_4)_1.description=_4;if(_5)_1.title=_5;if(_5)_1.ref=_7;if(_6)_1.requiresModules=_6}else{this.logWarn("Couldn't find example by id for ref: "+_1.ref)}
+,isc.A.showExample=function(_1,_2){if(this.exampleTree.data.isFolder(_1))_1.titlePage="true";if(!_2)isc.History.addHistoryEntry(this.genExampleId(_1));this.currentExampleConfig=_1;if(_1.ref){var _3=this.exampleTree.data.findById(_1.ref);if(_3!=null){var _4=_1.description,_5=_1.title,_6=_1.requiresModules,_7=_1.ref;_3=this.exampleTree.data.getCleanNodeData(_3);isc.addProperties(_1,_3);if(_4)_1.description=_4;if(_5)_1.title=_5;if(_7)_1.ref=_7;if(_6)_1.requiresModules=_6}else{this.logWarn("Couldn't find example by id for ref: "+_1.ref)}
 _1.ref=null}
 if(_1.bestSkin!=null&&isc.currentSkin!=_1.bestSkin&&(_1.badSkins==null||_1.badSkins.contains(isc.currentSkin)))
 {isc.warn("This example is best viewed in the "+_1.bestSkin+" skin.",this.getID()+".exampleViewer.setSkin('"+_1.bestSkin+"');");return}
 if(_1.titlePage=="true"){this.examplePage.hide();var _8=this.titlePage.titlePagePane;_8.titlePageHeader.setContents(_1.title||_1.name);_8.titlePageDescription.setContents(_1.description);_8.folderList.setContents(this.formatFolderList(_1));if(_1.screenshot){_8.screenshot.setSrc(_1.screenshot);_8.screenshot.resizeTo(_1.screenshotWidth,_1.screenshotHeight);_8.screenshot.show()}else{_8.screenshot.hide()}
 this.titlePage.show()}else{this.titlePage.hide();this.examplePage.show();this.exampleTitle.setContents(_1.title||_1.name);this.exampleDescription.setVAlign("top");if(this.descriptionHeight)this.exampleDescription.setHeight(this.descriptionHeight);var _9=[];for(var i=0;i<this.exampleChecks.length;i++){var _11=this.exampleChecks[i];var _12=_1[_11.flag];if(_12!=null&&!_11.test(_1)){var _13=_12;if(_13=="true")_13=_11.message;_13=isc.isA.Function(_13)?_13(_1):_13;_9.add(_13)}}
-var _6=_1.requiresModules,_14=_6?_6.indexOf("SCServer")>=0:false,_15="",_16=isc.hasOptionalModules("SCServer"),_17=false;var _18="",_19="",_20="";if(_6){var _21=_6.split(","),_22=/^\s+/,_23=/\s+$/;for(i=0;i<_21.length;i++){var _24=_21[i].replace(_22,"").replace(_23,""),_25=isc.getOptionalModule(_24),_26=isc.hasOptionalModule(_24);if(_25.isPro)continue;if(_24=="Calendar"){if(_26)continue}
+var _6=_1.requiresModules,_14=_6?_6.indexOf("SCServer")>=0:false,_15="",_16=isc.hasOptionalModules("SCServer"),_17=isc.licenseType=="Eval";var _18="",_19="",_20="";if(_6){var _21=_6.split(","),_22=/^\s+/,_23=/\s+$/;for(i=0;i<_21.length;i++){var _24=_21[i].replace(_22,"").replace(_23,""),_25=isc.getOptionalModule(_24),_26=isc.hasOptionalModule(_24);if(_25.isPro)continue;if(_24=="Calendar"){if(_26)continue}
 if(_25.isFeature){if(_18.length>0)_18+=", ";_18+=_25.name}else{if(_19.length>0)_19+=", ";_19+=_25.name;if(!_26){if(_20.length>0)_20+=", ";_20+=_25.name}}}
 var _27=_19.lastIndexOf(", ");if(_27>=0)_19=_19.substr(0,_27)+" and "+_19.substring(_27+2);_27=_18.lastIndexOf(", ");if(_27>=0)_18=_18.substr(0,_27)+" and "+_18.substring(_27+2);_27=_20.lastIndexOf(", ");if(_27>=0)_20=_20.substr(0,_27)+" and "+_20.substring(_27+2)}
-var _28=((_14&&!_16)||(!_17&&_18.length>0));if(_28){_13="This example is disabled in this SDK because it requires ";if(_14&&!_16){_13+="<a href='"+isc.licensingPage+"' target=_blank>SmartClient Pro</a>"}
-if(!_17&&_18.length>0){if(_14&&!_16)_13+=" and ";_13+="the following features from SmartClient Enterprise: <a href='"+isc.licensingPage+"' target=_blank>"+_18+"</a>"}
+var _28=((_14&&!_16)||(!_17&&_18.length>0));if(_28){_13="This example is disabled in this SDK because it requires ";if(_14&&!_16){_13+="<a href='"+isc.licensingPage+"' target=_blank>SmartClient Pro Edition</a>"}
+if(!_17&&_18.length>0){if(_14&&!_16)_13+=" and ";_13+="the following features from SmartClient Power Edition: <a href='"+isc.licensingPage+"' target=_blank>"+_18+"</a>"}
 _9.add(_13)}
 if(_20.length>0){if(_28){_13="This example also "}else{_13="This example is disabled in this SDK because it "}
 _9.add(_13+"requires the "+" following optional SmartClient components: <a href='"+isc.licensingPage+"' target=_blank>"+_20+"</a>")}
@@ -179,38 +175,34 @@ if(_4.id&&_2[_4.id]){this.logWarn("Duplicate id detected on node titled: "+_4.ti
 if(_4.visibility&&_4.visibility!=this.nodeVisibility){this.remove(_4,true);continue}
 if(!_4.ref)continue;var _5=this.findById(_4.ref);if(!_5){this.logWarn("The node titled '"+this.getTitle(_4)+"' references a non-existant id: "+_4.ref)}
 if(!this.isFolder(_5))continue;var _6=this.getChildren(_5);if(!_6||!_6.length)continue;var _7=this.getCleanNodeData(_6);if(!this.isFolder(_4))this.convertToFolder(_4);this.addList(_7,_4);delete _4.ref;if(!_4.description)_4.description=_5.description}}
-);isc.B._maxIndex=isc.C+1;isc.defineClass("ExplorerShell","VLayout");isc.A=isc.ExplorerShell.getPrototype();isc.A.layoutTopMargin=5;isc.A.layoutLeftMargin=10;isc.A.layoutRightMargin=10;isc.A.layoutBottomMargin=5;isc.A.membersMargin=5;isc.A.headerDefaults={_constructor:"Canvas",height:45,contents:isc.Canvas.imgHTML("[ISO_DOCS_SKIN]/images/featureExplorer_title.gif")};isc.A.footerDefaults={_constructor:"Label",height:15,overflow:"hidden",align:"right",contents:"<span style='color:#E0E0E0'>&copy;2000-2005 Isomorphic Software, Inc.</span>"};isc.A.featureExplorerDefaults={_constructor:"FeatureExplorer"};isc.A.autoChildren=["header","featureExplorer","footer"];isc.Page.setAppImgDir(isc.Page.getIsomorphicDocsDir()+"exampleImages/");isc._moduleEnd=isc._ExampleViewer_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('ExampleViewer module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'ExampleViewer'.");}
+);isc.B._maxIndex=isc.C+1;isc.defineClass("ExplorerShell","VLayout");isc.A=isc.ExplorerShell.getPrototype();isc.A.layoutTopMargin=5;isc.A.layoutLeftMargin=10;isc.A.layoutRightMargin=10;isc.A.layoutBottomMargin=5;isc.A.membersMargin=5;isc.A.headerDefaults={_constructor:"Canvas",height:45,contents:isc.Canvas.imgHTML("[ISO_DOCS_SKIN]/images/featureExplorer_title.gif")};isc.A.footerDefaults={_constructor:"Label",height:15,overflow:"hidden",align:"right",contents:"<span style='color:#E0E0E0'>&copy;2000-2005 Isomorphic Software, Inc.</span>"};isc.A.featureExplorerDefaults={_constructor:"FeatureExplorer"};isc.A.autoChildren=["header","featureExplorer","footer"];isc.Page.setAppImgDir(isc.Page.getIsomorphicDocsDir()+"exampleImages/");isc._moduleEnd=isc._ExampleViewer_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('ExampleViewer module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'ExampleViewer'.");}
 
 /*
 
   SmartClient Ajax RIA system
-  Version 7.0rc2/LGPL Development Only (2009-05-30)
+  Version SC_SNAPSHOT-2010-03-13/LGPL Development Only (2010-03-13)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
 
   LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF THE
-     SOFTWARE EVALUATION LICENSE AGREEMENT. If you have received this file
-     without an Isomorphic Software license file, please see:
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
 
-         http://www.isomorphic.com/licenses/isc_eval_license_050316.html
-
-     You are not required to accept this agreement, however, nothing else
-     grants you the right to copy or use this software. Unauthorized copying
-     and use of this software is a violation of international copyright law.
-
-  EVALUATION ONLY
-     This software is provided for limited evaluation purposes only. You must
-     acquire a deployment license from Isomorphic Software in order to use
-     the SmartClient system, or any portion thereof, in any non-evaluation
-     application, including internal or non-commercial applications.
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
 
   PROPRIETARY & PROTECTED MATERIAL
      This software contains proprietary materials that are protected by
-     contract and intellectual property law. YOU ARE EXPRESSLY PROHIBITED
-     FROM ATTEMPTING TO REVERSE ENGINEER THIS SOFTWARE OR MODIFY THIS
-     SOFTWARE FOR HUMAN READABILITY.
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
 
   CONTACT ISOMORPHIC
      For more information regarding license rights and restrictions, or to

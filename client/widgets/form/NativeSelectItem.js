@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -173,6 +173,31 @@ isc.NativeSelectItem.addMethods({
     init : function () {
         this.Super("init", arguments);
         isc.NativeSelectItem.instances.add(this);
+        
+        // have basic optionDataSource 
+        if (this.optionDataSource) {
+            var ds = this.getOptionDataSource();
+            var valFld = this.getValueFieldName();
+            var dispFld = this.getDisplayFieldName();
+            var self = this;
+            // fetch data manually and create a valuemap from the data
+            ds.fetchData(null, function (dsResponse, data) {
+                var valMap;
+                if (!dispFld) valMap = [];
+                else valMap = {};
+                for (var i=0; i < data.getLength(); i++) {
+                    var rec = data[i];
+                    if (!dispFld) {
+                        valMap.add(rec[valFld]);     
+                    } else {
+                        valMap[rec[valFld]] = rec[dispFld];     
+                    }
+                }
+                
+                self.setValueMap(valMap);
+            });
+             
+        }
     },
 
     destroy : function () {
@@ -186,7 +211,7 @@ isc.NativeSelectItem.addMethods({
     },
         
 	// getElementHTML()			output the HTML for this element
-	getElementHTML : function (value) {
+	getElementHTML : function (value, dataValue) {
 		// since we're redrawing the element, note that we have NOT added an unkown value
 		//	to its options.  See nativeSelectItem.setElementValue
 		this._unknownValueAdded = false;
@@ -198,7 +223,7 @@ isc.NativeSelectItem.addMethods({
 		;
 		
         var emptyString = isc._emptyString;  
-        var valueIconHTML = this._getValueIconHTML(this._value);
+        var valueIconHTML = this._getValueIconHTML(dataValue);
         if (valueIconHTML != null) output.append(valueIconHTML);
         if (!this.showValueIconOnly) {
     		output.append(

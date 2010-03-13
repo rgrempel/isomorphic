@@ -1,6 +1,7 @@
 <Object ID="OperationBinding" __autoConstruct="DataSource">
     <fields>
         <operationType type="string"/>
+        <customSQL type="string"/>
 
         <dataFormat type="string" title="DataFormat">
             <valueMap iscServer="ISC Java Server" 
@@ -54,7 +55,24 @@
         <exportResults type="boolean"/>
         <useForCacheSync type="boolean"/>
         <canSyncCache type="boolean"/>
-    </fields>
+        <allowMultiUpdate type="boolean"/>
+        
+        <!-- Security -->
+        <requiresAuthentication type="boolean"/>
+        <requiresRoles type="boolean"/>
+        <requires type="string" />
+        
+        <mail type="Mail" />
+        
+        <!-- Return results in a Javabean instead of a map (SQL DataSources only) -->
+        <beanClassName type="string"/>
+        
+        <!-- For "custom" operations on Hibernate and SQL DataSources, issue an update or a query? -->
+        <sqlType type="string"/>
+
+        <outputs type="string"/>
+        
+        </fields>
     
     <types>
         <type ID="DSProtocol" inheritsFrom="enum">

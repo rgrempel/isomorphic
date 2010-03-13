@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -62,6 +62,7 @@ var libs =
 		"widgets/form/ResetItem",		// reset button
 
 		"widgets/form/DateItem",		// multi-part Date editor
+        "widgets/form/DateTimeItem",    // modified subclass of DateItem for editing datetimes
 		"widgets/form/SpacerItem",		// spacer
 		"widgets/form/RowSpacerItem",	// separator
 		"widgets/form/SubmitItem",		// submit button
@@ -116,7 +117,14 @@ var libs =
         "widgets/form/NestedEditorItem",     // Item for auto-editing a single complex sub-object
         "widgets/form/NestedListEditorItem", // Item for auto-editing a list of complex sub-objects
 
+        "widgets/form/ViewFileItem", // Item for showing the download/view UI for binary/imageFile fields
+
                 
+		
+		"widgets/Panel",
+        
+        "widgets/form/DataPathItem"     // Item for managing a dataPath
+
 	];
 
 //<STOP PARSING 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -112,7 +112,8 @@ isc.LinkItem.addMethods({
             }
             return false;
         }
-        
+
+        return true;
     },
 	getElementHTML : function (value) {
         var linkHTML = this.getLinkHTML(value);
@@ -145,12 +146,12 @@ isc.LinkItem.addMethods({
         if (target == "javascript") {
             text = "javascript:void";
         }
-        
+
         text = isc.Canvas.linkHTML(text, title, target, 
                                     (this.getID() + "_link"), this.getGlobalTabIndex(), 
                                     this.accessKey)
         if (valueIconHTML != null) text = valueIconHTML + text;
-        
+
         return text;
     },
     

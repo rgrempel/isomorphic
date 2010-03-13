@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -369,6 +369,18 @@ getInnerHTML : function (values, includeHint, includeErrors, returnArray) {
 	
 	if (!this.items) return "No items set for containerItem " + this;
 
+    var clearInactiveContext;
+    if (this.isInactiveHTML() && this._currentInactiveContext == null) {
+        clearInactiveContext = true;
+        this._currentInactiveContext = this.setupInactiveContext(null);
+        
+        if (this.logIsDebugEnabled("inactiveEditorHTML")) {
+            this.logDebug("getInnerHTML(): Item is marked as inactive - set up " +
+                "new inactive context ID:" + this._currentInactiveContext,
+                "inactiveEditorHTML");
+        }
+    }        
+    
 	// form items are only actually responsible for writing out error HTML if error orientation
     // is left or right
     var errorOrientation = this.getErrorOrientation(),
@@ -543,7 +555,10 @@ getInnerHTML : function (values, includeHint, includeErrors, returnArray) {
 	
 	// end the table
 	output.append("</TR></TABLE>");
-	return output.toString();
+    
+    if (clearInactiveContext) delete this._currentInactiveContext;
+    
+    return output.toString();
 },
 
 

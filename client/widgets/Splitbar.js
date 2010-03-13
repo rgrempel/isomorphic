@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -84,38 +84,28 @@ isc._SplitbarProperties = {
     // @visibility external
     //<
 
-    // -----
-        
-    
     //> @attr   SplitBar.gripImgSuffix (string : "grip" : IRA)
-    // part name for the 'grip' image if +link{SplitBar.showGrip} is true
-    // @group grip
+    // @include StretchImg.gripImgSuffix
     // @visibility external
     //<
     
     
     //> @attr   Splitbar.showDownGrip   (boolean : null : IRA)
-    // If +link{SplitBar.showGrip} is true, this property determines whether to show the
-    // 'Down' state on the grip image when the user mousedown's on this widget. 
-    // Has no effect if +link{statefulCanvas.showDown} is false
+    // @include StretchImg.showDownGrip
     // @visibility external
-    // @group grip
     //<
 
     //> @attr   Splitbar.showRollOverGrip   (boolean : null : IRA)
-    // If +link{Splitbar.showGrip} is true, this property determines whether to show the
-    // 'Over' state on the grip image when the user rolls over on this widget. 
-    // Has no effect if +link{statefulCanvas.showRollOver} is false
+    // @include StretchImg.showRollOverGrip
     // @visibility external
-    // @group grip
     //<
       
     //> @attr   splitbar.showClosedGrip   (boolean : null : IRA)
     // If +link{splitbar.showGrip} is true, this property determines whether the grip image
     // displayed should show the <code>"Closed"</code> state when the +link{Splitbar.target} 
     // is hidden.
-    // @visibility external
     // @group grip
+    // @visibility external
     //<
 
     // on drag, we resize a target widget

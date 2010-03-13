@@ -3,22 +3,22 @@
 		<field name="tiles" multiple="true" type="Canvas"/>
 		
         <field name="tileSize" type="positiveInteger"/>
-        <field name="tileWidth" type="positiveInteger"/>
-        <field name="tileHeight" type="positiveInteger"/>
+        <field name="tileWidth" type="positiveInteger" basic="true"/>
+        <field name="tileHeight" type="positiveInteger" basic="true"/>
         
         <field name="tileMargin" type="positiveInteger"/> 
-        <field name="tileHMargin" type="positiveInteger"/>
-        <field name="tileVMargin" type="positiveInteger"/>
-        <field name="expandMargins" type="boolean"/>
-        <field name="layoutMargin" type="number"/>
-        <field name="layoutPolicy" type="enum" >
+        <field name="tileHMargin" type="positiveInteger" basic="true"/>
+        <field name="tileVMargin" type="positiveInteger" basic="true"/>
+        <field name="expandMargins" type="boolean" basic="true"/>
+        <field name="layoutMargin" type="number" basic="true"/>
+        <field name="layoutPolicy" type="enum">
             <valueMap>
 				<value>fit</value>
 				<value>flow</value>
 			</valueMap>
         </field>
-        <field name="orientation" type="Orientation" />
-        <field name="tilesPerLine" type="positiveInteger"/>
+        <field name="orientation" type="Orientation" basic="true"/>
+        <field name="tilesPerLine" type="positiveInteger" basic="true"/>
         <field name="autoWrapLines" type="boolean"/>
         
         <field name="paddingAsLayoutMargin" type="boolean"/>

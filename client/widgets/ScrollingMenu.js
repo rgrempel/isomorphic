@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -159,7 +159,7 @@ isc.ScrollingMenu.addMethods({
     // Always select the first item in the list *IF* nothing is selected
     dataChanged : function () {
         var returnVal = this.Super("dataChanged", arguments);
-        if (this.data && this.data.getLength() > 0 && !this.selection.anySelected() && 
+        if (this.data && this.data.getLength() > 0 && this.selection && !this.selection.anySelected() && 
             (isc.isA.ResultSet==null || !isc.isA.ResultSet(this.data) || this.data.rowIsLoaded(0))) 
         {
             this.selection.selectItem(0);

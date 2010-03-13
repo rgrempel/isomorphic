@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -55,17 +55,19 @@ stringify : function (totalDigits) {
 
 //>	@method	number.toCurrencyString()
 // Return this number as a currency-formatted string.
-//		@group	stringProcessing
-//
-//		@param	[currencyChar]	(string : "$")	Currency symbol, can be set to an empty string.
-//		@param	[decimalChar]	(string : ".")	Decimal separator symbol.
-//		@param	[padDecimal]	(boolean : true)	Should decimal portion be padded out to two digits?
-//		@param	[currencyCharLast]	(boolean : null)	Should currency symbol come at the end of the string?
-//
+// @group	stringProcessing
+// @param	[currencyChar]	(string) 
+//  Currency symbol, can be set to an empty string. If unset <code>"$"</code> will be used.
+// @param	[decimalChar]	(string) Decimal separator symbol. If unset <code>"."</code> will be used.
+// @param	[padDecimal]	(boolean)	Should decimal portion be padded out to two digits? True
+//  by default.
+// @param	[currencyCharLast]	(boolean) Should currency symbol come at the end of the string?
+//  If unspecified, currency symbol will be shown at the beginning of the string.
 //		@return				(string)		Currency-formatted string version of the number
+// @visibility external
 //<
 toCurrencyString : function(currencyChar, decimalChar, padDecimal, currencyCharLast) {
-	var wholeNumber = Math.floor(this),
+    var wholeNumber = Math.floor(this),
 		decimalNumber = Math.round((this - wholeNumber)*100),
 		output = isc.StringBuffer.create();
 	
@@ -247,8 +249,10 @@ _jsDecimalSymbol : ".",
 //  @visibility internal
 //<
 
+
 toLocalizedString : function(decimalPrecision, decimalSymbol, groupingSymbol, negativeSymbol) {
-    var absNum = Math.abs(this), // remove sign for now; deal with it at the very end of this method
+    var roundedValue = !decimalPrecision ? this : Math.round(this * Math.pow(10, decimalPrecision)) / Math.pow(10, decimalPrecision);
+    var absNum = Math.abs(roundedValue), // remove sign for now; deal with it at the very end of this method
         wholeNum = Math.floor(absNum), // whole part of the number (no decimal)
         wholeString, // string representation of whole part, before formatting
         decimalString, // string representation of decimal part, after formatting (padding)
@@ -294,10 +298,9 @@ toLocalizedString : function(decimalPrecision, decimalSymbol, groupingSymbol, ne
     // the whole part, decimal symbol, decimal part, and negative sign as appropriate
     var outputString = wholeChunks.join(groupingSymbol || this.localeProperties.groupingSymbol);
     if (decimalString) outputString = outputString + (decimalSymbol || this.localeProperties.decimalSymbol) + decimalString;
-    if (this < 0) outputString = (negativeSymbol || this.localeProperties.negativeSymbol) + outputString;
+    if (roundedValue < 0) outputString = (negativeSymbol || this.localeProperties.negativeSymbol) + outputString;
     return outputString;
 },
-
 
 
 toUSString : function(decimalPrecision) {

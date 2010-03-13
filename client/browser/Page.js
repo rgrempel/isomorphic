@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -66,16 +66,24 @@ isc.Page.addClassProperties({
 	//<
 	_directoryCache : {},								
 
-	//>	@classAttr	Page._protocolURLs	(array : [...] : IRW)
-	// 		Beginnings of URLs that correspond to protocols we recognize.
-	//		To support a new protocol in the URL assembly stuff below,
-	//		add it here.
-	//		@group	files
-	// 		@see Page.getURL()
-	//<
+    //> @classAttr Page.protocolURLs (Array of String : [...] : IRW)
+    // If a URL provided to various Page APIs begins with one of these Strings, it is treated
+    // as an absolute URL.
+    // <P>
+    // The default of protocols is:
+    // <pre>
+    //     ["http://","https://","file://","mailto:", "app-resource:", "data:"]
+    // </pre>
+    // .. and can be replaced via +link{class.addClassProperties,Page.addClassProperties()} or
+    // via setting the global variable isc_protocolURLs before SmartClient loads.
+    //
+    // @group files
+    // @see Page.getURL()
+    // @visibility external
+    //<
     // "app-resource:" used by apollo
     // "data:" allows base64 encoded images to be specified directly, in recent browsers
-	_protocolURLs : ["http://","https://","file://","mailto:", "app-resource:", "data:"],	
+	protocolURLs : window.isc_protocolURLs || ["http://","https://","file://","mailto:", "app-resource:", "data:"],	
 
 	//>	@classAttr	isc.Page.textDirection	(TextDirection : (null) : IRW)
 	//		What direction is text supposed to run?  
@@ -132,6 +140,17 @@ finishedLoading : function () {
             // auto-opening the log window
             isc.Timer.setTimeout("isc.Log.show(true)", 1000);
         }
+    }
+    
+    
+    // If deprecated UTCHoursOffset has been set for the page, respect it (but log a warning)
+    
+    if (isc.Time && isc.Time.UTCHoursOffset != null) {
+        isc.logWarn("This application includes code to set the Time.UTCHoursOffset attribute. " +
+            "This property will be respected but has been deprecated in favor of the " +
+            "classMethod isc.Time.setDefaultDisplayTimezone().");
+        // respect it anyway
+        isc.Time.setDefaultDisplayTimezone(isc.Time.UTCHoursOffset.stringify() + ":00");
     }
     
     // If we're polling for page size changes, kick this off now.
@@ -262,7 +281,11 @@ getAppDir : function () {
 //<
 // NOTE: Caches the combined appDir + imgDir.
 setAppImgDir : function (URL) {
-	isc.Page._directoryCache.APPIMG = isc.Page.getURL(URL != null ? URL : "[APP]images/");
+    // If the URL passed in is not absolute, explicitly combine it with the app dir
+    // This means if we generate Img HTML and end up showing it in another frame it'll still
+    // pick up the correct image (required for EG printing support)
+    this._directoryCache.APPIMG = 
+            this.combineURLs(this.getAppDir(), URL != null ? URL : "[APP]images/");
 },
 
 //>	@classMethod	Page.getAppImgDir()
@@ -569,6 +592,7 @@ getURL : function (URL) {
 //<
 _$dotdot:"..",
 combineURLs : function (masterURL, localURL) {
+    
 	if (!isc.isA.String(localURL)) return masterURL;
 
     
@@ -658,10 +682,17 @@ combineURLs : function (masterURL, localURL) {
 //<
 getProtocol : function (URL) {
     
-	for (var i = 0; i < isc.Page._protocolURLs.length; i++) {
-		if (isc.startsWith(URL, isc.Page._protocolURLs[i])) return isc.Page._protocolURLs[i];
+	for (var i = 0; i < isc.Page.protocolURLs.length; i++) {
+		if (isc.startsWith(URL, isc.Page.protocolURLs[i])) return isc.Page.protocolURLs[i];
 	}
 	return isc._emptyString;
+},
+
+getLastSegment : function (url) {
+    if (url == null) return isc.emptyString;
+    var slashIndex = url.lastIndexOf(isc.slash);
+    if (slashIndex == -1) return url;
+    return url.substring(slashIndex+1);
 },
 
 // XHTML
@@ -844,8 +875,10 @@ getWidth : (isc.Browser.isNS ?
 	function (wd, recalculate) {
 
 		if (!wd) wd = window;
+        
+        
+        recalculate = recalculate || (isc.Browser.isMoz && isc.Browser.geckoVersion >= 20080529);
         if (isc.Browser.isMoz && wd == window && !recalculate) {
-            // see comments at the end of Canvas.js about avoiding touching window.innerWidth.
 
             
             if (this.width != null) {
@@ -932,8 +965,10 @@ getWidth : (isc.Browser.isNS ?
 getHeight : (isc.Browser.isNS ? 
 	function (wd, recalculate) {
 		if (!wd) wd = window;
+        // see comments in getWidth()
+        recalculate = recalculate || (isc.Browser.isMoz && isc.Browser.geckoVersion >= 20080529);
         if (isc.Browser.isMoz && wd == window && !recalculate) {
-            // see comments at the end of Canvas.js
+            
             if (this.height != null) return this.height;
             return 500;
         } else {        

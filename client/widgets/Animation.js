@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -163,6 +163,7 @@ isc.Animation.addClassMethods({
             maxDuration:duration*3,
             acceleration:acceleration
         });
+        
         return ID;
     },
     
@@ -174,7 +175,7 @@ isc.Animation.addClassMethods({
     //                      Animation.registerAnimation().
     // @visibility animation_advanced
     //<
-    clearAnimation : function (ID) {        
+    clearAnimation : function (ID) {
         for (var i=0; i<this.registry.length; i++) {       
             if (this.registry[i].ID == ID) {                
                 this.registry.removeAt(i);
@@ -328,7 +329,7 @@ isc.Canvas.addProperties({
     
     animateTime:300,
     
-    //> @attr canvas.animateAcceleration (AnimationEffect : "smoothEnd" : IRWA)
+    //> @attr canvas.animateAcceleration (AnimationAcceleration : "smoothEnd" : IRWA)
     // Default acceleration effect to apply to all animations on this Canvas.
     // Can be overridden by setting animationAcceleration for specific animations or by passing
     // an acceleration function directly into the appropriate method.
@@ -519,9 +520,10 @@ isc.Canvas.addMethods({
     // is stored under this.[type]Animation (so this.rectAnimation, this.fadeAnimation, etc.)
     // Helper method to retrieve these IDs
     _animationIDs:{},
+    _$Animation:"Animation", 
     _getAnimationID : function (type) {
         if (!this._animationIDs[type]) {
-            this._animationIDs[type] = type + "Animation";
+            this._animationIDs[type] = type + this._$Animation;
         }
         return this._animationIDs[type];
     },
@@ -548,8 +550,13 @@ isc.Canvas.addMethods({
     // - the info passed to this method will be stored as "this.[animationType]Info" (so the
     //   action should be prepared to access that object)
     // - the ID of the registered animation will be stored as "this.[animationType]Animation"
-    //      o this ID should be cleared out when the animation completes
+    // - When the animation completes, the method _clearAnimationInfo() should be called to
+    //   clear out the stored animation ID and info. This is handled by the various 
+    //   fireAnimation... methods when the animation is complete (ratio == 1), and typically 
+    //   before the final callback fires to ensure isAnimating(..) is false at that point.
+    
     _animationInfoAttrs:{},
+    _runningAnimations:0,
     _startAnimation : function (type, info, duration, acceleration) {
         var ID = this._getAnimationID(type);
         // If an animation of the same type is already running, finish it before starting this
@@ -575,8 +582,21 @@ isc.Canvas.addMethods({
                          ", acceleration: " + this.echoLeaf(acceleration),
                          "animation");
         }
+        this._runningAnimations ++;
        
         return animationId;
+    },
+    
+    _clearAnimationInfo : function (type) {
+        var ID = this._getAnimationID(type);
+        if (!this[ID]) {
+            return;
+        }
+        delete this[ID];
+        delete this[this._animationInfoAttrs[type]];
+        
+        this._runningAnimations--;
+        
     },
     
     // helper method to fire the final callback at the end of an animation.
@@ -688,7 +708,7 @@ isc.Canvas.addMethods({
     },
     
     //> @method canvas.animateRect()
-    // Animate a reposition / resize of this canvas from its current size and postion.
+    // Animate a reposition / resize of this canvas from its current size and position.
     // @param left (number) new left position (or null for unchanged)
     // @param top (number) new top position (or null for unchanged)
     // @param width (number) new width (or null for unchanged)
@@ -775,17 +795,9 @@ isc.Canvas.addMethods({
             height = this._getRatioTargetValue(fromRect[3], toHeight, ratio);
         }
       
-        if (ratio == 1) {   
-            if (type == this._$resize) {
-                delete this.$resizeAnimationInfo;
-                delete this.resizeAnimation
-            } else if (type == this._$move) {
-                delete this.$moveAnimationInfo;
-                delete this.moveAnimation
-            } else {
-                delete this.$rectAnimationInfo;
-                delete this.rectAnimation
-            }
+        if (ratio == 1) {
+            if (type == null) type = "rect";
+            this._clearAnimationInfo(type);
         }
         // Pass in the additional 'animating' param.
         // - avoids setRect from relaying out children
@@ -877,8 +889,7 @@ isc.Canvas.addMethods({
 
         
         if (ratio == 1) {
-            delete this.$fadeAnimationInfo;
-            delete this.fadeAnimation;
+            this._clearAnimationInfo("fade");
         }
         this.setOpacity(opacity, (ratio < 1));
         if (ratio == 1) this._fireAnimationCompletionCallback(info._callback, earlyFinish);
@@ -887,8 +898,8 @@ isc.Canvas.addMethods({
 
     //> @method canvas.animateScroll()
     // Animate a scroll from the current scroll position to the specified position.
-    // @param scrollLeft (number) desired final left scroll postion
-    // @param scrollTop (number) desired final top scroll postion
+    // @param scrollLeft (number) desired final left scroll position
+    // @param scrollTop (number) desired final top scroll position
     // @param [callback] (callback) When the scroll completes this callback will be fired. Single
     //                              'earlyFinish' parameter will be passed if the animation was
     //                              cut short by a call to finishAnimation
@@ -914,8 +925,7 @@ isc.Canvas.addMethods({
             newTop = this._getRatioTargetValue(fromTop, toTop, ratio);
             
         if (ratio == 1) {
-            delete this.$scrollAnimationInfo;
-            delete this.scrollAnimation;
+            this._clearAnimationInfo("scroll");
         }
         this.scrollTo(newLeft, newTop, null, (ratio < 1));
         if (ratio ==1 && info._callback) {
@@ -1328,7 +1338,7 @@ isc.Canvas.addMethods({
                 var lengthScrollbar;
                 if (vertical) {
                     lengthScrollbar = this.vscrollbar;
-                    lengthScrollbar.resizeTo(null, size);
+                    if (lengthScrollbar) lengthScrollbar.resizeTo(null, size);
                 } else {
                     lengthScrollbar = this.hscrollbar;
                     var sbsize = size;
@@ -1340,17 +1350,17 @@ isc.Canvas.addMethods({
                         }
                     }
                     if (sbsize > 0) {
-                        lengthScrollbar.resizeTo(sbsize, null);
+                        if (lengthScrollbar) lengthScrollbar.resizeTo(sbsize, null);
                     }
                 }
 
-                if (info._slideIn) {
+                if (info._slideIn && lengthScrollbar) {
                     if (vertical) lengthScrollbar.scrollToBottom();
                     else lengthScrollbar.scrollToRight();
                 }
                 
                 // thumb
-                if (lengthScrollbar.thumb) {
+                if (lengthScrollbar && lengthScrollbar.thumb) {
                     var thumb = lengthScrollbar.thumb;
                     
                     // On a "slideIn" we need to grow the thumb then shift it in from the top
@@ -1404,7 +1414,7 @@ isc.Canvas.addMethods({
             // specified size by the difference between the rendered scrollbarSize and 
             // this.scrollbarSize to ensure the handle draws large enough
             var hiddenScrollbarDelta = 0;
-            if (breadthScrollOn) {
+            if (breadthScrollOn && breadthScrollbar) {
                 var breadthScrollbar = vertical ? this.hscrollbar : this.vscrollbar;
                 if (info._slideIn) {
                     
@@ -1481,8 +1491,7 @@ isc.Canvas.addMethods({
             // (Only likely to happen from an early finish of the animation)
             if (!this.isVisible()) this.show();
             
-            delete this.$showAnimationInfo;
-            delete this.showAnimation;            
+            this._clearAnimationInfo("show");
             this.setOverflow(info._originalOverflow);
             
             if (this.overflow == isc.Canvas.AUTO || this.overflow == isc.Canvas.SCROLL) {
@@ -1590,7 +1599,7 @@ isc.Canvas.addMethods({
     _canAnimateClip : function (effect) {
         if (this.canAnimateClip != null) return this.canAnimateClip;
         // - slide effect calls scrollTo() code - should not do so if scrollTo method has been
-        //   overriden, as component may not understand animation, so check:
+        //   overridden, as component may not understand animation, so check:
         //         this.scrollTo == isc.Canvas.getInstanceProperty("scrollTo")
         return (this.scrollTo == isc.Canvas.getInstanceProperty("scrollTo"));
         
@@ -2020,8 +2029,7 @@ isc.Canvas.addMethods({
 
         // Ratio == 1
         } else {
-            delete this.$hideAnimationInfo;
-            delete this.hideAnimation;
+            this._clearAnimationInfo("hide");
             
             if (this.isVisible()) this.hide();
 
@@ -2160,10 +2168,22 @@ isc.Canvas.addMethods({
     //<
     
     isAnimating : function (types) {
-        if (types && !isc.isAn.Array(types)) types = [types];
+        if (types == null) return this._runningAnimations > 0;
+        
+        if (types && !isc.isAn.Array(types)) {
+            // reuse an array for efficiency
+            if (!this._animatingTypesArray) this._animatingTypesArray = [];
+            this._animatingTypesArray[0] = types;
+            types = this._animatingTypesArray;
+        }
+        
         if (!types) types = this._animations;
         for (var i = 0; i < types.length; i++) {
-            if (this[this._getAnimationID(types[i])] != null) return true;
+            if (this[this._getAnimationID(types[i])] != null) {
+//                this.logWarn("ID:" + this._getAnimationID(types[i]) +
+//                    "set to:"  + this[this._getAnimationID(types[i])]);
+                return true;
+            }
         }
         return false;
     }

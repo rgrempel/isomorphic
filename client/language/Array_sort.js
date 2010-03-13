@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -72,6 +72,24 @@ sortByProperty : function (property, direction, normalizer, context) {
 
 }, 
 
+//> @method array.setSort()
+// Sort this Array by a list of +link{SortSpecifier}s. 
+// @param sortSpecifiers (Array of SortSpecifier) the list of +link{SortSpecifier}s to sort by
+// @return (array) the array itself
+// @visibility external
+//<
+setSort : function (sortSpecifiers) {
+    var properties = [], directions = [], normalizers = [], contexts = [];
+    for (var i = 0; i < sortSpecifiers.length; i++) {
+        var item = sortSpecifiers[i];
+        properties[i] = item.property;
+        directions[i] = Array.shouldSortAscending(item.direction);
+        normalizers[i] = item.normalizer;
+        contexts[i] = item.context;
+    }
+    return this.sortByProperties(properties, directions, normalizers, contexts);
+},
+
 //> @method array.sortByProperties()
 // Given an array of objects, sort them by the properties of the member objects.
 // Note that the sort will occur by the first property passed in, then for objects
@@ -79,7 +97,7 @@ sortByProperty : function (property, direction, normalizer, context) {
 // Can pass in an arbitary number of parameters.
 // @param sortData (object) Each parameter is an object of the following format:<br>
 // <code>{property:'propertyName', direction:direction, normalizer:normalizer}</code><br>
-// The only the "property" attribute is required.  Pass in multiple arguments to sort by multiple
+// Only the "property" attribute is required.  Pass in multiple arguments to sort by multiple
 // properties.
 // @return (array) the array itself
 //<
@@ -271,11 +289,11 @@ sortByProperties : function () {
 
 //>	@method		array.unsort()	(A)
 //		Turn sorting off for this array, indicating that the current sort
-//		order should be preserved.  Return true if this is supported in thist List.
+//		order should be preserved.  Return true if this is supported in this List.
 //
 //		Some implementations may not support this -- they should return false
 //		to indicate to the caller that sort order must be maintained (eg: in
-//		the case where sort order is dervied from the server, etc).
+//		the case where sort order is derived from the server, etc).
 //
 //		@group	sorting
 //
@@ -470,7 +488,7 @@ _normalizedValues:[],
 _unexpectedTypeValues:[],
 _sortDirections:[],
 
-// Comparitor function for sorting by property - uses already stored out normalized values and
+// Comparator function for sorting by property - uses already stored out normalized values and
 // sort-directions
 _compareNormalized : function (a,b) {
 

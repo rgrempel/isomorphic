@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -133,6 +133,16 @@ isc.SectionItem.addMethods({
     // The user is unable to directly interact with the 'value' of a sectionItem
     isEditable : function () {
         return false;
+    },
+
+    //> @method     SectionItem.isExpanded()
+    // Returns a boolean indicating whether this SectionItem is expanded.
+    //
+    // @return (boolean) true if the section is expanded false if not
+    // @visibility external
+    //<
+    isExpanded : function () {
+        return this.sectionExpanded == true ? true : false;
     },
     
     setValue : function (newValue) {

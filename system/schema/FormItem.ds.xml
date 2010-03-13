@@ -1,14 +1,18 @@
 <DataSource ID="FormItem" Constructor="FormItem" createStandalone="false" autoIdField="name">
 	<fields>
-        <field name="type"              type="FormItemType" title="Data Type"/>
-        <field name="editorType"    type="FormItemType" title="Editor Type"/>
-		<field name="name" 				type="identifier"  title="Name"/>
-		<field name="ID" 				type="identifier"/>
-		<field name="title" 			type="string"  title="Title" />
-		<field name="defaultValue"      type="string"  title="Default Value" />
+        <field name="type" xmlAttribute="true" type="FormItemType" title="Data Type" />
+        <field name="editorType" xmlAttribute="true" type="FormItemType" title="Editor Type"/>
+		<field name="name" xmlAttribute="true" type="identifier"  title="Name" basic="true" />
+        <field name="dataPath" xmlAttribute="true" type="string" hidden="true"/>
+		<field name="ID" xmlAttribute="true" type="identifier" basic="false"/>
+		<field name="title" xmlAttribute="true" type="string"  title="Title" basic="true" />
+		<field name="defaultValue"      type="string"  title="Default Value" basic="true" />
         <field name="defaultDynamicValue" type="expression" title="Default Dynamic Value"
             hint="JS expression to evaluate on redraw"
             prompt="JS expression - evaluates to default value"/>
+
+        <!-- hidden because for now, you would switch the type of the component instead -->
+		<field name="canEdit" xmlAttribute="true" type="boolean"  title="Can Edit" hidden="true" />
         
 		<field name="showTitle"			type="boolean" title="Show Title" defaultValue="true" />
 		<field name="icons"         type="FormItemIcon" multiple="true"/>
@@ -31,11 +35,11 @@
         <!-- These measure type fields are not understood - stored as text only -->
 		<field name="width" 			type="measure" title="Width"/>
 		<field name="height" 			type="measure" title="Height"/>
-		<field name="colSpan" 			type="measure" title="Column Span"/>
-		<field name="rowSpan" 			type="measure" title="Row Span"/>
-		<field name="startRow" 			type="boolean" title="Start Row"
+		<field name="colSpan" 			type="measure" title="Column Span" basic="true"/>
+		<field name="rowSpan" 			type="measure" title="Row Span" basic="true"/>
+		<field name="startRow" 			type="boolean" title="Start Row" basic="true"
             prompt="Position this item on a new row"/>
-		<field name="endRow" 			type="boolean" title="End Row"
+		<field name="endRow" 			type="boolean" title="End Row" basic="true"
             prompt="Start a new row after this item"/>
 
         <!-- these apply only to df.itemLayout:"absolute" -->
@@ -55,8 +59,8 @@
 		<field name="validators"		type="Validator"	multiple="true"	title="Validators"/>
 		<field name="validateOnChange" 	type="boolean" title="Validate On Change"/>
 
-		<field name="prompt" 			type="HTML"    title="Prompt"/>
-		<field name="hint" 				type="HTML" title="Hint"/>
+		<field name="prompt" 			type="HTML"    title="Prompt" basic="true" />
+		<field name="hint" 				type="HTML" title="Hint" basic="true"/>
 		<field name="showHint" 			type="boolean" title="Show Hint"/>
 
 		<field name="redrawOnChange" 	type="boolean" title="Redraw On Change" visibility="internal"/>
@@ -97,7 +101,7 @@
             
         <field name="valueField" type="string"/>
         <field name="displayField" type="string"/>
-        <field name="optionDataSource" type="string"/>
+        <field name="optionDataSource" type="DataSource" idAllowed="true"/>
 
         <!-- valueIcons properties -->
         <field name="valueIcons" type="Mapping" visibility="external"

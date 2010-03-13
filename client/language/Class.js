@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -378,6 +378,32 @@ isc.Class.addClassMethods({
 		isc.addPropertyList(this, arguments);
         return this;
 	},
+	
+	
+	//> @classAttr Class.isFrameworkClass (boolean : varies : RWA)
+	// Is this a core SmartClient class (part of the SmartClient framework)?
+	// This attribute may be used for debugging, and by the AutoTest subsystem to 
+	// differentiate between SmartClient classes (part of the smartClient framework) and
+	// subclasses created by specific applications
+	// @setter Class.markAsFrameworkClass()
+	// @visibility autoTest
+	//<
+	// Usually set at init time as part of ClassFactory.defineClass but we need to be able
+	// to also set this at runtime for the cases where we replace core smartclient classes - 
+	// for example IButton
+	
+	//>	@classMethod Class.markAsFrameworkClass()
+	// Mark this class as a framework class (member of the SmartClient framework).
+	// Sets +link{Class.isFrameworkClass}. May be used in debugging and by the
+	// AutoTest subsystem
+	// @visibility autoTest
+	//<
+	markAsFrameworkClass : function () {
+	    this.isFrameworkClass = true;
+	    this._instancePrototype.isFrameworkClass = true;
+	    this._scClass = this.Class;
+	    this._instancePrototype._scClass = this.Class;
+	},
 
 	//>	@classMethod Class.addProperties()
 	//
@@ -652,7 +678,7 @@ isc.Class.addClassMethods({
 	//	@param args         (arguments or Array) native "arguments" object, or array of
     //                                           arguments to pass to the Super call
 	//	@param [nativeArgs] (arguments) native "arguments" object, required if an Array is
-    //                                  passed for the "args" parameter in lieue of the native
+    //                                  passed for the "args" parameter in lieu of the native
     //                                  arguments object
 	//
 	//	@return					(any)		return value of the superclass call
@@ -984,7 +1010,7 @@ isc.Class.addClassMethods({
     // @param [argNames] (string) Comma separated string of variable names. If the callback
     //                            passed in was a string of script, any arguments passed to the
     //                            callback will be available as local variables with these names.
-    // @param [args] (array)    Array of arguments to pass to the mthod. Note that the number 
+    // @param [args] (array)    Array of arguments to pass to the method. Note that the number 
     //                          of arguments should match the number of argNames.
     // @param [target] (object) If specified the callback will be evaluated in the scope of this
     //                          object - the <code>this</code> keyword will be a pointer to this
@@ -1030,7 +1056,8 @@ isc.Class.addClassMethods({
         // we've converted the callback to a function, if possible.
         if (!isc.isA.Function(method)) {
             this.logWarn("fireCallback() unable to convert callback: " + this.echo(callback) + 
-                         " to a function.");
+                         " to a function.  target: " + target + ", argNames: " + argNames + 
+                         ", args: " + args);
             return;
         }
 
@@ -1088,7 +1115,7 @@ isc.Class.addClassMethods({
     //> @classMethod Class.delayCall()
     //  This is a helper to delay a call to a method on some target by a specified
     //  amount of time.  Can be used to delay a call to a static method on this class by 
-    //  ommiting the <code>target</code> parameter.
+    //  omitting the <code>target</code> parameter.
     // @param methodName (string) name of the method to call
     // @param [arrayArgs] (array) array of arguments to pass to the method in question
     // @param [time] (number) Number of ms to delay the call by - defaults to zero (so just pulls
@@ -1140,6 +1167,7 @@ isc.Class.addClassMethods({
         if (!id) return;
         if (!delay) delay = this.fireOnPauseDelay;
         
+
         // Note: If we have two separate instances calling the fireOnPause instance method with
         // the same ID, both actions need to fire -- the ID is essentially unique within the
         // instance only.
@@ -1159,9 +1187,9 @@ isc.Class.addClassMethods({
         var stamp = isc.timeStamp(),
             elapsed = this._lastFireOnPause ? stamp - this._lastFireOnPause : null;
         this._lastFireOnPause = stamp;
-        
+
         // If we're going to fire queue of actions before the delay passed in, we're done
-        if (elapsed && delay >= (this._fireOnPauseDelay - elapsed)) return;
+        if (elapsed && this._fireOnPauseDelay != null && delay >= (this._fireOnPauseDelay - elapsed)) return;
         
         if (this._fireOnPauseTimer) isc.Timer.clearTimeout(this._fireOnPauseTimer);
         this._fireOnPauseTimer = this.delayCall(this._$_fireActionsOnPause,null, delay);
@@ -1198,6 +1226,7 @@ isc.Class.addClassMethods({
             this._lastFireOnPause = isc.timeStamp();
             this.delayCall(this._$_fireActionsOnPause, null, fireAgainTime);
         } else {
+            this._fireOnPauseDelay = null;
             this._lastFireOnPause = null;
         }
     },
@@ -1230,7 +1259,12 @@ isc.Class.addClassMethods({
         }
 
         // create two arrays of the keys and values of the evalVars map
-        var argNames = ["evalString"];
+        var evalStringVarName = "_1";
+        // Ensure that we don't step on any of the vars passed in in the evalVars object
+        while (evalVars && isc.propertyDefined(evalVars, evalStringVarName)) {
+            evalStringVarName += "1"
+        }
+        var argNames = [evalStringVarName];
         var argValues = [evalString];
         if (evalVars) {
             for (var argName in evalVars) {
@@ -1241,7 +1275,8 @@ isc.Class.addClassMethods({
         
         // make a function with argNames as arguments that evals evalString
         
-        var theFunc = isc._makeFunction(argNames.join(","), "return eval(evalString)");
+        var theFunc = isc._makeFunction(argNames.join(","), 
+                                        "return eval(" + evalStringVarName + ")");
 
         // call the function on the target
         return theFunc.apply(target, argValues);
@@ -1667,7 +1702,7 @@ isc.Class.addMethods({
     // NOTE: not external.  Need to define what this should do, eg, just a dump of state for
     // debugging vs recreate component in current state / transmit between browsers
 	serialize : function (indent) {
-		return isc.Comm.serialize(this, indent, null);
+		return isc.Comm.serialize(this, indent);
 	},
 
 	xmlSerialize : function (indent) {
@@ -2154,6 +2189,7 @@ isc.Class.addMethods({
 	//<
     
     
+    
 	observe : function (object, methodName, action) {
         // if the object doesn't exist or doesn't implement a method with this name, return false to
 		// indicate that the observation isn't going to work
@@ -2189,8 +2225,9 @@ isc.Class.addMethods({
             argStr = object.getClass().getArgString(methodName);
         // NOTE: currently, there's no such thing as a classMethod that is a stringMethod
         } else {
-            // this code path is needed for methods set in autoChildDefaults - handled by
-            // the getInstanceProperty check above
+            // this code path is needed for two cases:
+            // * methods set in autoChildDefaults (caught by getInstanceProperty)
+            // * class methods (caught by isAn.Instance())
             argStr = isc.Func.getArgString(oldMethod);
         }
         var args = argStr.split(",");
@@ -2669,7 +2706,7 @@ isc.Class.addMethods({
     // AutoChildren support a standard set of properties that can be used to customize or skin
     // them.  The names of these properties are derived from the name of the autoChild itself.
     // These properties will generally not be separately documented for every autoChild unless
-    // there are special usage instructions - the existance of the properties is implied
+    // there are special usage instructions - the existence of the properties is implied
     // whenever you see an autoChild documented.
     // <P>
     // The properties are:
@@ -2714,6 +2751,15 @@ isc.Class.addMethods({
     // and indirect children (children of children).  For example, the
     // +link{window.minimizeButton,minimizeButton} of the Window is also an autoChild, even
     // though it is actually located within the window header.
+    // <P>
+    // <h4>AutoChildren lifecycle</h4>
+    // <P>
+    // By default any auto-children created by +link{canvas.addAutoChild()} or 
+    // +link{canvas.createAutoChild()} will be +link{canvas.destroy(),destroyed} when the
+    // canvas that created them is destroyed. You can suppress this behavior by setting
+    // <code>dontAutoDestroy</code> to <code>true</code> on the auto child. To do this you
+    // could add the property to the defaults or properties block for the autoChild, or
+    // pass it into the creating method in the dynamic set of properties.
     // <P>
     // <h4>Skinning AutoChildren</h4>
     // <P>
@@ -3118,6 +3164,10 @@ isc.Class.addMethods({
     // checks specifically for show<i>AutoChildName</i>:false, you do not have to add
     // show<i>AutoChildName</i>:true in order for an autoChild to be shown by default; leaving
     // the property undefined is sufficient.
+    // <P>
+    // Note that by default the child created by this method will be destroyed when
+    // +link{canvas.destroy(),destroy()} is called on this instance. To disable this behavior,
+    // set <code>dontAutoDestroy</code> to true on the auto child.
     // 
     // @param childName (String) name of the autoChild
     // @param defaults (Properties) dynamic properties for the autoChild
@@ -3132,10 +3182,7 @@ isc.Class.addMethods({
         // already created
         if (isc.isAn.Instance(childValue)) return childValue;
         
-        // We want a central list of all our 'autoChildren' so we can easily iterate through them
-        if (!this._createdAutoChildren) this._createdAutoChildren = {};
-        this._createdAutoChildren[childName] = true;
-
+       
         // allow a properties object with autoChildName etc
         if (isc.isAn.Object(childName) && childName.autoChildName) {
             dynamicProperties = childName;
@@ -3150,7 +3197,7 @@ isc.Class.addMethods({
             return this[childName];
         }
 
-        // check flags, and existance of parents, before proceeding to create the child
+        // check flags, and existence of parents, before proceeding to create the child
         // NOTE: null check allows constructor blocks for unnamed autoChildren (automatically
         // created, but not skinnable)
         if (childName != null && !this.shouldCreateChild(childName)) return;
@@ -3167,14 +3214,16 @@ isc.Class.addMethods({
         if (childName != null && this[makerName]) child = this[makerName](dynamicProperties);
         else {
             child = this.createAutoChild(childName, dynamicProperties, defaultConstructor, true);
-        }
-        
+        }      
         // createAutoChild() may return null if we're not configured to create this child.
         // A custom maker function may return null if it wants to handle adding the child to
         // the appropriate parent itself (and assinging the child to the appropriate property
         // name)
         if (!child) return; 
 
+        // If we went through createAutoChild with the assignToSlot parameter, this is unnecessary
+        // but if we ran the maker method, we have to actually assign this[childName] to the
+        // generated object
         this[childName] = child;
 
         this._addToParent(childName, child, parent, position);
@@ -3328,6 +3377,10 @@ isc.Class.addMethods({
     // <li> children need to be created before their parents (eg, for layout/auto-sizing
     // reasons)
     // </ul>
+    // <P>
+    // Note that by default the child created by this method will be destroyed when
+    // +link{canvas.destroy(),destroy()} is called on this instance. To disable this behavior,
+    // set <code>dontAutoDestroy</code> to true on the auto child.
     //
     // @param childName (String) name of the autoChild
     // @param defaults (Properties) dynamic properties for the autoChild
@@ -3404,6 +3457,26 @@ isc.Class.addMethods({
         isc.addProperties(child, this[childPropertiesName]);
 
         child.init();
+        
+        // Maintain a mapping between child name and generated auto children IDs
+        // This allows us to auto-destroy autochildren on destroy
+        // Also used by the AutoTest locator APIs
+        if (!this._createdAutoChildren) this._createdAutoChildren = {};
+        var ID = child.getID ? child.getID() : null;
+        if (ID != null) {
+            
+            if (!isc.isAn.Array(this._createdAutoChildren[childName])) {
+                if (this._createdAutoChildren[childName] != null) {
+                    isc.logWarn(this + ".createAutoChild(): Creating auto child named:" + childName
+                        + " appears to be replacing autoChild with same name...");
+                }
+                this._createdAutoChildren[childName] = [ID];
+
+            } else {
+                this._createdAutoChildren[childName].add(ID);
+            }
+        }
+        
         return child;
     },
 
@@ -3483,13 +3556,44 @@ isc.Class.addMethods({
     
 	//>	@method	class.Super()
 	//
-	//	Call the SuperClass implementation of a particular method.  
+	// Call the SuperClass implementation of an instance method.  For example:
+    // <pre>
+    //    isc.defineClass("MyButton", "Button").addProperties({
+    //        // this override causes no change in behavior because it just 
+    //        // calls Super and returns whatever the superclass would return
+    //        getTitle : function () {
+    //            return this.Super("getTitle", arguments);
+    //        },
+    //
+    //        // this override would add "foo" to the titles of all buttons
+    //        getTitle : function () {
+    //            // add code here to take actions before the superclass method is invoked
+    //
+    //            var superResult = return this.Super("getTitle", arguments);
+    //
+    //            // add code here to take action after the superclass method is invoked
+    //
+    //            return superResult + "foo";
+    //        }
+    //
+    //    })
+    // </pre>
+    // Note that Super is always called with the name of the current method.  You cannot call
+    // the Super class implementation of another method directly.
+    // <P>
+    // It is <b>required</b> to always pass the native 'arguments' object to Super.  Arguments
+    // is a JavaScript builtin that is available within any JavaScript function - see any
+    // JavaScript Reference for details.
+    // <P>
+    // See also +link{ClassFactory.defineClass,defineClass()} and
+    // +link{classMethod:class.addProperties,addProperties} for the basics of creating classes
+    // and overriding methods.
 	//
 	//	@param methodName   (string)	name of the superclass method to call
 	//	@param args         (arguments or Array) native "arguments" object, or array of
     //                                           arguments to pass to the Super call
 	//	@param [nativeArgs] (arguments) native "arguments" object, required if an Array is
-    //                                  passed for the "args" parameter in lieue of the native
+    //                                  passed for the "args" parameter in lieu of the native
     //                                  arguments object
     //
 	//	@return					(any)		return value of the superclass call
@@ -3569,6 +3673,13 @@ isc.addMethods(isc.ClassFactory, {
 	ignore : isc.Class.getPrototype().ignore,
 	_makeNotifyFunction : isc.Class.getPrototype()._makeNotifyFunction
 });
+
+// Add _makeNotifyFunction to classes so that one can observe() them.
+
+isc.Class.addClassMethods({
+	_makeNotifyFunction : isc.Class.getPrototype()._makeNotifyFunction
+});
+
 
 //> @classMethod isc.eval()
 // Evaluate a string of script and return the result. Falls through to

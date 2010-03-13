@@ -1,6 +1,9 @@
 <DataSource	ID="ButtonItem" inheritsFrom="CanvasItem" Constructor="ButtonItem">
 	<fields>
         <field name="baseStyle"         type="cssClass"/>
+        <field name="icon" type="string"/>
+        <field name="autoFit" type="boolean"/>
+
         <field name="buttonConstructor" type="className"/>
         <field name="buttonProperties"  type="Object"/>
 
@@ -28,6 +31,8 @@
 		<field name="canvasConstructor" inapplicable="true"/>
 		<field name="canvasProperties" inapplicable="true"/>
         
-        <field name="autoFit" type="boolean"/>
 	</fields>
+    <methods>
+        <method action="event" title="Click" name="click" basic="true" />
+    </methods>
 </DataSource>

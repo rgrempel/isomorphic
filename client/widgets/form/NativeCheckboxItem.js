@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -23,12 +23,13 @@
 isc.ClassFactory.defineClass("NativeCheckboxItem", "FormItem");
 isc.NativeCheckboxItem.addProperties({
     
-    //>	@attr	nativeCheckboxItem.titleStyle (FormItemBaseStyle : "labelAnchor" : IRW)
-	// Base CSS class applied to this item's title
-	//		@group	appearance
+    //>	@attr	nativeCheckboxItem.textBoxStyle (FormItemBaseStyle : "labelAnchor" : IRW)
+	// Base CSS class applied to this item's title text (rendered next to the checkbox element).
+	// @group appearance
+    // @visibility external
 	//<
     
-	titleStyle:"labelAnchor",
+	textBoxStyle:"labelAnchor",
     
     // If we're in screenReader mode, this form item will use the native 'title' attribute
     // to show hover prompts.
@@ -107,8 +108,10 @@ isc.NativeCheckboxItem.addMethods({
         "' ALIGN=LEFT",  // 2
         ,,              // 3,4: width= and width, or null
         ,,              // 5,6: height= and height, or null
-        ">",            // 7
-        ,               // 8: title
+        " style='",     // 7
+        ,               // 8 cssText for the text box, if any
+        "'>",            // 9
+        ,               // 10: title
         "</TD>"
     ],
     
@@ -118,7 +121,7 @@ isc.NativeCheckboxItem.addMethods({
         ".boxTitleClick()' ONMOUSEOVER='window.status = \"", // 2
         ,                               // 3: this.prompt
         "\"; return true' ONMOUSEOUT='window.status = \"\"; return true' CLASS='",    // 4
-        ,                               // 5: this.getTitleStyle()
+        ,                               // 5: this.getTextBoxStyle()
         "' title=\"",                     // 6
         ,                               // 7: this.prompt
         // Note - safari doesn't allow us to tab to links, so no need to exclude from page's tab order        
@@ -139,8 +142,7 @@ isc.NativeCheckboxItem.addMethods({
     },
     
     // Write out a table containing the checkbox followed by its label
-    getElementHTML : function (value) {
-        
+    getElementHTML : function (value) { 
         var formID = this.form.getID(),
 			itemIDStr = this.getItemID(),
             template = this._$HTMLTemplate,
@@ -152,8 +154,14 @@ isc.NativeCheckboxItem.addMethods({
         template[6] = this.getDataElementId();
         template[7] = this._getItemElementAttributeHTML();
         
-        if (value != null) {
-            template[8] = " VALUE='"; template[9] = value; template[10] = "'";
+        if (this.value != null) {
+            template[8] = " VALUE='"; template[9] = this.value; template[10] = "'";
+            
+            // if we're printing - explicitly mark as checked if appropriate:
+            if (this.containerWidget && this.containerWidget.isPrinting) {
+                if (value == this.value) template[10] += " CHECKED='true'";
+            }
+            
         } else {
             template[8] = null; template[9] = null; template[10] = null;
         }
@@ -190,7 +198,7 @@ isc.NativeCheckboxItem.addMethods({
                 var titleTemplate = this._$safariTitleTemplate;
                 titleTemplate[1] = itemIDStr;
                 titleTemplate[3] = this.prompt;
-                titleTemplate[5] = this.getTitleStyle();
+                titleTemplate[5] = this.getTextBoxStyle();
                 titleTemplate[7] = this.prompt;
                 titleTemplate[9] = title;
                 
@@ -200,7 +208,7 @@ isc.NativeCheckboxItem.addMethods({
             // The text beside the checkbox can be described as a 'label' or a title.
             // we apply the title style to it, since it contains the title for the item.
             var titleCellTemplate = this._$labelCellTemplate;
-            titleCellTemplate[1] = this.getTitleStyle();
+            titleCellTemplate[1] = this.getTextBoxStyle();
             if (width != null) {
                 titleCellTemplate[3] = " WIDTH="; titleCellTemplate[4] = width;
             } else {
@@ -212,7 +220,14 @@ isc.NativeCheckboxItem.addMethods({
             } else {
                 titleCellTemplate[5] = null; titleCellTemplate[6] = null;
             }
-            titleCellTemplate[8] = title;
+            // cssText - for now just worry about wrap
+            if (this.wrap == false) {
+                // nowrap cssText picked up from formItem
+                titleCellTemplate[8] = this._$nowrapCSS;
+            } else {
+                titleCellTemplate[8] = null;
+            }
+            titleCellTemplate[10] = title;
             
             // actually write it into the table
             template[21] = titleCellTemplate.join(isc.emptyString);

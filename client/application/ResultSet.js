@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -8,7 +8,7 @@
  *
  * http://smartclient.com/license
  */
-
+ 
  
 
 
@@ -157,7 +157,7 @@
 // <P>
 // When in paging mode with a partial cache, a ResultSet relies on server side sorting, setting 
 // +link{dsRequest.sortBy} to the current sort field and direction.  In order for the cache to 
-// remain coherant, row numbering must continue to agree between server and client as new
+// remain coherent, row numbering must continue to agree between server and client as new
 // fetches are issued, otherwise, duplicate rows or missing rows may occur.  
 // <P>
 // If concurrent modifications by other users are allowed, generally the server should set
@@ -216,11 +216,11 @@ isc.ResultSet.addProperties({
     // guaranteed to be small.
     //
     // @value "basic" All records that match the current filter are fetched.  Sorting is
-    //                performed on the client
+    //                performed on the client.
     // @value "paged" Only requested ranges of records are fetched, with predictive fetch
     //                ahead.  Sorting is performed on the server.
     // @value "local" All records available from the DataSource are fetched.  Filtering by
-    //                search criteria and sorting are both performed on the client
+    //                search criteria and sorting are both performed on the client.
     // @group fetching
 	// @visibility external
     //<
@@ -446,7 +446,7 @@ isc.ResultSet.addProperties({
     // out of date cache
 
     //> @attr   resultSet.neverDropUpdatedRows (boolean : false : IRA)
-    // By default when a a row is returned by the server, the current +link{setCriteria,filter
+    // By default when a row is returned by the server, the current +link{setCriteria,filter
     // criteria} are applied to it, and it may disappear from the cache.
     // <P>
     // Set this flag to true to disable this behavior.
@@ -473,7 +473,7 @@ isc.ResultSet.addProperties({
     // <li> newly added rows will be added at either the end (first preference) or beginning of
     // the dataset if that part of the dataset is cached and was most recently requested.
     // If not, the new row is added at the end of the most recently requested contiguously
-    // cached range
+    // cached range.
     // </ul>
     // The cache will then be dropped the next time rows are fetched, to prevent problems with
     // inconsistent row numbering between the server and client, which could otherwise lead to
@@ -490,6 +490,17 @@ isc.ResultSet.addProperties({
         //<Offline
         return this.updatePartialCache;
     }
+
+    //> @attr   resultSet.transformUpdateResponses (boolean : null : IRA)
+    // If true (or null), passes the record(s) returned by an update, add or remove operation
+    // through the +link{transformData(),transformData() method}, if one is defined.  If this 
+    // property is set to false, transformData() is bypassed.
+    // <P>
+    // Generally, you will want to transform update responses.  This property is provided for 
+    // reasons of backwards compatibility.
+    // @group cacheSync
+    // @visibility internal
+    //<
 });
 
 isc.ResultSet.addMethods({
@@ -525,6 +536,11 @@ init : function () {
         // support automatically deriving the DataSource from the operation (take the first
         // DataSource listed if more than one)
         if (!this.dataSource) this.dataSource = ds;
+    }
+
+    if (!this.getDataSource()) {
+        this.logError("Invalid dataSource: " + this.echoLeaf(this.dataSource) + 
+                      ", a ResultSet must be created with a valid DataSource");
     }
     
 	// context.dataPageSize may be set if specified on a DataBoundComponent that created us
@@ -621,6 +637,8 @@ isLocal : function () { return this.fetchMode == "local" },
 // <P>
 // Returns false if this is a paged data set, and the entire set of records that match
 // the current criteria has not been retrieved from the server.
+//
+// @return (boolean) whether all matching rows are cached
 // @visibility external
 //<
 allMatchingRowsCached : function () {
@@ -636,6 +654,8 @@ allMatchingRowsCached : function () {
 // <P>
 // Becomes true only when the ResultSet obtains a complete cache after a fetch with empty
 // criteria.
+//
+// @return (boolean) whether all rows are cached
 //
 // @visibility external
 //<
@@ -673,7 +693,7 @@ canFilterOnClient : function () { return this.shouldUseClientFiltering() && this
 // will trigger fetches, and will return a valueMap reflecting only the currently loaded rows.
 //
 // @param idField (string)  Property to use as ID (data value) in the valueMap
-// @param displayField (string) Property to use a display value in the valueMap
+// @param displayField (string) Property to use as a display value in the valueMap
 // @return (object) valueMap object
 // @see resultSet.allMatchingRowsCached()
 // @visibility external
@@ -832,9 +852,17 @@ getAllLoadedRows : function () {
 
 // called by grids, allows dynamic derivation of values.  Used in order to allow a ResultSet to
 // use a set of XML elements as its dataset.
-// "field" is the optional field descriptor used in the visual component. 
+// "field" is the optional field descriptor used in the visual component.
+dynamicDSFieldValues:false,
 getFieldValue : function (record, fieldName, field) {
-    return this.getDataSource().getFieldValue(record, fieldName, field);
+    if (this.dynamicDSFieldValues) {
+        return this.getDataSource().getFieldValue(record, fieldName, field);
+    } else {
+        if (field && field.dataPath) {
+            return isc.Canvas._getFieldValue(field.dataPath, record);
+        }
+        return record[fieldName];
+    }
 },
 
 // Retrieving rows
@@ -861,8 +889,8 @@ lengthIsKnown : function () {
 // Unlike get(), will not trigger a server fetch.  
 //
 // @param   rowNum  (number)   row to check
-// @return (boolean) true whether if the given row has been loaded, false if it has not been
-//                   loaded or is still in the process of bring loaded
+// @return (boolean) true if the given row has been loaded, false if it has not been
+//                   loaded or is still in the process of being loaded
 // @visibility external
 //<
 rowIsLoaded : function (rowNum) {
@@ -939,6 +967,7 @@ getCachedRange : function (rowNum) {
 // @visibility internal
 //<
 setRangeLoading : function (start, end) {
+    if (this.localData == null) this.localData = [];    
 	for (var i = start; i < end; i++) {
 		if (this.localData[i] == null) this.localData[i] = Array.LOADING;
 	}
@@ -1025,11 +1054,13 @@ fetchRemoteData : function (serverCriteria, startRow, endRow) {
         endRow : endRow,
         sortBy : this._serverSortBy,
         resultSet : this,
-        clientContext : clientContext,
-        // so that we don't get wedged in a loading state
-        willHandleError:true
-    }, this.context)
-
+        clientContext : clientContext
+    }, this.context);
+    
+    // Override willHandleError so we don't get wedged in a loading state
+    requestProperties.clientContext._explicitWillHandleError = requestProperties.willHandleError;
+    requestProperties.willHandleError = true;
+    
     // if cache was partially updated before, invalidate the cache
     if (this.rowOrderInvalid()) {
         this.logInfo("invalidating rows on fetch due to 'add'/'update' operation " +
@@ -1039,7 +1070,7 @@ fetchRemoteData : function (serverCriteria, startRow, endRow) {
  
     if (this.logIsDebugEnabled("fetchTrace")) {
         this.logWarn("ResultSet server fetch with server criteria: " +
-                     isc.Comm.serialize(serverCriteria, true) + this.getStackTrace());
+                     this.echoFull(serverCriteria) + this.getStackTrace());
     }
 
     this.getDataSource().fetchData(serverCriteria, 
@@ -1114,8 +1145,11 @@ fetchRemoteDataReply : function (dsResponse, data, request) {
                          " to " + dsResponse.endRow);
             // update endRow
             dsResponse.endRow = dsResponse.startRow + newData.length;
-            // totalRows may also need to be adjusted here, but just fall through to the generic
-            // clamp below
+            // must adjust totalRows here if smaller than endRow - startRow, otherwise clamp
+            // below will trim results
+             if (dsResponse.totalRows != null && dsResponse.totalRows < dsResponse.endRow) {            
+                 dsResponse.totalRows = dsResponse.endRow;
+             }
         }
     }
 
@@ -1167,7 +1201,11 @@ fetchRemoteDataReply : function (dsResponse, data, request) {
         }
     }
     
-    if (dsResponse.status < 0) {
+    // We overrode willHandleError for the request.
+    // Fire standard error handling now unless the original request already suppressed
+    // this.
+    var willHandleError = request.clientContext._explicitWillHandleError;
+    if (!willHandleError && dsResponse.status < 0) {
         isc.RPCManager._handleError(dsResponse, request)
     }
 }, 
@@ -1228,14 +1266,13 @@ _handleNewData : function (newData, result) {
     this.fillCacheData(newData, result.startRow);
 
     // handle server batch size set too small: clear loading markers for the rest of the
-    // requested range so that new requests will be fired.  NOTE: the true fix is to make
-    // client and server batch size agree, because if multiple concurrent requests are
-    // outstanding, there is a bad case where one request comes back and clears loading markers
-    // set by another request, causing a third request to be initiated for rows already being
-    // fetched.  
+    // requested range so that new requests will be fired.
+    
     var localData = this.localData;
     for (var i = result.startRow + newData.length; i < this.totalRows; i++) {
+        
         if (Array.isLoading(localData[i])) localData[i] = null;
+        else break;
     }
 
 	//>DEBUG
@@ -1263,20 +1300,58 @@ setContext : function (context) {
     this.context = context;
 },
 
+//> @method resultSet.findByKey()
+// Attempt to find the record in the resultSet that has a primary key value that matches the 
+// passed in parameter value. Only the locally cached data will be searched. 
+// Checks only loaded rows and will not trigger a fetch. Returns null if there is no match, 
+// data is not loaded, or there is no +link{resultSet.dataSource, dataSource}.
+//
+// @param keyValue (String) primary key value to search for
+// @return (Record) the record with a matching primary key field, or null if not found
+// @visibility external
+//<
+findByKey : function (keyValue) {
+     var ds = isc.DataSource.getDataSource(this.dataSource);
+     // make sure a dataSource exists for this resultSet
+     if (!ds) return;
+     // make sure there is a primary key field and that data is loaded
+     if (!ds.getPrimaryKeyField() || !this.lengthIsKnown()) return;
+     
+     var keyVals;
+     // if keyValue is an object, just pass that to findByKeys
+     if (isc.isAn.Object(keyValue)) {
+         keyVals = keyValue;
+     // otherwise make an object that findByKeys() will understand
+     } else {
+         keyVals = {};
+         keyVals[ds.getPrimaryKeyFieldName()] = keyValue;
+     }
+     
+     // call findByKeys on local data
+     var index = this.localData.findByKeys(keyVals, ds);
+     if (index != null) return this.localData[index];
+     else return null;       
+},
+
 // Criteria
 // --------------------------------------------------------------------------------------------
 
 //> @method resultSet.setCriteria()
 // Set the filter criteria to use when fetching rows.
 // <P>
-// Setting new criteria will invalidate the current cache, if any.
+// Depending on the result of +link{compareCriteria()} and settings for
+// +link{useClientFiltering} / +link{fetchMode}, setting criteria may cause a trip to the
+// server to get a new set of rows, or may simply cause already-fetched rows to be re-filtered
+// according to the new Criteria.  In either case, the dataset length available from
+// +link{getLength()} may change and rows will appear at different indices.
 // <P>
-// Note: any field values in the criteria explicitly specified as null will be
-// passed to the server. By default the server then returns only records whose value is null for
-// that field. This differs from certain higher level methods such as 
-// +link{listGrid.fetchData()} which prune null criteria fields before performing a fetch operation.
+// Note: for simple Criteria, any field values in the criteria explicitly specified as null
+// will be passed to the server.  By default the server then returns only records whose value
+// is null for that field. This differs from certain higher level methods such as 
+// +link{listGrid.fetchData()} which prune null criteria fields before performing a fetch
+// operation.
 //
-// @param newCriteria (Criteria)  the filter criteria
+// @param newCriteria (Criteria) the filter criteria
 // @visibility external
 //<
 // An overview on the caching system:
@@ -1427,7 +1502,8 @@ getCriteria : function () { return this.criteria },
 //> @method resultSet.compareCriteria()
 // Default behavior is to call +link{dataSource.compareCriteria()} to determine whether new
 // criteria is guaranteed more restrictive, equivalent to the old criteria, or not guaranteed
-// more restrictive, returning 1, 0 or -1 respectively.
+// more restrictive, returning 1, 0 or -1 respectively.  See
+// +link{dataSource.compareCriteria()} for a full explanation of the default behavior.
 // <P>
 // Override this method or +link{dataSource.compareCriteria()} to implement your own client-side
 // filtering behavior.
@@ -1463,7 +1539,7 @@ compareTextMatchStyle : function (newStyle, oldStyle) {
 // +link{ListGrid.filterData()} would cause a server side fetch when passed a certain set of 
 // criteria.
 // @param newCriteria (Criteria) new criteria to test.
-// @param [textMatchStyle] (String) New text match style. If not passed assumes 
+// @param [textMatchStyle] (TextMatchStyle) New text match style. If not passed, assumes 
 //      textMatchStyle will not be modified.
 // @return (boolean) true if server fetch would be required to satisfy new criteria.
 // @visibility external
@@ -1524,18 +1600,29 @@ sortByProperty : function (property, sortDirection, normalizer, context) {
     
     // If we're already sorted as appropriate, no-op.    
     
-	if (this._sortProperty == property && this._sortDirection == sortDirection && 
-		this._normalizer == normalizer) return;
+    if (this._sortProperty == property && this._sortDirection == sortDirection && 
+        this._normalizer == normalizer) return;
 
     var field;
-    // make sure optional parameter 'context' was actually passed in before using it
-    if (context) field = context.getField(property);
-    if (field && field.displayField) property = field.displayField;
-	
-	// remember sort and direction
-	this._sortProperty = property;
-	this._sortDirection = sortDirection;
-	this._normalizer = normalizer;
+    // If the sort property has a displayField defined and either no optionDataSource or the 
+    // same opDS as this data model's DS, sort by the displayField
+    if (context) {
+        field = context.getField(property);
+        if (field && field.displayField) {
+            var opDs;
+            if (field.optionDataSource) {
+                opDs = isc.DataSource.getDataSource(field.optionDataSource);
+            }
+            if (!opDs || opDs == isc.DataSource.getDataSource(this.dataSource)) {
+                property = field.displayField;
+            }
+        }
+    }
+
+    // remember sort and direction
+    this._sortProperty = property;
+    this._sortDirection = sortDirection;
+    this._normalizer = normalizer;
     this._sortContext = context;
 
     // set sortBy for any subsequent fetches.
@@ -1549,7 +1636,27 @@ sortByProperty : function (property, sortDirection, normalizer, context) {
         this._serverSortBy = (this._sortDirection ? "" : "-") + this._sortProperty;
     }
 
-	this._doSort();
+    // we can sort locally if we have the entire result set *for the current filter* cached
+    if (this.canSortOnClient()) {
+        this.localData.sortByProperties([property], [sortDirection], [normalizer], [context]);
+        // make sure we keep allRows in sync with localData when sorting, otherwise there
+        // can be a case where a call to filterLocalData() will de-synchronize allRows and 
+        // localData. Subsequent filters will then be filtering from incorrectly sorted data.
+        if (this.allRows && (this.localData !== this.allRows)) {
+            this.allRows.sortByProperties([property], [sortDirection], [normalizer], [context]);
+        }
+        // If this is from a cache update, and we're sorting, avoid passing the updated
+        // record info to dataChanged()
+        delete this._lastUpdateOperation;
+        delete this._lastUpdateData;
+        delete this._lastOrigRecord;
+        delete this._lastUpdateRow;
+
+        if (!this._isChangingData()) this.dataChanged();
+        return;
+    } 
+
+    this.invalidateCache();
 },
 
 
@@ -1579,47 +1686,150 @@ unsort : function () {
 
 // for internal callers - sort by current sort property
 _doSort : function () {
-    var property = this._sortProperty,
-        up = this._sortDirection;
+    var specifiers = this._sortSpecifiers;
 
     // if we don't have data yet, wait to be asked for data.
     // if we have no sort property, leave dataset in current order
-    if (this.localData == null || property == null) return;
+    if (this.localData == null || !specifiers || specifiers.length == 0) return;
+
+    // arrange arrays for passing into sortByProperties
+    var properties = [],
+        directions = [],
+        normalizers = [],
+        contexts = []
+    ;
+    
+    for (var i = 0; i < specifiers.length; i++) {
+        var item = specifiers[i];
+        properties[i] = item.property;
+        directions[i] = Array.shouldSortAscending(item.direction);
+        normalizers[i] = item.normalizer;
+        contexts[i] = item.context;
+    }
 
     // we can sort locally if we have the entire result set *for the current filter* cached
     if (this.canSortOnClient()) {
 
-		//>DEBUG
-        this.logInfo("sortByProperty(" + property + ", " + up +
-                     "): full cache allows local sort");
-		//<DEBUG
-
-    	// if we have data, and a sort order, sort it.  Otherwise wait until we have data
+        // if we have data, and a sort order, sort it.  Otherwise wait until we have data
         // and/or a sort order.
-    	if (property != null) {
-		    // XXX NOTE: function-based normalizers are not supported by server sort (and can't
+    	if (specifiers && specifiers.length>0) {
+            // XXX NOTE: function-based normalizers are not supported by server sort (and can't
             // be).  valueMap-based normalizers are, but currently are not submitted, so only
             // valueMaps defined on server DataSources work.
-    		this.localData.sortByProperty(property, up, this._normalizer, this._sortContext);
-            
+
+            //>DEBUG
+            this.logInfo("_doSort: sorting on properties [" + properties.join(",") + "] : " +
+                    "directions ["+ directions.join(",") + "]" +
+                     " : full cache allows local sort");
+            //<DEBUG
+
+            this.localData.sortByProperties(properties, directions, normalizers, contexts);
+
             // If this is from a cache update, and we're sorting, avoid passing the updated
             // record info to dataChanged()
             delete this._lastUpdateOperation;
             delete this._lastUpdateData;
             delete this._lastOrigRecord;
             delete this._lastUpdateRow;
-            
-    		if (!this._isChangingData()) this.dataChanged();
-    	}
+
+            if (!this._isChangingData()) this.dataChanged();
+        }
         return;
     }
-	//>DEBUG
-	this.logInfo("sortByProperty(" + property + ", " + up + "): invalidating cache");
-	//<DEBUG
+    //>DEBUG
+    this.logInfo("_doSort: sorting on properties [" + properties.join(",") + "] : " +
+            "directions ["+ directions.join(",") + "]" +
+             " : invalidating cache");
+    //<DEBUG
 
-	// paged mode: if sort column/direction changed, clear cache
+    // paged mode: if sort column/direction changed, clear cache
     
-	this.invalidateCache();
+    this.invalidateCache();
+},
+
+// multi-property sorting
+
+//> @method resultSet.getSort()
+// Return the current sort-specification for this ResultSet as an Array of +link{SortSpecifier}s.
+// 
+// @return  (Array of SortSpecifier) the list of +link{SortSpecifier}s currently applied to 
+//  this ResultSet
+// @visibility external
+//<
+getSort : function () {
+    return this._sortSpecifiers;
+},
+
+//> @method resultSet.setSort()
+// Sort this ResultSet by a list of +link{SortSpecifier}s. 
+// <P>
+//
+// @param sortSpecifiers (Array of SortSpecifier)  List of +link{SortSpecifier} objects, one 
+//   per sort-field and direction
+// @visibility external
+//<
+setSort : function (sortSpecifiers) {
+    var serverSorts = [],
+        sameSorts = [],
+        field
+    ;
+
+    for (var i = 0; i<sortSpecifiers.length; i++) {
+        var item = sortSpecifiers[i];
+        // If we were passed a null normalizer - use the field type as normalizer instead.
+        // (May still be null, in which case array sorting will try to derive from actual elements)
+        if (item.normalizer == null) {
+            var field = this.getDataSource().getField(item.property);    
+            if (field) item.normalizer = field.type;
+        }
+
+        // If the sort property has a displayField defined and either no optionDataSource or the 
+        // same opDS as this data model's DS, sort by the displayField
+        if (item.context) {
+            field = item.context.getField(item.property) || 
+                        this.getDataSource().getField(item.property);
+            if (field && field.displayField) {
+                var opDs;
+                if (field.optionDataSource) {
+                    opDs = isc.DataSource.getDataSource(field.optionDataSource);
+                }
+                if (!opDs || opDs == isc.DataSource.getDataSource(this.dataSource)) {
+                    item.property = field.displayField;
+                }
+            }
+        }
+
+        // set sortBy for any subsequent fetches.
+        // - if client sorting has been disabled, the server must sort for us
+        // - if we are using paging, the server must sort for us, since server and client sort may
+        //   not agree
+        //   - XXX we could conditionally turn this off in situations where the cache is going to
+        //     be completed when the next set of rows arrives, assuming the cache doesn't get
+        //     invalidated
+        if (this.isPaged() || !this.shouldUseClientSorting()) {
+            serverSorts[i] = (Array.shouldSortAscending(item.direction) ? "" : "-") + item.property;
+        }
+
+        // If the sort-specs appear the same, remember the same items
+        if (this._sortSpecifiers && this._sortSpecifiers.length > 0) {
+            var itemIndex = this._sortSpecifiers.findIndex(item);
+            if (itemIndex == i) {
+                sameSorts.add(item);
+            }
+        }
+
+    }
+
+    // If we're already sorted as appropriate, no-op.
+    if (sortSpecifiers.length == sameSorts.length) {
+        return;
+    }
+
+    // store both the sortSpecifiers for client sorting and the server sort strings
+    this._sortSpecifiers = isc.shallowClone(sortSpecifiers);
+    this._serverSortBy = serverSorts;
+
+    this._doSort();
 },
 
 // Handling Updates
@@ -1666,6 +1876,13 @@ dataSourceDataChanged : function (dsRequest, dsResponse) {
     // integrate the submitted values into the cache if the operation was succesful.
     var updateData = this.getDataSource().getUpdatedData(dsRequest, dsResponse, 
                                                    this.updateCacheFromRequest);
+                                                   
+    // Give transformData an opportunity
+    if (this.transformData && this.transformUpdateResponses !== false) {
+        var transformedData = this.transformData(updateData, dsResponse);
+        updateData = transformedData == null ? updateData : transformedData;
+    }
+                                                   
     this.handleUpdate(dsRequest.operationType, updateData, dsResponse.invalidateCache, dsRequest);
 },
 
@@ -1781,7 +1998,7 @@ _doneChangingData : function () {
 //   - to avoid: set dropCacheOnUpdate
 // 
 // 2 caches to consider:
-// this.localData represents the curent data-set that psses our filter criteria
+// this.localData represents the current data-set that passes our filter criteria
 // this.allRows (if set) represents the entire set of data we've been passed by the server.
 // In local filtering mode, or if we've performed a fetch with empty criteria this will be
 // the entire data set for the dataSource - otherwise will be the results matching the least
@@ -1790,7 +2007,7 @@ _doneChangingData : function () {
 //
 // Therefore every time we need to integrate modified data into the resultSet 
 // (removing, adding or updating rows), we need to ensure that if this.allRows is present we
-// manipulate that cache, and we also manipulated this.localData.
+// manipulate that cache, and we also manipulate this.localData.
 // We achieve this by:
 // - if this.allRows is present, modify that cache of rows, and call filterLocalData() to 
 //   re-generate this.localData based on the new set of data in that method. 
@@ -2091,7 +2308,7 @@ addCacheData : function (newRows) {
     }
     var addingSingleRow;
     if (validRows.length != newRows.length) {
-        this.logInfo(validRows.length + " of " + newRows.length + 
+        this.logInfo("Adding rows to cache, " + validRows.length + " of " + newRows.length + 
                      " rows match filter criteria");
     } else if (validRows.length == 1) {
         // flag that we're adding a single row to the cache (so should pass the 
@@ -2100,6 +2317,7 @@ addCacheData : function (newRows) {
     }
 
     var cache = this.allRows || this.localData;
+    if (!cache) return;
 
     if (!this.allMatchingRowsCached() && this.shouldUpdatePartialCache()) {
         var range = this.getCachedRange();
@@ -2179,7 +2397,7 @@ findLastCachedRow : function (pos) {
     return this.totalRows-1;
 },
 
-// It turns out that getRangePanged() can be reentrant.  The call stack is as follows (in an
+// It turns out that getRangePaged() can be reentrant.  The call stack is as follows (in an
 // LG): fetchRemoteData() -> shows prompt w/clickMask -> clickMask makes a synthetic mouseOut
 // call on the GridRenderer of the LG -> GR mouseOut calls this.getCellRecord() which is
 // plumbed through to the LG - and that method calls data.get() which leads back to here.
@@ -2438,7 +2656,7 @@ _addFetchAhead : function (requestedStart, requestedEnd, firstMissingRow, lastMi
 // <li> you have directly, programmatically modified data within the ResultSet such that it no
 // longer matches the filter criteria
 // <li> you want your modified records to disappear from the list of visible records (that is,
-// those accesible via +link{get()})
+// those accessible via +link{get()})
 // </ul>
 // 
 // @visibility external
@@ -2449,7 +2667,7 @@ filterLocalData : function () {
                                       isc.addProperties({dataSource:this}, this.context));
 	//>DEBUG
 	this.logInfo("Local filter applied: " + this.localData.length + " of " + this.allRows.length 
-                 + " records matched filter:" + isc.Comm.serialize(this.criteria));
+                 + " records matched filter:" + this.echoFull(this.criteria));
 	//<DEBUG
 
     // this.localData has changed,  apply sort if we have all the rows
@@ -2486,7 +2704,7 @@ applyFilter : function (data, criteria, requestProperties) {
 },
 
 // get a list of all values for a given property.  
-// ValuesLists are generally used for "Select Other.." widgets where there is field that is a
+// ValuesLists are generally used for "Select Other.." widgets where there's a field that is a
 // pseudo-enum: it can have any value, but it IS an enumerated list of eg categories, and we would
 // like to avoid having the same category entered twice with a slightly different name.  So we look
 // for existing values among all records.
@@ -2528,7 +2746,7 @@ getValuesList : function (property) {
 // - implementing your own comm layer
 
 //> @method resultSet.fillCacheData() [A]
-// Cache rows in this ResultSet's cache at specific positions
+// Cache rows in this ResultSet's cache at specific positions.
 // <P>
 // This is used internally by ResultSet, but can also be used to seed a new ResultSet with
 // already loaded data.
@@ -2613,8 +2831,8 @@ setFullLength : function (length) {
 // records, but when this is not possible, <code>invalidateCache()</code> allows manual cache
 // invalidation.
 // <P>
-// <code>invalidateCache()</code> fires <code>dataChanged()</code>, which may cause components which
-// as using this ResultSet to request new data for display, triggering server fetches.
+// <code>invalidateCache()</code> fires <code>dataChanged()</code>, which may cause components 
+// using this ResultSet to request new data for display, triggering server fetches.
 // @visibility external
 //<
 invalidateCache : function () {
@@ -2732,8 +2950,8 @@ isc.ResultSet.registerStringMethods({
     // <li> an "update" on a record not in the cache may introduce a new record to the cache.  In
     // this case, <code>originalRecord</code> is null and <code>rowNum</code> is the position of
     // insertion.
-    // <li> an "update" may remove a record from cache, in this case, the rowNum indicates it's
-    // former position, and this case can be detected by detecting
+    // <li> an "update" may remove a record from cache. In this case, the rowNum indicates it's
+    // former position and this can be detected by checking
     // resultSet.get(rowNum) != originalRecord
     // </ul>
     // Note that an "update" on a sorted dataset may cause changes at two indices.  In this case

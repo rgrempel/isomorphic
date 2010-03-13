@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -144,14 +144,14 @@ trim : function (chars) {
         start = 0,
         end = l - 1,
         i = 0;
-
+    
     // find first character not in the removal list
     while (start < l && removeChars.contains(this.charAt(i++))) start++;
-
+    
     // find last character not in the removal list
     i = l - 1;
     while (end >= 0 && removeChars.contains(this.charAt(i--))) end--;
-
+    
     return this.substring(start, end + 1);
 },
 
@@ -177,20 +177,20 @@ convertTags : function (prefix,suffix){
 // <p>
 // This prevents HTML-special characters like &lt; and &gt; from being interpreted as tags, and
 // preserves line breaks and extra spacing.
-//           <pre>
-//				converts		   to
-//				--------  		   ---------------------------
-//				  &				   &amp;
-//				  <				   &lt;
-//				  >				   &gt;
-//				  \r,\n,\r\n1space <BR>&nbsp;
-//				  \r,\n,\r\n	   <BR>
-//				  \t			   &nbsp;&nbsp;&nbsp;&nbsp;
-//				  2 spaces		   1space&nbsp;
-//           </pre>
-//		@group	stringProcessing
+// <pre>
+//    converts		   to
+//    --------  		   ---------------------------
+//    &				   &amp;
+//    <				   &lt;
+//    >				   &gt;
+//    \r,\n,\r\n1space <BR>&nbsp;
+//    \r,\n,\r\n	   <BR>
+//    \t			   &nbsp;&nbsp;&nbsp;&nbsp;
+//    2 spaces		   1space&nbsp;
+// </pre>
 //
-//	@return				(string)	prefix + converted text + suffix as a single string
+// @group stringProcessing
+// @return (string) string of HTML with tags in the original HTML escaped.
 //<
 asHTML : function (noAutoWrap) {
 	var s = this.replace(/&/g, "&amp;")
@@ -228,7 +228,7 @@ unescapeHTML : function () {
 //
 //		@return				(string)	converted string
 //<
-toInitialCaps : function (){
+toInitialCaps : function () {
 	// lowercase the entire thing, then split by spaces
 	var it = this.toLowerCase().split(" ");
 	// for each word
@@ -300,8 +300,16 @@ evalDynamicString : function (target, evalVars) {
 //<
 asSource : function (singleQuote) {
     return String.asSource(this, singleQuote);
-}
+},
 
+// String.cssToCamelCaps()
+//  Converts a string in css dash syntax "foo-bar-baz" to camelCaps syntax "fooBarBaz".
+// Non-alphabetic chars between the '-' and the lowercase letter are ignored,
+// eg, 'test-234foo' -> 'test234Foo'.
+cssToCamelCaps : function () {
+    return this.replace(/-([^a-z]*)([a-z])/g,
+                        function (str, p1, p2, offset, s) { return p1 + p2.toUpperCase(); });
+}
 
 });
 

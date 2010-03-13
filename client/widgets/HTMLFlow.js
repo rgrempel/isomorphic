@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -53,7 +53,7 @@ isc.HTMLFlow.addClassMethods({
 // Note: This method will be asynchronous if script blocks needs to be loaded from the server.
 // @param html (HTML) Block of HTML from which script tags will be extracted and executed
 // @param callback (callback) Callback to fire when the script has been executed. If a
-//  script error occured during execution, it will be passed to this parameter as the
+//  script error occurred during execution, it will be passed to this parameter as the
 //  first parameter <code>error</code>
 // @param [displayErrors] (boolean) By default script errors encountered executing the
 //  extracted script will be logged to the developer console. Pass in a false value for this
@@ -495,7 +495,7 @@ setContentsURL : function (url, params, rpcProperties) {
 
     // for IFRAME-based loading, leave it up to Canvas code
     if (this.contentsType == "page") {
-        return this.invokeSuper(isc.HTMLFlow, "setContentsURL", url);
+        return this.invokeSuper(isc.HTMLFlow, "setContentsURL", url, params);
     }
 
     // store new URL
@@ -704,7 +704,12 @@ transformHTML : function (html) {
 // @group contentLoading
 // @visibility external
 //<
-contentLoaded : function () { }
+contentLoaded : function () { },
+
+modifyContent : function () {
+    
+    this._updateFloat();
+}
 
 });
 

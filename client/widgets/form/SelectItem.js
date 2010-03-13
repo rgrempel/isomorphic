@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -30,7 +30,7 @@ if (isc.ListGrid) {
 //>	@class	SelectItem
 // FormItem that allows picking between several mutually exclusive options via a select list.
 // <P>
-// Options may be derived from a <code>dataSource</code> or a <code>valueMap</code>
+// Options may be derived from a <code>dataSource</code> or a <code>valueMap</code>.
 // <P>
 // Note that to select the first option as a default value for the item,
 // +link{SelectItem.defaultToFirstOption} may be set.
@@ -150,8 +150,8 @@ isc._SelectItemProperties = {
     
     //>	@attr	selectOtherItem.separatorValue		(string : "----" : IRWA)
     // Value for the separator item between normal items and the <code>Other...</code> value. 
-    // If necessary the value may be changed to ensure it doesn't colide with any data values in
-    // this items +link{formItem.valueMap,valueMap}.
+    // If necessary the value may be changed to ensure it doesn't collide with any data values in
+    // this item's +link{formItem.valueMap,valueMap}.
     // @group appearance
     // @visibility external
     //<
@@ -168,7 +168,7 @@ isc._SelectItemProperties = {
     
     //>	@attr	selectOtherItem.otherValue		(string : "***other***" : IRWA)
     // Data value for the <code>Other...</code> item. If necessary this value may be changed to
-    // ensure it doesn't collide with any data values in this items
+    // ensure it doesn't collide with any data values in this item's
     // +link{formItem.valueMap,valueMap}.
     // @group appearance
     // @visibility external
@@ -239,7 +239,7 @@ isc.SelectItem.addProperties({
     
     //> @attr SelectItem.pickerIconWidth (number : null : [IRWA])
     // If +link{selectItem.showPickerIcon} is true for this item, this property governs the
-    // size of the picker icon. If unset picker icon will be sized as a square to fit in the
+    // size of the picker icon. If unset, the picker icon will be sized as a square to fit in the
     // avaliable height for the icon.
     // @group pickerIcon
     // @visibility external
@@ -247,7 +247,7 @@ isc.SelectItem.addProperties({
         
     //> @attr SelectItem.pickerIconHeight (number : null : [IRWA])
     // If +link{selectItem.showPickerIcon} is true for this item, this property governs the
-    // size of the picker icon. If unset picker icon will be sized as a square to fit in the
+    // size of the picker icon. If unset, the picker icon will be sized as a square to fit in the
     // avaliable height for the icon.
     // @group pickerIcon
     // @visibility external
@@ -288,14 +288,14 @@ isc.SelectItem.addProperties({
     // Deprecated:
 
     //> @attr SelectItem.hiliteOnFocus   (boolean : true : [IRWA])
-    // Should this SelectItem show a hilite when it recieves keyboard focus?
+    // Should this SelectItem show a hilite when it receives keyboard focus?
     // @visibility external
     // @deprecated As of SmartClient version 5.5, use +link{SelectItem.showFocused} instead.
     //<
     
     //> @attr    SelectItem.hiliteColor (string : "#316AC5": IRWA)
     // Background color to apply to the select item's selected value when the SelectItem 
-    // recieves focus, if <code>hiliteOnFocus</code> is true.
+    // receives focus, if <code>hiliteOnFocus</code> is true.
     // @visibility external
     // @deprecated As of SmartClient version 5.5, if +link{SelectItem.showFocused} is true,
     //  styling will be updated for this form item on focus. The hiliting effect can therefore
@@ -305,7 +305,7 @@ isc.SelectItem.addProperties({
     
     //> @attr    SelectItem.hiliteTextColor (string : "white": IRWA)
     // Text color to apply to the select item's selected value when the SelectItem 
-    // recieves focus, if <code>hiliteOnFocus</code> is true.
+    // receives focus, if <code>hiliteOnFocus</code> is true.
     // @visibility external
     // @deprecated As of SmartClient version 5.5, if +link{SelectItem.showFocused} is true,
     //  styling will be updated for this form item on focus. The hiliting effect can therefore
@@ -372,7 +372,7 @@ isc.SelectItem.addProperties({
     //>@attr    SelectItem.changeOnValueChange (boolean : true : IRW) 
     //  If true the change handler for this item will fire when the item has focus and
     //  modifies the selection for the item.
-    //  If false, the change handler will only fire when the user leaves a modified selectItem
+    //  If false, the change handler will only fire when the user leaves a modified selectItem.
     //<
     
     
@@ -421,6 +421,15 @@ isc.SelectItem.addProperties({
     // @see PickList.optionDataSource
     //<
     autoFetchData:true
+
+    //>@attr SelectItem.showHintInField (boolean : null : IRWA)
+    // If showing a hint for this form item, should it be shown within the field?
+    // <P>CSS style for the hint is +link{selectItem.textBoxStyle} with the suffix
+    // "Hint" appended to it. 
+    // @group appearance
+    // @see FormItem.hint
+    // @visibility external
+    //<
 });
 
 
@@ -576,6 +585,7 @@ isc.SelectItem.addMethods({
                 this.form.__suppressFocusHandler = true;
             this.updateValue();
         }
+
         return returnVal;
     },    
     
@@ -589,6 +599,19 @@ isc.SelectItem.addMethods({
         return this.Super("handleEditorExit", arguments);
     },
     
+    editorEnter : function (form, item, value) {
+        // Hide in-field hint if being shown
+        this._hideInFieldHint();
+    },
+    editorExit : function (form, item, value) {
+        var undef;
+        if (this.showHintInField && 
+            (value === undef || value == null || isc.is.emptyString(value)))
+        {
+            this._showInFieldHint();
+        }
+    },
+
     // When the pick list is shown, fire editorEnter - essentially interacting with the picklist
     // is the same as interacting with this item.
     _pickListShown : function () {
@@ -802,12 +825,13 @@ isc.SelectItem.addMethods({
     // setLocalValue:
     // Update the displayed value without saving the value out / firing the change handler.
     setLocalValue : function (value) {
+        this._localValue = value;
+        
         if (this.isVisible() && this.containerWidget.isDrawn()) {
             
             if (value == null) value = null;
             this.setElementValue(this.mapValueToDisplay(value), value);
         }
-        this._localValue = value;
         this._markValueAsDirty();
     },
     
@@ -815,6 +839,34 @@ isc.SelectItem.addMethods({
     
     setElementValue : function (displayValue, dataValue, a,b,c) {
         this._displayValue = displayValue;
+
+        // If showing hint within data field, see if it should be shown now.
+        
+        if (this.showHintInField && this.getHint()) {
+            var undef;
+            if (displayValue === undef || displayValue == null || 
+                isc.is.emptyString(displayValue))
+            {
+                // Set field class to our hint style
+                if (this.hasDataElement()) {
+                    var element = this.getDataElement();
+                    element.className = this._getInFieldHintStyle();
+                } else {
+                    var textBox = this._getTextBoxElement();
+                    if (textBox != null)
+                        textBox.className = this._getInFieldHintStyle();
+                }
+
+                // Show the hint in the field
+                // Note that hint is HTML which may not display correctly within the field.
+                // To improve the situation, unescape common HTML sequences first.
+                var hint = this.getHint();
+                if (hint) hint = hint.unescapeHTML();
+                displayValue = hint;
+                this._showingInFieldHint = true;
+            }
+        }
+
         return this.invokeSuper(isc.SelectItem, "setElementValue", displayValue, dataValue, a,b,c);
     },
 
@@ -846,8 +898,8 @@ isc.SelectItem.addMethods({
     //>@attr    SelectOtherItem.selectOtherPrompt   (string : "Other value for <br>${item.getTitle()}?" : IR)
     // Title to show in prompt for "other" value.
     // Note this is a dynamic string. JavaScript content is supported within <code>\${...}</code>
-    // tags, with local variables for <code>item</code> (a pointer to this item), <code>value</code>
-    // a pointer to the currently selected item value
+    // tags, with local variables for <code>item</code> (a pointer to this item) and 
+    // <code>value</code> a pointer to the currently selected item value.
     // @group i18nMessages
     // @visibility external
     //<
@@ -920,6 +972,14 @@ isc.SelectItem.addMethods({
         if (this.pickList && this.pickList.isDrawn() && this.pickListVisible()) {
             this.setUpPickList(true);
         }
+
+        // See if the in-field hint needs to be shown
+        if (!this.hasFocus && this.showHint && this.showHintInField && this.getHint()) {
+            if (value === undef || value == null || isc.is.emptyString(value)) {
+                this._showInFieldHint();
+            }
+        }
+
         return value;
     },
     
@@ -1013,6 +1073,7 @@ isc.SelectItem.addMethods({
     // mapValueToDisplay() allows us to convert internal value to  display value.
     
     mapValueToDisplay : function (internalValue, a, b, c) {
+            
         if (this.isSelectOther) {
             if (internalValue == this.otherValue) return this.otherTitle;
             if (internalValue == this.separatorValue) return this.separatorTitle;
@@ -1020,6 +1081,34 @@ isc.SelectItem.addMethods({
 
         return this.invokeSuper(isc.SelectItem, "mapValueToDisplay", internalValue,a, b, c);
 	},
+    
+    
+    // getSelectedRecord()
+    // By default this always updates the selection on the pickList to match this item's stored
+    // value. However for SelectItems there's a _localValue which gets set up before we store our
+    // value properly.
+    // This is used to allow change to occur on blur rather than just on standard 'change' event.
+    //
+    // For selectItems use the current _local value rather than the stored item value when
+    // picking up the current record from the pickList. Otherwise you get unexpected behaviour if
+    // (for example) custom formatters make use of the pick list records -- we'll see the last
+    // selected record rather than the newly selected record until the change handler fires and
+    // stores the value out.
+    getSelectedRecord : function () {
+        if (this.pickList == null || this.pickList.destroyed) this.makePickList(false);
+        
+        // We can't just say this.pickList.getSelectedRecord(), since the
+        // value may not have been picked from a pickListClick -- instead force a selection
+        // that matches our item value then retrieve the selected value.
+        var undef,
+            value = this._localValue;
+        if (value === undef) value = this.getValue();
+        
+        if (this.selectItemFromValue(value)) {
+            return this.pickList.getSelectedRecord();
+        }
+        return null;
+    },
 
     // Map valueToDisplay needs to pick up
     // the mapping between displayField and valueField, if there is one.
@@ -1082,10 +1171,15 @@ isc.SelectItem.addMethods({
     // @include PickList.fetchData()
     //<
 
-    //> @attr SelectItem.optionFilterContext (RPCRequest Properties : null : IRA)
+    //> @attr SelectItem.optionFilterContext (DSRequest Properties : null : IRA)
     // @include PickList.optionFilterContext
     //<
-    
+ 
+    //> @attr SelectItem.optionOperationId (string : null : [IR])
+    // @include FormItem.optionOperationId
+    // @visibility external
+    //<
+ 
     //> @attr SelectItem.displayField (string : null : IRW)
     // @include PickList.displayField
     // @visibility external
@@ -1137,7 +1231,12 @@ isc.SelectItem.addMethods({
     // @include PickList.pickListProperties
     // @visibility external
     //<
-    
+
+    //> @attr   SelectItem.sortField   (String or integer : null : IR)
+    // @include PickList.sortField
+    // @visibility external
+    //<
+
     // Override the method to get pickList data to add unknown values and selectOther
     // properties
     
@@ -1190,6 +1289,15 @@ isc.SelectItem.addMethods({
             if (value == this.otherValue) return this.otherTitle;
             if (value == this.separatorValue) return this.separatorTitle;
         }
+        
+        // apply standard formatter to the value in the single generated field for
+        // standard pick lists.
+        // This handles formatters applied via simpleType as well as any
+        // 'formatValue()' method applied to this item
+        if (this.pickList.getField(fieldName)._isGeneratedField) {
+            return this._formatDataType(value);
+        }
+        
         return value;
         
     },
@@ -1210,7 +1318,7 @@ isc.SelectItem.addMethods({
     },
 
     //>@method SelectItem.getPickListPosition() (A)
-    // Returns the global top and left coordinates for the pickList.
+    // Returns the global left and top coordinates for the pickList.
     // Default implementation always draws the pick-list below the Select Item - override for
     // any special implementation.
     // @return (array)  2 element array indicating left and top coordinate for the pick list.
@@ -1297,7 +1405,8 @@ isc.ClassFactory.mixInInterface("SelectItem", "PickList");
 
 
 isc.SelectItem.registerStringMethods({
-    dataArrived:"startRow,endRow,data"
+    dataArrived:"startRow,endRow,data",
+    getPickListFilterCriteria:""
 });
 
 }

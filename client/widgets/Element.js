@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -46,7 +46,7 @@ get : function (id, doc) {
 // _getElementFromSelection()
 // Determine which DOM element contains the current selection.
 // 'doc' param allows caller to pass in a pointer to the document element - (may be document
-// element from some frame/iframe - if not specifed the main page document is used).
+// element from some frame/iframe - if not specified the main page document is used).
 
 _getElementFromSelection : function (doc) {
 
@@ -246,11 +246,12 @@ insertAdjacentHTML : function (element, where, html, singleElement) {
 },
 
 // clear the element passed in (removing it's HTML from the DOM)
-clear : function (element) {
+clear : function (element, useRemoveChild) {
     if (element == null) return;
  
     
-    if (isc.Page.isLoaded() && isc.Browser.isIE) {
+    if (!useRemoveChild && isc.Page.isLoaded() && isc.Browser.isIE) {
+        
         element.outerHTML = isc.emptyString;
         return;
     }
@@ -1472,7 +1473,7 @@ getStyleDeclaration : function (className, checkMultiples) {
             
             var selectorText = rules[j].selectorText;
 
-            // @import css tags result in entires with no 'selectorText' property.            
+            // @import css tags result in entries with no 'selectorText' property.            
             if (selectorText == null) continue;
 
             if (isc.Browser.isMoz) {
@@ -1576,7 +1577,7 @@ getStyleText : function (className, checkMultiples) {
             var actualStyle = style[i];
             var currentCssText = actualStyle.cssText;
             if (currentCssText == null) continue;
-            if (!currentCssText.endsWith(this._$semi)) currentCssText += this._$semi;
+            if (!isc.endsWith(currentCssText, this._$semi)) currentCssText += this._$semi;
             if (cssText == null) cssText = currentCssText;
             else cssText += currentCssText;
         }
@@ -1596,7 +1597,7 @@ getStyleText : function (className, checkMultiples) {
 // wipe out any cached CSS information
 // helper for Canvas._clearCSSCaches
 _clearCSSCaches : function () {
-    //isc.Log.logWarn("styleCache is: " + isc.Comm.serialize(isc.Element._styleCache, true));
+    //isc.Log.logWarn("styleCache is: " + isc.echoFull(isc.Element._styleCache));
 
     // wipe out the central style definition caches
     isc.Element._styleCache = {};
@@ -1680,16 +1681,16 @@ _calculateMargins : function (className) {
         leftMarginString = styleObject.marginLeft,
         rightMarginString = styleObject.marginRight,
         pxString = isc.px;
-    if (isc.isA.String(topMarginString) && topMarginString.endsWith(pxString)) 
+    if (isc.isA.String(topMarginString) && isc.endsWith(topMarginString, pxString)) 
         margins.top = parseInt(topMarginString);
 
-    if (isc.isA.String(bottomMarginString) && bottomMarginString.endsWith(pxString)) 
+    if (isc.isA.String(bottomMarginString) && isc.endsWith(bottomMarginString, pxString)) 
         margins.bottom = parseInt(bottomMarginString);
         
-    if (isc.isA.String(leftMarginString) && leftMarginString.endsWith(pxString)) 
+    if (isc.isA.String(leftMarginString) && isc.endsWith(leftMarginString, pxString)) 
         margins.left = parseInt(leftMarginString);
         
-    if (isc.isA.String(rightMarginString) && rightMarginString.endsWith(pxString)) 
+    if (isc.isA.String(rightMarginString) && isc.endsWith(rightMarginString, pxString)) 
         margins.right = parseInt(rightMarginString);
         
     this._marginsCache[className] = margins;        
@@ -1763,16 +1764,16 @@ _calculateBorderSize : function (className) {
         rightBorderString = styleObject.borderRightWidth,
         pxString = isc.px;
         
-    if (isc.isA.String(topBorderString) && topBorderString.endsWith(pxString)) 
+    if (isc.isA.String(topBorderString) && isc.endsWith(topBorderString, pxString)) 
         borderSize.top = parseInt(topBorderString);
 
-    if (isc.isA.String(bottomBorderString) && bottomBorderString.endsWith(pxString)) 
+    if (isc.isA.String(bottomBorderString) && isc.endsWith(bottomBorderString, pxString)) 
         borderSize.bottom = parseInt(bottomBorderString);
         
-    if (isc.isA.String(leftBorderString) && leftBorderString.endsWith(pxString)) 
+    if (isc.isA.String(leftBorderString) && isc.endsWith(leftBorderString, pxString)) 
         borderSize.left = parseInt(leftBorderString);
         
-    if (isc.isA.String(rightBorderString) && rightBorderString.endsWith(pxString)) 
+    if (isc.isA.String(rightBorderString) && isc.endsWith(rightBorderString, pxString)) 
         borderSize.right = parseInt(rightBorderString);
     
     this._borderSizeCache[className] = borderSize;        
@@ -1893,16 +1894,16 @@ _calculatePadding : function (className) {
     padSize.nullLeft = (leftPadding == null || leftPadding == isc.emptyString);
     padSize.nullRight = (rightPadding == null || rightPadding == isc.emptyString);
         
-    if (isc.isA.String(topPadding) && topPadding.endsWith(pxString)) 
+    if (isc.isA.String(topPadding) && isc.endsWith(topPadding, pxString)) 
         padSize.top = parseInt(topPadding);
 
-    if (isc.isA.String(bottomPadding) && bottomPadding.endsWith(pxString)) 
+    if (isc.isA.String(bottomPadding) && isc.endsWith(bottomPadding, pxString)) 
         padSize.bottom = parseInt(bottomPadding);
         
-    if (isc.isA.String(leftPadding) && leftPadding.endsWith(pxString)) 
+    if (isc.isA.String(leftPadding) && isc.endsWith(leftPadding, pxString)) 
         padSize.left = parseInt(leftPadding);
         
-    if (isc.isA.String(rightPadding) && rightPadding.endsWith(pxString)) 
+    if (isc.isA.String(rightPadding) && isc.endsWith(rightPadding, pxString)) 
         padSize.right = parseInt(rightPadding);
 
     this._padSizeCache[className] = padSize;

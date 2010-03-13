@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -255,7 +255,7 @@ handleEvent : function (target, eventType, eventInfo) {
             // time and stored as item.functionName
             var object = item.action;
 
-            if (object.destroyed) {
+            if (!object || object.destroyed) {
                 // if the item has been destroyed, remove the registration and continue
                 list[i] = null;
                 continue;

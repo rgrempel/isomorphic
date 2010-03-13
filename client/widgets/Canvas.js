@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -45,7 +45,7 @@ isc.isA.Canvas = function (object) { return (object != null && object._isA_Canva
 	// Width and height of an object
 	//<
 	//>	@groupDef appearance
-	// Properties defining an object's apperance
+	// Properties defining an object's appearance
 	//<
 	//>	@groupDef drawing
 	// Rendering an object on the page
@@ -67,14 +67,15 @@ isc.isA.Canvas = function (object) { return (object != null && object._isA_Canva
 	//<
 	//>	@groupDef dragdrop
 	// Dragging objects and dropping them onto other objects
+    // @title Drag and Drop
 	//<
 	//>	@groupDef image
 	// Utilities to render images
 	//<
 	//>	@groupDef images
-	// Refering to and loading images.
+	// Referring to and loading images.
     // <P>
-	// The two main URL settings relevent to loading images are:<br>
+	// The two main URL settings relevant to loading images are:<br>
 	// * imgDir (where application-specific images live)<br>
 	// * skinImgDir (where system supplied images live)<br>
 	//<
@@ -109,7 +110,7 @@ isc.isA.Canvas = function (object) { return (object != null && object._isA_Canva
     // @see group:files
     //<
 	//>	@groupDef files
-	// Refering to and loading other files.
+	// Referring to and loading other files.
     // <P>
 	// The two main URL settings relevant to file loading are:<br>
 	// * appDir  (where application-specific files live)<br>
@@ -144,7 +145,7 @@ isc.Canvas.addClassProperties({
 
 	//	Class constants
 	AUTO:"auto",				//=	@const	isc.Canvas.AUTO			The "use default" setting.
-	ANYTHING:"**anything**",	//=	@const	isc.Canvas.ANYTHING		Generally means "any value is acceptible".
+	ANYTHING:"**anything**",	//=	@const	isc.Canvas.ANYTHING		Generally means "any value is acceptable".
 
 
 	//>	@type	Positioning
@@ -412,7 +413,7 @@ isc.Canvas.addClassProperties({
     TAB_INDEX_CEILING:32766,
 
     //>	@classAttr	isc.Canvas._imageCache		(array : [] : IRWA)
-	//			cache to hold images, so we avoid loading them over and over unecessarily
+	//			cache to hold images, so we avoid loading them over and over unnecessarily
 	//		@group	images
 	//<
 	_imageCache:[],						
@@ -444,7 +445,7 @@ isc.Canvas.addClassProperties({
     // Delayed Redraw
 	// -----------------------------------------------------------------------------------------
     //>	@classAttr	isc.Canvas._redrawQueue		(array of canvas objects : [] : IRWA)
-	//			array to hold pointers to canvases that need to be redrawed
+	//			array to hold pointers to canvases that need to be redrawn
 	//			these items will be redrawn automatically after "a little while"
 	//		@group	handles
 	//		@see	Canvas.clearRedrawQueue()
@@ -622,28 +623,42 @@ isc.Canvas.addProperties({
     //  @group  containment
     //<
     
-    //> @attr   canvas.children    (Array of Canvas : null : IRWA)
+    //> @attr canvas.children (Array of Canvas : null : IR)
     // Array of all Canvii that are immediate children of this Canvas.
-    //  @visibility external
-    //  @group  containment
+    // <P>
+    // Use +link{addChild()} and +link{removeChild()} to add and remove children after a Canvas
+    // has been created/drawn.
+    //
+    // @visibility external
+    // @group containment
     //<
     
-    //> @attr   canvas.peers    (Array of Canvas : null : IRWA)
+    //> @attr canvas.peers (Array of Canvas : null : IRA)
     // Array of all Canvii that are peers of this Canvas.
-    //  @visibility external
-    //  @group  containment
+    // <P>
+    // Use +link{addPeer()} and +link{removePeer()} to add and remove peers after a Canvas
+    // has been created/drawn.
+    //
+    // @visibility external
+    // @group  containment
     //<
     
-    //> @attr   canvas.allowContentAndChildren (boolean : false : [IA])
+    //> @attr canvas.allowContentAndChildren (boolean : false : [IA])
     // If true this widget supports having content specified via the content property and
-    // children specifed in the normal way. Enabling entails a small performance reduction.
+    // children specified in the normal way.  Normally, if children are present, content
+    // returned from getInnerHTML() is shown but is not refreshed by redraw().
+    // <P>
+    // Enabling entails a small performance reduction on redraw()s.
     // @visibility internal
     //<
 
-    //> @attr   canvas.drawChildrenThenContent (boolean : false : [IA])
+    //> @attr canvas.drawChildrenThenContent (boolean : false : [IA])
     // If true, and this widget supports having content and children, when this widget is
     // drawn, the children will be written into the handle, then the content will be created
     // and inserted before the first child in the DOM.
+    // <P>
+    // This is used by widgets who need to create content based on the rendered size of their
+    // children.
     // @visibility internal
     //<
 
@@ -776,7 +791,7 @@ isc.Canvas.addProperties({
     // <P>
     // For canvases with a specified +link{canvas.htmlElement}, this attribute defaults to
     // <code>"relative"</code>. In all other cases the default value will be 
-    // <code>"aboslute"</code>.
+    // <code>"absolute"</code>.
     //
     // @visibility external
     // @group positioning
@@ -784,20 +799,28 @@ isc.Canvas.addProperties({
     //<
 	position:null,
 
-    //>	@attr	canvas.left		(number : 0 : IRW)
+    //>	@attr canvas.left (Number or String : 0 : IRW)
     // Number of pixels the left side of the widget is offset to the right from its default
     // drawing context (either its parent's topleft corner, or the document flow, depending on
     // the value of the +link{position} property).
+    // <P>
+    // Can also be set as a percentage, specified as a String ending in '%', eg, "50%".  In
+    // this case the top coordinate is considered as a percentage of the specified width of
+    // the +link{canvas.parentElement,parent}.
     //
     // @visibility external
     // @group  positioning
     //<
 	left:0,
 
-    //>	@attr	canvas.top		(number : 0 : IRW)
+    //>	@attr canvas.top (Number or String : 0 : IRW)
     // Number of pixels the top of the widget is offset down from its default drawing context
     // (either its parent's top-left corner, or the document flow, depending on the value of
     // the +link{position} property).
+    // <P>
+    // Can also be set as a percentage, specified as a String ending in '%', eg, "50%".  In
+    // this case the top coordinate is considered as a percentage of the specified height of
+    // the +link{canvas.parentElement,parent}.
     //
     // @visibility external
     // @group  positioning
@@ -814,7 +837,7 @@ isc.Canvas.addProperties({
     // defaults will be taken to be the "fixed" size of the widget, and its size will not be
     // managed by layouts
     // In some cases, we WANT certain dimensions to be regarded as fixed by a Layout (they may
-    // still be overriden by the user) so we set the height/width properties
+    // still be overridden by the user) so we set the height/width properties
 
     //>	@attr	canvas.width		(Number or String : null : [IRW])
     // Size for this component's horizontal dimension.
@@ -1090,7 +1113,7 @@ isc.Canvas.addProperties({
     // The value of a function is its return value.  The value of any variable is the same as
     // that returned by its toString() representation.
     // <p>
-    // Inside the evalution contentext, <code>this</code> points to the canvas instance that
+    // Inside the evaluation contentext, <code>this</code> points to the canvas instance that
     // has the dynamicContents string as its contents - in other words the canvas instance on
     // which the template is declared.
     //
@@ -1103,7 +1126,7 @@ isc.Canvas.addProperties({
 
     //> @attr canvas.dynamicContentsVars (ValueMap : null : IRWA)
     //
-    // An optional map of name:value parameters that will be evailable within the scope of the
+    // An optional map of name:value parameters that will be available within the scope of the
     // dynamicContents evaluation.  For example - if you have e.g:
     // <pre>
     // Canvas.create({
@@ -1118,7 +1141,7 @@ isc.Canvas.addProperties({
     // change values in the dynamicContentsVars object literal, just call
     // <code>markForRedraw()</code> on the canvas to have the dynamicContents template re-evaluated.
     // <p>
-    // Note that <code>this</code> is always evailable inside a dynamic contents string and points to
+    // Note that <code>this</code> is always available inside a dynamic contents string and points to
     // the canvas instance containing the dynamic contents.
     // <p>
     // Used only if +link{attr:Canvas.dynamicContents} : true has been set.
@@ -1184,14 +1207,14 @@ isc.Canvas.addProperties({
 	// @group appearance
 	//<
 
-	//>	@attr canvas.backgroundImage (SCImgURL : null : [IR])
+	//>	@attr canvas.backgroundImage (SCImgURL : null : IRW)
 	// URL for a background image for this widget (corresponding to the CSS "background-image"
     // attribute).
     // @visibility external
 	// @group appearance
 	//<
 
-    //>	@attr	canvas.backgroundRepeat		(BkgndRepeat : isc.Canvas.REPEAT : [IRW])
+    //>	@attr	canvas.backgroundRepeat		(BkgndRepeat : isc.Canvas.REPEAT : IR)
     //      Specifies how the background image should be tiled if this widget
     //      is larger than the image. It corresponds to the CSS background-repeat attribute.
     //      See BkgndRepeat type for details.
@@ -1200,7 +1223,7 @@ isc.Canvas.addProperties({
     //<
 	backgroundRepeat:isc.Canvas.REPEAT,
 
-    //>	@attr	canvas.backgroundPosition		(string : null : [IRW])
+    //>	@attr	canvas.backgroundPosition		(string : null : IR)
     //      Specifies how the background image should be positioned on the widget.
     //      It corresponds to the CSS background-position attribute. If unset,
     //      no background-position attribute is specified if a background image is
@@ -1211,7 +1234,7 @@ isc.Canvas.addProperties({
 
     //>	@attr	canvas.mozOutlineOffset (string : "-1px": [IRA])
     // Only applies to Moz Firefox 1.5 and above.
-    // When this widget recieves focus, how far should the dotted focus outline appear from
+    // When this widget receives focus, how far should the dotted focus outline appear from
     // the edge of the canvas. A negative value will render the dotted outline inside the
     // canvas 
     // @visibility internal
@@ -1220,7 +1243,7 @@ isc.Canvas.addProperties({
 
     //>	@attr	canvas.mozOutlineColor (string : null : [IRA])
     // Only applies to Moz Firefox 1.5 and above.
-    // When this widget recieves focus, what color should the dotted focus outline appear.
+    // When this widget receives focus, what color should the dotted focus outline appear.
     // Unspecified by default - gives us the native browser behavior.
     // @visibility internal
     //<    
@@ -1524,7 +1547,7 @@ isc.Canvas.addProperties({
     // @example focus
 	//<
     
-    //> @attr   canvas.showeFocusOutline    (boolean : true : IRWA)
+    //> @attr   canvas.showFocusOutline    (boolean : true : IRWA)
     // For focusable widgets, should the native dotted focus outline be shown, where supported?
     // @visibility internal
     //<
@@ -1554,10 +1577,10 @@ isc.Canvas.addProperties({
     //     native elements with explicit tab indices
     //   - NOTE: with both of the above use cases, if a compound widget is inserted, all
     //     focuseable children will need an explicit tabIndex.  In some cases this works
-    //     automatically, eg, in a ListGrid, the body and header recieve the same tabIndex by
+    //     automatically, eg, in a ListGrid, the body and header receive the same tabIndex by
     //     default
     //  - Cannot be used to slot a widget into the middle of the ISC auto-assigned tab loop,
-    //    as we enforce the TAB_INDEX_FLOOR upper limit on manually assigne tabindices
+    //    as we enforce the TAB_INDEX_FLOOR upper limit on manually assigned tabindices
     
     
     _useNativeTabIndex:(isc.Browser.isIE && isc.Browser.version >= 5) || 
@@ -1946,8 +1969,9 @@ isc.Canvas.addProperties({
     
     //>	@attr	canvas.edgeMarginSize		(number : 5 : IRWA)
 	// How far into the edge of an object do we consider the "edge" for drag resize purposes?
-	//		@group	dragdrop
-    //  @example dragResize
+	// @group dragdrop
+    // @example dragResize
+    // @visibility external
 	//<
 	edgeMarginSize:5,					
 
@@ -2104,7 +2128,7 @@ isc.Canvas.addProperties({
 	doubleClickDelay:250,
     
     //> @attr   canvas.noDoubleClicks   (boolean : null : IRWA)
-    // If true, this canvas will recieve all mouse-clicks as single click events rather than
+    // If true, this canvas will receive all mouse-clicks as single click events rather than
     // doubleClicks.
     // @group events
     // @visibility external
@@ -2144,8 +2168,8 @@ isc.Canvas.addProperties({
     
 
     //> @attr canvas.useEventParts  (boolean : false : IRWA)
-    // If true, when this widget recieves events, it will check whether the native DOM element
-    // that recieved the event has been marked as a special "part" of this widget, and if so
+    // If true, when this widget receives events, it will check whether the native DOM element
+    // that received the event has been marked as a special "part" of this widget, and if so
     // fire the appropriate part events.<br>
     // Elements written into this canvas can be marked as 'parts' by setting the 'eventpart'
     // attribute to the name of the part type. The events fired are then based upon this 
@@ -2173,7 +2197,7 @@ isc.Canvas.addProperties({
    
     //> @attr canvas.percentSource (Canvas : null : IRWA) 
     // If this canvas has its size specified as a percentage, this property allows the user to
-    // explicitly designate another canvas upon which sizinng will be based.
+    // explicitly designate another canvas upon which sizing will be based.
     // <P>
     // If unset percentage sizing is based on<br>
     // - the +link{canvas.masterElement,masterElement} if there is one and
@@ -2209,7 +2233,7 @@ isc.Canvas.addProperties({
     // +link{canvas.parentElement,parentElement}.
     // <P>
     // Note that this property also impacts the sizing of this widget. If this widgets size
-    // is specifed as a percent value, and has no explicit
+    // is specified as a percent value, and has no explicit
     // +link{Canvas.percentSource}, sizing will be calculated based on the size of the 
     // masterElement when snapTo is set.
     // <P>
@@ -2239,7 +2263,7 @@ isc.Canvas.addProperties({
     // If +link{canvas.snapTo,snapTo} is defined for this widget, this property can be used to
     // specify an offset in px or percentage for the left coordinate of this widget.
     // <P>
-    // For example if <code>snapTo</code> is specifed as <code>"L"</code> and 
+    // For example if <code>snapTo</code> is specified as <code>"L"</code> and 
     // <code>snapOffsetLeft</code> is set to 6, this widget will be rendered 6px inside the left
     // edge of its parent or master element.
     // @group sizing
@@ -2251,7 +2275,7 @@ isc.Canvas.addProperties({
     // If +link{canvas.snapTo,snapTo} is defined for this widget, this property can be used to
     // specify an offset in px or percentage for the top coordinate of this widget.
     // <P>
-    // For example if <code>snapTo</code> is specifed as <code>"T"</code> and 
+    // For example if <code>snapTo</code> is specified as <code>"T"</code> and 
     // <code>snapOffsetTop</code> is set to 6, this widget will be rendered 6px below the top
     // edge of its parent or master element.
     // @group sizing
@@ -2548,10 +2572,10 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
     }
     
     if (this.redrawOnEnable != null) {
-        this.logWarn("Widget initialized with deprcated 'redrawOnEnable' - use 'redrawOnDisable' instead.");
+        this.logWarn("Widget initialized with deprecated 'redrawOnEnable' - use 'redrawOnDisable' instead.");
         this.redrawOnDisable = this.redrawOnEnable;
     }
-    
+
 	// call initWidget() to give each subclass of canvas a chance to initialize its child
     // structures
 	this.initWidget(A,B,C,D,E,F,G,H,I,J,K,L,M);
@@ -2618,7 +2642,7 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
     // designated for us by skins and instances to add autoChildren to existing components.
     // Custom components should not use this.
     if (this.addOns) this.addAutoChildren(this.addOns);
-    
+
     //>!BackCompat 2004.08.05
     if (this._adjacentHandle && !this.drawContext) {
         this.drawContext = { element : this._adjacentHandle };
@@ -2653,6 +2677,31 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
         parentElement.addChild(this);
     }
 
+    //>!BackCompat 2009.7.7
+    // We created and exposed 'autoFetchAsFilter' for the 7.0 release candidate builds.
+    // If specified use it to override autoFetchTextMatchStyle 
+    // databinding / 
+    if (this.autoFetchAsFilter != null) {
+        var aftms = this.autoFetchAsFilter ? "substring" : "exact";
+        this.logWarn("This component has autoFetchAsFilter explicitly specified as:" +
+                    this.autoFetchAsFilter + ". This attribute is deprecated in favor of " +
+                    "this.autoFetchTextMatchStyle. Defaulting autoFetchTextMatchStyle to \"" +
+                    aftms + "\" based on this setting.");
+        this.autoFetchTextMatchStyle = aftms;
+    }
+    //<!BackCompat
+    
+    
+    // On init(), if we have a specified valuesManager, or a dataPath implying we should
+    // attach to one, set that relationship up.
+    // This is implemented in dataBoundComponent and will no-op in most cases
+    this.initializeValuesManager();
+
+	// panelHeader implementation
+	if (this.showPanelHeader == true) {
+        if (this.setupPanelHeader) this.setupPanelHeader();
+        if (this.refreshPanelControls) this.refreshPanelControls();
+    }
 
 	// if we're supposed to autoDraw, and we don't have a parentElement already,
 	//	draw us now.  This allows us to avoid sprinkling canvas.draw() commands
@@ -2665,7 +2714,7 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
         // XXX probably temporary workaround
         // in Safari, styling info isn't available until pageLoad, so we have a flag that
         // allows all autoDrawing to happen after page load, which works so long as no
-        // application code has draw-dependant behaviors (eg checking sizes, or expecting
+        // application code has draw-dependent behaviors (eg checking sizes, or expecting
         // children to exist that are created at draw() time)
         if (isc.Browser.isSafari && isc.deferAutoDraw && !isc.Page.isLoaded() &&
             this.position != "relative") 
@@ -2695,7 +2744,7 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
 // <P>
 // In general, if you are going to call functionality supported by your superclass (eg calling
 // addTab() when your superclass is a TabSet), call Super() first.  However, you can generally
-// assign properties to <code>this</code> before calling Super() as a way of mimicing the
+// assign properties to <code>this</code> before calling Super() as a way of mimicking the
 // effect of the property being passed to +link{Class.create(),create()} on normal instance
 // construction.  For example, when subclassing a DynamicForm, you could set this.items to a
 // generated set of items before calling Super().
@@ -2733,6 +2782,28 @@ setID : function (id) {
     this.clear(); this.draw();
 },
 //<EditMode
+
+// recursively clear out all global references to a Canvas and it's children and peers.  Used
+// when we want to destroy and recreate a component, and want to delay the destroy (for
+// performance reasons), but need to avoid colliding on IDs as the new component is created.
+// NOTE: may be imperfect if the target has a non-peer, non-child component that it creates
+// with a predictable global ID.
+clearIDs : function () {
+    this.clear();
+
+    window[this.ID] = null;
+
+    if (this.children) {
+        for (var i = 0; i < this.children.length; i++) {
+            this.children[i].clearIDs();
+        }
+    }
+    if (this.peers) {
+        for (var i = 0; i < this.peers.length; i++) {
+            this.peers[i].clearIDs();
+        }
+    }
+},
 
 // Drawn state
 // --------------------------------------------------------------------------------------------
@@ -2968,7 +3039,7 @@ readyToDraw : function () {
     // use the _insertHTML method to add the child to the parent using the DOM.
     //
     // If the parent has never drawn though we don't want to proceed, as we will either 
-    // document.write() into the wrong scope, or attempt to _insertHTML() into a non-existant handle
+    // document.write() into the wrong scope, or attempt to _insertHTML() into a non-existent handle
     if (this.parentElement != null && 
             (!isc.isA.Canvas(this.parentElement) || 
              this.parentElement.getDrawnState() == isc.Canvas.UNDRAWN) )
@@ -2987,6 +3058,9 @@ readyToDraw : function () {
             return false;
         
         } else {
+            // this hasn't been the case for quite some time - no longer makes sense to carp
+            // about this
+            /*
             if (!isc.Canvas._safariDeferDrawWarned) {
                 isc.Canvas.logWarn(
                     "Isomorphic recommends drawing components after page load in Safari, as " +
@@ -2998,6 +3072,7 @@ readyToDraw : function () {
                 );
                 isc.Canvas._safariDeferDrawWarned = true;
             }
+            */
         }
     }
     //<Safari
@@ -3094,32 +3169,10 @@ draw : function (showing) {
     this._addStat(this._$draws);
     
     //<DEBUG
+
     // If we are databound, and autoFetchData is true, do a one time fetch on initial draw.
-    
-    var fetchQueued = false;
-    if (this.autoFetchData && !this._initialFetchFired && this.fetchData) {
- 
-        if (!this.dataSource) {
-            this.logWarn("autoFetchData is set, but no dataSource is specified, can't fetch");
-        } else {
-            // Queue the fetch - this means we can batch up any requests our children make on draw
-            // and send them all off together
-            // Specific use case: this means if a ListGrid is autoFetchData:true and has a field
-            // with an optionDataSource we can use the same transaction to fetch the valid options
-            // as to fetch the LG data
-            fetchQueued = !isc.RPCManager.startQueue();
-            
-            
-            
-            if (this.autoFetchAsFilter && this.filterData) {
-                this.filterData(this.getInitialCriteria());
-            } else {
-                this.fetchData(this.getInitialCriteria());
-            }
-            
-            this._initialFetchFired = true;
-        }        
-    }
+    var fetchQueued = this.doInitialFetch();
+
     // If we have any peers, call the 'predrawPeers()' method.
     // This method will draw any peers marked with the "_drawBeforeMaster" flag (set up by passing
     // a parameter to addPeer()), before continuing with the drawing process.
@@ -3213,7 +3266,7 @@ draw : function (showing) {
 
         // detect the case of getting fooled about whether the page is loaded and fix it in
         // IE, warning for other browsers.
-        if ((isc.Browser.isOpra || isc.Browser.isIE) && this.getDocument().readyState == "complete")    
+        if ((isc.Browser.isOpera || isc.Browser.isIE) && this.getDocument().readyState == "complete")    
         {
             isc.Page.finishedLoading();
             
@@ -3225,7 +3278,8 @@ draw : function (showing) {
         
 	}
 
-    // If we queued the fetch, lets send it off now
+    // If we queued the fetch, lets send it off now.  Note this is *after* children have drawn,
+    // hence naturally combines the initial fetches of any hierarchy of databound widgets.
     if (fetchQueued) isc.RPCManager.sendQueue();    
     
     //>FocusProxy If we're using a focusProxy, create it now
@@ -3286,10 +3340,8 @@ draw : function (showing) {
     return this;
 },
 
-// getInitialCriteria() - used to retrieve the initialCriteria when performing auto-fetch of data
-getInitialCriteria : function () {
-    return this.initialCriteria;
-},
+// empty implementation overridden by DBC
+doInitialFetch : function () {},
 
 // output this widget's HTML via document.write()
 _writeHTML : function () {
@@ -3335,7 +3387,7 @@ _writeHTML : function () {
 		
     // if we are separately inserting content, insert the parent's content now.  Note that it
     // is legal for some children to get manually drawn at this point, which allows parents to
-    // write out content that is dependant on child sizes.
+    // write out content that is dependent on child sizes.
     if (separateContentInsertion) this._updateParentHTML();
 
     // draw children if we have any
@@ -3383,7 +3435,7 @@ drawDeferred : function () {
 
 
 
-//> @groupDef Printing
+//> @groupDef printing
 // The browser's built-in support for printing will at best print what you see, which in the
 // case of a web application will often be useless, illegible, or partial.
 // <P>
@@ -3403,7 +3455,8 @@ drawDeferred : function () {
 // including the ability to created printed representations of custom components you have
 // created.
 //
-// @visibility printing
+// @title Printing
+// @visibility external
 //<
 
 //>	@method	canvas.getPrintHTML() [A]
@@ -3413,14 +3466,23 @@ drawDeferred : function () {
 // children by calling getPrintHTML() on each child that is considered
 // +link{canvas.shouldPrint,printable}.  
 // <P>
-// Any Canvas that does not have children will return the result of +link{getPrintInnerHTML}.
+// If overriding this method for a custom component, you should <b>either</b> return a String of
+// printable HTML string directly <b>or</b> return null, and fire the callback (if provided) 
+// using +link{Class.fireCallback}.
+// <P>  
+// To return an empty print representation, return empty string ("") rather than null.
+// <P>
+// The <code>printProperties</code> argument, if passed, must be passed to any subcomponents on
+// which <code>getPrintHTML()</code> is called.
+// 
+// @param [printProperties] (PrintProperties) properties to configure printing behavior - may be null.
+// @param [callback] (Callback) optional callback. This is required to handle cases where HTML 
+//                  generation is asynchronous - if a method generates HTML asynchronously, it should return
+//                  null, and fire the specified callback on completion of HTML generation
 //
-// @visibility printing
+// @group printing
+// @visibility external
 //<
-// @attr printProperties (object) properties to configure printing behavior - may be null.
-// @attr callback (callback) optional callback. This is required to handle cases where HTML 
-// generation is asynchronous - if a method generates HTML asynchronously, it should return
-// null, and fire the specified callback on completion of HTML generation
 _$html:"html",
 getPrintHTML : function (printProperties, callback) {
 //!DONTOBFUSCATE  (obfuscation breaks the inline function definitions)
@@ -3428,28 +3490,24 @@ getPrintHTML : function (printProperties, callback) {
     this.isPrinting = true;
     // Always copy this.printProperties onto the printProperties block passed in
     // [Allows you to always suppress controls for certain components only, etc.]
-    if (printProperties == null) {
-        printProperties = isc.addProperties({},this.printProperties);
-        // store the top level canvas so we know not to writing out positioining info
-        // for it.
+    printProperties = isc.addProperties({}, printProperties,this.printProperties);
+    // store the top level canvas so we know not to writing out positioning info
+    // for it.
+    if (printProperties.topLevelCanvas == null) {
         printProperties.topLevelCanvas = this;
-
-        // omitControls / includeControls
-        // omitControls is an array of widget classes which should be ommitted as they are
-        // controls.
-        // By default all subclasses of these controls will also be ommitted - however we can
-        // override that behavior by including a subclass in the 'includeControls' array
-        printProperties.omitControls = isc.Canvas.printOmitControls;
-        printProperties.includeControls = isc.Canvas.printIncludeControls;
-        
         printProperties.isDrawn = this.isDrawn();
         printProperties.isVisible = this.isVisible();
-
-    } else {
-        printProperties = isc.addProperties(printProperties, this.printProperties);
     }
-
-
+    
+    // omitControls / includeControls
+    // omitControls is an array of widget classes which should be ommitted as they are
+    // controls.
+    // By default all subclasses of these controls will also be ommitted - however we can
+    // override that behavior by including a subclass in the 'includeControls' array
+    if (printProperties.omitControls == null) 
+        printProperties.omitControls = isc.Canvas.printOmitControls;
+    if (printProperties.includeControls == null) 
+        printProperties.includeControls = isc.Canvas.printIncludeControls;
     
     this.currentPrintProperties = printProperties || {};
     var HTML = [this.getPrintTagStart(), , ,this.getPrintTagEnd()];
@@ -3586,7 +3644,7 @@ getPrintChildren : function () {
 // </ul>
 //
 // @group printing
-// @visibility printing
+// @visibility external
 //<
 
 // shouldPrintChild - called by getPrintChildren() to determine which children need printing
@@ -3853,6 +3911,7 @@ _makeAccessKeyProxy : function () {
     var handleName = this._getDOMID("focusProxy");
     var proxyString = isc.StringBuffer.concat(
         "<a id='", handleName, 
+        "' href='javascript:void(0)",
         "' onfocus='var _0=window.", this.getID(), ";if(_0){_0.focus();}' ",
         "accessKey='" + accessKey + "'></a>");
            
@@ -4281,7 +4340,7 @@ isDirty : function () {
 // components is handled by a looping timer and will after a very short delay (typically less than
 // 100ms). In most cases it is recommended that developers use <code>markForRedraw()</code>
 // instead of calling +link{canvas.redraw()} directly. Since this method queues the redraw, multiple
-// calls to markForRedraw() within a single thread of excecution will only lead to a single DOM
+// calls to markForRedraw() within a single thread of execution will only lead to a single DOM
 // manipulation which greatly improves application performance.
 //
 //  @visibility external
@@ -4656,7 +4715,7 @@ redrawPeers : function () {
 // A flexible way to update a component from the server.
 // <p>
 // Makes a request to the server at the URL specified by the actionURL of the provided RPCRequest.
-// Sets +link{attr:RPCRequest.evalResult} and +link{attr:RPCRequest.supporessAutoDraw} to true in
+// Sets +link{attr:RPCRequest.evalResult} and +link{attr:RPCRequest.suppressAutoDraw} to true in
 // the provided request and automatically makes available the component on which this method is
 // called under the name 'targetComponent' in the response received from the server (i.e. in the
 // +link{attr:RPCRequest.evalVars} of the request).
@@ -4845,24 +4904,30 @@ clear : function (dontReport) {
     if (this == isc.Canvas._thumbTarget) isc.Canvas.hideResizeThumbs();
     //<EditMode
 
+	// clear the handle for this widget
+    
+	//if (!this._clearedByParent && this.getHandle()) this.clearHandle();
+	
+    //>FocusProxy If we have a focusProxy, clear it from the DOM as well.
+    if (this._useFocusProxy) this._clearFocusProxy();
+    //<FocusProxy
     
 	// tell all of our children to clear so they clean up their own act
 	if (this.children) {
 		for (var list = this.children, i = 0; i < list.length; i++) {
 			var child = list[i];
 			if (!isc.isA.Canvas(child)) continue;
+			child._clearedByParent = true;
 			child.clear(true);
+			child._clearedByParent = null;
 		}
 	}
+
+	if (this.getHandle()) this.clearHandle();
+
+    // don't send notifications to parents that are destroying themselves anyway
     if (this.parentElement) this.parentElement.childCleared(this);
     if (this.masterElement) this.masterElement.peerCleared(this);
-    
-	// clear the handle for this widget
-	if (this.getHandle()) this.clearHandle();
-	
-    //>FocusProxy If we have a focusProxy, clear it from the DOM as well.
-    if (this._useFocusProxy) this._clearFocusProxy();
-    //<FocusProxy
     
     // Clear the scroll-size enforcer div if present
     // (Don't call stopEnforcing - if we get drawn again, continue to enforce the scrollSize)
@@ -4882,7 +4947,10 @@ clear : function (dontReport) {
 	// if we have any peers, clear them as well
 	if (this.peers) {
 		for (var list = this.peers, i = 0; i < list.length; i++) {
+            // if we were cleared by our parent, our peers were too
+            if (this._clearedByParent) list[i]._clearedByParent = true;
 			list[i].clear(true);
+			list[i]._clearedByParent = null;
 		}
 	}
 	
@@ -4957,27 +5025,19 @@ destroy : function (indirectDestroy) {
     // if this widget is not showing a clickMask.
     this.hideClickMask();
 
-    //>DEBUG 
-    if (!this._iscInternal) {
-        // report every destroy for stats, but only log the direct destroys when 
-        // parents/masters destroy children/peers.
-        this._addStat("destroys"); 
-        if (!indirectDestroy) {
-            this.logInfo("destroy()" + 
-                         (this.children && this.children.length > 0 ? 
-                          " (" + this.getChildCount() + " children) " : "") +
-                         (this.logIsDebugEnabled("destroys") ? this.getStackTrace() : ""),
-                         "destroys");
-        }
-    } //<DEBUG
+    this._logDestroy(true, indirectDestroy);
 
-    // If we're showing the hover canvsa, clear it. 
+    // If we're showing the hover canvas, clear it. 
     if (isc.Hover.lastHoverCanvas == this) isc.Hover.hide();
     
-
     // destroy our DOM representation.  
 	this.clear(true);
 
+    // sever parent/peer connection as early as possible to prevent any code that traverses the
+    // parent hierarchy from doing extra work
+    this.deparent();
+    this.depeer();
+    
 	// tell all of our children to destroy so they clean up their own act
 	if (this.children) {
 		for (var list = this.children.duplicate(), i = 0; i < list.length; i++) {
@@ -5007,10 +5067,33 @@ destroy : function (indirectDestroy) {
     if (this.vscrollbar && !this.vscrollbar.destroyed) {
         this.vscrollbar.destroy(true);
         delete this.vscrollbar;
-    } 
+    }
     
-    this.deparent();
-    this.depeer();
+    // AutoChildren: By default destroy any autochildren we created
+    // We set up the _createdAutoChildren object in createAutoChild
+    // This is of the format:   {childName:<array of IDs>}
+    // Auto destroy these and clear this[childName] at the same time, if appropriate
+    if (this._createdAutoChildren) {
+        var autoChildren = this._createdAutoChildren;
+        for (var childName in autoChildren) {
+        
+            var array = autoChildren[childName];
+            for (var i = 0; i < array.length; i++) {
+                var childID = array[i],
+                    child = childID ? window[childID] : null;
+                    
+                if (child && !child.destroyed && child.destroy && !child.dontAutoDestroy) 
+                {
+                   child.destroy();
+                }
+            }
+            
+            // Always clear out this[childName].
+            // Probably not really required but if we didn't destroy the child (dontAutoDestroy)
+            // we don't want to keep pointing to it
+            delete this[childName];
+        }
+    }
     
     // if we have an event proxy, or any other widgets are event proxies for this one, clear
     // out the references in both directions.
@@ -5093,10 +5176,7 @@ markForDestroy : function () {
     if (this.destroyed || this.destroying || this.isPendingDestroy()) return;
     this._pendingDestroy = true;
 
-    if (this.logIsInfoEnabled("destroys")) {
-        this.logInfo("markForDestroy() - setting up delayed destroy() call for this component.",
-                    "destroys");
-    }
+    this._logDestroy(false, false);
     isc.Canvas.scheduleDestroy(this);
 },
 
@@ -5104,6 +5184,21 @@ isPendingDestroy : function () {
     return !this.destroyed && !this.destroying && (this._pendingDestroy == true);
 },
 
+_logDestroy : function (synchronous, indirectDestroy) {
+    //>DEBUG 
+    if (this._iscInternal) return;
+    // report every destroy for stats, but only log the direct destroys when 
+    // parents/masters destroy children/peers.
+    if (synchronous) this._addStat("destroys"); 
+    if (!indirectDestroy && this.logIsInfoEnabled("destroys")) {
+        this.logInfo((synchronous ? "destroy()" : "markForDestroy()") + 
+                     (this.children && this.children.length > 0 ? 
+                      " (" + this.getChildCount() + " children) " : "") +
+                     (this.logIsDebugEnabled("destroys") ? this.getStackTrace() : ""),
+                     "destroys");
+    }
+    //<DEBUG
+},
 
 //>	@method	canvas.clearHandle()	(A)
 //		Clear the canvas handle to free up memory (as much as we can anyway).
@@ -5135,7 +5230,8 @@ clearHandle : function () {
     
         
 
-    isc.Element.clear(handle);
+    
+    isc.Element.clear(handle, this._clearWithRemoveChild);
 
 },
 
@@ -5283,8 +5379,10 @@ _getDOMID : function (partName, dontCache, dontReuse) {
 // helper to retrieve the part name based on DOM ID
 _getDOMPartName : function (domID) {
     if (!this._domIDs) return null;
+    // This is a reverse lookup. If performance becomes a concern we could maintain 
+    // a reverse map instead...
     for (var ID in this._domIDs) {
-        if (ID == domID) return this._domIDs[ID];
+        if (this._domIDs[ID] == domID) return ID;
     }
 },
 // reuseDOMIDs
@@ -5370,7 +5468,7 @@ getTagStart : function (dontConcat) {
     // It also may be required for support of screen reader software.
     // We also need to support updating the tabIndex/accessKey of the widget on the fly.
 
-    // Native tabIndex / accessKey behaviour and considerations:
+    // Native tabIndex / accessKey behavior and considerations:
     // Not all browsers support focusability on every element type - some support focusability
     // only on form elements.  This creates a problem when we need to create keyboard
     // navigability for widgets whose rendering cannot possibly be based on the native <INPUT>
@@ -5405,7 +5503,7 @@ getTagStart : function (dontConcat) {
     //      content div (after the content div), with a specified accessKey and a focus handler
     //      that puts focus into the widget.
     //      See _makeAccessKeyProxy().
-    //      Focus on mouse down - In moz a div with a tabIndex will recieve focus when clicked.
+    //      Focus on mouse down - In moz a div with a tabIndex will receive focus when clicked.
     //      However we set the tabIndex on the clipDiv, not the content div (this is appropriate
     //      - if we set the tabIndex on the content div, the focus outline appears around the
     //      text rather than around the entire widget). In this case clicking on the content
@@ -5443,7 +5541,7 @@ getTagStart : function (dontConcat) {
     // Implementation, for Moz pre ff 1.5:
     //  -- For each 'focusable' widget, create a button element called a focusProxy.
     //     This button is hidden - it is clipped by a parent div, and absolutely positioned
-    //     behind the widget on the page (to ensure that when the element recieves native focus
+    //     behind the widget on the page (to ensure that when the element receives native focus
     //     it is scrolled into view.
     //  -- Give the focusProxy the same tabIndex and accessKey as the widget.
     //  -- Write onfocus and onblur handlers for the focusProxy that put the 'virtual ISC
@@ -5498,12 +5596,13 @@ getTagStart : function (dontConcat) {
     if (this.useClipDiv) { 
         //>DoubleDiv
    
-    	var containsIFrame = this.containsIFrame(),          
-            cursor = this.getCurrentCursor();
-        
-        var focusString,
+        var cursor = this.getCurrentCursor(),
+            focusString,
             nativeTabIndex = this._useNativeTabIndex;
         
+        // initialize for future use by Canvas._updateFloat()
+        this._currentFloatValue = this._calculateFloatValue();
+            
         if (nativeTabIndex && this._canFocus()) {
             focusString = isc.SB.concat(
                 canvas._onFocus, this._getNativeFocusHandlerString(),
@@ -5613,11 +5712,8 @@ getTagStart : function (dontConcat) {
             (this.textDirection != null ? "' dir='" + this.textDirection : ""),            
             "' style='POSITION:relative;VISIBILITY:inherit",
 
-                // nested DIV size detection and float:left - see comments "native size
-                // reporting issues" at bottom of Canvas.js for details
-                (!this._useMozScrollSize && !isc.Browser.isOpera && 
-                    !((isc.Browser.isSafari || isc.Browser.isFirefox) && containsIFrame) ? 
-                    ";FLOAT:left" : ""),
+                // nested DIV size detection and float:left - see _shouldFloatLeft()
+                this._currentFloatValue ? ";FLOAT:"+this._currentFloatValue : "",
                 ";Z-INDEX:" , this.zIndex,
                 (cursor == canvas.AUTO ? "" : ";CURSOR:" + cursor),
                 // padding should be included in the drawn content size, so it goes on the
@@ -6136,8 +6232,9 @@ getHandle : function () {
 
     // don't look for the handle unless we're drawn
     
+    //if (!(this._handleDrawn || this._drawn) || this._clearedByParent) return null;
     if (!(this._handleDrawn || this._drawn)) return null;
-
+    
     // if the handle is not already defined, find it
     if (this._handle == null) {
         // get the ID we wrote into the DOM for the handle
@@ -6164,7 +6261,9 @@ getClipHandle : function () {
 
     //>DoubleDiv
     // don't look for the handle unless we're drawn
+    //if (!(this._handleDrawn || this._drawn) || this._clearedByParent) return null;
     if (!(this._handleDrawn || this._drawn)) return null;
+
 
     // if the handle is not already defined, find it
     if (this._clipDiv == null) {
@@ -6630,6 +6729,13 @@ addChild : function (newChild, name, autoDraw) {
 
 
 _updateChildrenTopElement : function () {
+    // if a dataPath is specified, values may be managed by a valuesManager applied to
+    // an ancestor widget.
+    // Re-Run 'setDataPath()' when the ancestor hierarchy changes
+    // Note that for non dataBound components this no-ops
+    
+    if (this.dataPath) this.setDataPath(this.dataPath);
+    
     var children = this.children;
     if (!children || children.length == 0) return;
     for (var i = 0; i < children.length; i++) {
@@ -7179,7 +7285,7 @@ hideComponentMask : function () {
 //      the ISC widget defined as it's parent.  Measured from the outside of any border/margin
 //      on this widget to the inside of the parent widget's handle - so for
 //      absolutely positioned elements will be the same as the specified widget coordinates,
-//      and in almsot every case will be identical to the result of getOffsetLeft() / top()
+//      and in almost every case will be identical to the result of getOffsetLeft() / top()
 //      [As the parent scrolls, this value will not change, like the specified or offset values
 //       it is relative to the parent's content rather than floating position on the page].
 //  4 - Offset coordinates (getOffsetLeft() and getOffsetTop()).
@@ -7821,7 +7927,7 @@ _getWidthSpan : function (children, skipHidden) {
         // When calculating the scrollwidth of a scrollable widget, don't include the 
         // right-margin of absolute children.
         // Note - we don't make this adjustment if the overflow is visible on the horizontal
-        // axis as we do want the widget to expand to accomodate the child's margin on both 
+        // axis as we do want the widget to expand to accommodate the child's margin on both 
         // sides
         if (!horizontalOverflow && isAbsolute) childWidth -= child.getRightMargin();
     
@@ -8019,7 +8125,7 @@ _getHeightSpan : function (children, skipHidden) {
         // When calculating the scrollHeight of a scrollable widget, don't include the 
         // bottom-margin of absolute children.
         // Note - we don't make this adjustment if the overflow is visible on the vertical
-        // axis as we do want the widget to expand to accomodate the child's margin on both 
+        // axis as we do want the widget to expand to accommodate the child's margin on both 
         // sides        
         if (!verticalOverflow && isAbsolute) childHeight -= child.getBottomMargin();
 
@@ -8755,7 +8861,7 @@ getRightMargin : function () {
 //>	@method canvas._calculateMargins()
 //      Determines the size of the margins for this widget (on each side), by looking at the
 //      widget's "Margin" property, it's handle, and it's CSS class.
-//      Uses cacheing for speed
+//      Uses caching for speed
 //      
 //		@group	appearance
 //      @return (object)    Object with properties 'left', 'top', 'bottom', 'right', specifying the
@@ -8884,7 +8990,7 @@ _calculateNormalMargins : function () {
             // We should handle either "2" or "2px" format margin property
             // (This will also handle "2px 2px 2px 2px", but not asymmetric margins applied in this
             //  way)
-            if (marginString.endsWith(pxString) || parseInt(marginString) + "" == marginString) 
+            if (isc.endsWith(marginString, pxString) || parseInt(marginString) + isc.emptyString == marginString) 
                 marginString = parseInt(marginString);
         }
         
@@ -8911,16 +9017,16 @@ _calculateNormalMargins : function () {
             marginTop = handleStyle.marginTop,
             marginBottom = handleStyle.marginBottom;
         
-        if (isc.isA.String(marginLeft) && marginLeft.endsWith(pxString))
+        if (isc.isA.String(marginLeft) && isc.endsWith(marginLeft, pxString))
             marginLeft = parseInt(marginLeft);
         
-        if (isc.isA.String(marginRight) && marginRight.endsWith(pxString))
+        if (isc.isA.String(marginRight) && isc.endsWith(marginRight, pxString))
             marginRight = parseInt(marginRight)
             
-        if (isc.isA.String(marginTop) && marginTop.endsWith(pxString))
+        if (isc.isA.String(marginTop) && isc.endsWith(marginTop, pxString))
             marginTop = parseInt(marginTop);
         
-        if (isc.isA.String(marginBottom) && marginBottom.endsWith(pxString))
+        if (isc.isA.String(marginBottom) && isc.endsWith(marginBottom, pxString))
             marginBottom = parseInt(marginBottom)
             
         if (isc.isA.Number(marginLeft)) margins.left = marginLeft;
@@ -9038,7 +9144,7 @@ _calculateBorderSize : function () {
     // The Border for a widget can be applied directly to its handle's style attribute - done
     // via the "border" property of the widget, or (if that is not defined), it is picked up
     // from the CSS class for the widget.
-    // In this method we will check for an explictly specified border for the widget, and if none
+    // In this method we will check for an explicitly specified border for the widget, and if none
     // is found, fall through to checking the border on the widget's css class.
     // - Note on the 'border' property.
     //   widget.border is applied directly to the clipHandle's style. It should be of the form
@@ -9098,16 +9204,16 @@ _calculateBorderSize : function () {
             borderTop = handleStyle.borderTopWidth,
             borderBottom = handleStyle.borderBottomWidth;
         
-        if (isc.isA.String(borderLeft) && borderLeft.endsWith(pxString))
+        if (isc.isA.String(borderLeft) && isc.endsWith(borderLeft, pxString))
             borderLeft = parseInt(borderLeft);
         
-        if (isc.isA.String(borderRight) && borderRight.endsWith(pxString))
+        if (isc.isA.String(borderRight) && isc.endsWith(borderRight, pxString))
             borderRight = parseInt(borderRight)
             
-        if (isc.isA.String(borderTop) && borderTop.endsWith(pxString))
+        if (isc.isA.String(borderTop) && isc.endsWith(borderTop, pxString))
             borderTop = parseInt(borderTop);
         
-        if (isc.isA.String(borderBottom) && borderBottom.endsWith(pxString))
+        if (isc.isA.String(borderBottom) && isc.endsWith(borderBottom, pxString))
             borderBottom = parseInt(borderBottom)
         
         if (isc.isA.Number(borderLeft)) borderSizes.left = borderLeft;
@@ -9314,21 +9420,21 @@ _calculatePadding : function () {
         var handleStyle = this.getHandle().style;
 
         if (handleStyle.paddingTop != null && !isc.isAn.emptyString(handleStyle.paddingTop) &&
-            handleStyle.paddingTop.endsWith(pxString)) {
+            isc.endsWith(handleStyle.paddingTop, pxString)) {
                 padding.top = parseInt(handleStyle.paddingTop);
         }
         if (handleStyle.paddingBottom != null && !isc.isAn.emptyString(handleStyle.paddingBottom) &&
-            handleStyle.paddingBottom.endsWith(pxString)) {
+            isc.endsWith(handleStyle.paddingBottom, pxString)) {
                 padding.bottom = parseInt(handleStyle.paddingBottom);
         }
         
         if (handleStyle.paddingLeft != null && !isc.isAn.emptyString(handleStyle.paddingLeft) &&
-            handleStyle.paddingLeft.endsWith(pxString)) {
+            isc.endsWith(handleStyle.paddingLeft, pxString)) {
                 padding.left = parseInt(handleStyle.paddingLeft);
         }
 
         if (handleStyle.paddingRight != null && !isc.isAn.emptyString(handleStyle.paddingRight) &&
-            handleStyle.paddingRight.endsWith(pxString)) {
+            isc.endsWith(handleStyle.paddingRight, pxString)) {
                 padding.right = parseInt(handleStyle.paddingRight);
         }                        
 
@@ -9378,7 +9484,7 @@ _calculatePadding : function () {
 //
 //		@param	x		(number)	GLOBAL x-coordinate
 //		@param	y		(number)	GLOBAL y-coordinate
-//		@param	[withinViewport]	(boolean)	point lies specificly within our viewport
+//		@param	[withinViewport]	(boolean)	point lies specifically within our viewport
 //                                              (drawn area excluding margins and scrollbars if
 //                                              present)
 //
@@ -9763,7 +9869,7 @@ intersectsRect : function (left, top, width, height){
 //>	@method	canvas.containsEvent()
 //			Return true if the last event's mouse coordinates are within the bounds of this component.
 //		NOTE: Z-ordering is not considered for the purposes of this test.  If the coordinate you're
-//		testing is occluded by other component, but the X,Y coordiates are still within the bounds
+//		testing is occluded by other component, but the X,Y coordinates are still within the bounds
 //		of that component, this method will return true.
 //
 //		@group	events, positioning
@@ -10186,7 +10292,7 @@ getVisibleWidth : function (recalc) {
             if (this.vscrollbar.visibility == isc.Canvas.HIDDEN) {
                 sbDelta = this.getScrollbarSize();
             } else {
-                sbDelta = this.getScrollbarSize() - this.vscrollbar.getWidth();
+                sbDelta = this.getScrollbarSize() - this.getScrollbarSize();
             }
             return Math.max(this.getWidth() - sbDelta,1);
         }
@@ -10226,10 +10332,10 @@ getVisibleHeight : function (recalc) {
                             this.isAnimating(this._$hide) ? this.$hideAnimationInfo : null;
         if (animationInfo != null && animationInfo._vertical && this.hscrollOn) {
             var sbDelta = 0;
-            if (this.hscrollbar.visibility == isc.Canvas.HIDDEN) {
+            if (this.hscrollbar && this.hscrollbar.visibility == isc.Canvas.HIDDEN) {
                 sbDelta = this.getScrollbarSize();
             } else {
-                sbDelta = this.getScrollbarSize() - this.hscrollbar.getHeight();
+                sbDelta = this.getScrollbarSize() - this.getScrollbarSize();
             }
             return Math.max(this.getHeight() - sbDelta,1);
         }
@@ -10423,7 +10529,7 @@ masterMoved : function (deltaX, deltaY) {
 // master receiving notification that a peer has moved
 peerMoved : function (child, deltaX, deltaY) { },
 
-//> @method canvas.dragReposioned()    (A)
+//> @method canvas.dragRepositioned()    (A)
 // Observable function fired once at the end of a successful drag-reposition operation.
 // Useful for firing some action in response to reposition without firing repeatedly on every
 // dragMove while the user is drag-resizing the target.
@@ -10714,7 +10820,7 @@ moveToEvent : function (offsetX, offsetY) {
     } else {
         snapParent = EH.getDragTarget(event).parentElement;
     }
-    
+   
     // Parentless canvases cannot participate in snap-to-grid
     if (isc.isA.Canvas(snapParent) && 
         (snapChild.snapToGrid == true || 
@@ -10727,6 +10833,11 @@ moveToEvent : function (offsetX, offsetY) {
             x = event.x,
             y = event.y
         }
+        // allow snapOffsets to be individually disabled by axis. 
+        // useful in calendar.timelineView drag and drop
+        if (snapParent.suppressHSnapOffset == true) x = event.x;
+        if (snapParent.suppressVSnapOffset == true) y = event.y;
+        
         if (snapParent.snapAxis == isc.Canvas.HORIZONTAL ||    
             snapParent.snapAxis == isc.Canvas.BOTH) 
         {
@@ -10748,7 +10859,7 @@ moveToEvent : function (offsetX, offsetY) {
             y += snapParentContentOffset;
         }
     }
-
+    
     // x/y is where we want to move to in global coordinates, so use setPageRect 
     // (Don't pass in width and height - will just move to page coordinates)
     this.setPageRect(  x, y );
@@ -10869,7 +10980,7 @@ placeNear : function (left, top) {
 //      @example    resize
 //<
 // @param [animating] (boolean) Internal optional parameter indicating that this resize is
-//  ocurring as part of an animation
+//  occurring as part of an animation
 // @param [suppressHandleUpdate] (boolean) If passed avoid actually updating the handle
 resizeBy : function (deltaX, deltaY, animating, suppressHandleUpdate) {
     if (isc._traceMarkers) arguments.__this = this;
@@ -11048,7 +11159,7 @@ shouldRedrawOnResize : function (deltaX, deltaY) {
             // it's a parent with no content
             (this.children != null && this.children.length > 0 && 
              !this.allowContentAndChildren) ||
-            // contents are static: getInnerHTML has not been overriden, this.contents has not
+            // contents are static: getInnerHTML has not been overridden, this.contents has not
             // been set to a function
             (this.getInnerHTML == isc.Canvas._instancePrototype.getInnerHTML && 
              !isc.isA.Function(this.contents)));
@@ -11141,7 +11252,7 @@ innerSizeChanged : function (reason) {
 
 //> @method canvas.setPercentSource() [A]
 // Setter method for the +link{canvas.percentSource,percentSource} attribute.
-// @parameter [sourceWidget] (Canvas) New percent source (if ommitted existing
+// @parameter [sourceWidget] (Canvas) New percent source (if omitted existing
 //                                      percentSource will just be cleared).
 // @visibility external
 // @group sizing
@@ -11649,7 +11760,7 @@ noDropTracker:"[SKIN]/shared/no_drop.png",
 // should we scroll the viewport in the appropriate direction?
 // Returns this.canDragScroll by default.
 // @group events
-// @group dragging
+// @group dragdrop
 // @visibility external
 //<
 shouldDragScroll : function () {
@@ -11966,6 +12077,8 @@ getOverflow : function () {
 // Update the +link{Canvas.overflow, overflow} of a Canvas after it has been created.
 //		@group	positioning, sizing
 //		@param	newOverflow	(Overflow)		New overflow value.
+//
+// @group sizing
 // @visibility external
 //<
 setOverflow : function (newOverflow) {
@@ -12040,7 +12153,7 @@ setOverflow : function (newOverflow) {
 
     // The handle will now have it's overflow, size and clip set to the values they would
     // have at the end of getTagStart().
-    // Call adjustOverflow to handle resizing to accomodate contents, setting additional
+    // Call adjustOverflow to handle resizing to accommodate contents, setting additional
     // clips, showing scrollbars, etc.
 	this.adjustOverflow("setOverflow");
     
@@ -12472,7 +12585,7 @@ __adjustOverflow : function (reason) {
         // call clampToContent() to fix this
         // Note: May not be required for all browsers - but some, including Moz, do allow
         // specifying a scroll height such that you're scrolled past all content in the handle
-        this._clampToContent();
+        if (this.scrollLeft != 0 || this.scrollTop != 0) this._clampToContent();
         
 
 	} else if (this.overflow == canvas.CLIP_H) {
@@ -12740,6 +12853,9 @@ __adjustOverflow : function (reason) {
 // if our scrollHeight / scrollWidth has changed such that we're scrolled off the
 // end, snap back to the end
 _clampToContent : function () {
+    // not scrolled, doesn't apply
+    if (this.scrollLeft == 0 && this.scrollTop == 0) return;
+
     var maxScrollTop = Math.max(0, this.getScrollBottom()),
         maxScrollLeft = Math.max(0, this.getScrollRight()),
         newScrollLeft = this.getScrollLeft(),
@@ -12781,7 +12897,7 @@ checkNativeScroll : function () {
 
 //>	@method	canvas._setHorizontalScrollbar()	(A)
 //			Creates a horizontal custom scrollbar on a widget
-//          returns true for sucess, false for failure
+//          returns true for success, false for failure
 //		@group	scrolling
 //
 //<
@@ -12836,7 +12952,7 @@ _setHorizontalScrollbar : function () {
 
 //>	@method	canvas._makeVerticalScrollbar()	(A)
 //			Creates a vertical custom scrollbar on a widget
-//          returns true for sucess, false for failure
+//          returns true for success, false for failure
 //		@group	scrolling
 //<
 _setVerticalScrollbar : function () {
@@ -13075,7 +13191,7 @@ scrollByPercent : function (dX, dY) {
 //      @visibility external
 //		@group	scrolling
 //		@param	[left]	(number)    the left coordinate
-//		@param	[top]	(number)    the top coordiante
+//		@param	[top]	(number)    the top coordinate
 //<
 //>Animation additional 'animating' parameter passed if this is part of an animated scroll
 //<Animation
@@ -13229,7 +13345,7 @@ scrollToPercent : function (left, top) {
 //      @visibility internal
 //		@group	scrolling
 //		@param	left	(number)    the left coordinate
-//		@param	top	(number)    the top coordiante
+//		@param	top	(number)    the top coordinate
 //      @see    scrollTo()
 //<
 _scrollHandle : function (left, top) {    
@@ -13444,7 +13560,7 @@ handleKeyPress : function (event, eventInfo) {
         if (leftDelta != 0 || topDelta != 0) {
             // NOTE: scrollTo automatically clamps
             this.scrollTo(this.scrollLeft + leftDelta, this.scrollTop + topDelta);
-            // return false so the event doesn't get propogated
+            // return false so the event doesn't get propagated
             return false;
         } 
 
@@ -13500,12 +13616,12 @@ _setHandleRect : function (left, top, width, height) {
      
     var styleHandle = this.getStyleHandle();
     if (styleHandle) {
-        if (isc.isA.Number(left)) this._assignSize(styleHandle, isc.Canvas.LEFT, left);
-        if (isc.isA.Number(top)) this._assignSize(styleHandle, isc.Canvas.TOP, top);
-        if (isc.isA.Number(width)) this._assignSize(styleHandle, this._$width,
-                                                    Math.max(width,1));
-        if (isc.isA.Number(height)) this._assignSize(styleHandle, this._$height,
-                                                     Math.max(height,1));
+        if (left != null && isc.isA.Number(left)) this._assignSize(styleHandle, isc.Canvas.LEFT, left);
+        if (top != null && isc.isA.Number(top)) this._assignSize(styleHandle, isc.Canvas.TOP, top);
+        if (width != null && isc.isA.Number(width)) this._assignSize(styleHandle, this._$width,
+                                                                     Math.max(width,1));
+        if (height != null && isc.isA.Number(height)) this._assignSize(styleHandle, this._$height,
+                                                                       Math.max(height,1));
         //  this.logWarn("setHandleRect: style handle now reports: " + 
         //              this.echo({left:styleHandle.left, top:styleHandle.top, 
         //                         width:styleHandle.width, height:styleHandle.height}));
@@ -14449,7 +14565,7 @@ _restoreFocus : function () {
 
 //>	@method	canvas.focus()
 // If this canvas can accept focus, give it keyboard focus. After this method, the canvas
-// will appear focussed and will recieve keyboard events.
+// will appear focused and will receive keyboard events.
 // @group	focus
 // @visibility external
 //<
@@ -14463,7 +14579,7 @@ focus : function () {
 
 //>	@method	canvas.blur()
 // If this canvas has keyboard focus, blur it. After this method, the canvas
-// will no longer appear focussed and will stop recieving keyboard events.
+// will no longer appear focused and will stop receiving keyboard events.
 // @group	focus
 // @visibility external
 //<
@@ -14496,7 +14612,7 @@ _setFocusWithoutHandler : function (state) {
 
 
 //>	@method	canvas._focusChanged() (I)
-// Fired when this canvas is focussed or blurred.  May cause redraw if redrawOnFocus is true.
+// Fired when this canvas is focused or blurred.  May cause redraw if redrawOnFocus is true.
 //		@group	focus
 //<
  
@@ -15022,19 +15138,32 @@ _focusInNextTabElement : function (forward, mask) {
         
         nextWidget.focusAtEnd(forward)
         
-    } else if (forward) {
+    } else if (forward) {        
         //>DEBUG
         this.logInfo("focusInNextTabElement() shifting focus to first widget", "syntheticTabIndex");
         //<DEBUG
         if (isc.EH._firstTabWidget == null || 
-            (isc.EH._firstTabWidget == this && this.isMasked(mask))) return;
+            // If we're the first widget in the synthetic tab order and we're non focusable
+            // telling EH to drop focus into the first guy will cause EH to call this
+            // method again, leading to a potential infinite loop.
+            (isc.EH._firstTabWidget == this && 
+             (this.isDisabled() || !this.isDrawn() || 
+             !this.isVisible()  || !this._canFocus() || this.isMasked(mask)))) 
+         {
+             return;
+         }
         isc.EH._focusInFirstWidget(mask);
     } else {
         //>DEBUG
         this.logInfo("focusInNextTabElement() shifting focus to last widget", "syntheticTabIndex");
         //<DEBUG
         if (isc.EH._lastTabWidget == null || 
-            (isc.EH._lastTabWidget == this && this.isMasked(mask))) return;        
+            (isc.EH._lastTabWidget == this && 
+             (this.isDisabled() || !this.isDrawn() || 
+             !this.isVisible()  || !this._canFocus() || this.isMasked(mask))))
+        {
+            return;
+        }
         isc.EH._focusInLastWidget(mask);
     }
 },
@@ -15126,7 +15255,7 @@ _removeFromAutoTabOrder : function () {
 //
 //		@group	zIndex
 //
-//      @param resovleToNumber(boolean)     
+//      @param resolveToNumber(boolean)     
 //              If passed <code>true</code>, for undrawn widgets, resolve "auto" to the next available zIndex.
 //
 //		@return	(number)	
@@ -15273,7 +15402,7 @@ sendToBack : function () {
 //<
 moveAbove : function (canvas) {
     // if the other Canvas has "auto" because it hasn't drawn yet, assign it a zIndex now
-    // Note - this method will always set the zIndex so that this widget is adjascent to the 
+    // Note - this method will always set the zIndex so that this widget is adjacent to the 
     // other widget (may lower the zIndex of this widget if it is already well above the other
     // widget).
     // Therefore we can't no-op if this widget is already above the other widget without a 
@@ -15355,14 +15484,15 @@ getContentsURL : function () {
 //
 //		@param	newURL	(string)
 //<
-setContentsURL : function (url) {
+setContentsURL : function (url, params) {
     // store new URL
 	this.contentsURL = url;
 
     // support special prefixes, eg [APPFILES]
     url = isc.Page.getURL(url);
     // support params (NOTE: doc'd under HTMLFlow)
-    url = isc.rpc.addParamsToURL(url, this.contentsURLParams);
+    var allParams = isc.addProperties({}, this.contentsURLParams, params),
+    url = isc.rpc.addParamsToURL(url, allParams);
 
     if (!this.isDrawn()) return;
     
@@ -15374,6 +15504,29 @@ setContentsURL : function (url) {
         else urlHandle.src = url;
     }
 },
+
+// Returns the correct value of the CSS "float" property for this widget's handle,
+// or null if unset, for nested DIV size detection purposes.
+// See the bottom of Canvas.js in sections "native size reporting issues" and
+// "offsetWidth/offsetHeight" for more details.
+//
+
+_calculateFloatValue : function () {
+    var shouldFloatLeft = !this._useMozScrollSize && !isc.Browser.isOpera && 
+        !((isc.Browser.isSafari || isc.Browser.isFirefox) && this.containsIFrame());
+    return shouldFloatLeft ? isc.Canvas._$left : null;
+},
+
+// Update handle's CSS "float" property, to match what the property would have been
+// initialized to on the initial Canvas.draw(), as done by Canvas.getTagStart().
+// this._currentFloatValue is initialized by getTagStart() to identify whether a DOM update
+// is necessary. See _calculateFloatValue() and getTagStart() for more details.
+_updateFloat : function () {
+    var newFloat = this._calculateFloatValue();
+    if (newFloat != this._currentFloatValue)
+        this.getHandle().style.float = this._currentFloatValue = newFloat;
+},
+
 
 // Miscellaneous styling setters
 // --------------------------------------------------------------------------------------------
@@ -15429,7 +15582,7 @@ setBorder : function (newBorder) {
     
     // Avoid a mysterious JS error in IE6 if someone passes in a string like
     // "2px solid gold;" rather than "2px solid gold"
-    if (newBorder.endsWith(";")) newBorder = newBorder.slice(0,newBorder.length-1);
+    if (isc.endsWith(newBorder, isc.semi)) newBorder = newBorder.slice(0,newBorder.length-1);
     
     this.border = newBorder;
     
@@ -15693,7 +15846,7 @@ getCurrentCursor : function () {
 
 //> @method canvas.getHoverTarget() (A)
 // This method is fired when a user moves over this widget, and returns a pointer to the widget
-// that should recieve a hover event if the user remains positioned over this canvas.
+// that should receive a hover event if the user remains positioned over this canvas.
 // Default implementation will return the first ancestor of this widget (or this widget itself)
 // for which <code>canHover</code> is true.  If it encounters a parent for which canHover is
 // explicitly set to false, the default implementation returns null.
@@ -16651,6 +16804,14 @@ _hideDragMask : function () {
     if (this._eventMask.visibility != isc.Canvas.HIDDEN) this._eventMask.hide();
 },
 
+// handleDrop() -- if 'onDrop' exists fire this before the standard drop behavior
+
+handleDrop : function (event,eventInfo) {
+    if (this.onDrop != null && (this.onDrop() == false)) return false;
+    return this.drop(event,eventInfo);
+},
+
+
 
 // Drag/drop snap-to-grid functionality
 
@@ -16797,7 +16958,7 @@ setSkinImgDir : function (URL) {
 // directory.
 //
 // @group images
-// @return	(URL)	Widget mage directory (including Page widget image directory) for this widget.
+// @return	(URL)	Widget image directory (including Page widget image directory) for this widget.
 //<
 getSkinImgDir : function () {
 	return isc.Page.getSkinImgDir(this.skinImgDir);
@@ -17010,7 +17171,7 @@ linkHTML : function (href, text, target, ID, tabIndex, accessKey, extraStuff) {
 //		@group	utils
 //
 //		@param	list			(array of numbers)	these are sizes (widths, heights, etc) of each
-//		                         items, such as that returned by Canvas.applyStretchResizePolicy()
+//		                         item, such as that returned by Canvas.applyStretchResizePolicy()
 //		@param	coord			(number)	coordinate, such as an x or y coordinate from an Event
 //		@param	[direction]	    (Page.LTR or Page.RTL)	direction 
 //									-- if LTR we scan from left to right, if RTL we scan from right
@@ -17298,6 +17459,8 @@ _createEdges : function () {
 // edgeOpacity will be considered a percentage of the parent's opacity (so 50% opaque parent plus
 // edgeOpacity 50 means 25% opaque edges)
 // @setter setEdgeOpacity()
+//
+// @group imageEdges
 // @visibility external
 // @example edges
 //<
@@ -17566,6 +17729,8 @@ shouldShowGroupLabel : function () {
     return this.showGroupLabel;
 },
 
+groupLabelStyleName:"groupLabel",
+
 // creates the groupLabel canvas (and sets default properties)
 makeGroupLabel : function () {
     
@@ -17573,7 +17738,8 @@ makeGroupLabel : function () {
         var dynamicDefaults = {
             autoDraw:false, _resizeWithMaster:false, _moveWithMaster:true,
             backgroundColor:this.getGroupLabelBackgroundColor(),
-            eventProxy:this
+            eventProxy:this,
+            styleName:this.groupLabelStyleName
         }
         if (this.groupTitle != null) dynamicDefaults.contents = this.groupTitle;        
         this.groupLabel = this.createAutoChild("groupLabel", dynamicDefaults);
@@ -17650,7 +17816,7 @@ groupLabelDefaults:{
     // which fits its content
     overflow:"visible", 
     height:1, width:1,
-    padding:5, wrap:false,
+    wrap:false,
     // center in both directions
     vAlign:"center", align:"center"
 },
@@ -17678,7 +17844,7 @@ isc.Canvas.addClassMethods({
 // e.g. VBScript doesn't re-execute. That's why we don't reuse code from HTMLFlow here.
 //
 // Note: these will incorrectly strip matching text in e.g. strings and textareas - but that
-// should be a somewhat unlikely occurence.
+// should be a somewhat unlikely occurrence.
 //
 // Furthermore, we can provide these as semi-public override points for easy patching if anyone
 // runs into a problem.
@@ -17960,17 +18126,17 @@ printIncludeControls : [
 ],
 
 //> @classMethod Canvas.getPrintHTML()
-// Returns print-formatted HTML for a number of components in the page.
-// @param components (array of Canvas) Components to get the print HTML for. Strings of raw HTML may
+// Returns print-formatted HTML for the specified list of components.
+//
+// @param components (Array of Canvas) Components to get the print HTML for. Strings of raw HTML may
 //  also be included in this array, and will be integrated into the final HTML at the appropriate
 //  point.
-// @param [printProperties] (object) printProperties object to pass to getPrintHTML() method for
-//  the various components.
+// @param printProperties (PrintProperties) properties affecting print output
 // @param callback (callback) Callback to fire when the method completes. The generated print HTML
-//  will be passed in as the first paramter <code>HTML</code>.
-// @param separator (HTML) Optional HTML separator to render between each component's printable HTML 
-// 
-// @visibility printing
+//  will be passed in as the first parameter <code>HTML</code>.
+// @param [separator] (HTML) Optional HTML separator to render between each component's printable HTML 
+// @return (string) print HTML for the components passed in
+// @visibility external
 //<
 // callback is also passed the callback as a second parameter to allow the developer to pass
 // state around.
@@ -18102,16 +18268,13 @@ imgHTML : function (src, width, height, name, extraStuff, imgDir, activeAreaHTML
         this._endString = " border='0' suppress='TRUE'/>";
         this._imgTemplate = template = [this._imgSrc];
 
-        if (isc.Browser.isIE8Strict) {
+        
+        
+        this._alphaFilterStart = 
+           "' style='filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src=\"";
+        this._alphaFilterEnd = "\",sizingMethod=\"scale\");";
             
-            this._alphaFilterStart = 
-                "' style='filter:\"progid:DXImageTransform.Microsoft.AlphaImageLoader(src="; 
-            this._alphaFilterEnd = ",sizingMethod=scale)\";";
-        } else {
-            this._alphaFilterStart = 
-                "' style='filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src=\""; 
-            this._alphaFilterEnd = "\",sizingMethod=\"scale\");";
-        }
+
     }
     // default align to texttop (this._textTop defined above)
     if (align == null) align = this._textTop;
@@ -18212,7 +18375,6 @@ imgHTML : function (src, width, height, name, extraStuff, imgDir, activeAreaHTML
 },
 
 
-
 // Value Icon HTML generation
 // Generates the <img ...> tag HTML used by ListGrids and DynamicForm items for their 'valueIcons'
 
@@ -18299,8 +18461,14 @@ _getValueIconHTML : function (src, prefix, width, height, leftPad, rightPad, ID,
 // unless we *both* do not use any IE filters within the framework *and* insist that all
 // developers who use SmartClient also do not use IE filters
 //
-// Preliminary investigation on IE8 beta (March 14 2008) indicates that, like IE7 if a filter is
-// applied to introduce translucency the PNG alpha channel support is broken 
+// IE 8 (version 8.0.6001.18702) tested  6 Aug 09:
+// The issue with other filters causing stretch pngs to "fade" has been resolved.
+// However the underlying issue where if you also set opacity via the
+// Microsoft.Alpha filter, PNG transparency breaks still occurs.
+// Note that we can't just apply this workaround where opacity is specified on a widget since we'd
+// also have to check up the parentElement chain to the topmost widget to be sure none of them had
+// a specified transparancy != 100.
+// Note: still no support for setting handle.style.opacity directly in IE8
 _fixPNG : function (instance) {
     
 	var fix = isc.Browser.isIE && isc.Browser.minorVersion >= 5.5 && 
@@ -18352,7 +18520,7 @@ _setImageURL : function (imageElement, src, imgDir, instance) {
 // @param [target] (string) target window for the link - defaults to "_blank"
 // @param [ID] (string) optional ID for the link element
 // @param [tabIndex] (number) optional tabIndex for the link
-// @param [accessKey] (string) optionl accessKey for the link
+// @param [accessKey] (string) optional accessKey for the link
 // @visibility internal
 //<
 // @param extraStuff - allows you to add freeform attributes into the tag)
@@ -18461,12 +18629,11 @@ spacerHTML : function (width, height, contents) {
         }
         
         if (threshold != null && (width > threshold || height > threshold)) {
-            
             var output = isc.SB.create(),
                 max = threshold,
                 // note - numRows / cols will be one less than is required
-                numRows = parseInt(height / max),
-                numCols = parseInt(width / max);
+                numRows = Math.floor(height / max),
+                numCols = Math.floor(width / max);
 
             output.append("<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 MARGIN=0>");
             for (var i = 0; i <= numRows; i++) {
@@ -18515,7 +18682,7 @@ spacerHTML : function (width, height, contents) {
 },
 
 //>	@classMethod canvas.hiliteCharacter()	(A)
-//			Given a string and a character, hilite the first occurrance of the character in the
+//			Given a string and a character, hilite the first occurrence of the character in the
 //          string (if it occurs), preferring uppercase to lowercase.
 //
 //		@group	utils
@@ -18524,10 +18691,10 @@ spacerHTML : function (width, height, contents) {
 //		@param	character   (character) Character to hilite
 //		@param	[hilitePrefix] (string) Prefix to apply to hilighted character - defaults to
 //                                      "&lt;span style='text-decoration:underline;'&gt;"
-//      @param  [hiliteSuffix]  (string)    Suffix to apply to hiliteed character - defaults to
+//      @param  [hiliteSuffix]  (string)    Suffix to apply to hilited character - defaults to
 //                                          "&lt;/span&gt;"
 //
-//		@return	(string)	The string passed in, with the first occurrance of the hilite
+//		@return	(string)	The string passed in, with the first occurrence of the hilite
 //                          character enclosed by the 'hilitePrefix' and 'hiliteSuffix'
 // @visibility external
 //<
@@ -19139,7 +19306,8 @@ _clearDOMHandles : function () {
 // @param snapRect - canvas being snapped
 // @param snapEdge - edge of snapRect to align with snapTo
 //<
-snapToEdge : function (targetRect, snapTo, snapRect, snapEdge) {
+
+snapToEdge : function (targetRect, snapTo, snapRect, snapEdge, arbitraryCanvas) {
     // any combo of snapTo and snapEdge can be resolved by two fairly simple coordinate 
     // transforms. SnapPoints are the 8 possible values for snapTo and snapEdge.
     // To get the final (top,left) of the canvas in question:
@@ -19169,6 +19337,19 @@ snapToEdge : function (targetRect, snapTo, snapRect, snapEdge) {
                                        (targetRect.getLeftBorderSize() + targetRect.getLeftMargin()) : 
                                        0)                          
                         ];
+    } else if (isc.isA.Canvas(arbitraryCanvas)) {
+        insideCoords = (snapRect.percentBox == snapRect._$viewport),
+        targetDims = [insideCoords ? arbitraryCanvas.getViewportWidth() : 
+                                      arbitraryCanvas.getVisibleWidth(),
+                       insideCoords ? arbitraryCanvas.getViewportHeight() : 
+                                      arbitraryCanvas.getVisibleHeight() ];
+        targetOrigin = [arbitraryCanvas.getPageTop() + (insideCoords ? 
+                            (arbitraryCanvas.getTopBorderSize() + arbitraryCanvas.getTopMargin()) : 
+                            0), 
+                        arbitraryCanvas.getPageLeft() + (insideCoords ? 
+                            (arbitraryCanvas.getLeftBorderSize() + arbitraryCanvas.getLeftMargin()) : 
+                            0)                          
+                        ];
     } else {
         insideCoords = true;
         targetDims = [targetRect.getViewportWidth(), targetRect.getViewportHeight()];
@@ -19186,7 +19367,7 @@ snapToEdge : function (targetRect, snapTo, snapRect, snapEdge) {
     // note that _getSnapPoint() returns [top,left], not [left,top]
     if (snapRect.snapOffsetLeft != null) finalCoord[1] += snapRect.snapOffsetLeft;
     if (snapRect.snapOffsetTop != null) finalCoord[0] += snapRect.snapOffsetTop;
-    
+
     // finally, move this to result coords
     snapRect.moveTo(finalCoord[1], finalCoord[0]);  
     // let master know not to resize this peer
@@ -19237,7 +19418,7 @@ isc.Canvas.registerStringMethods({
     deparented:"oldParent,name",
     depeered:"oldMaster,name",
     //> @method     canvas.focusChanged()
-    // Notification function fired when this widget recieves or loses keyboard focus.
+    // Notification function fired when this widget receives or loses keyboard focus.
     // @param   hasFocus (boolean) If true this widget now has keyboard focus
     // @group focus
     // @visibility external
@@ -19245,7 +19426,16 @@ isc.Canvas.registerStringMethods({
     focusChanged:"hasFocus",
     scrolled:null,
     // The hover event is generated by the Canvas class, so not present in EH.eventTypes.
-    hover:""
+    hover:"",
+    
+    //> @method Canvas.onDrop()
+    // Notification method fired when the user drops another canvas onto this one. Returning
+    // <code>false</code> from this method will prevent any default drop behavior from occurring
+    // @return (boolean) return false to cancel default drop handling
+    // @visibility sgwt
+    //<
+    onDrop:""
+    
     
 });
 
@@ -19555,7 +19745,7 @@ isc.setAutoDraw = function (enable) {
 };
 
 
-
+isc.allowDuplicateStyles = true;
 
 //	END package Canvas
 //

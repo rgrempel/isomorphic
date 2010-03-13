@@ -3,17 +3,17 @@
          implementations are possible - if you know you're using an ImgTab, you can
          specify <ImgTab> in your XML -->
 	<fields>
-		<field name="title"	type="string"/>
+		<field name="title"	type="string" basic="true"/>
 		<field name="pane"	type="Canvas"/>
 		<field name="ID"	type="identifier"/>
-		<field name="width"	type="measure"/>
+		<field name="width"	type="measure" basic="true"/>
 
-        <field name="disabled" type="boolean"/>
+        <field name="disabled" type="boolean" basic="true"/>
         
         <field name="pickerTitle" type="string"/>
         
         <field name="icon" type="string"/>
-        <field name="canClose" type="boolean"/>
+        <field name="canClose" type="boolean" basic="true"/>
         <field name="closeIcon" type="string"/>
         
         <!-- backcompat -->

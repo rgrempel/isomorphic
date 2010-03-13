@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -54,7 +54,11 @@ isc.defineClass("XMLDoc").addMethods({
         this.documentElement = this.nativeDoc.documentElement;
     },
     hasParseError : function () {
-        if (isc.Browser.isIE) return this.nativeDoc.parseError != null;
+        if (isc.Browser.isIE) {
+            var parseError = this.nativeDoc.parseError;
+            // IE8 now returns zero for no error
+            return parseError != null && parseError != 0;
+        }
         return this.nativeDoc.documentElement && 
                 this.nativeDoc.documentElement.tagName == "parsererror"; //FF
     },
@@ -141,6 +145,9 @@ isc.XMLTools.addClassMethods({
 // @visibility external
 //<
 loadXML : function (url, callback, requestProperties) {
+    requestProperties = requestProperties || {};
+    requestProperties.operationType = requestProperties.operationType || "loadXML";
+
     this.getXMLResponse(isc.addProperties({ 
         actionURL : url, 
         httpMethod:"GET",
@@ -165,6 +172,15 @@ getXMLResponse : function (request) {
 xmlResponses : [],
 _nextResponseID : 0,
 _getXMLResponseReply : function (rpcResponse, data, rpcRequest) {
+    // if we already have a structured response don't try to parse it as XML
+    // This can occur if an operation timed out
+    if (rpcResponse.isStructured) {        
+        this.fireCallback(rpcRequest._xmlIndirectCallback, 
+                      // NOTE: request/response probably only for internal callers
+                      "xmlDoc,xmlText,rpcResponse,rpcRequest", 
+                      [null,null,rpcResponse,rpcRequest]);
+        return;
+    }
     
     var xmlText = rpcResponse.httpResponseText,
         xmlDoc = this.parseXML(xmlText);
@@ -299,10 +315,12 @@ parseXML : function (xml, suppressErrors) {
 
 // NOTE: don't obfuscate "trimXMLStart", used by dev console
 trimXMLStart : function (xml) {
+
     
     if (xml.indexOf("<?xml") != -1) 
     {
-        var match = xml.match(new RegExp("^\\s*<\\?.*\\?>"));
+        
+        var match = xml.match(new RegExp("^\\s*<\\?[^?]*\\?>"));
         if (match) {
     		xml = xml.substring(match[0].length);
 	    	//this.logWarn("match is: " + this.echoAll(match) + ", trimming by: " + match[0].length);
@@ -428,7 +446,7 @@ elementToObject : function (element) {
 
     var object = this.getAttributes(element);
 
-    // tranform subelements to properties
+    // transform subelements to properties
     var children = element.getElementsByTagName(this._$star);
     for (var i = 0; i < children.length; i++) {
         var child = children[i];
@@ -478,7 +496,7 @@ getLocalName : function (node) {
 // All atomic property values will be of String type.  Use +link{DataSource.recordsFromXML()}
 // to do schema-driven XML to JS transform, which can produce correctly typed values.
 // 
-// @param element (XMLElement or XMLDocument) The element to tranform to JS
+// @param element (XMLElement or XMLDocument) The element to transform to JS
 // @return (Object) The resulting JavaScript collection.
 //
 // @visibility external
@@ -499,10 +517,6 @@ toJS : function (element, attrMask, dataSource, widgetXML, context) {
     if (element.documentElement) element = element.documentElement;
     context = context || isc.emptyObject;
 
-    //this.logWarn("toJS: " + this.echoLeaf(element) +
-    //             ", attrs: " + attrMask +
-    //             ", dataSource: " + dataSource);
-
     // handle arrays of elements
     if (isc.isAn.Array(element)) {
         var results = [];
@@ -518,19 +532,45 @@ toJS : function (element, attrMask, dataSource, widgetXML, context) {
         
     // check explicit type
     
-    var type = this.getExplicitType(element);
+    var type = this.getExplicitType(element, widgetXML);
     if (widgetXML || !dataSource || (dataSource && isc.DS.get(type) == null)) {
         
 
-        if (!type && widgetXML) {
-            // in widgetXML mode, if the tag name matches any known complexType, treat this as
-            // a type override.  Allows eg <ListGrid> to override the "members" field type being
-            // "Canvas"
-            var tagName = element.tagName;
-            if (tagName == this._$List || isc.DS.get(tagName)) type = element.tagName;
-        }
+        if (widgetXML) {
+            // for widgetXML, detect <Canvas ref="someId"/>, the official way of referring to other
+            // components
+            var refId = this.isRefElement(element);
+            if (refId) 
+            {   
+                var canvas = isc.Canvas.getById(refId);
+                //this.logWarn("ref: " + refId + ", found related Canvas: " + canvas);
+                if (canvas != null) return canvas;
+            }
+            // detect indirect refs <Canvas ref="someId"/>.  Eg if this schema is Menu.ds.xml
+            // invoked from Canvas.contextMenu, we're being invoked on the <contextMenu>
+            // element, and we need to check if it has a single child <Menu ref="someId"/>
+            var firstChild = this.firstElementChild(element),
+                refId = firstChild ? this.isRefElement(firstChild) : null;
+            if (refId && this.getElementChildren(element).length == 1)
+            {
+                var canvas = isc.Canvas.getById(refId);
+                //this.logWarn("ref: " + refId + ", found related Canvas: " + canvas);
+                if (canvas != null) return canvas;
+            }
 
-        // handle like field.multiple=true if List type explicitly specified
+            if (!type) {
+                // in widgetXML mode, if there's no explicitly specified type on the element,
+                // but the tag name matches any known complexType, treat this as a type
+                // override.  Allows eg <ListGrid> to override the "members" field type being
+                // "Canvas"
+                var tagName = element.tagName;
+                if (tagName == this._$List || isc.DS.get(tagName)) type = element.tagName;
+            }
+        }
+    
+
+        // handle like field.multiple=true if List type explicitly specified.  In widgetXML
+        // mode this includes a tag of <List>.
         if (type != null && type == this._$List) {
             var children = this.getElementChildren(element);
             return this.toJS(children, attrMask, dataSource, widgetXML, context);            
@@ -596,8 +636,16 @@ toJS : function (element, attrMask, dataSource, widgetXML, context) {
         delete object[this._$xsiType];
     }
 
-    // tranform subelements to properties
+    // transform subelements to properties
     var children = element.childNodes;
+
+    if (this.logIsDebugEnabled(this._$xmlToJS)) {
+        this.logDebug("using DataSource: " + dataSource +
+                      " for complex element: " + this.echoLeaf(element) +
+                      " childNodes: " + this.echoLeaf(children) +
+                      " has attributes: " + this._hasDataAttributes(object)
+                      ,"xmlToJS");
+    }
 
     var hadElementChildren = false;
     for (var i = 0; i < children.length; i++) {
@@ -736,7 +784,7 @@ toJS : function (element, attrMask, dataSource, widgetXML, context) {
     // if we have a dataSource with a instanceConstructor property that maps to an existing
     // class, create a new one of those with the data we've mined off the XML
     
-    if (dataSource && (dataSource.instanceConstructor || dataSource.Constructor)) {
+    if (widgetXML && dataSource && (dataSource.instanceConstructor || dataSource.Constructor)) {
         var Constructor = dataSource.instanceConstructor || dataSource.Constructor;
         //this.logWarn("toJS creating an instance of: " + Constructor +
         //             " with properties: " + isc.echo(object));
@@ -753,7 +801,7 @@ toJS : function (element, attrMask, dataSource, widgetXML, context) {
 // copied from BasicDataSource.getExplicitType() in server code
 _$type : "type",
 _$xsiType : "xsi:type",
-getExplicitType : function (element) {
+getExplicitType : function (element, widgetXML) {
     if (element == null || this.isTextNode(element)) return;
 
     var type = this.getXSIAttribute(element, this._$type);
@@ -762,9 +810,20 @@ getExplicitType : function (element) {
         return type;
     }
 
-    type = element.getAttribute("constructor");
+    if (widgetXML) type = element.getAttribute("constructor");
     
     return type;
+},
+
+// for widgetXML, detect <Canvas ref="someId"/>, the official way of referring to other
+// components
+_$ref:"ref",
+isRefElement : function (element) {
+    if (element == null || this.isTextNode(element)) {
+        return false;
+    }
+    var refId = element.getAttribute(this._$ref);
+    if (refId && element.attributes.length == 1 && !this.hasElementChildren(element)) return refId;
 },
 
 // converts isomorphic:XML to components, complains about missing system schema
@@ -783,7 +842,7 @@ toComponents : function (xmlDoc, context) {
         // if initial parse run fails
         var doc = this.parseXML(xmlDoc, true);
         if (doc.hasParseError()) {
-            this.logWarn("xml failed to parse xmlDoc, wrapping in root node.");
+            this.logWarn("xml failed to parse xmlDoc, wrapping in root node");
             doc = this.parseXML("<isomorphicXML>"+xmlDoc+"</isomorphicXML>");
         }
         xmlDoc = doc;
@@ -867,6 +926,7 @@ _hasDataAttributes : function (attributes) {
 },
 
 
+_$xmlnsColon: "xmlns:",
 getAttributes : function (element, attrMask, object, dontClobber, dataSource) {
     // NOTE: hasAttributes() doesn't exist in IE
 
@@ -893,13 +953,18 @@ getAttributes : function (element, attrMask, object, dontClobber, dataSource) {
         return object;
     }
 
-    // tranform attributes to properties
+    // transform attributes to properties
     var attrs = element.attributes;
     if (attrs != null) {
         for (var i = 0; i < attrs.length; i++) {
             var attr = attrs[i],
                 attrName = attr.name;
             if (dontClobber && object[attrName] !== undef) continue;
+
+            // whether to include namespace declarations in JS data
+            if (isc.startsWith(attrName, this._$xmlnsColon) && 
+                dataSource && dataSource.dropNamespaceDeclarations) continue;
+
             var attrValue = attr.value;
             if (attrValue == null || isc.isAn.emptyString(attrValue)) continue;
 
@@ -970,7 +1035,7 @@ getElementText : function (element) {
     if (!child) return isc.emptyString; // empty element, but not marked nil
     var text = child.data;
     
-    if (isc.Browser.isMoz && text.length > 4000) return element.textContent;
+    if (isc.Browser.isMoz && text != null && text.length > 4000) return element.textContent;
     return text;
 },
 
@@ -982,20 +1047,26 @@ isTextNode : function (element) {
     return (nodeType == 3 || nodeType == 4 || nodeType == 8);
 },
 
-// whether an element has only a single child, of type text or CData
+// whether an element has an element child (as opposed to only text children)
 hasElementChildren : function (element) {
+    return this.firstElementChild(element) != null;
+},
+
+// return the first element child (as opposed to text node child) if there is one, otherwise
+// null
+firstElementChild : function (element) {
     
     if (element == null || 
-        (element.hasChildNodes != null && element.hasChildNodes() == false)) return false;
+        (element.hasChildNodes != null && element.hasChildNodes() == false)) return null;
 
     var childNodes = element.childNodes;
-    if (!childNodes) return false;
+    if (!childNodes) return null;
     var length = childNodes.length;
     for (var i = 0; i < length; i++) {
         var child = childNodes[i];
-        if (!this.isTextNode(child)) return true;
+        if (!this.isTextNode(child)) return child;
     } 
-    return false;
+    return null;
 },
 
 // JS -> XML
@@ -1372,7 +1443,7 @@ selectNodes : function (element, expression, namespaces, single) {
         element = this.parseXML(element);    
     }
     
-    if (isc.Browser.isSafari &&  (isc.Browser.isApollo || (isc.Browser.safariVersion < 522)))
+    if (isc.Browser.isSafari && (isc.Browser.isApollo || (isc.Browser.safariVersion < 522)))
     {
         this._warnIfNativeXMLUnavailable("XPath");
         return this.safariSelectNodes(element, expression, namespaces, single);
@@ -1630,11 +1701,11 @@ selectScalar : function (element, expression, namespaces, asNumber) {
     
     
     var value;
-    if(isc.Browser.isSafari && isc.Browser.isApollo || (isc.Browser.safariVersion < 522)) {
+    if (isc.Browser.isSafari && isc.Browser.isApollo || (isc.Browser.safariVersion < 522)) {
         var name=expression.substring(expression.indexOf(":")+1);
-        value=element.getElementsByTagName(name)[0];
-    }else{
-        value=this.selectNodes(element,expression,namespaces,true);
+        value = element.getElementsByTagName(name)[0];
+    } else {
+        value = this.selectNodes(element,expression,namespaces,true);
     }
 
     if (value == null) return null;
@@ -1781,13 +1852,21 @@ serializeToString : function (inputDocument) {
 // @param callback  (Callback) signature is callback(schemaSet)
 // @param [requestProperties] (RPCRequest) additional properties to set on the RPCRequest
 //                                         that will be issued
+// @param autoLoadImports (boolean) if set, xsd:import statements will be processed
+//                                  automatically to load dependent XSD files where a
+//                                  "location" is specified.  The callback will not fire until
+//                                  all dependencies have been loaded
+
 //
 // @group xmlSchema
 // @visibility xmlBinding
 // @example xmlSchemaImport
 //<
-loadXMLSchema : function (xmlSchemaURL, callback, requestProperties) {
-    this.loadWSDL(xmlSchemaURL, callback, true, requestProperties);
+loadXMLSchema : function (xmlSchemaURL, callback, requestProperties, autoLoadImports, wsProperties) {
+    requestProperties = requestProperties || {};
+    requestProperties.operationType = requestProperties.operationType || "loadXMLSchema";
+
+    this.loadWSDL(xmlSchemaURL, callback, requestProperties, autoLoadImports, wsProperties, true);
 },
 
 //> @classMethod XMLTools.loadWSDL()      [A]
@@ -1795,9 +1874,9 @@ loadXMLSchema : function (xmlSchemaURL, callback, requestProperties) {
 // binding DataSources to web service operations.
 // <P>
 // The created WebService object is available in the callback as the single parameter
-// "service", or can retrieved via <code>WebService.get(serviceNamespace)</code>.
+// "service", or can be retrieved via <code>WebService.get(serviceNamespace)</code>.
 // <P>
-// XML Schema present in the WSDL file will also will also be processed as described in
+// XML Schema present in the WSDL file will also be processed as described in
 // +link{XMLTools.loadXMLSchema()}.  However note that <b>imported</b> XML Schema
 // (&lt;xs:import&gt; tag) will not be automatically loaded and must be loaded manually using
 // +link{loadXMLSchema()} before the loaded service will be usable.  This is because the WSDL
@@ -1823,15 +1902,20 @@ loadXMLSchema : function (xmlSchemaURL, callback, requestProperties) {
 //
 // @param wsdlURL  (URL) URL to load the WSDL file from
 // @param callback (Callback) signature is callback(service)
-// @param [returnSchemaSet] (boolean)
 // @param [requestProperties] (RPCRequest) additional properties to set on the RPCRequest
 //                                         that will be issued
+// @param autoLoadImports (boolean) if set, xsd:import statements will be processed
+//                                  automatically to load dependent XSD files where a
+//                                  "location" is specified.  The callback will not fire until
+//                                  all dependencies have been loaded
 //
 // @group xmlSchema
 // @visibility xmlBinding
 // @example WSDLDataSource
 //<
-loadWSDL : function (xmlSchemaURL, callback, returnSchemaSet, requestProperties) {
+// NOTE: returnSchemaSet is an internal parameter to allow the loadWSDL logic to also be used
+// by loadXMLSchema()
+loadWSDL : function (xmlSchemaURL, callback, requestProperties, autoLoadImports, wsProperties, returnSchemaSet) {
     // load the schema translator if it hasn't been loaded, not doing translation until it's
     // done loading
     if (!this._schemaTranslator) {
@@ -1851,25 +1935,46 @@ loadWSDL : function (xmlSchemaURL, callback, returnSchemaSet, requestProperties)
             } else {
                 isc.xml._schemaTranslator = xmlDoc;
             }
-            isc.xml.loadWSDL(xmlSchemaURL, callback, returnSchemaSet, requestProperties);
+            isc.xml.loadWSDL(xmlSchemaURL, callback, requestProperties, 
+                             autoLoadImports, wsProperties, returnSchemaSet);
         });
         return;
     }
 
-    isc.xml.loadXML(xmlSchemaURL, function (xmlDoc) {   
-                        isc.xml._loadSchemaReply(xmlDoc, returnSchemaSet, callback);
+    requestProperties = requestProperties || {};
+    requestProperties.operationType = requestProperties.operationType || "loadWSDL";
+
+    var context = { 
+        location: xmlSchemaURL,
+        callback : callback,
+        autoLoadImports: autoLoadImports, 
+        wsProperties: wsProperties || {},
+        returnSchemaSet: returnSchemaSet
+    };
+    isc.xml.loadXML(xmlSchemaURL, function (xmlDoc,xmlText,rpcResponse,rpcRequest) {   
+                        context.rpcResponse = rpcResponse;
+                        context.rpcRequest = rpcRequest;
+                        isc.xml._loadSchemaReply(xmlDoc, context);
                     },
                     requestProperties);
 },
 
+// load a WSDL service from XML text, an XMLDoc or XML elements that are already loaded
+loadWSDLFromXML : function (xmlDoc, callback, autoLoadImports, wsProperties, returnSchemaSet) {
+    if (isc.isA.String(xmlDoc)) xmlDoc = isc.xml.parseXML(xmlDoc);
+
+    this._loadSchemaReply(xmlDoc, { callback:callback, autoLoadImports:autoLoadImports,
+                                    wsProperties:wsProperties, returnSchemaSet:returnSchemaSet });
+},
+
 // whether to use client-side XML2JS to translate WSDL/XMLSchema definitions to live objects
 useClientXML : true, 
-_loadSchemaReply : function (xmlDoc, returnSchemaSet, callback) {
+_loadSchemaReply : function (xmlDoc, context) {
     // NOTE: check that translator is an XML doc, not null, since we use a loading marker
     if (!isc.isAn.XMLDoc(this._schemaTranslator)) { 
         this.logInfo("deferred schema translator, schema translator not loaded", "xmlComm");
         isc.Timer.setTimeout({ methodName: "_loadSchemaReply", target:this, 
-                               args:[xmlDoc, returnSchemaSet, callback] });
+                               args:[xmlDoc, context] });
         return;
     }
     this.logInfo("transforming schema: " + this.echoLeaf(xmlDoc) + 
@@ -1880,41 +1985,96 @@ _loadSchemaReply : function (xmlDoc, returnSchemaSet, callback) {
         this.logWarn("XML service definition is: \n" + xmlText);
     }
 
+    var wsProperties = context.wsProperties,
+        initiator = wsProperties.initiator;
+    if (wsProperties.captureXML) {
+        wsProperties.xmlSource = xmlText;
+        if (initiator) initiator.addImportXMLSource(xmlText, context.location);
+    }
+
     if (this.useClientXML) {
         var xmlDoc = isc.xml.parseXML(xmlText),
             elements = this._nodeListToArray(xmlDoc.documentElement.childNodes),
             jsResult = this.toJS(elements, null, null, true);
 
-        //this.logWarn("js result: \n" + isc.Comm.serialize(jsResult, true));
-        this._loadSchemaToJSReply(returnSchemaSet, callback);
+        //this.logWarn("XML service definition is: \n" + xmlText);
+
+        //this.logWarn("js result: \n" + this.echoFull(this.toJS(elements)));
+
+        this._loadSchemaToJSReply(context);
         return;
     }
 
     this.logInfo("about to call serverToJS with: " + this.echoLeaf(xmlText) +
-                 ", callback: " + this.echo(callback), "xmlComm");
+                 ", callback: " + this.echo(context.callback), "xmlComm");
     this.serverToJS(xmlText, function () {
                         isc.Log.logWarn("serverToJS returned");
-                        isc.xml._loadSchemaToJSReply(returnSchemaSet, callback);
+                        isc.xml._loadSchemaToJSReply(context);
                     });
 },
-_loadSchemaToJSReply : function (returnSchemaSet, callback) {
+_loadSchemaToJSReply : function (context) {
     
-    var arg, argName;
-    if (returnSchemaSet) {
-        arg = isc.SchemaSet._lastLoaded;
-        argName = "schemaSet";
+    var loadedObject;
+    if (context.returnSchemaSet) {
+        loadedObject = isc.SchemaSet._lastLoaded;
     } else {
-        arg = isc.WebService._lastLoaded;
-        argName = "service";
+        // fallback covers us in case someone loads a WSDL that really don't have a workable
+        // service definition but contains schema
+        loadedObject = isc.WebService._lastLoaded || isc.SchemaSet._lastLoaded;
     }
+    isc.WebService._lastLoaded = isc.SchemaSet._lastLoaded = null;
 
+    // tell the service/schemaSet the location it was loaded from - needed for knowing the
+    // correct relative path to load imported schema
+    loadedObject.location = context.location;
+    
+    if (context.wsProperties) loadedObject.setProperties(context.wsProperties);
+
+    // tack on the RPCRequest - allows context to be kept across a loadWSDL call
+    var argNames = (isc.isA.WebService(loadedObject) ? "service" : "schemaSet") + ",rpcRequest";
+    var args = [loadedObject,context.rpcRequest];
+
+    // if autoLoadImports was passed, tell the service/schemaSet to load imported schema
+    if (context.autoLoadImports && loadedObject.loadImports) {
+        var _this = this;
+        loadedObject.loadImports(function () {
+            _this._completeLoad(context.callback, argNames, args);
+        });
+    } else {
+        this._completeLoad(context.callback, argNames, args);
+    }
+},
+
+_completeLoad : function (callback, argNames, args) {
     //this.logWarn("firing callback: " + this.echo(callback) + 
     //             " with argName: " + argName +
     //             " value: " + arg);
 
-    this.fireCallback(callback, argName, [arg]);
+    this.fireCallback(callback, argNames, args);
+},
 
-    isc.WebService._lastLoaded = isc.SchemaSet._lastLoaded = null;
+getCompleteSource : function (service, callback, asXML) {
+    var importSources = service.importSources;
+    if (!importSources) return "";
+
+    importSources = importSources.getProperty("xmlText");
+    // include the source of the webService or schemaSet that imported all of these
+    // dependencies
+    importSources.unshift(service.xmlSource);
+    // remove <?xml directives
+    importSources = this.map("trimXMLStart", importSources);
+    var source = importSources.join("\n");
+    
+    //this.logWarn("sources: " + this.echo(importSources));
+
+    if (asXML) {
+        this.fireCallback(callback, "source", [source]);
+        return;
+    }
+    
+    this.toJSCode(source, function (rpcResponse, data) {
+        this.fireCallback(callback, "source", [data]);
+    })
 }
 
 // SmartClient Component XML
@@ -1992,7 +2152,7 @@ _loadSchemaToJSReply : function (returnSchemaSet, callback) {
 // </pre>
 // <P>
 // Overall, embedding code in XML can be awkward.  Isomorphic generally recommends that
-// signficant chunks of JavaScript code, such as non-trivial custom components, be moved to
+// significant chunks of JavaScript code, such as non-trivial custom components, be moved to
 // separate, purely JavaScript files, while code embedded in component XML is limited to simple
 // expressions and short functions.
 // <P>
@@ -2151,7 +2311,7 @@ _loadSchemaToJSReply : function (returnSchemaSet, callback) {
 // </ul>
 // When a component is edited within Visual Builder, the DataSource properties that normally
 // influence databound forms will influence the Component Editor (for example, field.title,
-// field.editorType).  In addition, the following properties have special signficance in
+// field.editorType).  In addition, the following properties have special significance in
 // component editing and component drag and drop:
 // <ul>
 // <li> +link{dataSourceField.inapplicable,field.inapplicable} indicates that an inherited

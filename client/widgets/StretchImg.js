@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version 7.0rc2 (2009-05-30)
+ * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -151,25 +151,26 @@ isc.StretchImg.addProperties({
     //<
     
     //> @attr   stretchImg.gripImgSuffix (string : "grip" : IRA)
-    // part name for the 'grip' image if +link{stretchImg.showGrip} is true
+    // Suffix used the 'grip' image if +link{stretchImg.showGrip} is true.
     // @group grip
+    // @visibility external
     //<
     gripImgSuffix:"grip",
     
     //> @attr   stretchImg.showDownGrip   (boolean : null : IRA)
     // If +link{stretchImg.showGrip} is true, this property determines whether to show the
     // 'Down' state on the grip image when the user mousedown's on this widget. 
-    // Has no effect if +link{statefulCanvas.showDown} is false
-    // @visibility internal
+    // Has no effect if +link{statefulCanvas.showDown} is false.
     // @group grip
+    // @visibility external
     //<
 
     //> @attr   stretchImg.showRollOverGrip   (boolean : null : IRA)
     // If +link{stretchImg.showGrip} is true, this property determines whether to show the
     // 'Over' state on the grip image when the user rolls over on this widget. 
-    // Has no effect if +link{statefulCanvas.showRollOver} is false
-    // @visibility internal
+    // Has no effect if +link{statefulCanvas.showRollOver} is false.
     // @group grip
+    // @visibility external
     //<
     
    
@@ -339,19 +340,38 @@ _handleResized : function (deltaX, deltaY, forceResize) {
         //   scrollbar corner
 
         if (image == null) continue;
-
+        
+        // If we wrote the image oversized, within a clipDiv we'll need to resize
+        // the clipDiv as well as the image
+        var oversize = this.oversizeStretchImg && 
+                        (this.vertical ? items[i].height == isc.star 
+                                       : items[i].width == isc.star),
+            clipDiv = oversize ? image.parentNode : null;
+        
         if (breadthResize) {
             var size = this.vertical ? this.getWidth() : this.getHeight();
             //this.logWarn("assigning: " + size + " to segment: " + items[i].name + 
             //             ", image: " + this.echoLeaf(image));
+                    
             this._assignSize(image.style, 
                              this.vertical ? this._$width : this._$height, 
                              size);
+            if (oversize && clipDiv != null) {
+                this._assignSize(clipDiv.style, 
+                             this.vertical ? this._$width : this._$height, 
+                             size);
+            }
         }
         if (lengthResize) {
             var size = this._imgSizes[i];
             //this.logWarn("assigning: " + size + " to segment: " + items[i].name + 
             //             ", image: " + this.echoLeaf(image));
+            if (oversize && clipDiv != null) {
+                this._assignSize(clipDiv.style, 
+                             this.vertical ? this._$height : this._$width, 
+                             size);
+                size += 2;
+            }
             this._assignSize(image.style, 
                              this.vertical ? this._$height : this._$width, 
                              size);
@@ -398,7 +418,9 @@ _$noBRStart : "<NOBR>",
 _$noBREnd : "</NOBR>",
 _$BR : "<BR>",
 _$styleDisplayBlock : " STYLE='display:block'",
-_$tableStart : "<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0>", _$tableEnd : "</TABLE>",
+
+_$tableStart : "<TABLE style='font-size:1px;' CELLPADDING=0 CELLSPACING=0 BORDER=0>", 
+_$tableEnd : "</TABLE>",
 _$rowStart : "<TR><TD class='",
 // _$cellStartTagClose will close rowStart too
 _$rowEnd : "</TD></TR>",
@@ -506,10 +528,7 @@ getInnerHTML : function () {
 
     } else {    //this.imageType == isc.Img.STRETCH  [default]
 
-		// if stretching, output the images only unless we're in Moz    
-        
-        var useTable = isc.Browser.isMoz;
-        
+        var useTable = this.renderStretchImgInTable;
         if (useTable) output.append(this._$tableStart);
         else if (!vertical) output.append(this._$noBRStart);
         
@@ -551,7 +570,18 @@ getInnerHTML : function () {
                     
                     // just write a series of image tags, which will naturally stack
                     // horizontally
-					output.append(this.imgHTML(src, size, height, item.name, extraStuff));
+                    
+                    var imgWidth = size,
+                        oversize = (this.oversizeStretchImg && (item.width == isc.star));
+                    if (oversize) {
+                        output.append("<div style='overflow:hidden;width:",size,
+                                "px;height:",height,"px;'>")
+                        imgWidth = size+2;
+                    }
+					output.append(this.imgHTML(src, imgWidth, height, item.name, extraStuff));
+                    if (oversize) {
+                        output.append("</div>");
+                    }
                     if (useTable) output.append(end ? this._$rowEnd : this._$cellEnd);
                 } else {
                     if (useTable) {
@@ -561,10 +591,21 @@ getInnerHTML : function () {
                     }
                     
                     
-                    output.append(this.imgHTML(src, width, size, item.name,
+                    
+                    var imgHeight = size,
+                        oversize = (this.oversizeStretchImg && (item.width == isc.star));
+                    if (oversize) {
+                        output.append("<div style='overflow:hidden;height:",size,
+                                "px;width:",width,"px;'>")
+                        imgHeight = size+2;
+                    }
+                    
+                    output.append(this.imgHTML(src, width, imgHeight, item.name,
                                   isc.Browser.isDOM ? (extraStuff + this._$styleDisplayBlock) 
                                                     : extraStuff));
-
+                    if (oversize) {
+                        output.append("</div>");
+                    }
                     if (useTable) output.append(this._$rowEnd);
                     else if (!isc.Browser.isDOM && i < length - 1) output.append(this._$BR);
                 }
@@ -577,6 +618,13 @@ getInnerHTML : function () {
 	return output.toString();
 },
 
+// if stretching, in Moz pre FF 3.0, output the images in a table
+
+renderStretchImgInTable:isc.Browser.isMoz || isc.Browser.isIE8Strict,
+
+
+
+oversizeStretchImg:isc.Browser.isMoz && isc.Browser.isUnix,
 
 //> @attr StretchImg.itemBaseStyle (CSSStyleName : null : IRW)
 // If specified this css class will be applied to the individual item images within this StretchImg.
@@ -695,6 +743,23 @@ stateChanged : function (whichPart) {
 	}
 
 },
+
+
+//>	@method	stretchImg.setSrc()    ([])
+// Changes the base +link{stretchImg.src} for this stretchImg, redrawing if necessary.
+//
+// @param	src		(URL)	new URL for the image
+// @group	appearance
+// @visibility external
+// @example loadImages
+//<
+setSrc : function (URL) {
+    if (URL == null || this.src == URL) return;
+
+	this.src = URL;
+    this.markForRedraw();
+},
+
 
 //>	@method	stretchImg.inWhichPart()	(A)
 //		@group	event handling

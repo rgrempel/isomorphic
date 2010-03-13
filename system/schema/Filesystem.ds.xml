@@ -19,5 +19,7 @@
         <field name="size"  type="long"/>
         <field name="lastModified" type="lastModified"/>
         <field name="mimeType"  type="text"/>
-    </fields>
+
+        <field name="contents"  type="text" size="1000000" />
+        </fields>
 </DataSource>
