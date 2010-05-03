@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -59,7 +59,38 @@ isc.ScrollingMenu.addProperties({
     showModal:true,
     
     // Override arrowKeyAction to focus on the new record but not select it by default
-    arrowKeyAction:"focus"
+    arrowKeyAction:"focus",
+    
+    enableSelectOnRowOver: true,
+    
+    // default to filter on keypress if we show a filter editor
+    filterOnKeypress:true
+    
+});
+
+isc.ScrollingMenu.changeDefaults("filterEditorDefaults", {
+        // If the filter editor is showing, explicitly give it a solid bg color.
+        // This prevents things showing through under the transparent background of
+        // the filter button image
+        backgroundColor:"white",
+        
+        // Override editor keypress -- allow the user to move around and select
+        // records as expected
+        editorKeyPress : function (item, keyName, characterValue) {
+            if (keyName == "Arrow_Down") {
+                this.sourceWidget._navigateToNextRecord(1);    
+                return false;
+            }
+            if (keyName == "Arrow_Up") {
+                this.sourceWidget._navigateToNextRecord(-1);
+                return false;
+            }
+            if (keyName == "Enter") {
+                this.sourceWidget._generateFocusRecordClick();
+                return;
+            }
+            return this.Super("editorKeyPress", arguments);
+        }
 });
 
 isc.ScrollingMenu.addMethods({
@@ -90,7 +121,7 @@ isc.ScrollingMenu.addMethods({
     // This matches behavior in native select item drop-downs.
     
     rowOver : function (record,rowNum,colNum) {
-        this.selection.selectOnRowOver(record);
+        if (this.enableSelectOnRowOver) this.selection.selectOnRowOver(record);
     },
     
     createSelectionModel : function (a,b,c,d,e) {
@@ -111,7 +142,7 @@ isc.ScrollingMenu.addMethods({
         });
         
         return returnVal;
-    },
+   },
 
     // Keyboard handling:
 

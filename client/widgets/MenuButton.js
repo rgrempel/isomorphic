@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -266,12 +266,6 @@ isc._commonMenuButtonProperties = {
     _updateCanFocus : function () {
         this.Super("_updateCanFocus", arguments);
         this.markForRedraw();
-    },
-    
-    // override showContext menu to show the menu as well
-    showContextMenu : function () {
-        this.click();
-        return false;   // avoid the native context menu from showing
     },
     
     showMenu : function () {

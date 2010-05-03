@@ -85,8 +85,8 @@ with (theWindow) {
         autoFit: true,
         autoFitDirection: isc.Canvas.HORIZONTAL
     });
-    isc.IButton.markAsFrameworkClass();
-    isc.IAutoFitButton.markAsFrameworkClass();
+    if (isc.IButton.markAsFrameworkClass != null) isc.IButton.markAsFrameworkClass();
+    if (isc.IAutoFitButton.markAsFrameworkClass != null) isc.IAutoFitButton.markAsFrameworkClass();
 
 
     if (isc.IMenuButton) {
@@ -96,7 +96,7 @@ with (theWindow) {
             vertical:false,
             titleStyle:"headerTitle"
         });
-        isc.IMenuButton.markAsFrameworkClass();
+        if (isc.IMenuButton.markAsFrameworkClass != null) isc.IMenuButton.markAsFrameworkClass();
 
     }
 
@@ -401,7 +401,10 @@ with (theWindow) {
             
             
             headerMenuButtonBaseStyle:"headerButton",
-            headerMenuButtonTitleStyle:"headerTitle"
+            headerMenuButtonTitleStyle:"headerTitle",
+
+            expansionFieldImageWidth : 16,
+            expansionFieldImageHeight : 16
             
             //,groupIcon:"[SKINIMG]/TreeGrid/folder.png"
         })

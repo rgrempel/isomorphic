@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -41,13 +41,22 @@ isc.addMethods(Number.prototype, {
 // @return				(string)		Padded string version of the number
 //<
 
-stringify : function (totalDigits) {
+stringify : function (totalDigits, predecimal) {
 	// default to 2 digits
 	if (!totalDigits) totalDigits = 2;
 	
     var numberString = this.toString(),
-        zeroes = totalDigits - numberString.length,
-        pad = Number._getZeroString(zeroes);
+        zeroes = totalDigits - numberString.length;
+
+    // predecimal: ignore any decimal digits, such that two numbers with differing decimal
+    // precision get the same total number of characters before the decimal.
+    if (predecimal) {
+        var dotIndex = numberString.indexOf(isc.dot);
+        if (dotIndex != -1) {
+            zeroes += (numberString.length - dotIndex);    
+        }
+    }
+    var pad = Number._getZeroString(zeroes);
 
     if (pad == null) return numberString;
     return pad + numberString;

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -74,7 +74,7 @@ isc.ContainerItem.addMethods(isc.applyMask(isc.DynamicForm.getPrototype(), [
      "getTitleAlign", "getItemPromptHTML",
 
 	 // get things that deal with nested sets of items
-	 "getItem"
+	 "getItem", "fieldIdProperty"
 	]
 ));
 
@@ -191,6 +191,11 @@ setItems : function (itemList) {
     this.redraw();
 },
 
+// simple getter for this.items
+
+getItems : function () {
+    return this.items;
+},
 
 // override getTitleHTML() to avoid writing a <label> tag around the title, and setting an 
 // accessKey property on that label.  This is appropriate as we are setting up the accessKey

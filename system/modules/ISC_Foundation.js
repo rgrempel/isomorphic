@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -21,9 +21,9 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;isc.ClassFactory.defineCl
 if(!_4)_4=this;if(!_2)_2=this.animateTime;if(isc.isA.String(_3)){if(!isc.Animation.accelerationMap){isc.Animation.accelerationMap={smoothStart:isc.Animation.smoothStart,smoothEnd:isc.Animation.smoothEnd,smoothStartEnd:isc.Animation.smoothStartEnd}}
 _3=isc.Animation.accelerationMap[_3]}
 var _5=this.generateAnimationID();this.registry.add({ID:_5,target:_4,callback:_1,duration:_2,elapsed:0,totalFrames:Math.round(_2/ this.interval),currentFrame:0,maxDuration:_2*3,acceleration:_3});return _5}
-,isc.A.clearAnimation=function(_1){for(var i=0;i<this.registry.length;i++){if(this.registry[i].ID==_1){this.registry.removeAt(i);break}}}
-,isc.A.finishAnimation=function(_1){for(var i=0;i<this.registry.length;i++){if(this.registry[i].ID==_1){var _3=this.registry[i];break}}
-this.clearAnimation(_1);this.fireAction(_3,1,true)}
+,isc.A.clearAnimation=function(_1){for(var i=0;i<this.registry.length;i++){if(this.registry[i]&&this.registry[i].ID==_1){this.registry.removeAt(i);break}}}
+,isc.A.finishAnimation=function(_1){for(var i=0;i<this.registry.length;i++){if(this.registry[i]&&this.registry[i].ID==_1){var _3=this.registry[i];break}}
+this.clearAnimation(_1);if(_3)this.fireAction(_3,1,true)}
 ,isc.A.fireTimer=function(){var _1=isc.timeStamp(),_2=(_1-this.$0f),_3=Math.max(0,this.interval-(_2-this.interval));this.$0e=isc.Timer.setTimeout(this.timeoutAction,_3);this.$0f=_1;for(var i=0;i<this.registry.length;i++){var _5=this.registry[i];if(_5==null)continue;_5.elapsed+=_2;var _6=_5.currentFrame+1;if(!isc.Animation.timeBased&&((_5.elapsed/ _5.maxDuration)>(_6/ _5.totalFrames)))
 {_6=Math.min(_5.totalFrames,Math.ceil((_5.elapsed/ _5.maxDuration)*_5.totalFrames))}
 _5.currentFrame=_6;var _7=isc.Animation.timeBased?_5.elapsed/ _5.duration:_5.currentFrame/ _5.totalFrames;var _8=_7,_9=_5.acceleration;if(_9&&isc.isA.Function(_9)){try{_8=_5.acceleration(_8)}catch(e){this.logWarn("Custom ratio function for animation:"+isc.Log.echoAll(_5)+"\nCaused an error:"+(e.message?e.message:e));_5.acceleration=null}}
@@ -646,7 +646,7 @@ if(_4){_10[5]=isc.$ag;_10[6]=_4}
 if(_6){_10[7]=isc.$ag;_10[8]=_6}
 if(_5){_10[9]=isc.$ag;_10[10]=_5}
 _10[11]=isc.dot;_10[12]=_9;var _11=_10.join(isc.$ad);return _11}
-);isc.B._maxIndex=isc.C+1;isc.A=isc.Img.getPrototype();isc.A.name="main";isc.A.src="blank.gif";isc.A.imageType=isc.Img.STRETCH;isc.A.suppressClassName=false;isc.A.mozOutlineOffset="0px";isc.A.showTitle=false;isc.A=isc.Img.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$5h="<TABLE WIDTH=";isc.A.$5i=" HEIGHT=";isc.A.$5j=" BORDER=0 CELLSPACING=0 CELLPADDING=0><TR>";isc.A.$5k="<TD VALIGN=center ALIGN=center>";isc.A.$5l="<TD BACKGROUND=";isc.A.$5m="</TD></TR></TABLE>";isc.B.push(isc.A.initWidget=function(){isc.StatefulCanvas.$b4.initWidget.call(this);this.redrawOnResize=(this.imageType!=isc.Img.STRETCH)}
+);isc.B._maxIndex=isc.C+1;isc.A=isc.Img.getPrototype();isc.A.name="main";isc.A.src="blank.gif";isc.A.imageType=isc.Img.STRETCH;isc.A.suppressClassName=false;isc.A.mozOutlineOffset="0px";isc.A.showTitle=false;isc.A.usePNGFix=true;isc.A=isc.Img.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$5h="<TABLE WIDTH=";isc.A.$5i=" HEIGHT=";isc.A.$5j=" BORDER=0 CELLSPACING=0 CELLPADDING=0><TR>";isc.A.$5k="<TD VALIGN=center ALIGN=center>";isc.A.$5l="<TD BACKGROUND=";isc.A.$5m="</TD></TR></TABLE>";isc.B.push(isc.A.initWidget=function(){isc.StatefulCanvas.$b4.initWidget.call(this);this.redrawOnResize=(this.imageType!=isc.Img.STRETCH)}
 ,isc.A.setImageType=function(_1){if(this.imageType==_1)return;this.imageType=_1;this.markForRedraw();this.redrawOnResize=(this.imageType!=isc.Img.STRETCH)}
 ,isc.A.getInnerHTML=function(){var _1=this.getInnerWidth(),_2=this.getInnerHeight(),_3=this.imageType;if(_3==isc.Img.STRETCH||_3==isc.Img.NORMAL){if(_3==isc.Img.NORMAL){_1=this.imageWidth;_2=this.imageHeight}
 return this.imgHTML(this.getURL(),_1,_2,this.name,this.extraStuff,null,this.activeAreaHTML)}
@@ -894,7 +894,7 @@ if(this.forceFill&&this.getVisibleHeight()<=this.getHeight()){var _9=this.getMem
 if(!_11){for(var i=_9+1;i<this.members.length;i++){var _12=this.members[i];if(_5.contains(_12))continue;if(this.memberIsDragResizeable(_12)){if(this.memberHasAutoResizeableHeight(_12)){_11=true;break}else if(_10==null){_10=_12}}}}
 if(!_11&&_10!=null){_10.$po=null}}
 this.hideMembers(_5,_4)}
-,isc.A.sectionIsVisible=function(_1){_1=this.getSectionHeader(_1);if(_1.showHeader&&_1.isVisible())return true;var _2=_1.items.first();if(_2==null||!isc.isA.Canvas(_2)||!_2.isDrawn()||_2.visibility==isc.Canvas.HIDDEN)return false;return true}
+,isc.A.sectionIsVisible=function(_1){_1=this.getSectionHeader(_1);if(!_1)return false;if(_1.showHeader&&_1.isVisible())return true;var _2=_1.items.first();if(_2==null||!isc.isA.Canvas(_2)||!_2.isDrawn()||_2.visibility==isc.Canvas.HIDDEN)return false;return true}
 ,isc.A.getVisibleSections=function(){var _1=[];for(var i=0;i<this.sections.length;i++)
 if(this.sectionIsVisible(this.sections[i]))_1.add(this.sections[i].name);return _1}
 ,isc.A.sectionIsExpanded=function(_1){return this.getSectionHeader(_1).expanded}
@@ -1055,12 +1055,12 @@ _6._generated=true;_4.add(_6)}
 _3=_4}
 var _7=_1.inheritsFrom;if(_7!=null){var _8=this.getType(_7,_2);if(_8!=null){var _9=this.getValidators(_8,_2);if(_9!=null){_3=_3||[];_3.addAsList(_9);this.$67(_3)}}}
 if(_3)_3.$69=true;_1.validators=_3;_1.$68=true;return _3},$7a:"typeCastValidator",$67:function(_1){var _2=_1.find(this.$7a,true);if(_2){var _3=_2.type;for(var i=0;i<_1.length;i++){if(_1[i].type==_3)break}
-if(i!=0)_1.unshift(_1[i]);_1[0].stopIfFalse=true}},$71g:{sum:function(_1,_2){var _3=_2.name;if(!_3)return;var _4=0;for(var i=0;i<_1.length;i++){var _6=_1[i][_3],_7=parseFloat(_6);if(isc.isA.Number(_7)&&(_7==_6))_4+=_7;else return null}
-return _4},avg:function(_1,_2){var _3=_2.name;if(!_3)return;var _4=0,_5=0;for(var i=0;i<_1.length;i++){var _7=_1[i][_3],_8=parseFloat(_7);if(isc.isA.Number(_8)&&(_8==_7)){_5+=1;_4+=_8}else{return null}}
-return _5>0?_4/ _5:null},max:function(_1,_2){var _3=_2?_2.name:null;if(!_3)return;var _4=(_2&&(_2.type=="date"));var _5;for(var i=0;i<_1.length;i++){var _7=_1[i][_3];if(_4){if(!isc.isA.Date(_7))return null;if(_5==null||_7.getTime()>_5.getTime())_5=_7.duplicate()}else{var _8=parseFloat(_7);if(isc.isA.Number(_8)&&(_8==_7)){if(_5==null)_5=_8;else if(_5<_7)_5=_8}else{return null}}}
+if(i!=0)_1.unshift(_1[i]);_1[0].stopIfFalse=true}},$71g:{sum:function(_1,_2){var _3=_2.name;if(!_3)return;var _4=0;for(var i=0;i<_1.length;i++){var _6=_1[i][_3],_7=parseFloat(_6);if(_6==null||_6==isc.emptyString)continue;if(isc.isA.Number(_7)&&(_7==_6))_4+=_7;else return null}
+return _4},avg:function(_1,_2){var _3=_2.name;if(!_3)return;var _4=0,_5=0;for(var i=0;i<_1.length;i++){var _7=_1[i][_3],_8=parseFloat(_7);if(_7==null||_7==isc.emptyString)continue;if(isc.isA.Number(_8)&&(_8==_7)){_5+=1;_4+=_8}else{return null}}
+return _5>0?_4/ _5:null},max:function(_1,_2){var _3=_2?_2.name:null;if(!_3)return;var _4=(_2&&(_2.type=="date"));var _5;for(var i=0;i<_1.length;i++){var _7=_1[i][_3];if(_7==null||_7==isc.emptyString)continue;if(_4){if(!isc.isA.Date(_7))return null;if(_5==null||_7.getTime()>_5.getTime())_5=_7.duplicate()}else{var _8=parseFloat(_7);if(isc.isA.Number(_8)&&(_8==_7)){if(_5==null)_5=_8;else if(_5<_7)_5=_8}else{return null}}}
 return _5},min:function(_1,_2){var _3=_2?_2.name:null;if(!_3)return;var _4=(_2.type=="date")
-var _5;for(var i=0;i<_1.length;i++){var _7=_1[i][_3];if(_4){if(!isc.isA.Date(_7))return null;if(_5==null||_7.getTime()<_5.getTime())_5=_7.duplicate()}else{var _8=parseFloat(_7);if(isc.isA.Number(_8)&&(_8==_7)){if(_5==null)_5=_8;else if(_5>_7)_5=_8}else{return null}}}
-return _5},multiplier:function(_1,_2){var _3=_2?_2.name:null;if(!_3)return;var _4=0;for(var i=0;i<_1.length;i++){var _6=_1[i][_3];var _7=parseFloat(_6);if(isc.isA.Number(_7)&&(_7==_6)){if(_4==0)_4=_7;else _4=(_4*_7)}else{return null}}
+var _5;for(var i=0;i<_1.length;i++){var _7=_1[i][_3];if(_7==null||_7==isc.emptyString)continue;if(_4){if(!isc.isA.Date(_7))return null;if(_5==null||_7.getTime()<_5.getTime())_5=_7.duplicate()}else{var _8=parseFloat(_7);if(isc.isA.Number(_8)&&(_8==_7)){if(_5==null)_5=_8;else if(_5>_7)_5=_8}else{return null}}}
+return _5},multiplier:function(_1,_2){var _3=_2?_2.name:null;if(!_3)return;var _4=0;for(var i=0;i<_1.length;i++){var _6=_1[i][_3];var _7=parseFloat(_6);if(isc.isA.Number(_7)&&(_7==_6)){if(i==0)_4=_7;else _4=(_4*_7)}else{return null}}
 return _4},count:function(_1,_2){return _1.length}},registerSummaryFunction:function(_1,_2){if(_1==null)return;if(isc.isA.String(_2)){_2=isc.Func.expressionToFunction("records,field",_1)}
 this.$71g[_1]=_2},setDefaultSummaryFunction:function(_1,_2){var _3=this.getType(_1);if(_3)_3.$71h=_2},getDefaultSummaryFunction:function(_1){var _2=this.getType(_1);if(_2)return _2.$71h},applySummaryFunction:function(_1,_2,_3){if(!_3||!_2||!_1)return;if(isc.isA.String(_3)){if(this.$71g[_3]){_3=this.$71g[_3]}else{_3=isc.Func.expressionToFunction("records,field",_3)}}
 if(isc.isA.Function(_3)){return _3(_1,_2)}}});isc.SimpleType.setDefaultSummaryFunction("integer","sum");isc.SimpleType.setDefaultSummaryFunction("float","sum");isc.A=isc.SimpleType.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.init=function(){if(!this.name)this.name=isc.ClassFactory.getNextGlobalID(this);if(isc.builtinTypes[this.name]!=null){if(!this.xmlSource){this.logWarn("SimpleType '"+this.name+"' defined twice: "+this.getStackTrace());isc.builtinTypes[this.name]=this}}else{isc.builtinTypes[this.name]=this}
@@ -1068,7 +1068,7 @@ if(this.validOperators!=null){isc.DataSource.setTypeOperators(this.name,this.val
 );isc.B._maxIndex=isc.C+1;isc.SimpleType.getPrototype().toString=function(){return"["+this.Class+" name="+this.name+(this.inheritsFrom?" inheritsFrom="+this.inheritsFrom:"")+"]"};isc._moduleEnd=isc._Foundation_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Foundation module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Foundation'.");}
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *

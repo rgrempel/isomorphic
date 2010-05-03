@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -45,30 +45,9 @@ isc.NativeSelectItem.addProperties(isc._SelectItemProperties);
 // Properties to apply to native selects only.
 isc.NativeSelectItem.addProperties({
 
-    //>	@attr	selectItem.multiple		(boolean : false : IRW)
-	// If true, this selectItem will be displayed as a tall list of options, and the user
-    // will be able to select multiple options.
-    // <P>
-    // In this case the logical value of the formItem, as retrieved by 
-    // +link{formItem.getValue,getValue()} and set via +link{formItem.setValue,setValue()}, is 
-    // an Array of Strings reflecting the selected values.
-    // <P>
-    // Note: <code>multiple:true</code> SelectItems do not currently support optionDataSource
-    // binding.  You can get around this by calling DataSource.fetchData() directly and creating
-    // a valueMap for the item from the resulting array. 
-    //
-	//  @group	appearance
-    //  @visibility external
-	//<
-    // Doc'd here, since multiple selects are always implemented using this class.
-    
     // Set the height to null by default - will size to 1 row of content.
     height:null,
     
-    
-    
-
-
     //> @attr   nativeSelectItem._hasDataElement    (boolean : true : IRW)
     //      Native Select items have a data element.
     // @group formValues
@@ -81,7 +60,6 @@ isc.NativeSelectItem.addProperties({
     // This flag means updateState will apply the result of this.getTextBoxStyle() to this item's
     // data element - appropriate for native text boxes, text areas and selects.
     _dataElementIsTextBox:true,
-
     
     // _nativeEventHandlers is a place to specify native event handlers to be applied to the
     // form item element once it has been written into the DOM (without having to override 
@@ -90,8 +68,6 @@ isc.NativeSelectItem.addProperties({
         // apply a native 'onchange' hander to notify us of changes.
         onchange : isc.FormItem._nativeChangeHandler
     }    
-
-
 });
 
 // add the getOptionsHTML method as a static method so it can be used as a utility routine

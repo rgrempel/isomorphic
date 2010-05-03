@@ -116,8 +116,8 @@ with (theWindow) {
         autoFitDirection: isc.Canvas.HORIZONTAL
     });
 
-    isc.IButton.markAsFrameworkClass();
-    isc.IAutoFitButton.markAsFrameworkClass();
+    if (isc.IButton.markAsFrameworkClass != null) isc.IButton.markAsFrameworkClass();
+    if (isc.IAutoFitButton.markAsFrameworkClass != null) isc.IAutoFitButton.markAsFrameworkClass();
 
 
 
@@ -600,8 +600,7 @@ with (theWindow) {
             headerMenuButtonWidth:17,
             headerMenuButtonSrc:"[SKIN]/ListGrid/header_menu.gif",
             headerMenuButtonIcon:null
-            
-            
+
             //,groupIcon:"[SKINIMG]/TreeGrid/folder.png"
         })
         isc.ListGrid.changeDefaults("sorterDefaults", { 

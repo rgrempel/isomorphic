@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -49,7 +49,7 @@ isc.EBay.addProperties({
     //
     // Sets the token to be used by queries to the eBay sandbox environment.
     // 
-    // @param authToken (string) Your sanbox authToken, provided to you by eBay. 
+    // @param authToken (string) Your sandbox authToken, provided to you by eBay. 
     //
     // @visibility EBay
     //<
@@ -82,7 +82,7 @@ isc.EBay.addProperties({
         this._useProduction = useProduction;
     },
 
-    //> @attr EBay.sanboxEndpoint       (URL : "https://api.sandbox.ebay.com/wsapi" : IR)
+    //> @attr EBay.sandboxEndpoint       (URL : "https://api.sandbox.ebay.com/wsapi" : IR)
     //
     // The eBay sandbox requires the use of a different endpoint than that specified in the
     // WSDL - see  Getting Started > Invoking eBay Web Services > Routing the Request (Gateway

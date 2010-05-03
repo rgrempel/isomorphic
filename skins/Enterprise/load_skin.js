@@ -106,13 +106,13 @@ with (theWindow) {
         showFocused:true,
         showFocusedAsOver:true
     });
-    isc.IButton.markAsFrameworkClass();
+    if (isc.IButton.markAsFrameworkClass != null) isc.IButton.markAsFrameworkClass();
 
     isc.defineClass("IAutoFitButton", "IButton").addProperties({
         autoFit: true,
         autoFitDirection: isc.Canvas.HORIZONTAL
     });
-    isc.IAutoFitButton.markAsFrameworkClass();
+    if (isc.IAutoFitButton.markAsFrameworkClass != null) isc.IAutoFitButton.markAsFrameworkClass();
 
 
     isc.ImgButton.addProperties({
@@ -470,7 +470,7 @@ with (theWindow) {
             src: "[SKIN]DynamicForm/Remove_icon.png"
         });
     }
-    
+ 
     if (isc.DateChooser) {
         isc.DateChooser.addProperties({
             headerStyle:"dateChooserButton",
@@ -630,6 +630,7 @@ with (theWindow) {
             headerHeight:23,
             summaryRowHeight:21,
             cellHeight:22,
+            normalCellHeight:22,
             headerBackgroundColor:null,
             headerBarStyle:"headerBar",
             headerBaseStyle:"headerButton",	// bgcolor tint and borders
@@ -812,8 +813,21 @@ with (theWindow) {
         }
     })}
 
-
-
+    if(isc.DateRangeDialog) {
+        isc.DateRangeDialog.changeDefaults("headerIconProperties", {
+            src: "[SKIN]/DynamicForm/date_control.png"
+        });
+    }
+    if(isc.MiniDateRangeItem) {
+        isc.MiniDateRangeItem.changeDefaults("pickerIcon", {
+            src: "[SKIN]/DynamicForm/date_control.png"
+        });
+    }
+    if(isc.RelativeDateItem) {
+        isc.RelativeDateItem.changeDefaults("pickerIconDefaults", {
+            src: "[SKIN]/DynamicForm/date_control.png"
+        });
+    }
 //----------------------------------------
 // 15) Drag & Drop
 //----------------------------------------

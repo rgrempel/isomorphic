@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -225,7 +225,7 @@ isc.Canvas.addClassProperties({
     //	@value	isc.Canvas.NESTED_DIV   Scroll by moving a handle around within an outer handle.
     //<
     	
-	//>	@type	Alignment
+	//>	@type Alignment
 	CENTER:"center",			//	@value	isc.Canvas.CENTER		Center within container.
 	LEFT:"left",				//	@value	isc.Canvas.LEFT			Stick to left side of container.
 	RIGHT:"right",				//	@value	isc.Canvas.RIGHT		Stick to right side of container.
@@ -233,7 +233,7 @@ isc.Canvas.addClassProperties({
 	// @visibility external
 	//<
 	
-	//>	@type	VerticalAlignment
+	//>	@type VerticalAlignment
     //	@value	isc.Canvas.TOP			At the top of the container
 	TOP:"top",
     //	@value	isc.Canvas.CENTER		Center within container.
@@ -314,8 +314,9 @@ isc.Canvas.addClassProperties({
 	DEFAULT:"default",
 	ARROW:"default",
 
-	WAIT:"wait",				
-	HAND:(isc.Browser.isMoz ? "pointer" : "hand"),	
+	WAIT:"wait",
+	// in Moz and in Safari/Chrome strict mode we have to use "ointer" rather than "hand"
+	HAND:(isc.Browser.isMoz || (isc.Browser.isSafari && isc.Browser.isStrict) ? "pointer" : "hand"),	
 	MOVE:"move",				
 	HELP:"help",				
 	TEXT:"text",				
@@ -1431,15 +1432,16 @@ isc.Canvas.addProperties({
     // Disabling
 	// --------------------------------------------------------------------------------------------
     
-    //>	@attr   canvas.disabled		(boolean : false : IRWA)
-    //      If set to true, the widget will be disabled. A widget is only considered enabled 
-    //      if it is individually enabled and all parents above it in the containment hierarchy 
-    //      are enabled. This allows you to enable or disable all components of a complex 
-    //      nested widget by enabling or disabling the top-level parent only.
-    //  @getter isDisabled
-    //  @setter enable, disable
-    //  @visibility external
-    //  @group enable
+    //>	@attr canvas.disabled (boolean : false : IRW)
+    // If set to true, the widget will be disabled. A widget is only considered enabled 
+    // if it is individually enabled and all parents above it in the containment hierarchy 
+    // are enabled. This allows you to enable or disable all components of a complex 
+    // nested widget by enabling or disabling the top-level parent only.
+    //
+    // @getter isDisabled
+    // @setter enable, disable
+    // @group enable
+    // @visibility external
     //<
     //disabled:false,
     
@@ -2952,6 +2954,7 @@ _sizeIFrame : function () {
 
 // internal signature, allows timing all getInnerHTML overrides from the Canvas level
 _getInnerHTML : function (dontConcat) {
+    if (isc._traceMarkers) arguments.__this = this;
     
     var HTML = this.getInnerHTML(dontConcat);
     
@@ -3478,7 +3481,8 @@ drawDeferred : function () {
 // @param [printProperties] (PrintProperties) properties to configure printing behavior - may be null.
 // @param [callback] (Callback) optional callback. This is required to handle cases where HTML 
 //                  generation is asynchronous - if a method generates HTML asynchronously, it should return
-//                  null, and fire the specified callback on completion of HTML generation
+//                  null, and fire the specified callback on completion of HTML generation. The 
+//                  first parameter <code>HTML</code> should contain the generated print HTML.
 //
 // @group printing
 // @visibility external
@@ -7487,7 +7491,7 @@ getOffsetTop : function () {
     
 },
 
-//>	@method	canvas.setTop() ([])
+//>	@method	canvas.setTop()
 // Set the top coordinate of this object, relative to its enclosing context, in pixels.
 // <P>
 // NOTE: if you're setting multiple coordinates, use setRect() or moveTo() instead
@@ -7501,7 +7505,7 @@ setTop : function (top) {
 },
 
 
-//>	@method	canvas.getWidth()   ([])
+//>	@method	canvas.getWidth()
 // Return the width of this object, in pixels.
 //      @visibility external
 //		@group	sizing
@@ -7512,7 +7516,7 @@ getWidth : function () {
 },
 
 
-//>	@method	canvas.setWidth()   ([])
+//>	@method	canvas.setWidth()
 // Resizes the widget horizontally to the specified width (moves the right side of the
 // widget). The width parameter can be expressed as a percentage of viewport size or as
 // the number of pixels.
@@ -7529,7 +7533,7 @@ setWidth : function (width) {
 },
 
 
-//>	@method	canvas.getHeight()  ([])
+//>	@method	canvas.getHeight()
 // Return the height of this object, in pixels.
 //      @visibility external
 //		@group	sizing
@@ -7540,16 +7544,16 @@ getHeight : function () {
 },
 
 
-//>	@method	canvas.setHeight()  ([])
+//>	@method	canvas.setHeight()
 // Resizes the widget vertically to the specified height (moves the bottom side of the
 // widget). The height parameter can be expressed as a percentage of viewport size or as
 // the number of pixels.
 // <P>
 // NOTE: if you're setting multiple coordinates, use resizeTo() or setRect() instead
 //
-//      @visibility external
-//		@group	sizing
-//		@param	height		(number)	new height
+// @group sizing
+// @param height (number) new height
+// @visibility external
 //<
 setHeight : function (height) {
 	this.resizeTo(null, height);
@@ -7557,8 +7561,8 @@ setHeight : function (height) {
 
 //>	@method	canvas.getMinWidth()
 // Get the minimum width that this Canvas can be resized to.
-//		@group	sizing
-//		@return	(number)	width
+// @return	(number)	width
+// @group	sizing
 //<
 getMinWidth : function () {
 	return this.minWidth;
@@ -7566,8 +7570,8 @@ getMinWidth : function () {
 
 //>	@method	canvas.getMinHeight()
 // Get the minimum height that this Canvas can be resized to.
-//		@group	sizing
-//		@return	(number)	height
+// @return	(number)	height
+// @group	sizing
 //<
 getMinHeight : function () {
 	return this.minHeight;
@@ -7575,8 +7579,8 @@ getMinHeight : function () {
 
 //>	@method	canvas.getMaxWidth()
 // Get the maximum width that this Canvas can be resized to.
-//		@group	sizing
-//		@return	(number)	width
+// @group	sizing
+// @return	(number)	width
 //<
 getMaxWidth : function () {
 	return this.maxWidth;
@@ -7584,34 +7588,36 @@ getMaxWidth : function () {
 
 //>	@method	canvas.getMaxHeight()
 // Get the maximum height that this Canvas can be resized to.
-//		@group	sizing
-//		@return	(number)	height
+// @return	(number)	height
+// @group	sizing
 //<
 getMaxHeight : function () {
 	return this.maxHeight;
 },
 
-//>	@method	canvas.getRight()   ([])
+//>	@method	canvas.getRight()
 // Return the right coordinate of this object as rendered, relative to its enclosing context,
 // in pixels.
 //
-//      @visibility external
-//		@group	positioning, sizing
-//		@return	(number)	right coordinate
+// @return (number)	right coordinate
+// @group positioning, sizing
+// @visibility external
 //<
 getRight : function () {
 	return this.getLeft() + this.getVisibleWidth();
 },
 
 
-//>	@method	canvas.setRight()   ([])
+//>	@method	canvas.setRight()
 // Resizes the widget horizontally to position its right side at the specified coordinate.
 // <P>
 // NOTE: if you're setting multiple coordinates, use setRect(), moveTo() or resizeTo()
 // instead
-//      @visibility external
-//		@group	sizing
-//		@param	right		(number)	new right coordinate
+//
+// @param	right		(number)	new right coordinate
+//
+// @group	sizing
+// @visibility external
 //<
 setRight : function (right) {
 	if (isc.isA.Number(right)) {
@@ -7622,13 +7628,14 @@ setRight : function (right) {
 },
 
 
-//>	@method	canvas.getBottom()  ([])
+//>	@method	canvas.getBottom()
 // Return the bottom coordinate of this object as rendered, relative to its enclosing context,
 // in pixels.
 //
-//      @visibility external
-//		@group	positioning, sizing
-//		@return	(number)	bottom coordinate
+// @return	(number)	bottom coordinate
+//
+// @group positioning, sizing
+// @visibility external
 //<
 getBottom : function () {
 	return this.getTop() + this.getVisibleHeight();
@@ -7641,9 +7648,9 @@ getBottom : function () {
 // NOTE: if you're setting multiple coordinates, use setRect(), moveTo() or resizeTo()
 // instead
 //
-//      @visibility external
-//		@group	sizing
-//		@param	bottom		(number)	new bottom coordinate
+// @param bottom		(number)	new bottom coordinate
+// @group sizing
+// @visibility external
 //<
 setBottom : function (bottom) {
 	if (isc.isA.Number(bottom)) {
@@ -7813,7 +7820,7 @@ getScrollWidth : function (calculateNewValue) {
             hasChildren = children && children.length > 0,
             handleScrollWidth = 0;
         
-        // If have content, look at the clip handle's reported scroll size.
+        // If we have content, look at the clip handle's reported scroll size.
         if (!hasChildren || this.allowContentAndChildren) {
             
             if (isc.Browser.isSafari && this.overflow == isc.Canvas.VISIBLE) {
@@ -9723,7 +9730,7 @@ visibleAtPoint : function (x, y, withinViewport, ignoreWidgets) {
 //                                      of this widget.
 //<
 _$left:"left", _$top:"top", _$right:"right", _$bottom:"bottom", _$center:"center",
-scrollIntoView : function (x,y, width, height, xPosition, yPosition, animated, callback) { 
+scrollIntoView : function (x,y, width, height, xPosition, yPosition, animated, callback, alwaysCenter) { 
     // If not passed a width / height, just scroll the point into view
     if (width == null) width = 0;
     if (height == null) height = 0;
@@ -9749,7 +9756,7 @@ scrollIntoView : function (x,y, width, height, xPosition, yPosition, animated, c
             // scroll.
             // (If they're both off, on different sides, then the rect is greater than the
             // viewport and there's nothing we can do)
-            if (rightOff != leftOff) {
+            if (rightOff != leftOff || alwaysCenter) {
                 if (xPosition == this._$left) {
                     desiredScrollLeft = x;
                 // Align the right edge with the right edge of the viewport
@@ -9777,7 +9784,7 @@ scrollIntoView : function (x,y, width, height, xPosition, yPosition, animated, c
             // scroll.
             // (If they're both off, on different sides, then the rect is greater than the
             // viewport and there's nothing we can do)
-            if (topOff != bottomOff) {
+            if (topOff != bottomOff || alwaysCenter) {
                 if (yPosition == this._$top) {
                     desiredScrollTop = y;
                 } else if (yPosition == this._$bottom) {
@@ -15766,7 +15773,9 @@ setCursor : function (newCursor) {
 _applyCursor : function (newCursor) {
     if (this.isDrawn()) {
         
-        if (isc.Browser.isMoz && newCursor == "hand") newCursor = isc.Canvas.HAND;
+        if (
+            (isc.Browser.isMoz || (isc.Browser.isStrict && isc.Browser.isSafari))
+            && newCursor == "hand") newCursor = isc.Canvas.HAND;
         
         this._styleCursor = newCursor;
         
@@ -18470,7 +18479,8 @@ _getValueIconHTML : function (src, prefix, width, height, leftPad, rightPad, ID,
 // a specified transparancy != 100.
 // Note: still no support for setting handle.style.opacity directly in IE8
 _fixPNG : function (instance) {
-    
+    // if we're explicitly not using the png fix, return false immediately.
+    if (this.usePNGFix == false) return false;
 	var fix = isc.Browser.isIE && isc.Browser.minorVersion >= 5.5 && 
 //                (isc.Browser.version < 7 || this.opacity == null) &&
                 isc.Browser.isWin &&
@@ -19999,7 +20009,7 @@ isc.allowDuplicateStyles = true;
 // Skinning (aka "theming" or "branding") is the process of modifying SmartClient's default
 // look and feel to match the desired look and feel for your application.  SmartClient supports
 // an extremely powerful and simple skinning system that allows designers with a basic grasp of
-// CSS and JavaScript to skin any SmartClient component.
+// CSS and JSON to skin any SmartClient component.
 // <P>
 // <h4>Basics</h4>
 // <P>
@@ -20029,7 +20039,7 @@ isc.allowDuplicateStyles = true;
 // 
 // <li>
 // The example skins that come with SmartClient are in
-// <code>isomorphicSDK/isomorphic/skins</code>.  The standard filesystem layout for a skin is:
+// <code>smartclientSDK/isomorphic/skins</code>.  The standard filesystem layout for a skin is:
 // <pre>
 //    isomorphic/skins
 //        skin_styles.css

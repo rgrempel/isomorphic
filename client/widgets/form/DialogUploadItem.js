@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -28,8 +28,8 @@ isc.defineClass("DialogUploadItem", "StaticTextItem").addProperties({
     iconHeight: 16,
     iconWidth: 16,
     icons: [
-        {src: "[SKIN]MultiUploadItem/icon_add_files.png", prompt: "Upload File",  click: "item.showPicker(true)"},
-        {src: "[SKIN]MultiUploadItem/icon_remove_files.png", prompt: "Remove File", click: "item.removeFile()"}
+        {src: "[SKIN]MultiUploadItem/icon_add_files.png", name:"upload", prompt: "Upload File",  click: "item.showPicker(true)"},
+        {src: "[SKIN]MultiUploadItem/icon_remove_files.png", name:"remove", prompt: "Remove File", click: "item.removeFile()"}
     ],
 
     pickerConstructor: "DialogUploadPicker",

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -515,9 +515,135 @@ isc.CanvasItem.addMethods({
     blurItem : function () {
         if (this.canvas) this.canvas.blur();
         return this.Super("blurItem", arguments);
-    }
+    },
     
-    
+    //> @method canvasItem.hasAdvancedCriteria()
+    // Overridden to return true if +link{canvasItem.canvas} is a dynamicForm.
+    // See +link{getCriterion()} for details of editing advanced criteria using nested
+    // dynamicForms.
+    // @return (boolean) true if this item's canvas is a DynamicForm
+    // @group criteriaEditing
+    // @visibility external
+    //<
+    hasAdvancedCriteria : function () {
+        return isc.isA.DynamicForm(this.canvas);
+    },
 
+    //> @method canvasItem.canEditCriterion()
+    // AdvancedCriteria objects may be edited via nested dynamicForms as described in
+    // +link{canvasItem.getCriterion()}
+    // <P>
+    // This method has been overridden to return true if this item's canvas is a DynamicForm,
+    // where the +link{dynamicForm.operator} matches the operator of the criterion passed in
+    // and dynamicForm contains items where +link{formItem.canEditCriterion()} returns true
+    // for each sub-criterion in the object passed in.
+    // @param criterion (Criterion) criteria to test
+    // @return (boolean) returns true if the specified criterion may be edited by this item
+    // @group criteriaEditing
+    // @visibility external
+    //<
+    canEditCriterion : function (criterion) {
+        if (isc.isA.DynamicForm(this.canvas) && criterion.operator == this.canvas.operator) {
+            //this.logWarn("going to compare criterion:" + this.echo(criterion) + " with form: " +
+            //    this.canvas);
+            for (var i = 0; i < criterion.criteria; i++) {
+                var items = this.canvas.getItems(),
+                    foundItem;
+                for (var ii = 0; ii < items.length; ii++) {
+                    if (items[ii].canEditCriterion(criterion.criteria[i])) {
+                        //this.logWarn("item:" + items[ii] + " can edit:" + this.echo(criterion.criteria[i]));
+                        foundItem = true;
+                        break;
+                    }
+                }
+                //this.logWarn("found item:" + foundItem + " for criterion:" + this.echo(criterion.criteria[i]));
+                if (!foundItem) return false;
+            }
+            return true;
+        }
+    },
+
+    //> @method canvasItem.getCriterion()
+    // The standard formItem criteria editing APIs have been overridden in the canvasItem class
+    // to simplify the editing of complex +link{AdvancedCriteria} objects using nested 
+    // DynamicForms.
+    // <P>
+    // The following pattern is supported without need for further modification:<br>
+    // A complex Advanced criteria object may have nested sub criteria using the <code>"and"</code>
+    // or <code>"or"</code> operators. For example:
+    // <pre>
+    // { _constructor:"AdvancedCriteria",
+    //   operator:"and",
+    //   criteria:[
+    //      {fieldName:"field1", value:"value1", operator:"iContains"},
+    //      {operator:"or", criteria:[
+    //          {fieldName:"innerField1", value:"value1", operator:"equals"},
+    //          {fieldName:"innerField2", value:"value2", operator:"iContains"}
+    //       ]
+    //      }
+    //   ]
+    // }
+    // </pre>
+    // To create a form capable of editing the above criteria without providing custom overrides
+    // to +link{formItem.getCriterion()} et al, you would create a form with 2 items.
+    // The 'field1' criterion could be edited by a simple form item such as a TextItem.
+    // The nested criteria ('innerField1' and 'innerField2') could be edited by a canvasItem
+    // whose canvas property was set to a DynamicForm showing items capable of editing the 2
+    // inner criteria, and whose operator was specified as "or".<br>
+    // For example:
+    // <pre>
+    //  isc.DynamicForm.create({
+    //      items:[
+    //          {name:"field1", type:"TextItem"},
+    //          {name:"nestedItem", shouldSaveValue:true, type:"CanvasItem",
+    //              canvas:isc.DynamicForm.create({
+    //                  operator:"or",
+    //                  items:[
+    //                      {name:"innerField1", type:"TextItem", operator:"equals"},
+    //                      {name:"innerField2", type:"TextItem"}
+    //                  ]
+    //              })
+    //          }
+    //      ]
+    //  });
+    //  </pre>
+    // This form would be able to edit the above advanced criteria object via
+    // +link{dynamicForm.setValuesAsCriteria()}. Edited values would be retrieved via
+    // +link{dynamicForm.getValuesAsCriteria()}.
+    // <P>
+    // Note that the canvas item has <code>shouldSaveValue</code> set to true - this is required
+    // to ensure the nested form is actually passed the values to edit. 
+    // <P>
+    // The default implementation of this method checks for this.canvas being specified as a
+    // dynamicForm, and in that case simply returns the result of 
+    // +link{dynamicForm.getValuesAsAdvancedCriteria()} on the inner form.
+    // 
+    // @return (Criterion) criterion to merge with advanced criteria returned by 
+    //  +link{dynamicForm.getValuesAsCriteria()}
+    // @group criteriaEditing
+    // @visibility external
+    //<
+    getCriterion : function () {
+        if (isc.isA.DynamicForm(this.canvas)) {
+            return this.canvas.getValuesAsAdvancedCriteria();
+        }
+    },
+    
+    //> @method canvasItem.setCriterion()
+    // Display a +link{criterion} object in this item for editing. Overridden from 
+    // +link{formItem.setCriterion()} in order to support editing nested criteria using 
+    // nested dynamicForms as described in +link{canvasItem.getCriterion()}.
+    // <P>
+    // Implementation checks for this.canvas being specified as a DynamicForm, and applies
+    // criterion directly to the embedded form via setValuesAsCriteria()
+    // @param criterion (Criterion) criteria to edit
+    // @group criteriaEditing
+    // @visibility external
+    //<
+    setCriterion : function (criterion) {
+        if (isc.isA.DynamicForm(this.canvas)) {
+            this.canvas.setValuesAsCriteria(criterion, true);
+        }
+    }
 });
 

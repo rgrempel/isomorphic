@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -853,6 +853,9 @@ isc.defineClass("SimpleType").addClassMethods({
             for (var i = 0; i < records.length; i++) {
                 var value = records[i][fieldName],
                     floatVal = parseFloat(value);
+
+                if (value == null || value == isc.emptyString) continue;
+
                 if (isc.isA.Number(floatVal) && (floatVal == value)) total += floatVal;
                 // if we hit any invalid values, just return null - the grid will show
                 // the 'invalidSummaryValue' marker
@@ -868,6 +871,8 @@ isc.defineClass("SimpleType").addClassMethods({
             for (var i = 0; i < records.length; i++) {
                 var value = records[i][fieldName],
                     floatVal = parseFloat(value);
+                if (value == null || value == isc.emptyString) continue;
+
                 if (isc.isA.Number(floatVal) && (floatVal == value)) {
                     count += 1;
                     total += floatVal;
@@ -888,6 +893,8 @@ isc.defineClass("SimpleType").addClassMethods({
             var max;
             for (var i = 0; i < records.length; i++) {
                 var value = records[i][fieldName];
+                if (value == null || value == isc.emptyString) continue;
+
                 if (dateCompare) {
                     if (!isc.isA.Date(value)) return null;
                     if (max == null || value.getTime() > max.getTime()) max = value.duplicate(); 
@@ -913,6 +920,8 @@ isc.defineClass("SimpleType").addClassMethods({
             var min;
             for (var i = 0; i < records.length; i++) {
                 var value = records[i][fieldName];
+                if (value == null || value == isc.emptyString) continue;
+
                 if (dateCompare) {
                     if (!isc.isA.Date(value)) return null;
                     if (min == null || value.getTime() < min.getTime()) min = value.duplicate();
@@ -934,9 +943,10 @@ isc.defineClass("SimpleType").addClassMethods({
             var multiplier = 0;
             for (var i = 0; i < records.length; i++) {
                 var value = records[i][fieldName];
+               
                 var floatVal = parseFloat(value);
                 if (isc.isA.Number(floatVal) && (floatVal == value)) {
-                    if (multiplier == 0) multiplier = floatVal;
+                    if (i == 0) multiplier = floatVal;
                     else multiplier = (multiplier * floatVal);
                 } else {
                     return null;

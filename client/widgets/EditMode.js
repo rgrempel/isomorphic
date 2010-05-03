@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -90,7 +90,8 @@ isc.Canvas.addClassMethods({
             var thumb = thumbs[thumbName];
             // set all the thumbs to drag resize the canvas we're masking
             thumb.dragTarget = target;
-            // show all the thumbs            
+            // show all the thumbs    
+            thumb.bringToFront();        
             thumb.show();
         }
 

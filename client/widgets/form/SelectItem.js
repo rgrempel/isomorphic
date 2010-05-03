@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -120,6 +120,43 @@ isc._SelectItemProperties = {
     
     autoSizePickList:true,
     
+    //>	@attr	selectItem.multiple		(boolean : false : IRW)
+	// If true, multiple values may be selected.
+    // <P>
+    // The SelectItem will either render as a drop-down allowing multiple options, or a
+    // multi-row list of options similar to a small headerless +link{ListGrid}, based on the
+    // +link{multipleAppearance} setting.
+    // <P>
+    // The logical value of the formItem, as retrieved by +link{formItem.getValue,getValue()}
+    // and set via +link{formItem.setValue,setValue()}, is an Array of Strings reflecting the
+    // selected values.
+    // <P>
+    // Note: <code>multiple:true</code> SelectItems do not currently support optionDataSource
+    // binding.  You can get around this by calling +link{DataSource.fetchData()} directly and
+    // calling +link{list.getValueMap,dsResponse.data.getValueMap()} to obtain a valueMap.
+    //
+	//  @group	appearance
+    //  @visibility external
+	//<
+    // Note that if multipleAppearance is "grid", this currently uses NativeSelectItem
+    
+    //> @type MultipleAppearance
+    // Appearance for a SelectItem that allows multiple selection
+    //
+    // @value "picklist" a drop-down picklist that allows multiple choices by
+    //              clicking on a checkbox next to each item
+    // @value "grid" a grid that displays all items in-place. Multiple selection
+    //              accomplished by ctrl-click or shift-click.
+    // @visibility external
+    //<
+    
+    //> @attr SelectItem.multipleAppearance   (MultipleAppearance : "picklist" : IR)
+    // How should items with +link{SelectItem.multiple} set to 'true' be displayed?
+    // @visibility external
+    //<
+    multipleAppearance: "picklist",
+    
+    
     // ---------------------------
     // SelectOther is a behavior implemented on select items 
     // This is doc'd as a separate form item type, and can be specified by creating a 
@@ -186,7 +223,7 @@ isc.SelectItem.addProperties({
     
     
     //> @attr selectItem.showPickerIcon (boolean : true : [IRW])
-    // Should we show a special 'picker' icon for this form item. Picker icons are customizeable
+    // Should we show a special 'picker' icon for this form item. Picker icons are customizable
     // via +link{SelectItem.pickerIconProperties}. By default they will be rendered inside the 
     // Form Item's "control box" area, and will call +link{SelectItem.showPicker()} when clicked.
     //
@@ -240,7 +277,7 @@ isc.SelectItem.addProperties({
     //> @attr SelectItem.pickerIconWidth (number : null : [IRWA])
     // If +link{selectItem.showPickerIcon} is true for this item, this property governs the
     // size of the picker icon. If unset, the picker icon will be sized as a square to fit in the
-    // avaliable height for the icon.
+    // available height for the icon.
     // @group pickerIcon
     // @visibility external
     //<
@@ -248,7 +285,7 @@ isc.SelectItem.addProperties({
     //> @attr SelectItem.pickerIconHeight (number : null : [IRWA])
     // If +link{selectItem.showPickerIcon} is true for this item, this property governs the
     // size of the picker icon. If unset, the picker icon will be sized as a square to fit in the
-    // avaliable height for the icon.
+    // available height for the icon.
     // @group pickerIcon
     // @visibility external
     //<
@@ -369,6 +406,11 @@ isc.SelectItem.addProperties({
     // and take focus when shown.
     modalPickList:true,
     
+    //>@attr    SelectItem.fireChangeOnSelect   (boolean : true : IRW)
+    // whether +link{FormItem.change()} 
+    // fires each time the pickList selection changes, or only when the pickList is dismissed. 
+    //<
+    
     //>@attr    SelectItem.changeOnValueChange (boolean : true : IRW) 
     //  If true the change handler for this item will fire when the item has focus and
     //  modifies the selection for the item.
@@ -482,7 +524,7 @@ isc.SelectItem.addMethods({
     // Override iconFocus() - if focus goes to the picker icon, shift it to the textbox instead
     
     _iconFocus : function (id, element) {
-        var icon = this._getIcon(id);
+        var icon = this.getIcon(id);
         if (icon == this.getPickerIcon()) {
             element.blur();
             this.focusInItem();
@@ -514,7 +556,7 @@ isc.SelectItem.addMethods({
     // on iconMouseOut - if the user rolled off the picker icon, but is still over the 
     // control table - don't clear the picker icon hilight
     _iconMouseOut : function (id, a,b,c,d) {
-        if (this._getIcon(id) == this.getPickerIcon() && this._overControlTable()) return;
+        if (this.getIcon(id) == this.getPickerIcon() && this._overControlTable()) return;
         return this.invokeSuper("SelectItem", "_iconMouseOut", id, a,b,c,d);
     },
     
@@ -595,6 +637,7 @@ isc.SelectItem.addMethods({
     // don't want to fire the editorExit method, since focus is going to the pickList
     handleEditorExit : function () {
         
+isc.logWarn("handleEditorExit: _showingPickList=" + this._showingPickList);
         if (this._showingPickList) return;
         return this.Super("handleEditorExit", arguments);
     },
@@ -620,6 +663,13 @@ isc.SelectItem.addMethods({
         if (this.pickListShown) this.pickListShown();
     },
     
+    // override _pickListHidden so that change notifications can be fired when
+    // fireChangeOnSelect is false, and the item is in multi mode
+    _pickListHidden : function () {
+        if (this.fireChangeOnSelect == false) this.updateValue();   
+        if (this.pickListHidden) this.pickListHidden();
+    },
+
     // Navigation methods:
 
     
@@ -918,7 +968,7 @@ isc.SelectItem.addMethods({
         if (value == this.separatorValue) return (this._localValue || this.getValue());
         if (value == this.otherValue) {
 
-            // Note the prompt contents should probably be customizeable
+            // Note the prompt contents should probably be customizable
             var oldValue = this._localValue || this.getValue(),
                 oldTitle = (oldValue == null ? "" : this.mapValueToDisplay(oldValue)),
                 promptTitle = this.selectOtherPrompt.evalDynamicString(null,
@@ -1072,8 +1122,7 @@ isc.SelectItem.addMethods({
     // Display vs internal value mapping
     // mapValueToDisplay() allows us to convert internal value to  display value.
     
-    mapValueToDisplay : function (internalValue, a, b, c) {
-            
+    mapValueToDisplay : function (internalValue, a, b, c) {          
         if (this.isSelectOther) {
             if (internalValue == this.otherValue) return this.otherTitle;
             if (internalValue == this.separatorValue) return this.separatorTitle;
@@ -1110,6 +1159,15 @@ isc.SelectItem.addMethods({
         return null;
     },
 
+    // getSelectedRecords()
+    getSelectedRecords : function () {
+        var value = this._localValue;
+        this.selectItemFromValue(value);
+        var sel = this.pickList.getSelection();
+        if (sel.length > 0) return sel;
+        else return null;
+    },
+    
     // Map valueToDisplay needs to pick up
     // the mapping between displayField and valueField, if there is one.
     // We implement this by overriding _mapKey() to check for the value in
@@ -1260,7 +1318,10 @@ isc.SelectItem.addMethods({
         // The current selected value must always be present in the records for the VM.
         
         var value = this.getValue();
-        if (value != null && records.find(valueField, value) == null) {
+        // don't add the value if value is an array;  this means the item is in 
+        // multiselect mode
+                
+        if (value != null && !isc.isAn.Array(value) && records.find(valueField, value) == null) {
             var newRecord = {};
             newRecord[valueField] = value;
             records.addAt(newRecord, 0);
@@ -1314,7 +1375,7 @@ isc.SelectItem.addMethods({
         }
         
         // use changeToValue() to update the value and fire the change handler
-        this.changeToValue(value, this.changeOnValueChange);
+        this.changeToValue(value, (this.changeOnValueChange && this.fireChangeOnSelect != false));
     },
 
     //>@method SelectItem.getPickListPosition() (A)

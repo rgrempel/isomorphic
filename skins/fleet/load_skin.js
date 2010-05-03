@@ -43,14 +43,14 @@ with (theWindow) {
     // button will fall back on the CSS-based Button with this skin
 	isc.ClassFactory.defineClass("IButton", "Button");
 	isc.ClassFactory.defineClass("IAutoFitButton", "AutoFitButton");
-    isc.IButton.markAsFrameworkClass();
-    isc.IAutoFitButton.markAsFrameworkClass();
+    if (isc.IButton.markAsFrameworkClass != null) isc.IButton.markAsFrameworkClass();
+    if (isc.IAutoFitButton.markAsFrameworkClass != null) isc.IAutoFitButton.markAsFrameworkClass();
 
 	
 	// Have IMenuButton be just a synonym for IMenuButton
 	if (isc.MenuButton) {
 	    isc.ClassFactory.defineClass("IMenuButton", "MenuButton");
-	    isc.IMenuButton.markAsFrameworkClass();
+	    if (isc.IMenuButton.markAsFrameworkClass != null) isc.IMenuButton.markAsFrameworkClass();
     }
     
 	// ListGrid skinning	
@@ -58,7 +58,9 @@ with (theWindow) {
 		isc.ListGrid.addProperties({
 			// copy the header (.button) background-color to match when sort arrow is hidden
 			backgroundColor:"#CCCCCC",
-            headerBackgroundColor:null
+            headerBackgroundColor:null,
+            expansionFieldImageWidth : 16,
+            expansionFieldImageHeight : 16
 		});
 	}
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -604,7 +604,7 @@ isc.DynamicForm.addProperties({
     // +link{dynamicForm.showErrorStyle,showErrorStyle} control how validation errors are
     // displayed when they are displayed inline in the form (next to the form item where there
     // is a validation error).  To instead display all errors at the top of the form, set
-    // +link{showInlineErrors:false}.
+    // +link{showInlineErrors}:false.
     // <P>
     // <code>showErrorIcons</code>, <code>showErrorText</code> and <code>showErrorStyle</code>
     // are all boolean properties, and can be set on a DynamicForm to control the behavior
@@ -1721,6 +1721,12 @@ createItem : function (item, type) {
     item.form = item.containerWidget = item.eventParent = this;
     
     
+    var baseValidators = null;
+    if (item["validators"] != null && itemConfig["validators"] != null) {
+        baseValidators = item.validators;
+    }
+
+    
     if (isc.Browser.isIE && this.canAlterItems) {
         this.copyKnownProperties(item, itemConfig, this._knownProps);
     }
@@ -1737,6 +1743,23 @@ createItem : function (item, type) {
         //this.logWarn("item: " + this.echoLeaf(item) + ", item.form is: " + item.form + 
         //             ", itemConfig is: " + this.echo(itemConfig));
         item.completeCreation(itemConfig);
+
+        if (baseValidators != null) {
+            // Add base validator(s) to item
+            if (!item.validators) {
+                item.validators = baseValidators;
+            } else {
+                if (!isc.isAn.Array(item.validators)) {
+                    item.validators = [item.validators];
+                }
+                // if the field is using the shared, default validators for the type, 
+                // make a copy before modifying
+                if (item.validators._typeValidators) {
+                    item.validators = item.validators.duplicate();
+                }
+                item.validators.addList(baseValidators);
+            }
+        }
     }
 
     
@@ -2282,6 +2305,18 @@ dataArity:"single",
 // @visibility external
 //<
 setValues : function (newData, initTime) {
+    
+    // clear any extra advancedCriteria stored by setValuesAsCriteria()
+    // getValuesAsCriteria() should return whatever was passed into this method rather than
+    // hanging onto a stale advanced criteria object.
+    /*if (this._extraAdvancedCriteria != null) {
+        
+        this.logWarn("clearing stored _extraAdvancedCriteria due to setValues. values:"
+            + this.echo(newData) + ", old stored crit:" + isc.Comm.serialize(this._extraAdvancedCriteria) +
+            " stack:" + this.getStackTrace());
+    }*/
+    delete this._extraAdvancedCriteria;
+    
     if (isc.isAn.Array(newData)) {
         var useFirst = isc.isA.Object(newData[0]);
         this.logWarn("values specified as an array." + 
@@ -2551,16 +2586,60 @@ getData : function () {
 	return this.getValues();
 },
 
+//> @groupDef criteriaEditing
+// DynamicForms may be used to edit +link{Criteria} or +link{AdvancedCriteria} for filtering 
+// data from a DataSource.
+// <P>
+// The main APIs for this are +link{dynamicForm.getValuesAsCriteria()} and
+// +link{dynamicForm.setValuesAsCriteria()}.
+// <P>
+// <code>getValuesAsCriteria()</code> will return an AdvancedCriteria object in the following
+// cases:
+// <ul>
+// <li>The form was previously passed AdvancedCriteria via <code>setValuesAsCriteria()</code></li>
+// <li>The form has a specified +link{dynamicForm.operator} of <code>"or"</code></li>
+// <li>+link{FormItem.hasAdvancedCriteria()} returns true for some item(s) within the form</li>
+// </ul>
+// <P>
+// Note that at the form item level, individual items can support editing of advanced criteria
+// via overrides to the +link{formitem.hasAdvancedCriteria()}, +link{formItem.canEditCriterion()},
+// +link{formItem.setCriterion()} and +link{formItem.getCriterion()} methods.
+// <P>
+// The common pattern of using nested dynamicForms to edit arbitrary advanced criteria has been
+// implemented via overrides to these methods in the +link{CanvasItem} class. See 
+// +link{CanvasItem.getCriterion()} for details.
+// <P>
+// For completely user-driven advanced criteria editing see also the +link{FilterBuilder} class.
+//
+// @title Criteria Editing
+// @treeLocation Client Reference/Forms
+// @visibility external
+//<
+
+
 //>	@method	dynamicForm.getValuesAsCriteria()
 // Return search criteria based on the current set of values within this form.
 // <p>
-// The returned search criteria will be either a simple +link{Criteria} object or an
-// +link{AdvancedCriteria} object if +link{formItem.operator} has been set for any item in the
-// form (see +link{formItem.operator} for details).  Note that AdvancedCriteria objects will
-// only be returned if this form is bound to an appropriate +link{DataSource} (ie, a 
-// dataSource which contains the fields you're trying to use as criteria).
+// The returned search criteria will be a simple +link{Criteria} object, except for
+// in the following cases, in which case an +link{AdvancedCriteria} object will be returned:
+// <ul>
+// <li>The <code>advanced</code> parameter may be passed to explicitly request a 
+// <code>AdvancedCriteria</code> object be returned</li>
+// <li>If +link{setValuesAsCriteria()} was called with an <code>AdvancedCriteria</code>
+//     object, this method will return advanced criteria.</li>
+// <li>If +link{dynamicForm.operator} is set to <code>"or"</code> rather than 
+//     <code>"and"</code> the generated criteria will always be advanced.</li>
+// <li>If any item within this form is marked as producing advanced criteria by
+//     +link{FormItem.hasAdvancedCriteria()} returning true.</li>
+// </ul>
+// The criteria returned will be picked up from the current values for this form. For simple
+// criteria, each form item simply maps its value to it's fieldName. See
+// +link{formItem.getCriterion()} for details on how form items generate advanced criteria.
+// Note that any values or criteria specified via +link{setValues()} or
+// +link{setValuesAsCriteria()} which do not correspond to an item within the form will be
+// combined with the live item values when criteria are generated.
 // <P>
-// The returned criteria object can then be used to filter data via methods such as
+// The returned criteria object can be used to filter data via methods such as
 // +link{ListGrid.fetchData()}, +link{DataSource.fetchData()}, or, for more advanced usage,
 // +link{ResultSet.setCriteria()}.
 // <P>
@@ -2569,73 +2648,122 @@ getData : function () {
 // be blank".  Examples of empty values include a blank text field or SelectItem with an empty
 // selection.
 //
-// @group formValues
+// @param advanced (boolean) if true, return an +link{AdvancedCriteria} object even if the
+//   form item values could be represented in a simple +link{Criterion} object.
+//
+// @group criteriaEditing
 // @return (Criteria or AdvancedCriteria) a +link{Criteria} object, or +link{AdvancedCriteria}
 //
 // @visibility external
 //<
 
-getValuesAsCriteria : function (returnNulls, advanced) {
-    var values = this._getCriteriaValuesMap();
-    var items = this.getFields().duplicate();
-    
-    // Should we create a normal criteria object or an AdvancedCriteria?
-    for (var i = 0; i < items.length; i++) {
-        if (!items[i].shouldSaveValue) {
-            items[i] = null;
-        } else if (items[i].operator) {
-            advanced = true;
-        }
-    }
-    items.removeEmpty();
 
-    // filterCriteriaForFormValues will clear out null values, and handle arrays returned
-    // by multi-selects.  
+getValuesAsCriteria : function (advanced, returnNulls) {
     
-    var ds = this.dataSource;
-    if (!ds) {
-        if (this.grid && this.grid.sourceWidget) ds = this.grid.sourceWidget.dataSource;
+    if (advanced == null) {
+        advanced = (this.operator != "and") || 
+                   this.getItems().map("hasAdvancedCriteria").contains(true) ||
+                   (this._extraAdvancedCriteria != null);
     }
-    ds = isc.DataSource.getDataSource(ds);
     
-    if (!advanced || !ds) {
+    
+    // Simple criteria:
+    // - criteria basically == values object
+    // - remap specific items according to getCriteriaFieldName() and getCriteriaValue()
+    // - pass through DS.filterCriteriaforFormValues() to clear nulls and handle arrays
+    if (!advanced) {
+        var values = this._getMappedCriteriaValues();
+        
+        // filterCriteriaForFormValues will clear out null values, and handle arrays returned
+        // by multi-selects.  
+        
         if (returnNulls) return values;
         return isc.DataSource.filterCriteriaForFormValues(values);
     }
     
-    // AdvancedFilter
-    var criteria = { 
-        _constructor: "AdvancedCriteria",
-        operator: this.operator
-    }
+    // Advanced criteria:
+    // - top level operator comes from form.operator
+    // - if advanced criteria was already set combine live values into it, otherwise
+    //   use values object as base and combine live values into that
+    // - add each item value as a sub criterion (remapping field name and value according to
+    //   getCriteraiFieldName() and getCriteriaValue();
+
+    // The _extraAdvancedCriteria gets set when 'setValuesAsCriteria()' is called.
+    // It representes the criteria passed in, excluding any sub-criteria for which we 
+    // have a live formItem editor - we want to overlay live values from form items
+    // on top of it.    
+    var baseCriteria = this._extraAdvancedCriteria ? isc.clone(this._extraAdvancedCriteria) 
+                        : { operator:this.operator, _constructor: "AdvancedCriteria", 
+                            criteria:[]};
     
-    var subCriteria = [];
-    for (i = 0; i < items.length; i++) {
-        var field = items[i];
-        var fieldName = items[i].criteriaField ? items[i].criteriaField : items[i].name;
-        // Ignore this field if it isn't on the dataSource
-        if (ds.getField(fieldName) == null) continue
-
-        var criterion = field.getCriterion();
-        if (criterion) subCriteria.add(criterion);
-    }
-
-    criteria.criteria = subCriteria;
-    return criteria;
+    
+    var criteria = this._getMappedCriteriaValues(true);
+    baseCriteria.criteria.addList(criteria);
+    return baseCriteria;
     
 },
+
+
+// _getMappedCriteriaValues()
+// Pick up the criteria field name and criteria value for each item in the form.
+// 
+// Combine this with items from the form values object so we don't omit criteria fields
+// without a specified item
+_getMappedCriteriaValues : function (advanced) {
     
-_getCriteriaValuesMap : function () {
-    var valuesMap = {};
+    // Note we iterate through all the items in the form, but we also need to look at the
+    // form's values object, since there may be values set for fields that have no associated
+    // item.
+    // Cases where this could happen:
+    // - setValues() was called, with a simple values object including fields with no item.
+    //   In this case this._extraAdvancedCriteria will have been wiped
+    // - the items in the form have changed since setValuesAsCriteria() was called.
+    var values = isc.addProperties({},this.getValues()),
+        simpleCriteria = {},
+        advancedCriteria = [];
+        
     var items = this.getFields();
     for (var i = 0; i < items.length; i++) {
         if (!items[i].shouldSaveValue) continue;
-        // If the item returns a criteriaFieldName of null, exclude it from the criteria
-        // altogether
-        var fieldName = items[i].getCriteriaFieldName();
-        if (fieldName) valuesMap[fieldName] = items[i].getCriteriaValue();
+        var item = items[i],
+            itemName = items[i].getFieldName(),
+            criterionName = items[i].getCriteriaFieldName();
+        
+        // clear the value from the values object if it has an associated item!
+        // We do this so we can retain values that don't have an associated item, but for
+        // those that do we can remap values to a new criteria field name and a new
+        // value via getCriteriaValue()
+        delete values[itemName];
+        
+        if (!advanced) {
+            // If the item returns a criteriaFieldName of null, exclude it from the criteria
+            // altogether
+            if (criterionName != null) {
+                simpleCriteria[criterionName] = items[i].getCriteriaValue();
+            }
+            
+        } else {
+         
+            var criterion = item.getCriterion();
+            if (criterion != null) advancedCriteria.add(criterion);
+        }
     }
-    return valuesMap;
+    // overlay the values from actual items on top of the values from the values object.
+    if (!advanced) {
+        return isc.addProperties(values, simpleCriteria);
+    } else {
+        for (var fieldName in values) {
+            
+            if (advancedCriteria.find("fieldName", fieldName)) continue;
+            advancedCriteria.add({
+                    operator:"equals",
+                    fieldName:fieldName,
+                    value:values[fieldName]
+            });
+        }
+        return advancedCriteria;
+    }
+    
 },    
 
 //>!BackCompat 2005.3.21
@@ -2644,6 +2772,100 @@ getFilterCriteria : function () {
 },
 //<!BackCompat
 
+//> @method dynamicForm.setValuesAsCriteria()
+// This method will display the specified criteria in this form for editing. The criteria
+// parameter may be a simple +link{criterion} object or an +link{AdvancedCriteria} object.
+// <P>
+// For simple criteria, the specified fieldName will be used to apply criteria to form items,
+// as with a standard setValues() call.
+// <P>
+// For AdvancedCriteria, behavior is as follows:
+// <ul>
+// <li>If the top level operator doesn't match the +link{dynamicForm.operator,operator} for
+//  this form, the entire criteria will be nested in an outer advanced criteria object with
+//  the appropriate operator.</li>
+// <li>Each criterion within AdvancedCriteria will be applied to a form item if
+//  +link{formItem.shouldSaveValue} is true for the item and 
+//  +link{formItem.canEditCriterion()} returns true for the criterion in question. By default
+//  this method checks for a match with both the <code>fieldName</code> and <code>operator</code>
+//  of the criterion. The criterion is actually passed to the item for editing via
+//  +link{formItem.setCriterion()}. Note that these methods may be overridden for custom 
+//  handling. Also note that the default +link{CanvasItem.setCriterion()} implementation
+//  handles editing nested criteria via embedded dynamicForms.</li>
+// <li>Criteria which don't map to any form item will be stored directly on the form and
+//  recombined with the edited values from each item when +link{getValuesAsCriteria()} is
+//  called.</li>
+// </ul>
+// @param criteria (Criterion) criteria to edit.
+// 
+// @group criteriaEditing
+// @visibility external
+//<
+// advanced parameter used when we're using nested forms to edit advanced criteria. In this
+// case we don't have the "AdvancedCriteria" constructor property set on the inner criteria
+// but we still want to use the 'advanced' type handling to apply it to our form items.
+setValuesAsCriteria : function (criteria, advanced) {
+    if (!advanced && !isc.DataSource.isAdvancedCriteria(criteria)) {
+        this.setValues(criteria);
+    } else {
+        
+        // Explicitly clear our existing values.
+        // We'll update values item-by-item via 'setCriterion()'
+        this.setValues({});
+
+        // copy the crit object - we don't want to directly manipulate it and confuse other
+        // code
+        criteria = isc.clone(criteria);
+        
+        var topOperator = criteria.operator;
+        if (topOperator != this.operator) {
+            // this doesn't necessarily indicate an error but it might be unexpected.
+            // Log a warning and wrap in a top level AC object.
+            this.logWarn("Dynamic Form editing advanced criteria object:" +
+                isc.Comm.serialize(criteria) + ". Form level operator specified as '" +
+                this.operator + "' - Criteria returned from this form will be nested in an outer " +
+                this.operator + " clause.");
+            
+            criteria._constructor = null;
+            criteria = {
+                _constructor:"AdvancedCriteria",
+                operator:this.operator,
+                criteria:[criteria]
+            }
+        }
+        
+        // We have to determine which items will edit which of the criteria.
+        // For each inner criterion - see if we have an item that can edit it. If so,
+        // clear it off the stored "extra criteria" and apply it directly to the item for
+        // editing. getValuesAsCriteria() will reconstitute it when it runs!
+        var items = this.getItems(),
+            values = {},
+            innerCriteria = criteria.criteria;
+            
+        for (var i = 0; i < innerCriteria.length; i++) {
+    
+            for (var ii = 0; ii < items.length; ii++) {
+                if (!items[ii].shouldSaveValue) continue;
+
+                if (items[ii].canEditCriterion(innerCriteria[i])) {
+                    //this.logWarn("applying advanced criterion:" + isc.Comm.serialize(innerCriteria[i]) + 
+                    //    "to item:" + items[ii]);
+                    
+                    items[ii].setCriterion(innerCriteria[i]);
+                    innerCriteria[i] = null;
+                    // no need to go through the rest of the items for this criterion...
+                    break;
+                }
+            }
+        }
+        innerCriteria.removeEmpty();
+        
+        // store the fields we're not directly editing -- these will be recombined with
+        // live values as part of getValuesAsCriteria();
+        this._extraAdvancedCriteria = criteria;
+    }
+},
+
 //>	@method	dynamicForm.getValuesAsAdvancedCriteria()
 // Return an AdvancedCriteria object based on the current set of values within this form.
 // <p>
@@ -2651,13 +2873,13 @@ getFilterCriteria : function () {
 // is guaranteed to be an AdvancedCriteria object, even if none of the form's fields has a
 // specified +link{formItem.operator}
 //
-// @group formValues
+// @group criteriaEditing
 // @return (AdvancedCriteria) a +link{AdvancedCriteria} based on the form's current values
 //
 // @visibility external
 //<
 getValuesAsAdvancedCriteria : function (returnNulls) {
-    return this.getValuesAsCriteria(returnNulls,true);
+    return this.getValuesAsCriteria(true, returnNulls);
     
 },
 
@@ -3091,7 +3313,7 @@ getFieldErrors : function (fieldName) {
 //<
 setErrors : function (errors, showErrors) {
 
-	this.errors = isc.DynamicForm.formatValidationErrors(errors);
+    this.errors = isc.DynamicForm.formatValidationErrors(errors);
     
     var hasHiddenErrors = false,
         hiddenErrors = {};
@@ -3187,7 +3409,6 @@ setFieldErrors : function (fieldName, errors, showErrors) {
     
     if (showErrors) this.showFieldErrors(fieldName);
 },
-
 
 //> @method dynamicForm.clearFieldErrors()
 // Clear any validation errors on the field passed in.
@@ -4082,7 +4303,9 @@ getCellStartHTML : function (item, error) {
     // Use the height calculated by tableResizePolicy rather than the specified size (may be
     // null, "*" or a percentage).
     
+    var forceHeight = this.fixedRowHeights || item.shouldFixRowHeight();
     var height = item._size ? item._size[1] : null;
+    
     if (isc.isA.Number(height) && this.cellSpacing != 0) height -= 2*this.cellSpacing;
     
     return this._getCellStartHTML(
@@ -4096,7 +4319,7 @@ getCellStartHTML : function (item, error) {
                 
         null, 
         
-        (this.fixedRowHeights ? height : null),
+        (forceHeight ? height : null),
         
         null,
         item.cssText,
@@ -5074,7 +5297,9 @@ validate : function (validateHiddenFields, ignoreDSFields, typeValidationsOnly, 
     if (dsFields) {    
         // Unless we're looking at a 'required' or 'requiredIf' field,
         // don't try to validate null values.
-        validationOptions = {dontValidateNullValues: true};
+        validationOptions.dontValidateNullValues = true;
+        // We want to process all validators
+        delete validationOptions.typeValidationsOnly;
 
         for (var i in dsFields) {
             
@@ -5202,11 +5427,10 @@ showErrors : function (errors, hiddenErrors) {
     // method is overridden the developer will be suppressing this default approach.
     if (errors && !this.showInlineErrors && (!this._errorItem || this._errorItem.destroyed))
         this.createErrorItem();
-    
+
     // Redraw whether there are outstanding errors or not. This means that this method will 
     // also clear visible errors that have been resolved.
     this.markForRedraw("Validation Errors Changed");
-    
 
     if (errors && !isc.isAn.emptyObject(errors)) {
         for (var fieldName in errors) {
@@ -5415,7 +5639,7 @@ setFocus : function (hasFocus) {
         // item.
         
         var event = isc.EH.lastEvent;
-        if (!(event.target == this && event.eventType == isc.EH.MOUSE_DOWN)) {
+        if (item != null && !(event.target == this && event.eventType == isc.EH.MOUSE_DOWN)) {
             // No need to call Super because focusing in the item will trigger the 
             // elementFocus() method which updates this.hasFocus, etc.
             return this.focusInItem(item);
@@ -5584,15 +5808,15 @@ _canFocusInItem : function (item, tabStop) {
 //<
 focusInItem : function (itemName) {
 
-	// normalize the item in case it's a number or a string
-	if (itemName != null) {
-		var item = this.getItem(itemName);
-	} else {
-		var item = this.getFocusItem();
-	}
-	// if nothing was found to focus in, bail!
-	if (!item) {
-        this.logWarn("couldn't find focus item: " + itemName);
+    // normalize the item in case it's a number or a string
+    if (itemName != null) {
+        var item = this.getItem(itemName);
+    } else {
+        var item = this.getFocusItem();
+    }
+    // if nothing was found to focus in, bail!
+    if (!item) {
+        if (itemName != null) this.logWarn("couldn't find focus item: " + itemName);
         return;
     }
 
@@ -5752,7 +5976,7 @@ setVisibility : function (newVisibility,a,b,c) {
     this.invokeSuper(isc.DynamicForm, "setVisibility", newVisibility,a,b,c);
     this.itemsVisibilityChanged();
     // If we are shown and we are auto-focus true, focus now
-    if (this.isVisible() && this.autoFocus) this.focus();
+    if (this.isVisible() && this.isDrawn() && this.autoFocus) this.focus();
 },
 
 // override 'clear' to notify the form items that they have been hidden.
@@ -6047,6 +6271,9 @@ bubbleItemHandler : function (itemID, handlerName, arg1, arg2, arg3, arg4) {
         result = null;
 
 	for (; subItem != null; subItem = subItem.parentItem) {
+	    // if we don't directly hold this form item, don't attempt to send events to it
+	    
+	    if (subItem.form != this) continue;
 		if (subItem[handlerName] != null && !isc.isA.Function(subItem[handlerName])) {
 			isc.Func.replaceWithMethod(subItem, handlerName, "arg1,arg2,arg3,arg4");
 		}
@@ -6135,12 +6362,13 @@ handleClick : function (event, eventInfo) {
                 overItem = overItem || item.isA("SpacerItem");
                 
                 
-                if (itemInfo.overIcon) {
+                
+                if (itemInfo.overIcon && (item.form == this)) {
                     if (item._iconClick(itemInfo.overIcon) == false) 
                         return false;
                     // The picker is written into the main body of the item - other icons are not,
                     // so don't fire the standard click handler for them.
-                    var icon = item._getIcon(itemInfo.overIcon);
+                    var icon = item.getIcon(itemInfo.overIcon);
                     if (icon && icon.writeIntoItem) 
                         overItem = true;
                 }
@@ -6180,7 +6408,7 @@ handleDoubleClick : function (event, eventInfo) {
                 if (item._iconClick(itemInfo.overIcon) == false) return false;
                 // The picker is written into the main body of the item - other icons are not,
                 // so don't fire the standard click handler for them.
-                var icon = item._getIcon(itemInfo.overIcon);
+                var icon = item.getIcon(itemInfo.overIcon);
                 if (icon && icon.writeIntoItem) overItem = true;
             }
 
@@ -7038,7 +7266,7 @@ _getItemInfoFromElement : function (target, form) {
 //       ...
 //     }
 //   Note that error object {} can also be an array of error objects [{}, ...]
-getSimpleErrors : function (errors, detailed) {
+getSimpleErrors : function (errors) {
     // If error is in server format, transform the server error report format to the error
     // report expected by an editor component.  Server errors are formatted as:
     // [{ "recordPath" : pathString, 
@@ -7062,6 +7290,7 @@ getSimpleErrors : function (errors, detailed) {
 
     for (var fieldName in errors) {
         var fieldErrors = errors[fieldName];
+        if (fieldName == "recordPath" && !isc.isAn.Object(fieldErrors)) continue;
 
         if (isc.isAn.Array(fieldErrors)) {
             errorObjects[fieldName] = [];
@@ -7105,6 +7334,7 @@ formatValidationErrors : function (errors) {
 
     for (var fieldName in errors) {
         var fieldErrors = errors[fieldName];
+        if (fieldName == "recordPath" && !isc.isAn.Object(fieldErrors)) continue;
 
         if (isc.isAn.Array(fieldErrors)) {
             errorMessages[fieldName] = [];

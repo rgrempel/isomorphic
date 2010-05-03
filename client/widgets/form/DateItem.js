@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -63,43 +63,7 @@ isc.DateItem.addClassProperties({
                         }
                    },
     
-	//>	@const	DateItem.DAY_SELECTOR		(object : {...} : IRW)
-	//		Select item to hold the day part of the date.
-	//<	
-	DAY_SELECTOR:	{name:"daySelector",		prompt:"Choose a day", type:"select", 	
-                        valueMap:"this.parentItem.getDayOptions()", shouldSaveValue:false,
-                        // Override saveValue to update the parent.
-                        
-                        saveValue:function () {
-                            this.Super("saveValue", arguments);
-                            this.parentItem.updateValue();
-                        },
-                        cssText:"padding-left:3px;",
-                        width:45},
-
-	//>	@const	DateItem.MONTH_SELECTOR		(object : {...} : IRW)
-	//		Select item to hold the month part of the date.
-	//<	
-	MONTH_SELECTOR:	{name:"monthSelector",	prompt:"Choose a month", type:"select", 	
-                        valueMap:"this.parentItem.getMonthOptions()", shouldSaveValue:false,
-                        saveValue:function () {
-                            this.Super("saveValue", arguments);
-                            this.parentItem.updateValue();
-                        },
-                        width:55},
 	
-
-	//>	@const	DateItem.YEAR_SELECTOR		(object : {...} : IRW)
-	//		Select item to hold the year part of the date.
-	//<	
-	YEAR_SELECTOR:	{name:"yearSelector",		prompt:"Choose a year", type:"select",	
-                        valueMap:"this.parentItem.getYearOptions()", shouldSaveValue:false,
-                        saveValue:function () {
-                            this.Super("saveValue", arguments);
-                            this.parentItem.updateValue();
-                        },
-                        cssText:"padding-left:3px;",
-                        width:60},
 	
 	//>	@type	DateItemSelectorFormat
     // Order of pickers and which pickers are present when using a DateItem with
@@ -125,14 +89,64 @@ isc.DateItem.addClassProperties({
 });
 
 isc.DateItem.addProperties({
-    
+    //>	@attr	DateItem.daySelector		(AutoChild : null : IR)
+	//	Select item to hold the day part of the date.
+	// @visibility external
+	//<	
+	daySelectorDefaults:	{name:"daySelector",		prompt:"Choose a day", type:"select", 	
+                        valueMap:"this.parentItem.getDayOptions()", shouldSaveValue:false,
+                        // Override saveValue to update the parent.
+                        
+                        saveValue:function () {
+                            this.Super("saveValue", arguments);
+                            this.parentItem.updateValue();
+                        },
+                        cssText:"padding-left:3px;",
+                        width:45},
+
+	//>	@attr	DateItem.monthSelector		(AutoChild : null : IR)
+	//	Select item to hold the month part of the date.
+	// @visibility external
+	//<	
+	monthSelectorDefaults:	{name:"monthSelector",	prompt:"Choose a month", type:"select", 	
+                        valueMap:"this.parentItem.getMonthOptions()", shouldSaveValue:false,
+                        saveValue:function () {
+                            this.Super("saveValue", arguments);
+                            this.parentItem.updateValue();
+                        },
+                        width:55},
+	
+
+	//>	@attr	DateItem.yearSelector		(AutoChild : null : IR)
+	//	Select item to hold the year part of the date.
+	// @visibility external
+	//<	
+	yearSelectorDefaults:	{name:"yearSelector",		prompt:"Choose a year", type:"select",	
+                        valueMap:"this.parentItem.getYearOptions()", shouldSaveValue:false,
+                        saveValue:function () {
+                            this.Super("saveValue", arguments);
+                            this.parentItem.updateValue();
+                        },
+                        cssText:"padding-left:3px;",
+                        width:60},
+                        
     // Default to 150 wide
     // This is an appropriate default if we're showing the text field 
     // If we're showing the selectors, this value will be forced to 200 during setItems
     width:150,
-    
+
     cellPadding:0,
-    
+
+    //> @attr dateItem.useSharedPicker (boolean : true : [IR])
+    // When set to true (the default), use a single shared date-picker across all widgets that
+    // use one.  When false, create a new picker using the autoChild system.  See 
+    // +link{dateItem.pickerDefaults, picker} and 
+    // +link{dateItem.pickerProperties, pickerProperties} for details on setting up an unshared
+    // picker.
+    // @visibility external
+    //<
+    useSharedPicker: true,
+
     //> @attr dateItem.pickerConstructor (string : "DateChooser" : [IR])
     // SmartClient class for the +link{FormItem.picker} autoChild displayed to allow the user
     // to directly select dates.
@@ -140,11 +154,10 @@ isc.DateItem.addProperties({
     //<
     pickerConstructor: "DateChooser",
 
-    //> @attr dateItem.pickerProperties (DateChooser : see below : [IR])
-    // Properties for the +link{DateChooser} created by this form item.
+    //> @attr dateItem.pickerDefaults (DateChooser : see below : [IR])
+    // Defaults for the +link{DateChooser} created by this form item.
     //<
-    
-    pickerProperties: {
+    pickerDefaults: {
         width: isc.DateItem.chooserWidth,
         height: isc.DateItem.chooserHeight,
         border:"1px solid black;",
@@ -152,6 +165,10 @@ isc.DateItem.addProperties({
         showCancelButton: true,
         autoHide: true
     },
+
+    //> @attr dateItem.pickerProperties (DateChooser : see below : [IR])
+    // Properties for the +link{DateChooser} created by this form item.
+    //<
 
     //>	@attr	dateItem.useTextField   (boolean    : null : IRW)
     //      Should we show the date in a text field, or as 3 select boxes?
@@ -499,25 +516,25 @@ isc.DateItem.addMethods({
                 if (field == "D") {
                     var dayField;
                     if (this.daySelectorProperties != null) {
-                        dayField = isc.addProperties({}, DI.DAY_SELECTOR, this.daySelectorProperties);
+                        dayField = isc.addProperties({}, this.daySelectorDefaults, DI.DAY_SELECTOR, this.daySelectorProperties);
                     } else {
-                        dayField = isc.addProperties({}, DI.DAY_SELECTOR);
+                        dayField = isc.addProperties({}, this.daySelectorDefaults, DI.DAY_SELECTOR);
                     }
                     itemList.add(dayField);
                 } else if (field == "M") {
                     var monthField;
                     if (this.monthSelectorProperties != null) {
-                        monthField = isc.addProperties({}, DI.MONTH_SELECTOR, this.monthSelectorProperties);
+                        monthField = isc.addProperties({}, this.monthSelectorDefaults, DI.MONTH_SELECTOR, this.monthSelectorProperties);
                     } else {
-                        monthField = isc.addProperties({}, DI.MONTH_SELECTOR);
+                        monthField = isc.addProperties({}, this.monthSelectorDefaults, DI.MONTH_SELECTOR);
                     }                
                     itemList.add(monthField);
                 } else if (field == "Y") {
                     var yearField;
                     if (this.yearSelectorProperties != null) {
-                        yearField = isc.addProperties({}, DI.YEAR_SELECTOR, this.yearSelectorProperties);
+                        yearField = isc.addProperties({}, this.yearSelectorDefaults, DI.YEAR_SELECTOR, this.yearSelectorProperties);
                     } else {
-                        yearField = isc.addProperties({}, DI.YEAR_SELECTOR);
+                        yearField = isc.addProperties({}, this.yearSelectorDefaults, DI.YEAR_SELECTOR);
                     }
                     itemList.add(yearField);
                 }
@@ -1225,9 +1242,27 @@ isc.DateItem.addMethods({
     // one.
     showPicker : function () {
 
-        if (!this.picker) this.picker = isc.DateChooser.getSharedDateChooser();
+        if (!this.picker) {
+            if (this.useSharedPicker) this.picker = isc.DateChooser.getSharedDateChooser();
+            else {
+                this.picker = isc[this.pickerConstructor].create(
+                    isc.addProperties({}, this.pickerDefaults, this.pickerProperties, 
+                        {
+                            border: "none",
+                            _generated:true,
+                            // When re-using a DateChooser, we're almost certainly displaying it as a 
+                            // floating picker rather than an inline element. Apply the common options for 
+                            // a floating picker
+                            autoHide:true,
+                            showCancelButton:true
+                        }
+                    )
+                );
+            }
+        }
+
         var picker = this.picker;
-        
+
         var oldItem = picker.callingFormItem;
         if (oldItem != this) {
             if (oldItem) oldItem.ignore(picker, "dataChanged");
@@ -1238,7 +1273,10 @@ isc.DateItem.addMethods({
             
             picker.locatorParent = this.form;
         }
-        
+
+        picker.startYear = this.getStartDate().getFullYear();
+        picker.endYear = this.getEndDate().getFullYear();        
+
         return this.Super("showPicker", arguments);
         
     },

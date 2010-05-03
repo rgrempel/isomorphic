@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -688,18 +688,21 @@ isc.DateChooser.addMethods({
 
 	showYearMenu : function () {
 		if (!this.yearMenu) {
-			var yearItems = [[]];
+			var yearItems = [[]],
+                yearDiff = (this.endYear-this.startYear),
+                colCount = Math.round(yearDiff/10) > 3 ? Math.round(yearDiff/10) : 3
+            ;
 			for (var i = 0; i <= (this.endYear-this.startYear); i++) {
 				var year = i+this.startYear;
 				yearItems[yearItems.length-1].add({contents:year,
 									action:this.getID()+".showYear("+year+")"
 								});
-				if ((i+1)%3 == 0) yearItems.add([]);
+				if ((i+1)%colCount == 0) yearItems.add([]);
 			}
 			this.yearMenu = isc.ButtonTable.newInstance({
                 styleName:this.yearMenuStyle,
 				top:this.getPageTop()+this.headerHeight,
-				width:Math.min(this.getWidth(), 120),
+				width:Math.min(this.getWidth(), (40*colCount)),
 				height:Math.min(this.getHeight()-this.headerHeight, 80),
 				items:yearItems,
 				visibility:isc.Canvas.HIDDEN,
@@ -711,7 +714,7 @@ isc.DateChooser.addMethods({
 		} else {
             // L, T, W, H
             var top = this.getPageTop()+this.headerHeight,
-				width = Math.min(this.getWidth(), 120),
+				width = Math.min(this.getWidth(), (40*colCount)),
 				height = Math.min(this.getHeight()-this.headerHeight, 80),
                 left = this.getPageLeft() + ((this.width - width)/2)
 

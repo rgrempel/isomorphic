@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -28,7 +28,7 @@ isc.Canvas.addMethods({
         // "afterFlowCallback" fires after the callback passed to dataSource methods like
         // addData().
         if (callback) context.afterFlowCallback = callback;
-    
+        
         // text match style: 
         // - support the legacy "filter" operationType.
         // - pick up setting on ListGrids and DynamicForms
@@ -71,7 +71,6 @@ isc.Canvas.addMethods({
         context.operation = operation || this.operation;
         // add component ID
         context.componentId = this.ID;
-        
         return isc.rpc.addDefaultOperation(context, this.dataSource, operationType);
     },
     
@@ -83,6 +82,23 @@ isc.Canvas.addMethods({
 
         if (type == null) type = "fetch";
         if ( requestProperties == null ) requestProperties = {};
+        
+        // By default when filterData is called the callback passed in is stored as the
+        // afterFlowCallback for the request.
+        // This is the callback we want to fire after initial fetch.
+        // If this wasn't passed in explicitly look it up on the request.
+        
+        if (requestProperties.afterFlowCallback != null) {
+            if (this._initialFetchCallback == null) {
+                this._initialFetchCallback = requestProperties.afterFlowCallback;
+            } else if (this._initialFetchCallback != requestProperties.afterFlowCallback) {
+                
+                this.logWarn("createResultTree called with request.afterFlowCallback:" + 
+                    this.echo(requestProperties.afterFlowCallback) + 
+                    " as well as explicit callback parameter " + 
+                    this.echo(callback) + ". The request.afterFlowCallback will not be fired.");
+            }
+        }
         requestProperties.afterFlowCallback = {target:this, methodName:"_fireFetchCallback"};
 
         // put together Tree-specific properties for the data model we're auto-creating
@@ -758,7 +774,7 @@ isc.EditorActionMethods.addInterfaceMethods({
     // If a +link{DSRequest} configuration object is passed in containing an explicit operationType
     // this will be returned. Otherwise +link{DynamicForm.saveOperationType} will be returned.
     //
-    // @param [requestProperties] (DSRequest properties) Optional DSRequest config block for the
+    // @param [requestProperties] (DSRequest Properties) Optional DSRequest config block for the
     //  save operation
     // @return (DSOperationType) Operation type for the save request.
     // @visibility external
@@ -946,7 +962,9 @@ isc.EditorActionMethods.addInterfaceMethods({
         // error occurred: the presence of results.errors indicates it's a validation error,
         // which we can handle.  XXX should really check for status == validation error constant
 		if (response.status == isc.RPCResponse.STATUS_VALIDATION_ERROR && response.errors) {
-			this.setErrors(response.errors, true);
+            if (isc.isA.FileItem(this.targetItem)) 
+                this.parentElement.setErrors(response.errors, true);
+            else this.setErrors(response.errors, true);
             return false; // return false to avoid the end user callback being called
 		}
 
@@ -1001,7 +1019,13 @@ isc._EditorFlowOverrides = {
     },
     
     fetchDataReply : function (response, data, request) {
-        var record = data ? data.get(0) : null;
+        var record;
+        if (isc.isAn.Array(data)) {
+            record = data.get(0);    
+        } else {
+            record = data;    
+        }
+        //var record = data ? data.get(0) : null;
         this.editRecord(record);
         var callback = this._fetchDataCallbackArr.pop();
         if (callback) this.fireCallback(callback, "dsResponse,data,dsRequest", [response,data,request]);

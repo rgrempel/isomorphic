@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1050,7 +1050,7 @@ _formatDataType : function (record, field, value) {
 //> @method detailViewer.getRecordIndex()
 // @param record (Record) the record whose index is to be retrieved
 // @return index (Number) index of the record, or -1 if not found
-// @include databoundComponent.getRecordIndex
+// @include dataBoundComponent.getRecordIndex
 // @visibility external
 //<
 getRecordIndex : function (record) {

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -35,6 +35,11 @@
 // @visibility external
 //<
 isc.ClassFactory.defineClass("Tree", null, "List");
+
+// List.getProperty() needs to be explicitly installed because there is a Class.getProperty()
+isc.Tree.addProperties({
+    getProperty : isc.List.getInstanceProperty("getProperty")
+})
 
 //> @groupDef ancestry
 // Parent/child relationships
@@ -72,7 +77,7 @@ UNLOADED: null,
 //	@value	isc.Tree.LOADING		currently in the process of loading
 LOADING: "loading",					
 //	@value	isc.Tree.FOLDERS_LOADED	folders only are already loaded
-FOLDERS_LOADED: "folders",			
+FOLDERS_LOADED: "foldersLoaded",			
 //	@value	isc.Tree.LOADED			already fully loaded
 LOADED: "loaded",
 // @group loadState
@@ -420,6 +425,12 @@ cacheOpenList:true,
 //<
 discaredParentlessNodes:false,
 
+//> @attr Tree.indexByLevel (boolean : false : IR)
+// If enabled, the tree keeps an index of nodes by level, so that +link{tree.getLevelNodes()}
+// can operate more efficiently
+//<
+indexByLevel: false,
+
 //> @object TreeNode
 //
 // Every node in the tree is represented by a TreeNode object which is an object literal with a
@@ -646,10 +657,20 @@ showRoot: false,
 autoOpenRoot: true,
 
 //>	@attr	tree.separateFolders	(boolean : false : IRW)
-//		@group	openList
-//			true == folders should be sorted separately from leaves
+// Should folders be sorted separately from leaves or should nodes be ordered according to
+// their sort field value regardless of whether the node is a leaf or folder?
+// @see tree.sortFoldersBeforeLeaves
+// @visibility external
 //<
 separateFolders:false,
+
+//>	@attr	tree.sortFoldersBeforeLeaves (boolean : true : IRW)
+// If +link{tree.separateFolders} is true, should folders be displayed above or below leaves?
+// When set to <code>true</code> folders will appear above leaves when the
+// <code>sortDirection</code> applied to the tree is +link{Array.ASCENDING}
+// @visibility external
+//<
+sortFoldersBeforeLeaves:true,
 
 //>	@attr	tree.defaultNodeTitle	(string : "Untitled" : IRW)
 //
@@ -716,6 +737,9 @@ setupProperties : function () {
 
 	// set the openProperty if it wasn't set already
 	if (!this.openProperty) this.openProperty = "_isOpen_" + this.ID;
+
+	// Create an empty _levelNodes array if we're indexing by level
+	if (this.indexByLevel) this._levelNodes = [];
 },
 
 destroy : function () {
@@ -774,8 +798,9 @@ makeNode : function (path, autoConvertParents) {
     
     // The path must start at the root - if it doesn't, assume it was intended to
     var rootName = this.getRoot()[this.nameProperty];
-    if (rootName.endsWith(this.pathDelim)) 
+    if (rootName.endsWith(this.pathDelim)) {
         rootName = rootName.substring(0, rootName.length - this.pathDelim.length);
+    }
     
     if (pathComponents[0] != rootName) pathComponents.addAt(rootName, 0);
     
@@ -824,6 +849,7 @@ makeNode : function (path, autoConvertParents) {
 
 	// and add it to the tree
 	return this.add(node, parent);
+
 },
 
 
@@ -883,10 +909,13 @@ setupParentLinks : function (node) {
 
 		// set the child's parent to the parent
 		child[this.parentProperty] = node;
+        
+        this._addToLevelCache(child, node);
 
 		// if the child is a folder, call setupParentLinks recursively on the child
-		if (this.isFolder(child)) this.setupParentLinks(child);
-        else if (child[this.idField] != null) {
+		if (this.isFolder(child)) {
+            this.setupParentLinks(child);
+        } else if (child[this.idField] != null) {
             this.nodeIndex[child[this.idField]] = child; // link into the nodeIndex
         }
 	}
@@ -1172,7 +1201,7 @@ setRoot : function (newRoot, autoOpen) {
 // get a copy of these nodes without all the properties the Tree scribbles on them.
 // Note the intent here is that children should in fact be serialized unless the caller has
 // explicitly trimmed them.
-getCleanNodeData : function (nodeList, includeChildren) {
+getCleanNodeData : function (nodeList, includeChildren, cleanChildren) {
     if (nodeList == null) return null;
 
     var nodes = [], wasSingular = false;
@@ -1220,7 +1249,10 @@ getCleanNodeData : function (nodeList, includeChildren) {
             node[propName] = treeNode[propName];
    
             // Clean up the children as well (if there are any)
-            if (propName == this.childrenProperty && isc.isAn.Array(node[propName])) {
+            if (cleanChildren && 
+                propName == this.childrenProperty && 
+                isc.isAn.Array(node[propName])) 
+            {
                 node[propName] = this.getCleanNodeData(node[propName]);
             }
         }
@@ -1768,7 +1800,16 @@ findChildNum : function (parent, name) {
 //<
 
 getChildren : function (parentNode, displayNodeType, normalizer, sortDirection, criteria, context) {
-
+    
+    // If separateFolders is true, we need to have an openNormalizer so we can sort/separate
+    // leaves and folders
+    // This will not actually mark the tree as sorted by any property since we're not setting up
+    // a sortProp.
+    
+    if (normalizer == null && this._openNormalizer == null && this.separateFolders) {
+        this.sortByProperty();
+    }
+    
 	if (parentNode == null) parentNode = this.root;
 
 	// if we're passed a leaf, it has no children, return empty array
@@ -1818,7 +1859,6 @@ getChildren : function (parentNode, displayNodeType, normalizer, sortDirection, 
 	} else {
 		subset = list;
 	}
-	
 	// if a normalizer is specified, sort before returning
 	if (normalizer) {
         
@@ -1879,6 +1919,32 @@ getLeaves : function (node, normalizer, sortDirection, criteria, context) {
                             context);
 },
 
+//> @method Tree.getLevelNodes()
+// Get all nodes of a certain depth within the tree, optionally starting from
+// a specific node.  Level 0 means the immediate children of the passed node,
+// so if no node is passed, level 0 is the children of root
+// @param depth (integer) level of the tree
+// @param [node] (TreeNode) option node to start from
+// @return (Array of TreeNode)
+//<
+getLevelNodes : function (depth, node) {
+
+    if (this.indexByLevel && (node == null || node == this.getRoot())) {
+        return this._levelNodes[depth] || [];
+    } else {
+        if (!node) node = this.getRoot();
+        var children = this.getChildren(node);
+       
+        if (depth == 0) return children;
+        var result = [];
+        if (!children) return result;
+        for (var i = 0; i < children.length; i++) {
+            var nestedChildren = this.getLevelNodes(depth-1, children[i]);
+            if (nestedChildren) result.addList(nestedChildren);
+        }
+        return result;
+    }
+}, 
 
 //>	@method	tree.hasChildren()
 //
@@ -2119,8 +2185,9 @@ dataChanged : function () {},
 // to the node as added.
 add : function (node, parent, position) {
 	// normalize the parent parameter into a node
-	if (isc.isA.String(parent)) parent = this.find(parent);
-    else if (!this.getParent(parent) && parent !== this.getRoot()) {
+	if (isc.isA.String(parent)) {
+        parent = this.find(parent);
+    } else if (!this.getParent(parent) && parent !== this.getRoot()) {
         // if parent is not in the tree, bail
         isc.logWarn('Tree.add(): specified parent node:' + this.echo(parent) +
                     ' is not in the tree, returning');
@@ -2141,6 +2208,8 @@ add : function (node, parent, position) {
 		
 	// call the dataChanged method
 	this.dataChanged();    
+    
+    this._addToLevelCache(node, parent, position)
     
     return node;
 },
@@ -2251,6 +2320,70 @@ _add : function (node, parent, position) {
     }
 },	
 
+_addToLevelCache : function (nodes, parent, position) {
+    if (!this.indexByLevel) return;
+
+    var level = this.getLevel(parent);
+    if (!this._levelNodes[level]) this._levelNodes[level] = [];
+    var levelNodes = this._levelNodes[level];
+
+    // Special case - array is empty, just add the node to the end
+    if (levelNodes.length == 0) {
+        if (!isc.isAn.Array(nodes)) {
+            levelNodes.push(nodes);
+        } else {
+            levelNodes.concat(nodes);
+        }
+    } else {
+        // Make sure none of these nodes is already cached
+        if (!isc.isAn.Array(nodes)) {
+            if (levelNodes.contains(nodes)) return;
+        } else {
+            var cleanNodes = [];
+            for (var j = 0; j < nodes.length; j++) {
+                if (!levelNodes.contains(nodes[j])) {
+                    cleanNodes.push(nodes[j]);
+                }
+            }
+        }
+        // Slot the node(s) into the level cache at the correct position
+        var startedThisParent = false,
+            siblingCount = 0,
+            i = 0;
+        for (i; i < levelNodes.length; i++) {
+            if (this.getParent(levelNodes[i]) == parent) {
+                startedThisParent = true;
+            } else if (startedThisParent) {
+                break;
+            } else {
+                continue;
+            }
+            // Exact equality is important - position 0 means first, position null means last
+            if (siblingCount === position) {
+                break;
+            }
+            siblingCount++;
+        }
+        
+        if (!isc.isAn.Array(nodes)) {
+            levelNodes.splice(i, 0, nodes);
+        } else {
+            // Using concat() because splice, push and unshift all insert the array itself,
+            // not the array's contents, and a solution involving a Javascript loop would 
+            // presumably cause far more churn in the array than passing everything in a 
+            // single native call and letting the browser deal with it
+            if (i == 0) {
+                this._levelNodes[level] = cleanNodes.concat(levelNodes);
+            } else if (i == levelNodes.length) {
+                this._levelNodes[level] = levelNodes.concat(cleanNodes);
+            } else {
+                this._levelNodes[level] = 
+                            levelNodes.slice(0, i).concat(cleanNodes, levelNodes.slice(i));
+            }
+        }
+    }
+},
+
 //>	@method	tree.addList()
 //
 // Add a list of nodes to some parent.
@@ -2278,7 +2411,9 @@ addList : function (nodeList, parent, position) {
     this._addList(nodeList, parent, position);
 
     this._clearNodeCache(true);
-    this.dataChanged();    
+    this.dataChanged(); 
+
+    this._addToLevelCache(nodeList, parent, position);
 
     return nodeList;
 },
@@ -2380,6 +2515,8 @@ remove : function (node, noDataChanged) {
 		    // call the dataChanged method to notify anyone who's observing it
     		this.dataChanged();
         }
+        
+        this._removeFromLevelCache(node);
 
         return true;
 	}
@@ -2417,6 +2554,30 @@ removeList : function (nodeList) {
     }
 
     return changed;
+},
+
+_removeFromLevelCache : function (node, level) {
+    if (!this.indexByLevel) return;
+    
+    level = level || this.getLevel(node) - 1;
+    
+    // Remove index entries for descendants first
+    var nodeChildren = this.getChildren(node);
+    if (nodeChildren) {
+        for (var i = 0; i < nodeChildren.length; i++) {
+            this._removeFromLevelCache(nodeChildren[i], level + 1);
+        }
+    }
+    
+    if (this._levelNodes[level]) {
+        var levelNodes = this._levelNodes[level];
+        for (var i = 0; i < levelNodes.length; i++) {
+            if (levelNodes[i] == node) {
+                levelNodes.splice(i, 1);
+                break;
+            }
+        }
+    }
 },
 
 
@@ -2801,7 +2962,6 @@ getOpenList : function (node, displayNodeType, normalizer, sortDirection, criter
 	if (normalizer == null) 		normalizer = this._openNormalizer;
 	if (sortDirection == null)		sortDirection = this.sortDirection;
 	if (context == null) context = this._sortContext;
-    
 	// if the node is a leaf, return the empty list since it's not going to have any children
 	if (this.isLeaf(node)) { 
         // prevents mysterious crash if an isFolder() override claims root is a leaf
@@ -3002,10 +3162,11 @@ _makeOpenNormalizer : function () {
 	//	function normalizer(obj, property, destination)
 
     // create a String that sorts:
-    // - [optionally] according to folderness
+    // - [optionally] according to folderness [based on separateFolders]
     // - [optionally] according to an arbitrary property [sortProp]
-    // - according to title
-
+    // - [optionally] according to title. Title is retrieved via 'getTitle()' when the
+    //   sortProp is set to "title".
+    
 	var property = this.sortProp,
 		sortDirection = this.sortDirection,
 		separateFolders = this.separateFolders != false;
@@ -3014,25 +3175,38 @@ _makeOpenNormalizer : function () {
     script.append("var __tree__ = ", this.getID(), ";\rvar value = '';");
 
     // optionally sort by folder vs file
-    if (separateFolders) script.append("value+=(__tree__.isFolder(obj) ? '0:' : '1:');");
-
+    if (separateFolders) {
+        var folderPrefix, leafPrefix;
+        if (this.sortFoldersBeforeLeaves) {
+            folderPrefix = "0:";
+            leafPrefix = "1:";
+        } else {
+            folderPrefix = "1:";
+            leafPrefix = "0:";
+        }
+        script.append("value+=(__tree__.isFolder(obj) ? '" + folderPrefix +
+                                                    "' : '" + leafPrefix + "');");
+    }
+    
     // optionally sort by sortProp
     if (property && property != "title") {
         script.append("var prop = obj['", property, "'];",
                       
-                      "if (isc.isA.Number(prop)) prop = prop.stringify(12);",
-                      "if (isc.isA.Date(prop)) prop = prop.getTime();",
+                      "if (isc.isA.Number(prop)) prop = prop.stringify(12,true);",
+                      "else if (isc.isA.Date(prop)) prop = prop.getTime();",
                       "if (prop != null) value += prop + ':';")
     }
 
-    // sort by title
-    script.append("var title = __tree__.getTitle(obj);",
-                      
-                      "if (isc.isA.Number(title)) title = title.stringify(12);",
-                      "if (isc.isA.Date(title)) title = title.getTime();",
-                      "if (title != null) {title = title + ''; value += title.toLowerCase();}",
-                      "return value;");
-
+    if (property) {
+        // sort by title
+        script.append("var title = __tree__.getTitle(obj);",
+                          
+                          "if (isc.isA.Number(title)) title = title.stringify(12,true);",
+                          "else if (isc.isA.Date(title)) title = title.getTime();",
+                          "if (title != null) {title = title + ''; value += title.toLowerCase();}");
+    }
+    script.append("return value;");
+    
     //isc.Log.logWarn("script text: " + script);
 	this.addMethods({_openNormalizer : new Function("obj,property", script.toString())});
 },

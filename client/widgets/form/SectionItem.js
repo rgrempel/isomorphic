@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -14,7 +14,7 @@
 
 
 //>	@class	SectionItem
-// Header item for a collapsable section in a +link{DynamicForm}.  Each <code>SectionItem</code>
+// Header item for a collapsible section in a +link{DynamicForm}.  Each <code>SectionItem</code>
 // is associated with a number of other <code>item</code>s in the form, which will be shown or
 // hidden as a group when the section is expanded or collapsed.  Clicking on a
 // <code>SectionItem</code> will expand or collapse the section.
@@ -57,7 +57,7 @@ isc.defineClass("SectionItem", "CanvasItem").addProperties({
     sectionVisible:true,
     
     //> @attr sectionItem.sectionExpanded   (boolean: true : IR)
-    // Whether this form section should be initially collapsed. Can be set programatically
+    // Whether this form section should be initially collapsed. Can be set programmatically
     // via +link{SectionItem.expandSection()} and +link{SectionItem.collapseSection()}.
     // @visibility external
     // @example formSections

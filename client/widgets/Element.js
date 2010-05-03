@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -66,7 +66,13 @@ _getElementFromSelection : function (doc) {
         // NOTE: an empty selection will be reported as type "None", but can be used to create
         // a zero char text range, so we treat it like a "Text" selection.
         if (isText) {
-            var range = selection.createRange();
+            var range;
+            
+            try {
+                range = selection.createRange();
+            } catch (e) {
+                
+            }
             return range ? range.parentElement() : null;
 
         // If it's a control range, we can get at the elements in the control range

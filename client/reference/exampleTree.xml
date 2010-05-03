@@ -648,84 +648,9 @@ isc.ExampleTree.create({
                     },
                     {
                         isOpen:false,
-                        title:"Sort & Filter",
-                        description:"\n    SmartClient grids provide interactive sorting of standard and custom data types,\n    with automatic client/server coordination.\n",
+                        title:"Filter",
+                        description:"\n    SmartClient grids provide interactive filtering of standard and custom data types,\n    with automatic client/server coordination.\n",
                         children:[
-                            {
-                                id:"sort",
-                                jsURL:"grids/sorting/sort.js",
-                                title:"Sort",
-                                tabs:[
-                                    {
-                                        title:"countryData",
-                                        url:"grids/data/countryData.js"
-                                    }
-                                ],
-                                description:"\n        Click on any column header to sort by that column. To reverse the sort direction,\n        click on the same column header, or the top-right corner of the grid.\n        "
-                            },
-                            {
-                                jsURL:"grids/sorting/disableSort.js",
-                                title:"Disable sort",
-                                visibility:"sdk",
-                                tabs:[
-                                    {
-                                        title:"countryData",
-                                        url:"grids/data/countryData.js"
-                                    }
-                                ],
-                                description:"\n        Sorting is disabled on the \"Flag\" column. Click on any other column header to sort\n        on the corresponding column.\n        "
-                            },
-                            {
-                                jsURL:"grids/sorting/sortArrow.js",
-                                title:"Sort arrows",
-                                visibility:"sdk",
-                                tabs:[
-                                    {
-                                        title:"countryData",
-                                        url:"grids/data/countryData.js"
-                                    }
-                                ],
-                                description:"\n        Click on any column header to sort or reverse-sort by that column.\n        This grid shows the sort-direction arrow in the top-right corner only.\n        "
-                            },
-                            {
-                                id:"dataTypes",
-                                jsURL:"grids/sorting/dataTypes.js",
-                                title:"Data-Aware Sort",
-                                tabs:[
-                                    {
-                                        title:"countryData",
-                                        url:"grids/data/countryData.js"
-                                    }
-                                ],
-                                description:"\n        Click on any column header to sort by that column.\n        The \"Nationhood\", \"Area\", and \"GDP (per capita)\" columns are sorted as date, number, and\n        calculated number values, respectively.\n        "
-                            },
-                            {
-                                id:"multiLevelSortLG",
-                                jsURL:"grids/sorting/multiLevelSortLG.js",
-                                title:"Multilevel Sort (UI)",
-                                tabs:[
-                                    {
-                                        canEdit:"false",
-                                        title:"supplyItem",
-                                        url:"supplyItem.ds.xml"
-                                    }
-                                ],
-                                descriptionHeight:"150",
-                                description:"\n        This grid is displayed pre-sorted on two fields: first by Category ascending and then\n        by Item Name descending.  As well as the field's title, the header of each field included \n        in the sort configuration displays a sort-arrow indicating the direction of sort on that \n        field and, when multiple fields are sorted, a small numeral indicating this field's \n        position in the list of fields being sorted.  You can hold down SHIFT and \n        click an already sorted column-header to reverse it's direction, or an unsorted column-\n        header to add that field to the list of fields being sorted.  Clicking a column header\n        without holding down SHIFT clears the current sort configuration and initializes a new\n        sort on the selected field.\n        <P>SmartClient's SQL and Hibernate adapters support server-side multi-sorting and this\n        is in evidence in this example.\n        "
-                            },
-                            {
-                                id:"multiLevelSortDialog",
-                                jsURL:"grids/sorting/multiLevelSort.js",
-                                title:"Multilevel Sort (Dialog)",
-                                tabs:[
-                                    {
-                                        canEdit:"false",
-                                        title:"supplyItem",
-                                        url:"supplyItem.ds.xml"
-                                    }
-                                ],
-                                description:"\n        Click the \"Multilevel Sort\" button to show a MultiSortDialog.  Select a set of sort\n        properties and directions and click \"Save\" to see the grid resorted by those properties.\n        "
-                            },
                             {
                                 id:"filter",
                                 jsURL:"grids/filtering/filter.js",
@@ -763,18 +688,6 @@ isc.ExampleTree.create({
                                     }
                                 ],
                                 description:"\n        SmartClient combines large dataset handling with <b>adaptive</b> use of\n        client-side filtering.  Begin typing an Item name in the filter box above the \"Item\"\n        column.  When the dataset becomes small enough, SmartClient switches to client-side\n        filtering automatically.  Delete part of the item name to see SmartClient automatically\n        switch back to server-side filtering.  The label underneath the grid flashes briefly \n        every time SmartClient needs to visit the server.\n        "
-                            },
-                            {
-                                id:"adaptiveSort",
-                                jsURL:"grids/sorting/adaptiveSort.js",
-                                title:"Adaptive Sort",
-                                tabs:[
-                                    {
-                                        title:"supplyItem",
-                                        url:"supplyItem.ds.xml"
-                                    }
-                                ],
-                                description:"\n        SmartClient combines large dataset handling with <b>adaptive</b> use of\n        client-side sort.  Click any header now and server-side sort will be used for this\n        large dataset.  Check \"Limit to Electronics\" to limit the dataset and sort again:\n        when the dataset becomes small enough, SmartClient switches to client-side\n        sorting automatically.  The label underneath the grid flashes briefly \n        every time SmartClient needs to visit the server.\n        "
                             },
                             {
                                 id:"advancedFilter",
@@ -854,6 +767,114 @@ isc.ExampleTree.create({
                             {
                                 ref:"autofitFilter",
                                 title:"Autofit filter"
+                            },
+                            {
+                                id:"dateRangeFilter",
+                                jsURL:"grids/filtering/dateRangeFilter.js",
+                                title:"Date Range",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        title:"worldDS",
+                                        url:"grids/ds/worldSQLDS.ds.xml"
+                                    }
+                                ],
+                                descriptionHeight:"180",
+                                description:"\n        Smartclient provides special widgets for filtering date values, including recognised \n        RelativeDate strings that cause filtering relative to some other base-date. \n        <P>The RelativeDateRangeItem allows selection of dates in three ways: you can select a\n        preset date-string, like \"Today\" or \"Tomorrow\", or a \"ranged\" date-string, such as \n        \"N days from now\" and enter a quantity to associate with it, or you can directly enter\n        a date-string in a recognized format.  You can also select a date from the DateChooser\n        by click the icon to the right of the widget.\n        <P>The first example below demonstrates using a DateRangeItem in a seperate DynamicForm\n        to filter a ListGrid.  Select start and end values for the range using one of the \n        methods described above and click the \"Search\" button to see the data filtered \n        according to the values in the \"Nationhood\" field.\n        <P>The second example below demonstrates filtering grid data using a MiniDateRangeItem\n        to filter data when a ListGrid is showing it's FilterEditor.  In\n        this example, click the Date icon in the header for the Nationhood field to open a \n        popup DateRangeItemDialog.  In the dialog, select start and end values for the range, \n        as described above, and click Ok to close the Window.  Then click the Filter button in\n        the top right of the grid to see the data filtered.  You can hover the mouse over the \n        Nationhood field-header to see the full date-range string.\n        "
+                            }
+                        ]
+                    },
+                    {
+                        isOpen:false,
+                        title:"Sort",
+                        description:"\n    SmartClient grids provide interactive sorting of standard and custom data types,\n    with automatic client/server coordination.\n",
+                        children:[
+                            {
+                                id:"sort",
+                                jsURL:"grids/sorting/sort.js",
+                                title:"Sort",
+                                tabs:[
+                                    {
+                                        title:"countryData",
+                                        url:"grids/data/countryData.js"
+                                    }
+                                ],
+                                description:"\n        Click on any column header to sort by that column. To reverse the sort direction,\n        click on the same column header, or the top-right corner of the grid.\n        "
+                            },
+                            {
+                                jsURL:"grids/sorting/disableSort.js",
+                                title:"Disable sort",
+                                visibility:"sdk",
+                                tabs:[
+                                    {
+                                        title:"countryData",
+                                        url:"grids/data/countryData.js"
+                                    }
+                                ],
+                                description:"\n        Sorting is disabled on the \"Flag\" column. Click on any other column header to sort\n        on the corresponding column.\n        "
+                            },
+                            {
+                                jsURL:"grids/sorting/sortArrow.js",
+                                title:"Sort arrows",
+                                visibility:"sdk",
+                                tabs:[
+                                    {
+                                        title:"countryData",
+                                        url:"grids/data/countryData.js"
+                                    }
+                                ],
+                                description:"\n        Click on any column header to sort or reverse-sort by that column.\n        This grid shows the sort-direction arrow in the top-right corner only.\n        "
+                            },
+                            {
+                                id:"dataTypes",
+                                jsURL:"grids/sorting/dataTypes.js",
+                                title:"Data-Aware Sort",
+                                tabs:[
+                                    {
+                                        title:"countryData",
+                                        url:"grids/data/countryData.js"
+                                    }
+                                ],
+                                description:"\n        Click on any column header to sort by that column.\n        The \"Nationhood\", \"Area\", and \"GDP (per capita)\" columns are sorted as date, number, and\n        calculated number values, respectively.\n        "
+                            },
+                            {
+                                id:"multiLevelSortLG",
+                                jsURL:"grids/sorting/multiLevelSortLG.js",
+                                title:"Multilevel Sort (UI)",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        title:"supplyItem",
+                                        url:"supplyItem.ds.xml"
+                                    }
+                                ],
+                                descriptionHeight:"150",
+                                description:"\n        This grid is displayed pre-sorted on two fields: first by Category ascending and then\n        by Item Name descending.  As well as the field's title, the header of each field included \n        in the sort configuration displays a sort-arrow indicating the direction of sort on that \n        field and, when multiple fields are sorted, a small numeral indicating this field's \n        position in the list of fields being sorted.  You can hold down SHIFT and \n        click an already sorted column-header to reverse it's direction, or an unsorted column-\n        header to add that field to the list of fields being sorted.  Clicking a column header\n        without holding down SHIFT clears the current sort configuration and initializes a new\n        sort on the selected field.\n        <P>SmartClient's SQL and Hibernate adapters support server-side multi-sorting and this\n        is in evidence in this example.\n        "
+                            },
+                            {
+                                id:"multiLevelSortDialog",
+                                jsURL:"grids/sorting/multiLevelSort.js",
+                                title:"Multilevel Sort (Dialog)",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        title:"supplyItem",
+                                        url:"supplyItem.ds.xml"
+                                    }
+                                ],
+                                description:"\n        Click the \"Multilevel Sort\" button to show a MultiSortDialog.  Select a set of sort\n        properties and directions and click \"Save\" to see the grid resorted by those properties.\n        "
+                            },
+                            {
+                                id:"adaptiveSort",
+                                jsURL:"grids/sorting/adaptiveSort.js",
+                                title:"Adaptive Sort",
+                                tabs:[
+                                    {
+                                        title:"supplyItem",
+                                        url:"supplyItem.ds.xml"
+                                    }
+                                ],
+                                description:"\n        SmartClient combines large dataset handling with <b>adaptive</b> use of\n        client-side sort.  Click any header now and server-side sort will be used for this\n        large dataset.  Check \"Limit to Electronics\" to limit the dataset and sort again:\n        when the dataset becomes small enough, SmartClient switches to client-side\n        sorting automatically.  The label underneath the grid flashes briefly \n        every time SmartClient needs to visit the server.\n        "
                             }
                         ]
                     },
@@ -1231,7 +1252,7 @@ isc.ExampleTree.create({
                                 url:"grids/ds/worldSQLDSExport.ds.xml"
                             }
                         ],
-                        description:"\n            It's now easy to export data from a DataSource or from DataboundComponents, \n            such as <i>ListGrid</i>, <i>TreeGrid</i> and <i>TileGrid</i>.  In the example \n            below, choose an Export-Format from the select-list, decide whether to \n            download the results or view them in a window using the checkbox and \n            click the Export button.  Because exporting to JSON is allowed only via \n            server-side custom-code or via an OperationBinding, choosing <i>JSON</i>\n            from the select-item issues the export using the operationId set up in\n            the DataSource but still respects the \"Show in Window\" checkbox.  See the \n            <i>JS</i> and <i>worldDSExport</i> tabs below.\n            <p>Try changing the filters and sort-order on the grid to see that the exported data \n            is filtered and sorted according to criteria applied to the grid.\n        "
+                        description:"\n            It's now easy to export data from a DataSource or from DataboundComponents, \n            such as <i>ListGrid</i>, <i>TreeGrid</i> and <i>TileGrid</i>.  In the example \n            below, choose an export format from the select-list, decide whether to \n            download the results or view them in a window using the checkbox and \n            click the Export button.  Because exporting to JSON is allowed only via \n            server-side custom code or via an OperationBinding (for security reasons), choosing\n            <i>JSON</i> from the select-item issues the export using the operationId set up in\n            the DataSource but still respects the \"Show in Window\" checkbox.  See the \n            <i>JS</i> and <i>worldDSExport</i> tabs below.\n            <p>Try changing the filters and sort-order on the grid to see that the exported data \n            is filtered and sorted according to criteria applied to the grid.\n        "
                     },
                     {
                         id:"gridsDataTypes",
@@ -1887,17 +1908,19 @@ isc.ExampleTree.create({
                             },
                             {
                                 id:"formSplitting",
+                                jsURL:"forms/layout/valuesManager.js",
                                 showSkinSwitcher:true,
                                 title:"Splitting",
                                 xmlURL:"ValuesManager.xml",
-                                description:"\n            Click \"Submit\" to jump to a validation error in the \"Stock\" tab.\n            \n            Forms which are split for layout purposes can behave like a single logical form for\n            validation and saves.\n            "
+                                description:"\n            Click \"Submit\" to jump to a validation error in the \"Stock\" tab.\n            \n            Forms which are split for layout purposes can behave like a single logical form for\n            validation and saves.\n            <BR><BR>JS and XML tabs show two alternative versions of source, only one is\n                required.\n            "
                             },
                             {
                                 id:"formSections",
+                                jsURL:"forms/layout/sectionItem.js",
                                 showSkinSwitcher:true,
                                 title:"Sections",
                                 xmlURL:"SectionItem.xml",
-                                description:"\n            Click on \"Stock\" to reveal fields relating to stock on hand.\n            "
+                                description:"\n            Click on \"Stock\" to reveal fields relating to stock on hand.\n            <BR><BR>JS and XML tabs show two alternative versions of source, only one is\n                required.\n            "
                             },
                             {
                                 ref:"validationFieldBinding",
@@ -1959,9 +1982,10 @@ isc.ExampleTree.create({
                         children:[
                             {
                                 id:"textItem",
+                                jsURL:"forms/dataTypes/text.js",
                                 title:"Text",
                                 xmlURL:"TextItem.xml",
-                                description:"\n            "
+                                description:"\n                JS and XML tabs show two alternative versions of source, only one is\n                required.\n            "
                             },
                             {
                                 id:"maskedTextItem",
@@ -1971,21 +1995,24 @@ isc.ExampleTree.create({
                             },
                             {
                                 id:"textAreaItem",
+                                jsURL:"forms/dataTypes/textAreaItem.js",
                                 title:"TextArea",
                                 xmlURL:"TextAreaItem.xml",
-                                description:"\n            "
+                                description:"\n                JS and XML tabs show two alternative versions of source, only one is\n                required.\n            "
                             },
                             {
                                 id:"dateItem",
+                                jsURL:"forms/dataTypes/dateItem.js",
                                 title:"Date",
                                 xmlURL:"DateItem.xml",
-                                description:"\n            DateItems support direct or pickList-based input of dates, and have a built-in\n            pop-up day picker.\n            "
+                                description:"\n            DateItems support direct or pickList-based input of dates, and have a built-in\n            pop-up day picker.\n            <BR><BR>JS and XML tabs show two alternative versions of source, only one is\n             required.\n            "
                             },
                             {
                                 id:"timeItem",
+                                jsURL:"forms/dataTypes/timeItem.js",
                                 title:"Time",
                                 xmlURL:"TimeItem.xml",
-                                description:"\n            TimeItem supports text-based input of Times\n            "
+                                description:"\n            TimeItem supports text-based input of Times.\n            <BR><BR>JS and XML tabs show two alternative versions of source, only one is\n             required.\n            "
                             },
                             {
                                 id:"spinnerItem",
@@ -2001,9 +2028,10 @@ isc.ExampleTree.create({
                             },
                             {
                                 id:"checkboxItem",
+                                jsURL:"forms/dataTypes/checkboxItem.js",
                                 title:"Boolean - Checkbox",
                                 xmlURL:"CheckboxItem.xml",
-                                description:"\n            "
+                                description:"\n            JS and XML tabs show two alternative versions of source, only one is\n             required.     \n            "
                             },
                             {
                                 id:"selectItem",
@@ -2020,6 +2048,13 @@ isc.ExampleTree.create({
                             },
                             {
                                 dataSource:"supplyItem",
+                                id:"comboBoxStyled",
+                                jsURL:"forms/dataTypes/comboBoxStyled.js",
+                                title:"Combo Box - Styled",
+                                description:"\n           Combo box rows can be styled via html to display data in almost any \n           way imaginable. Row hovers are also customized in this example.\n        "
+                            },
+                            {
+                                dataSource:"supplyItem",
                                 id:"relatedRecords",
                                 jsURL:"forms/dataTypes/relatedRecords.js",
                                 showSkinSwitcher:true,
@@ -2028,23 +2063,25 @@ isc.ExampleTree.create({
                             },
                             {
                                 id:"colorItem",
+                                jsURL:"forms/dataTypes/colorItem.js",
                                 title:"Color",
                                 xmlURL:"ColorItem.xml",
-                                description:"\n            ColorItems support direct input of HTML color values (in the form #RRGGBB), or \n            selection of colors via a ColorPicker widget.\n            "
+                                description:"\n            ColorItems support direct input of HTML color values (in the form #RRGGBB), or \n            selection of colors via a ColorPicker widget.\n            <BR><BR>JS and XML tabs show two alternative versions of source, only one is\n             required.\n            "
                             },
                             {
                                 dataSource:"supplyCategory",
                                 id:"pickTree",
+                                jsURL:"forms/dataTypes/pickTree.js",
                                 showSkinSwitcher:true,
                                 title:"Tree",
                                 xmlURL:"PickTree.xml",
-                                description:"\n            Click on \"Department\" or \"Category\" below to show hierarchical menus.  The\n            \"Category\" menu loads options dynamically from the SupplyCategory DataSource.\n            "
+                                description:"\n            Click on \"Department\" or \"Category\" below to show hierarchical menus.  The\n            \"Category\" menu loads options dynamically from the SupplyCategory DataSource.\n            <BR><BR>JS and XML tabs show two alternative versions of source, only one is\n             required.\n            "
                             },
                             {
                                 title:"List - Select Other",
                                 visibility:"sdk",
                                 xmlURL:"SelectOtherItem.xml",
-                                description:"\n            Select \"Other..\" from the drop down to enter a custom value.\n            "
+                                description:"\n            Select \"Other..\" from the drop down to enter a custom value.\n            <BR><BR>JS and XML tabs show two alternative versions of source, only one is\n             required.\n            "
                             },
                             {
                                 ref:"RichTextEditor",
@@ -2560,6 +2597,29 @@ isc.ExampleTree.create({
                                         description:"\n            Validation rules are automatically enforced on both the client- and server-side based on\n            a single, shared declaration.  Press \"Save\" to see errors from client-side\n            validation.  Press \"Clear Errors\" then \"Disable Validation\" then \"Save\" again to see the\n            same errors caught by the SmartClient server.\n            "
                                     },
                                     {
+                                        dataSource:"queuing_userHB",
+                                        id:"uniqueCheckValidation",
+                                        jsURL:"dataIntegration/java/uniqueCheckValidation.js",
+                                        requiresModules:"SCServer",
+                                        title:"Unique Check",
+                                        description:"\n            Enter the email address \"kamirov@server.com\" in the email field and press Tab. Do so with\n            any other email address as well.\n            <P/>\n            The resulting validation error is based upon the server-side isUnique validator that\n            checks to see if there is already a record in the DataSource and if so fails validation. \n            "
+                                    },
+                                    {
+                                        dataSource:"velocity_orderForm",
+                                        id:"velocityValidation",
+                                        jsURL:"dataIntegration/java/velocityValidation.js",
+                                        requiresModules:"SCServer",
+                                        title:"Velocity Expression",
+                                        tabs:[
+                                            {
+                                                canEdit:"false",
+                                                dataSource:"StockItem",
+                                                title:"StockItem"
+                                            }
+                                        ],
+                                        description:"\n            Use the \"Item Id\" ComboBox to select an item,  enter a very large quantity (999999)\n            and press the \"Submit Order\" button.\n            <P/>\n            The resulting validation error is based upon server-side condition specified in\n            the validator using a Velocity expression. It checks a related DataSource (StockItem)\n            to see if there is sufficient quantity in stock to fulfill the order.\n            "
+                                    },
+                                    {
                                         dataSource:"validationDMI_orderForm",
                                         id:"dmiValidation",
                                         jsURL:"dataIntegration/java/validationDMI.js",
@@ -2578,30 +2638,8 @@ isc.ExampleTree.create({
                                                 url:"serverExamples/validation/ValidatorDMI.java"
                                             }
                                         ],
-                                        description:"\n            Use the \"Item Id\" ComboBox to select an item,  enter a very large quantity (999999)\n            and press the \"Submit Order\" button.\n            <P/>\n            The resulting validation error is based upon server-side logic in ValidatorDMI.java\n            that checks a related DataSource (StockItem) to see if there is sufficient quantity in\n            stock to fulfill the order.\n            <P/>\n            Validators can use SmartClient DMI to call any server-side method to check the validity\n            of data, including methods on Java beans looked up via Spring.\n            "
-                                    },
-                                    {
-                                        dataSource:"velocity_orderForm",
-                                        id:"velocityValidation",
-                                        jsURL:"dataIntegration/java/velocityValidation.js",
-                                        requiresModules:"SCServer",
-                                        title:"Velocity Expression",
-                                        tabs:[
-                                            {
-                                                canEdit:"false",
-                                                dataSource:"StockItem",
-                                                title:"StockItem"
-                                            }
-                                        ],
-                                        description:"\n            Use the \"Item Id\" ComboBox to select an item,  enter a very large quantity (999999)\n            and press the \"Submit Order\" button.\n            <P/>\n            The resulting validation error is based upon server-side condition specified in\n            the validator using a Velocity expression. It checks a related DataSource (StockItem)\n            to see if there is sufficient quantity in stock to fulfill the order.\n            "
-                                    },
-                                    {
-                                        dataSource:"queuing_userHB",
-                                        id:"uniqueCheckValidation",
-                                        jsURL:"dataIntegration/java/uniqueCheckValidation.js",
-                                        requiresModules:"SCServer",
-                                        title:"Unique Check",
-                                        description:"\n            Enter the email address \"kamirov@server.com\" in the email field and press Tab. Do so with\n            any other email address as well.\n            <P/>\n            The resulting validation error is based upon the server-side isUnique validator that\n            checks to see if there is already a record in the DataSource and if so fails validation. \n            "
+                                        descriptionHeight:"150",
+                                        description:"\n            Use the \"Item Id\" ComboBox to select an item,  enter a very large quantity (999999)\n            and press the \"Submit Order\" button.\n            <P/>\n            The resulting validation error is based upon server-side logic in ValidatorDMI.java\n            that checks a related DataSource (StockItem) to see if there is sufficient quantity in\n            stock to fulfill the order.  Hover over the error icon to see the error message and\n            note that it includes an indication of the stock level: error messages are Velocity \n            templates, and DMI validators can easily populate variable values, as \n            ValidatorDMI.java shows\n            <P/>\n            Validators can use SmartClient DMI to call any server-side method to check the validity\n            of data, including methods on Java beans looked up via Spring.\n            "
                                     },
                                     {
                                         dataSource:"complaint",
@@ -2802,11 +2840,11 @@ isc.ExampleTree.create({
                             },
                             {
                                 id:"wsdlBinding",
-                                jsURL:"dataIntegration/xml/googleSOAPSearch.js",
+                                jsURL:"dataIntegration/xml/weatherForecastSearch.js",
                                 needXML:"true",
                                 showSkinSwitcher:true,
-                                title:"Google SOAP Search",
-                                description:"\n            Enter a search in the \"q\" field to search the web with Google. \n            \n            DataSources can bind directly to the structure of WSDL messages.\n            "
+                                title:"Weather SOAP Search",
+                                description:"\n            Enter a zip code  in the \"Zip\" field to retrieve a weather forecast. \n            \n            DataSources can bind directly to the structure of WSDL messages.\n            "
                             },
                             {
                                 id:"xmlEditSave",
@@ -3579,6 +3617,7 @@ isc.ExampleTree.create({
                                 title:"Excel Export"
                             },
                             {
+                                descriptionHeight:"150",
                                 icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png",
                                 id:"formattedExport",
                                 jsURL:"grids/formattedExport.js",
@@ -3591,7 +3630,7 @@ isc.ExampleTree.create({
                                         url:"grids/ds/worldSQLDSExport.ds.xml"
                                     }
                                 ],
-                                description:"\n            You can export the client-side data from a DataBoundComponent.  That is, the data \n            as seen in a component, including the effects of client-side formatters.\n            <p>In the example below, choose an Export-Format from the select-list, decide \n            whether to download the results or view them in a window using the checkbox and \n            click the Export button.  \n            <p>Data is exported according to the filters and sort-order on the grid and includes\n            the formatted values and field-titles as seen in the grid.\n        "
+                                description:"\n            You can export the client-side data from a DataBoundComponent.  That is, the data \n            as seen in a component, including the effects of client-side formatters.\n            <p>In the example below, choose an export format from the select-list, decide \n            whether to download the results or view them in a window using the checkbox and \n            click the Export button.  \n            <p>Data is exported according to the filters and sort-order on the grid and includes\n            the formatted values and field-titles as seen in the grid.\n            <p>If you target one of the supported native spreadsheet formats (Excel 97 or \n            Excel 2007), the resulting export file contains styling to match any Hilites that \n            are in force.  For example, this grid has a Hilite in place to show all countries\n            with a population in excess of 100 million in white-on-green; if you export direct \n            to one of the Excel formats, those rows will be styled as white-on-green in the \n            spreadsheet.\n        "
                             },
                             {
                                 icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png",

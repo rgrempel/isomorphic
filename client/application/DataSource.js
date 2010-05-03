@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1005,8 +1005,13 @@ isc.defineClass("DataSource");
 // SmartClient processing.<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;mail - if you plan to use the Mail messaging feature<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;activation - if you plan to use the Mail messaging feature and you
-// are using a JDK &lt; 1.6<br>
+// are using a JDK &lt; 1.6<br><br>
+// &nbsp;&nbsp;&nbsp;&nbsp;poi - if you plan to export datasets in Microsoft Excel 97 (xls)  
+// or 2007 (xlsx) formats.  Additionally, if you plan to export data in Excel 2007 (xlsx) 
+// format, you will need the following libraries:<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;poi-ooxml, poi-ooxml-schemas, xbean, jsr173_1.0_api
 // </li>
+// <p>
 // <li><b>isomorphic_web_services</b>: Web services examples only.  Contains code backing the
 // SmartClientOperations.wsdl example.  Do not deploy in production.<br>
 // &nbsp;&nbsp;<u>Requires</u>:<br>
@@ -1035,23 +1040,6 @@ isc.defineClass("DataSource");
 // &nbsp;&nbsp;<u>Requires</u>:<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;isomorphic_core_rpc<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;All JARs under WEB-INF/embeddedTomcat/lib<br>
-// </li>
-// <li><b>isomorphic_struts</b>: Contains the ValidationAction and ValidationFailureAction
-// classes that implement RPC-based validation of DynamicForms using the Struts
-// ValidatorPlugIn.  If you're not using Struts or if you don't need this particular feature of
-// SmartClient, you do not need this module or its dependencies.  An example of this style of
-// validation is available here: +externalLink{/examples/struts/forms/welcome.do} - read the
-// info on this page, and follow the "Dynamic Form (With RPC-based Validation)" Link for
-// the actual example.<br>
-// &nbsp;&nbsp;<u>Requires</u>:<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;isomorphic_core_rpc<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;struts<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;commons-digester<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;commons-beanutils<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;commons-fileupload<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;commons-logging<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;commons-validator<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;jakarta-oro<br>
 // </li>
 // <li><b>isomorphic_spring</b>: Required for +link{DMI} dispatches to Spring beans (via
 // +link{serverObject.lookupStyle} : "spring").<br>
@@ -1134,6 +1122,26 @@ isc.defineClass("DataSource");
 // +link{group:compression}.<br>
 // &nbsp;&nbsp;<u>Requires</u>:<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;isomorphic_core_rpc<br> 
+// </li>
+// <li><b>isomorphic_struts</b>: Contains the ValidationAction and ValidationFailureAction
+// classes that implement RPC-based validation of DynamicForms using the Struts
+// ValidatorPlugIn.  If you're not using Struts or if you don't need this particular feature of
+// SmartClient, you do not need this module or its dependencies (also see the important note 
+// below).  An example of this style of validation is available here: 
+// +externalLink{/examples/struts/forms/welcome.do} - read the info on this page, and follow 
+// the "Dynamic Form (With RPC-based Validation)" Link for the actual example.<br><br>
+// <b>NOTE:</b> This support is for Struts 1.0 only, and is only intended to be used in certain
+// edge cases of incremental migration to SmartClient.  You should only use it if directed to 
+// do so by Isomorphic Support.<br><br>
+// &nbsp;&nbsp;<u>Requires</u>:<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;isomorphic_core_rpc<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;struts<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;commons-digester<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;commons-beanutils<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;commons-fileupload<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;commons-logging<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;commons-validator<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;jakarta-oro<br>
 // </li>
 // </ul>
 //
@@ -1792,12 +1800,16 @@ isc.defineClass("DataSource");
 //        &lt;isomorphic:XML filename="shared/ds/test_data/solutions.data.xml"/&gt;
 //   });
 // </pre>
-// Finally, if you specify your DataSource as <code>clientOnly: true</code>, omit testData
+// If you specify your DataSource as <code>clientOnly: true</code>, omit testData
 // entirely, and provide either a +link{attr:dataSource.dataURL} or a <code>testFileName</code>, the
 // DataSource will lazily make a one-time fetch against the specified data file the first time
 // an operation is called on it.  From then on, the DataSource will work against the local
 // cache created from this initial request.  This is a quick way to prototype against some test
 // data that may eventually be returned from an arbitrary back-end.
+// <P>
+// Finally, it is possible to have a DataSource which initially fetches the entire dataset and
+// performs all subsequent fetching locally, while still visiting the server to perform all 
+// other operations.  See +link{dataSource.cacheAllData}.
 //
 // @treeLocation Client Reference/Data Binding/DataSource
 // @title Client Only DataSources
@@ -2998,6 +3010,10 @@ supportsRequestQueuing : true,
     // contacts the server, instead using a set of test data to respond to requests in the same
     // manner as a server-based DataSource might.
     // <P>
+    // Note that a client-only DataSource is an entirely client-side variant of a
+    // +link{cacheAllData} DataSource, where all operations are performed on client-side data,
+    // not just fetches.
+    // <P>
     // See +link{group:clientOnlyDataSources,this discussion} for ways to populate a
     // client-only DataSource with test data.
     //
@@ -3245,10 +3261,20 @@ supportsRequestQueuing : true,
     // Set this property to true to have a DataSource fetch all of it's data client-side on the 
     // first fetch request.  However, unlike a +link{clientOnly} DataSource, this DataSource 
     // will still save changes normally, sending remote requests.
+    // <P>
+    // You can manually set this attribute after initialization by calling 
+    // +link{setCacheAllData} and setting +link{autoCacheAllData}:true causes a DataSource to 
+    // automatically switch to <code>cacheAllData:true</> when a fetch results in the entire 
+    // dataset being brought client-side.
+    // <P>
+    // To cause automatic cache updates, you can set +link{cacheMaxAge} to a number of seconds
+    // and once data has been client-side for that length of time, the next fetch causes the
+    // cache to be dropped and a new cache retrieved.
+    // 
     //
     // @setter setCacheAllData
     // @group clientData
-    // @visibility cacheAllData
+    // @visibility external
     //<
 
     //> @method dataSource.setCacheAllData() 
@@ -3259,63 +3285,300 @@ supportsRequestQueuing : true,
     // 
     // @param shouldCache (Boolean) New value for +link{cacheAllData}
     // @group clientData
-    // @visibility cacheAllData
+    // @visibility external
     //<
     setCacheAllData : function (shouldCache) {
         if (!shouldCache) {
             if (this.cacheAllData == true) {
+                if (this.logIsInfoEnabled("cacheAllData")) {
+                    this.logInfo("setCacheAllData(false): clearing the cache and any "+
+                        "deferred requests", "cacheAllData");
+                }
                 // TODO: reset to normal operation
                 this.cacheAllData = false;
                 // 1) clear the cache if there is one
-                this.clearClientSideCache();
+                this.invalidateCache();
                 // 2) cancel and ignore any outstanding "fetch" requests for a full cache
-                this.clearPendingCacheRequests();
-                // 3) issue any pending requests normally
-                this.issuePendingRequests();
+                this.clearDeferredRequests();
             }
+        } else {
+            if (this.logIsInfoEnabled("cacheAllData")) {
+                this.logInfo("setCacheAllData(true): invalidate the cache", "cacheAllData");
+            }
+            this.cacheAllData = true;
+            this.invalidateCache();
         }
-    },    
-    
-    //> @attr dataSource.cacheMaxAge (Number : 0 : IRW)
+    },
+
+    //> @attr dataSource.cacheMaxAge (Number : 60 : IRW)
     // The maximum time, in seconds, to maintain the client-side cache.  If a fetch occurs after
     // the cacheMaxAge has expired, the current cache will be dropped and another complete
     // cache fetched.
-    // @visibility cacheAllData
     // @group clientData
+    // @visibility external
     //<
-    cacheMaxAge: 0,
+    cacheMaxAge: 60,
     // cacheLastFetchTime - the time at which the client-side cache became valid - this value +
     // the cacheMaxAge determines when the cache will be invalidated.
     cacheLastFetchTime: 0,
 
+    cacheNeedsRefresh : function () {
+        var currentTime = new Date().getTime(),
+            elapsedSeconds = ((currentTime - this.cacheLastFetchTime) / 1000),
+            result = (this.cacheLastFetchTime == 0 || elapsedSeconds > this.cacheMaxAge)
+        ;
+
+        if (this.logIsInfoEnabled("cacheAllData")) {
+            this.logInfo("cacheNeedsRefresh returns "+result, "cacheAllData");
+        }
+
+        return result;
+    },
+
     //> @attr dataSource.cacheData (Array of Record : null : IR)
-    // For a cacheAllData or client-only DataSource, a set of records to use as a dataset, 
+    // For a +link{cacheAllData} or client-only DataSource, a set of records to use as a dataset, 
     // specified as an Array of JavaScript Objects representing records.
-    // @visibility cacheAllData
     // @setter setCacheData
     // @group clientData
+    // @visibility external
     //<
 
     //> @method dataSource.setCacheData() 
-    // Call this method to set the data in the client-side cache.
+    // Call this method to set the data in the client-side cache after initialization.
     // @param data (Array of Record) Array of records to apply as the client-side cache
-    // @visibility cacheAllData
     // @group clientData
+    // @visibility external
     //<
-    setCacheData : function (data) {
-        this.cacheData = data;
+    setCacheData : function (data, invalidateCache) {
+        if (this.cacheAllData || this.clientOnly) {
+            // don't attempt to invalidate the cache if the flag isn't passed
+            if (invalidateCache) {
+                if (this.logIsInfoEnabled("cacheAllData")) {
+                    this.logInfo("setCacheData: invalidating the cache", "cacheAllData");
+                }
+                // invalidate the cache and clear any pending requests
+                this.invalidateCache();
+                this.clearDeferredRequests();
+            }
+
+            // set the cacheData
+            
+            this.cacheData = this.testData = data;
+            if (this.logIsInfoEnabled("cacheAllData")) {
+                this.logInfo("setCacheData: cacheData has been set", "cacheAllData");
+            }
+        }
+    },
+
+    // clear deferred requests - support passing in requestTypes to cancel or "any" to clear
+    // all pending requests - if no requestTypes passed, assume "any"
+    clearDeferredRequests : function (requestTypes) {
+        if (!this._deferredRequests) return;
+        requestTypes = requestTypes || "any";
+        if (!isc.isAn.Array(requestTypes)) requestTypes = [requestTypes];
+
+        if (this.logIsInfoEnabled("cacheAllData")) {
+            this.logInfo("clearDeferredRequests: "+this._deferredRequests.length+" requests, "+
+                "clearing those of type "+isc.echoAll(requestTypes), "cacheAllData");
+        }
+
+        if (requestTypes.contains("any")) delete this._deferredRequests;
+        else {
+            if (this._deferredRequests) {
+                var requests = this._deferredRequests;
+                for (var i=requests.length; i>=0; i--) {
+                    var type = requests[i].operationType || "fetch";
+                    if (requestTypes.contains(type)) this._deferredRequests.removeAt(i);
+                }
+                if (this._deferredRequests.length == 0) delete this._deferredRequests;
+            }
+        }
+    },
+
+    // process any deferred requests that are still outstanding
+    processDeferredRequests : function () {
+        if (!this._deferredRequests) return;
+        if (this.logIsInfoEnabled("cacheAllData")) {
+            this.logInfo("processDeferredRequests: processing "+this._deferredRequests.length+
+                " deferred requests", "cacheAllData");
+        }
+
+        var deferredRequests = this._deferredRequests;
+        this.clearDeferredRequests();
+        // call all deferred requests
+        for (var i = 0; i < deferredRequests.length; i++) {
+            this.sendDSRequest(deferredRequests[i]);
+        }
     },
 
     //> @method dataSource.invalidateCache() 
-    // The maximum time, in seconds, to maintain the client-side cache.  If a fetch occurs after
-    // the cacheMaxAge has expired, the current cache will be dropped and another complete
-    // cache fetched.
-    // @visibility cacheAllData
+    // Invalidate the cache when +link{cacheAllData} or +link{clientOnly} are true.
     // @group clientData
+    // @visibility external
     //<
     invalidateCache : function () {
-        if (this.cacheAllData != true) return;
-    }
+        if (!this.cacheAllData && !this.clientOnly) return;
+
+        if (this.logIsInfoEnabled("cacheAllData")) {
+            this.logInfo("invalidateCache: invalidating client-side cache", "cacheAllData");
+        }
+
+        delete this.cacheData;
+        delete this.testData;
+        this.cacheLastFetchTime = 0;
+        if (this.cacheResultSet) {
+            this.cacheResultSet.destroy();
+            delete this.cacheResultSet;
+        }
+    },
+
+    //> @method dataSource.setClientOnly() 
+    // Switch into clientOnly mode, taking the cache from the cacheAllData ResultSet if it 
+    // exists.
+    // @group clientData
+    // @visibility external
+    //<
+    setClientOnly : function (clientOnly) {
+        if (clientOnly) {
+            this.clientOnly = true
+            if (this.cacheAllData) {
+                if (this.cacheResultSet) {
+                    if (this.logIsInfoEnabled("cacheAllData")) {
+                        this.logInfo("setClientOnly: sourcing from client-cache", "cacheAllData");
+                    }
+                    this.cacheData = this.testData = this.cacheResultSet.getAllRows();
+                }
+            } else {
+                this.clearDeferredRequests();
+                this.invalidateCache();
+                this.performDSOperation("fetch");
+            }
+        }
+    },
+
+    //> @method dataSource.hasAllData() 
+    // When +link{dataSource.cacheAllData} is true, has all the data been retrieved to the client?
+    // @return (boolean) All data has been fetched from the server and is available client-side
+    // @group clientData
+    // @visibility external
+    //<
+    hasAllData : function () {
+        if (this.cacheResultSet) return this.cacheResultSet.lengthIsKnown();
+        else return false;
+    },
+
+    //> @attr dataSource.autoCacheAllData (boolean : false : IRW)
+    // When a DataSource is not +link{dataSource.cacheAllData}:true and a fetch results in the
+    // entire dataset being retrieved, this attribute being set to true causes the DataSource
+    // to automatically switch to cacheAllData:true and prevent further server-trips for fetch 
+    // requests.
+    // @group clientData
+    // @visibility external
+    //<
+    autoCacheAllData: false,
+
+    //> @attr dataSource.useTestDataFetch (boolean : null : IRW)
+    // When set, causes a +link{clientOnly, client-only} or +link{cacheAllData} DataSource to 
+    // create a second DataSource to perform it's one-time fetch.  By default, this attribute
+    // will be considered true when clientOnly is true, cacheAllData is false or unset and
+    // a dataURL or testDataFileName is specified on the DataSource.
+    // @group clientData
+    // @visibility external
+    //<
+
+    //> @method dataSource.convertRelativeDates (Criteria : null : IRW)
+    // Takes all relative date values found anywhere within a Criteria / AdvancedCriteria object
+    // and converts them to concrete date values, returning the new criteria object.
+    // @param criteria (Criteria) criteria to convert
+    // @param [timezoneOffset] (String) optional timezone offset.  Defaults to the current timezone
+    // @param [firstDayOfWeek] (integer) first day of the week (zero is Sunday).  Defaults to
+    //                               +link{DateChooser.firstDayOfWeek}
+    // @return (Criteria) new copy of the criteria with all relative dates converted
+    // @visibility external
+    //<
+    convertRelativeDates : function (criteria, timezoneOffset, firstDayOfWeek, baseDate) {
+        if (!criteria) return null;
+
+        if (!this.isAdvancedCriteria(criteria) && criteria.operator == null) {
+            // this is neither an AdvancedCriteria nor a simple Criterion object so no point
+            // parsing it, just return it as-is
+            return criteria;
+        }
+
+        // get a copy of the criteria to alter and return
+        var RD = isc.RelativeDate,
+            result = isc.addProperties({}, criteria);
+
+        baseDate = baseDate || new Date();
+
+        if (firstDayOfWeek == null) firstDayOfWeek = isc.DateChooser.firstDayOfWeek;
+
+        if (result.criteria && isc.isAn.Array(result.criteria)) {
+            // complex sub-criteria, call this method again with that criteria
+            var subCriteria = result.criteria;
+
+            for (var i = 0; i<subCriteria.length; i++) {
+                var subItem = subCriteria[i];
+
+                if (subItem.criteria && isc.isAn.Array(subItem.criteria)) {
+                    result.criteria[i] = this.convertRelativeDates(subItem, timezoneOffset,
+                        firstDayOfWeek, baseDate);
+                } else {
+                    result.criteria[i] = this.mapRelativeDate(subItem, baseDate);
+                }
+            }
+        } else {
+            // simple criterion
+            result = this.mapRelativeDate(result, baseDate);
+        }
+
+        return result;
+    },
+
+// helper method to map the relative date in a single criterion
+    mapRelativeDate : function (criterion, baseDate) {
+        var result = isc.addProperties({}, criterion),
+            rangeStart,
+            value
+        ;
+
+        baseDate = baseDate || new Date();
+
+        if (result.value && isc.isAn.Object(result.value) && result.value._constructor == "RelativeDate") 
+        {
+            // we have a criterion with a "value" and it's a relativeDate - parse it now
+            value = result.value.value;
+            result.value = isc.RelativeDateItem.getAbsoluteDate(value, baseDate);
+        } else {
+            if (result.start && isc.isAn.Object(result.start) && result.end._constructor == "RelativeDate")
+            {
+                // we have a criterion with a "start" and it's a relativeDate - parse it now
+                value = result.start.value;
+                // if the "start" relativeDate is the value "$today", make it the $startOfToday
+                if (value == "$today") value = "$startOfToday";
+                result.start = rangeStart = isc.RelativeDateItem.getAbsoluteDate(value, baseDate);
+            }
+            if (result.end && isc.isAn.Object(result.end) && result.end._constructor == "RelativeDate")
+            {
+                // we have a criterion with an "end" and it's a relativeDate - convert it now
+                value = result.end.value;
+                // if the "end" relativeDate is the value "$today", make it the $endOfToday
+                if (value == "$today") value = "$endOfToday";
+                result.end = isc.RelativeDateItem.getAbsoluteDate(value, baseDate);
+            }
+        }
+
+        return result;
+    },
+
+    //> @attr dataSource.autoConvertRelativeDates (boolean : true : IR)
+    // Whether to convert relative date values to concrete date values before sending to the 
+    // server.  Default value is true, which means that the server does not need to understand 
+    // how to filter using relative dates - it receives all date values as absolute dates.
+    // 
+    // @visibility external
+    //<
+    autoConvertRelativeDates: true
 
 });
 
@@ -3595,7 +3858,7 @@ supportsRequestQueuing : true,
 
 //> @attr dataSourceField.canFilter (boolean : null : IR)
 // Should the user be able to filter data by this field.
-// Effects whether this field will show up in dataBoundComponents with UI for filtering data.
+// Affects whether this field will show up in dataBoundComponents with UI for filtering data.
 // @serverDS allowed
 // @visibility external
 //<
@@ -3608,6 +3871,14 @@ supportsRequestQueuing : true,
 // rules explained +link{type:FormItemType,here}.
 // 
 // @group componentBinding
+// @serverDS allowed
+// @visibility external
+//<
+
+//> @attr dataSourceField.displayFormat        (DateDisplayFormat : null : [IR])
+// The default date formatter to use for displaying this field.  Only applicable to fields of 
+// type "date" and "datetime"
+// 
 // @serverDS allowed
 // @visibility external
 //<
@@ -4043,6 +4314,35 @@ supportsRequestQueuing : true,
 
 
 
+//> @attr dataSourceField.customSQLExpression (string : null : IR)
+// This property indicates that this field does not represent a column in a table, but a custom 
+// expression that should be embedded in the generated SQL instead of a reference to this 
+// field.  For example, if you have a field <code>partialName</code> where this value is set 
+// to <code>SUBSTR(surname, 2)</code>, the generated SQL would look similar to this:
+// <pre>
+//   SELECT ... SUBSTR(surname, 2) AS partialName ...
+// </pre>
+// 
+// Fields with this property set can be used for sorting and filtering in the normal way, but 
+// they are only applicable to "fetch" operations; they are ignored for any kind of update
+// because they are not real columns in a table.
+// <p>
+// <b>WARNING:</b> Using this property often involves writing database-specific SQL.  In the
+// above example, we use the <code>SUBSTR</code> function.  This function will work in many
+// database products, including Oracle and MySQL, but it will not work in Microsoft SQL Server
+// or Sybase. The equivalent ANSI SQL function <code>SUBSTRING</code> will also work in many 
+// database products, including Microsoft SQL Server and MySQL, but it will not work in Oracle
+// or DB2.  The more database-specific SQL you write, the harder it will be if you ever want 
+// to move your application to a different database product.
+// <p>
+// Note that this property only applies to users of the SmartClient server using dataSources of
+// type "sql".
+//
+// @serverDS allowed
+// @visibility internal
+//<
+
+
 //> @attr dataSourceField.tableName (String : null : IR)
 // The table name to use when qualifying the column name for this field during server-side SQL
 // query generation.  Only applicable to "sql" dataSources, and only has an effect when 
@@ -4396,6 +4696,14 @@ isc.DataSource.addMethods({
         // iscServer format
         this.canQueueRequests = (this.dataFormat == "iscServer" || this.clientOnly);
 
+        // if testData is set and cacheData isn't, set cacheData now, since testData is marked
+        // as deprecated
+        if (this.testData && !this.cacheData) this.cacheData = this.testData;
+        // if cacheData is set and testData isn't, and we're in clientOnly mode, set testData
+        // now, since internal code requires it but it's marked externally as deprecated
+        else if (this.clientOnly && this.cacheData && !this.testData)
+            this.testData = this.cacheData;
+
         
         if (this.ID == null && this.id != null) this.ID = this.id;
 
@@ -4515,9 +4823,12 @@ isc.DataSource.addMethods({
     // +link{DataSource.updateData()}, addData() or removeData() can be called in order to both
     // change the dataset stored inside the browser and notify all cache managers.
     // <P>
+    // If a DataSource has +link{cacheAllData} set and a full cache has been obtained, calling
+    // <code>updateCaches</code> will automatically update the cache.
+    // <P>
     // Note that this DSResponse will <b>not</b> go through +link{transformResponse()} or other
-    // processing that would normally occur for a DSResponse resulting from a DSRequest sent by the
-    // application in this page.
+    // processing that would normally occur for a DSResponse resulting from a DSRequest sent by 
+    // the application in this page.
     //
     // @param dsResponse (DSResponse)
     // @param [dsRequest] (DSRequest)
@@ -4552,7 +4863,12 @@ isc.DataSource.addMethods({
 			//<DEBUG
 			return;
 		}
-    
+        
+        // if we're caching all data and the cache is full, invalidate it to force a refresh
+        if (this.cacheAllData && this.hasAllData()) {
+            this.invalidateCache();
+        }
+
         this.dataChanged(dsResponse, dsRequest);
 	},
 
@@ -4582,12 +4898,12 @@ isc.DataSource.addMethods({
         return complexFields;
     },
 
-    // get the operationBinding for this operation.  The operationBinding is the bundle of properties specifying
-    // how to invoke a particular DataSource operation, eg "fetch".  
+    // get the operationBinding for this operation.  The operationBinding is the bundle of 
+    // properties specifying how to invoke a particular DataSource operation, eg "fetch".  
     // <BR>
-    // In the absence of an operationBinding for a particular operation, the DataSource itself is used
-    // as the operationBinding, with the same set of properties supported - in this case you basically
-    // have a read-only DataSource only capable of fetch.
+    // In the absence of an operationBinding for a particular operation, the DataSource itself 
+    // is used as the operationBinding, with the same set of properties supported - in this 
+    // case you basically have a read-only DataSource, only capable of fetching.
     // <BR>
     // Takes either a dsRequest or an operationType and optional operationId.  
     getOperationBinding : function (operationType, operationId) { 
@@ -4837,6 +5153,20 @@ isc.DataSource.addMethods({
                 isc.isA.WebService(service) ? "soap" : this.dataProtocol || "getParams");
     },
 
+    _storeCustomRequest : function (dsRequest) {
+        // clientCustom dataProtocol 
+        // - transformRequest has been implemented to call non SmartClient code to generate the
+        //   appropriate response, and call 'processResponse()' with it.
+        // - store out the request so we can retrieve it by ID when processResponse fires.
+        //   Doing this before calling transformRequest should handle synchronous as well as asynch
+        //   response generation code.
+        // - note we do this unconditionally since it is allowed to switch a request
+        //   dynamically to clientCustom in transformRequest.  If it turns out it's not a
+        //   clientCustom request, we just remove the entry later
+        if (!this._clientCustomRequests) this._clientCustomRequests = {};
+        this._clientCustomRequests[dsRequest.requestId] = dsRequest;
+    },
+    
     // get rpcRequest properties that should be set on this dsRequest based on dataProtocol and
     // other DataSource settings.
     // NOTE: 
@@ -4859,18 +5189,8 @@ isc.DataSource.addMethods({
         // wire.  Hang onto the data in it's original format too
         dsRequest.originalData = dsRequest.data;
         
-        // clientCustom dataProtocol 
-        // - transformRequest has been implemented to call non SmartClient code to generate the
-        //   appropriate response, and call 'processResponse()' with it.
-        // - store out the request so we can retrieve it by ID when processResponse fires.
-        //   Doing this before calling transformRequest should handle synchronous as well as asynch
-        //   response generation code.
-        // - note we do this unconditionally since it is allowed to switch a request
-        //   dynamically to clientCustom in transformRequest.  If it turns out it's not a
-        //   clientCustom request, we just remove the entry later
-        if (!this._clientCustomRequests) this._clientCustomRequests = {};
-        this._clientCustomRequests[dsRequest.requestId] = dsRequest;
-        
+        this._storeCustomRequest(dsRequest);
+       
         // If sendExtraFields is false, remove any non-ds fields from the record(s) in request.data
         // before calling transformRequest
                 
@@ -4890,8 +5210,17 @@ isc.DataSource.addMethods({
         // correct the common error of returning the dsRequest itself incorrectly, which is
         // never right since the dsRequest contains various widgets and other data
         // inappropriate to send to the server.
-        if (transformedData !== dsRequest) dsRequest.data = transformedData;
-        
+        if (transformedData !== dsRequest) {
+            dsRequest.data = transformedData;
+
+            if (this.autoConvertRelativeDates == true) {
+                // convert any relative dates in criteria into absolute dates so the server
+                // doesn't need to know how to handle relative dates
+                transformedData = this.convertRelativeDates(transformedData);
+                dsRequest.data = transformedData;
+            }
+        }
+
         // If it was a clientCustom request, just return and wait for a call to
         // processResponse.  Note dynamic checks allows switching dataProtocol in
         // transformRequest
@@ -5041,10 +5370,13 @@ isc.DataSource.addMethods({
         }
         this._completeResponseProcessing(data, dsResponse, dsRequest);
     },
-    
+
     _handleClientOnlyReply : function (rpcResponse, data, rpcRequest) {
-        var dsResponse = this.getClientOnlyResponse(rpcRequest._dsRequest),
-            dsRequest = rpcRequest._dsRequest;
+        var serverData = this.cacheAllData && !this.clientOnly ? 
+                this.cacheResultSet.getAllRows() : null,
+            dsResponse = this.getClientOnlyResponse(rpcRequest._dsRequest, serverData),
+            dsRequest = rpcRequest._dsRequest
+        ;
 
         this._completeResponseProcessing(data, dsResponse, dsRequest, rpcResponse, rpcRequest);
     },
@@ -7121,6 +7453,11 @@ isc.DataSource.addMethods({
     // Perform a "fetch" DataSource operation against this DataSource, sending search criteria
     // and retrieving matching records.
     // <P>
+    // <b>NOTE:</b> do not attempt to override this method to create a custom DataSource.  For
+    // a server-side custom DataSource, use the +link{DataSource.serverConstructor} attribute,
+    // and the +explorerExample{customDataSource,Custom DataSource samples}.  For a
+    // client-side custom DataSource, see +link{dataProtocol,dataProtocol:"custom"}.
+    // <P>
     // In contrast to +link{listGrid.fetchData()}, which creates a +link{ResultSet} to manage
     // the returned data, calling <code>dataSource.fetchData()</code> provides the returned
     // data in the callback as a simple JavaScript Array of JavaScript Objects.  Calling
@@ -7376,6 +7713,10 @@ isc.DataSource.addMethods({
     // <P>
     // The new DataSource is returned via the "callback" argument.
     //
+    // If +link{cacheAllData} is enabled and +link{hasAllData()} returns true, the new 
+    // DataSource is synchronously returned as the result of the method.  In this case, if a 
+    // callback was passed, it also is executed.
+
     // @param criteria (Criteria) The criteria for the clientOnly DS
     // @param callback (Callback) The callback to fire passing the clientOnly DS
     // @param requestProperties (DSRequest Properties) Properties to pass through to the DSRequest
@@ -7388,28 +7729,43 @@ isc.DataSource.addMethods({
             _callback = callback,
             parentDS = this;
 
-        this.fetchData(_criteria, 
-            function (dsResponse, data) {
-                var rows = dsResponse.totalRows;
-                parentDS.fetchData(_criteria,
-                    function (dsResponse, data) {
-                        var ds = isc.DataSource.create({
-                            inheritsFrom: parentDS,
-                            clientOnly: true,
-                            useParentFieldOrder: true,
-                            testData: data
-                            }, dataSourceProperties)
-                        ;
-                        parentDS.fireCallback(_callback, "dataSource", [ds]);
-                    }, isc.addProperties({}, requestProperties, {startRow:0, endRow: rows})
-                )
-            }, isc.addProperties({}, requestProperties, { startRow:0, endRow:0 })
-        );
+        if (this.cacheAllData && this.hasAllData()) {
+            var ds = isc.DataSource.create({
+                inheritsFrom: parentDS,
+                clientOnly: true,
+                useParentFieldOrder: true,
+                testData: this.cacheResultSet.getAllRows()
+                }, dataSourceProperties)
+            ;
+            parentDS.fireCallback(_callback, "dataSource", [ds]);
+            return ds;
+        } else {
+            this.fetchData(_criteria, 
+                function (dsResponse, data) {
+                    var rows = dsResponse.totalRows;
+                    parentDS.fetchData(_criteria,
+                        function (dsResponse, data) {
+                            var ds = isc.DataSource.create({
+                                inheritsFrom: parentDS,
+                                clientOnly: true,
+                                useParentFieldOrder: true,
+                                testData: data
+                                }, dataSourceProperties)
+                            ;
+                            parentDS.fireCallback(_callback, "dataSource", [ds]);
+                        }, isc.addProperties({}, requestProperties, {startRow:0, endRow: rows})
+                    )
+                }, isc.addProperties({}, requestProperties, { startRow:0, endRow:0 })
+            );
+        }
     },
 
     //> @method dataSource.addData()
     // Perform an "add" DataSource operation against this DataSource, to create a new DataSource
     // record.
+    // <P>
+    // <b>NOTE:</b> do not use this method to populate a +link{clientOnly} DataSource.  Set
+    // +link{cacheData} instead.
     //
     //	@param	newRecord           (Record)      new record
     //	@param	[callback]          (DSCallback)  callback to invoke on completion
@@ -7547,6 +7903,7 @@ isc.DataSource.addMethods({
     },
 
     sendDSRequest : function (dsRequest) {
+
         // provide default requestProperties for the operationBinding and the DataSource as a
         // whole
         isc.addDefaults(dsRequest, 
@@ -7577,9 +7934,22 @@ isc.DataSource.addMethods({
             dsRequest.showPrompt = this.showPrompt;
         }
 
-        // handle clientOnly DataSources
+        // if cacheAllData:false and autoCacheAllData:true and this request will fetch all data, 
+        // switch cacheAllData on and proceed
+        if (!this.cacheAllData && this.autoCacheAllData && 
+                dsRequest.operationType == "fetch" && 
+                dsRequest.startRow == null && dsRequest.endRow == null && 
+                dsRequest.criteria == null)
+        {
+            if (this.logIsInfoEnabled("cacheAllData")) {
+                this.logInfo("sendDSRequest: switching on cacheAllData", "cacheAllData");
+            }
+            this.cacheAllData = true;
+        }
+
+        // handle clientOnly and cacheAllData DataSources
         if (this.fetchingClientOnlyData(dsRequest)) return;
-        
+
         if (this.logIsDebugEnabled()) {
             this.logDebug("Outbound DSRequest: " + this.echo(dsRequest));
         }
@@ -7588,22 +7958,45 @@ isc.DataSource.addMethods({
         // to the RPC layer
         dsRequest._dsCallback = dsRequest.callback;
 
-        if (dataFormat == "iscServer" && !this.clientOnly) {
-            return this.performSCServerOperation(dsRequest);
+        if (dataFormat == "iscServer") {
+            this._storeCustomRequest(dsRequest);
+
+            var data = this.transformRequest(dsRequest);
+
+            if (this.autoConvertRelativeDates == true) {
+                // convert any relative dates in criteria into absolute dates so the server
+                // doesn't need to know how to handle relative dates
+                data = this.convertRelativeDates(data);
+                dsRequest.data = data;
+            }
+
+            // If this is a clientCustom operation we're done
+            // (protocol can be set dynamically in the transformRequest method)
+            // This implies the transformRequest implementation will have 
+            // kicked off a request and we'll be notified via an explicit call to
+            // processResponse() when new data is available.
+            var protocol = this.getDataProtocol(dsRequest);
+            if (protocol == "clientCustom") return;
+
+            if ((!this.clientOnly  && !this.cacheAllData) || dsRequest.cachingAllData) {
+                if (this.logIsInfoEnabled("cacheAllData") && dsRequest.cachingAllData) {
+                    this.logInfo("sendDSRequest: processing cacheAllData request", "cacheAllData");
+                }
+                return this.performSCServerOperation(dsRequest, data);
+            }
         }
-        
+
         
 
         
         var inputs = this.getServiceInputs(dsRequest);
-
         
         // clientCustom dataProtocol - in this case we assume transformRequest has been implemented
         // to call non SmartClient code to generate the appropriate response. This will have been
         // called as part of getServiceInputs() - simply return and wait for 'processResponse' to
         // be called
         if (inputs.dataProtocol == "clientCustom") return;
-        
+
         var rpcRequest = isc.addProperties({}, dsRequest, inputs);
 
         // hold onto the dsRequest that initiated this call, and the indirect callback
@@ -7614,13 +8007,17 @@ isc.DataSource.addMethods({
         if (inputs.data == null) rpcRequest.data = null;
 
         // client only requests: set up a callback to populate with data
-        if (this.clientOnly) {
+        
+        if (this.clientOnly || (this.cacheAllData && dsRequest.operationType == "fetch")) {
+            rpcRequest.clientOnly = true;
             rpcRequest.callback = {target:this, methodName:"_handleClientOnlyReply" };
+
             isc.RPC.sendRequest(rpcRequest);
             return;
         }
-        
+
         var opBinding = this.getOperationBinding(dsRequest);
+
         rpcRequest.transport = opBinding.dataTransport || this.dataTransport;
         if (rpcRequest.transport == "scriptInclude") {
             // cross-site JSON: we will receive live JS objects directly
@@ -7673,7 +8070,7 @@ isc.DataSource.addMethods({
     },     
     
 
-    performSCServerOperation : function (dsRequest, callback) {
+    performSCServerOperation : function (dsRequest, data) {
         this.logWarn("Attempt to perform iscServer request requires options SmartClient server " +
                      "support - not present in this build.\nRequest details:"+ 
                      this.echo(dsRequest));
@@ -7955,7 +8352,7 @@ isc.DataSource.addMethods({
 // @visibility external
 //<
 
-//> @attr dsRequest.textMatchStyle (TextMatchStyle: "exact" : I)
+//> @attr dsRequest.textMatchStyle (TextMatchStyle: "exact" : IR)
 // For "fetch" operations, how search criteria should be interpreted for text fields: either
 // "exact" for exact match, "startsWith" for matching at the beginning only, or "substring" for
 // case-insensitive substring match.
@@ -8002,7 +8399,7 @@ isc.DataSource.addMethods({
 // @visibility external
 //<
 
-//> @attr dsRequest.operationId (String : null : I)
+//> @attr dsRequest.operationId (String : null : IR)
 // When a +link{interface:DataBoundComponent} sends a DSRequest, the
 // <code>dsRequest.operationId</code> will be automatically picked up from the
 // <code>fetchOperation</code>, <code>addOperation</code>, etc properties of the
@@ -8199,11 +8596,17 @@ isc.DataSource.addMethods({
 //<
 
 //> @type ExportFormat
-// One of the supported formats for data-export.
+// One of the supported formats for data-export.  If you are doing a 
+// +link{DataBoundComponent.exportClientData(),client export} to one of the native spreadsheet
+// formats (xls or ooxml), we also export +link{object:Hilite,hilite-based} coloring.  So, if
+// Hilites are causing a particular cell to be rendered as green text on a blue background, 
+// the corresponding cell in the exported spreadsheet document will also be colored that way.
 //
 // @value "xml"    Export data as XML records
 // @value "json"   Export data as JSON objects
 // @value "csv"    Export data in comma-separated format
+// @value "xls"    Export data in native Microsoft Excel 97 format
+// @value "ooxml"  Export data in native Microsoft Excel 2007 format (also called XLSX)
 //
 // @serverDS allowed
 // @visibility external
@@ -8249,7 +8652,7 @@ isc.DataSource.addMethods({
 // to CSV and the +link{dsRequest.exportTitleSeparatorChar, separator-character} to use in 
 // field-titles when exporting to XML.
 // <P>
-// Additionaly, you can output arbitrary text before and after the exported data by setting 
+// Additionally, you can output arbitrary text before and after the exported data by setting 
 // +link{dsRequest.exportHeader, exportHeader} and +link{dsRequest.exportFooter, exportFooter}.
 // <P>
 // Note that an export initiated using dsRequest properties does not provide support for JSON
@@ -8605,7 +9008,7 @@ isc.DataSource.addMethods({
 // }); 
 // </pre>
 // NOTE: additional code is required to handle authentication and other details, see the
-// complete code in isomorphicSDK/examples/databinding/SalesForce.
+// complete code in smartclientSDK/examples/databinding/SalesForce.
 // <P>
 // For DataSources that contact non-WSDL-described XML or JSON services, OperationBindings can
 // be used to separately configure the URL, HTTP method, input and output processing for each
@@ -10445,8 +10848,17 @@ isc.DataSource.addMethods({
                     //             " in superDS: " + superDS);
                     localField.visibility = "external";
                 }
+                
+                // Save a copy of the localField - it's about to be clobbered
+                var localCopy = isc.addProperties({}, localField);
+                
                 // local and super field definition: combine with overrides
                 fields[fieldName] = superDS.combineFieldData(localField);
+                
+                // Special override case: all fields have a title attribute, because one will
+                // auto-derived from the name if necessary.  However, we do not want to use 
+                // the auto-derived title if a better one can be inherited
+                if (localCopy._titleAutoDerived) fields[fieldName].title = superField.title;
             } else {
                 // field definition in parent only
                 if (this.showLocalFieldsOnly) {
@@ -11195,6 +11607,7 @@ isc.DataSource.addMethods({
             if (field.title != null) continue;
 
             field.title = this.getAutoTitle(fieldName);
+            field._titleAutoDerived = true;
         }
     }, 
 
@@ -11235,13 +11648,80 @@ isc.DataSource.addMethods({
     //>LocalDS mode (serverless DataSource)
 	// -----------------------------------------------------------------------------------------
 
+
+    firstCacheAllDataRequest : function (dsRequest) {
+
+        if (this.logIsInfoEnabled("cacheAllData")) {
+            this.logInfo("firstCacheAllDataRequest: refreshing cache", "cacheAllData");
+        }
+        // defer all other operations against this datasource until this fetch
+        // completes, starting with this one
+        this._deferredRequests = [dsRequest];
+
+        this.cacheResultSet = isc.ResultSet.create({
+            dataSource: this,
+            fetchMode: "local",
+            allRows: this.cacheData ? this.cacheData : null,
+            cachingAllData: true,
+            dataArrived : function (startRow, endRow) {
+//                if (this.logIsInfoEnabled("cacheAllData")) {
+                    this.logWarn("cacheAllData - cacheResultSet.dataArrived: startRow/endRow: "+startRow+"/"+endRow);
+//                }
+                if (this.lengthIsKnown()) {
+                    var ds = this.getDataSource();
+                    if (ds.cacheResultSet == null) return;
+                    ds.cacheLastFetchTime = new Date().getTime();
+                    // if both cacheAllData and clientOnly are set, we do the initial fetch
+                    // here according to cacheAllData, but we then switch to clientOnly by 
+                    // setting ds.testData/cacheData
+                    if (ds.clientOnly) ds.testData = ds.cacheData = this.getAllRows();
+                    ds.processDeferredRequests();
+                }
+            }
+        });
+
+        if (!this.cacheData) {
+            if (this.logIsInfoEnabled("cacheAllData")) {
+                this.logInfo("firstCacheAllDataRequest: issuing fetch", "cacheAllData");
+            }
+            this.cacheResultSet.get(0);
+            return true; // request has been deferred, return true to halt further processing
+        } else {
+            if (this.logIsInfoEnabled("cacheAllData")) {
+                this.logInfo("firstCacheAllDataRequest: updating last fetch time", "cacheAllData");
+            }
+            this.cacheLastFetchTime = new Date().getTime();
+            if (this.clientOnly) this.testData = this.cacheData;
+            this.processDeferredRequests();
+        }
+
+    },
+
     fetchingClientOnlyData : function (dsRequest) 
     { 
+        if (dsRequest.cachingAllData) {
+            //delete dsRequest.cachingAllData;
+            return false;
+        }
+
+        var useTestDataFetch = (this.useTestDataFetch == null ? 
+                (this.clientOnly == true && this.cacheAllData != true && 
+                    (this.dataURL != null || this.testFileName != null))
+                : this.useTestDataFetch);
+
+        if (this.logIsInfoEnabled("cacheAllData")) {
+            this.logInfo("fetchingClientOnlyData: useTestDataFetch is "+useTestDataFetch, "cacheAllData");
+        }
+
         // mark the request client-only: this causes the RPCManager to avoid sending
         // this RPC to the server.  Note that, if clientOnly requests were not allowed to be
         // involved in transactions, we could just fire the passed-in callback immediately with
         // the client-only dsResult
-        if (this.clientOnly) dsRequest.clientOnly = true;
+        if (this.clientOnly) {
+            dsRequest.clientOnly = true;
+            if (this.testData && !this.cacheData) this.cacheData = this.testData;
+            else if (this.cacheData && !this.testData) this.testData = this.cacheData;
+        }
 
         // if we're deferring requests, add request to queue and return
         if (this._deferredRequests) {
@@ -11249,104 +11729,149 @@ isc.DataSource.addMethods({
             return true; // request has been deferred, return true to halt further processing
         }
 
-        // if we're in clientOnly mode and there's no testData, but we do have a dataURL or
-        // testFileName, do a one-time load, then re-run current operation against the
-        // resulting testData.
-        if (this.clientOnly && !this.testData && (this.testFileName || this.dataURL)) {
-            // defer all other operations against this datasource until this fetch
-            // completes, starting with this one
-            this._deferredRequests = [dsRequest];
+        if (useTestDataFetch == false && this.clientOnly && (this.testFileName || this.dataURL)) 
+            useTestDataFetch = true;
 
-            // perform a one-time fetch by creating a datasource that picks up the fields,
-            // but not the operationBindings or other properties.  This way we don't have
-            // to muck with this DS and try to restore settings
+        if (!useTestDataFetch && ((this.cacheAllData && this.cacheNeedsRefresh()) ||
+                (this.clientOnly && !this.testData && 
+                    (this.dataURL != null && this.testDataFile != null))
+            ))
+        {
+            // we're not using a testDataFetch and either we're in cacheAllData mode and the
+            // cache needs refreshing, or we're in clientOnly mode and the cache hasn't been 
+            // fetched yet
+            return this.firstCacheAllDataRequest(dsRequest);
+        } else {
+            // if we're in clientOnly or cacheAllData mode and there's no testData, but we do 
+            // have a dataURL or testFileName, do a one-time load, then re-run current 
+            // operation against the resulting testData.  If we're in cacheAllData mode, 
+            // initialize the cacheResultSet with the resulting testData - further client-side
+            // fetching will take place against that resultSet.
+            if (this.clientOnly && !this.testData && (this.testFileName || this.dataURL) ||
+                (this.cacheAllData && this.cacheNeedsRefresh())){
 
-            // if only testFileName is set, use that as the dataURL
-            var dataURL = this.dataURL || this.testFileName;
-
-            // if dataFormat is the default iscServer, set it based on the file extension
-            // of the dataURL, since it doesn't really make sense to have a clientOnly
-            // dataSource of type iscServer
-            var dataFormat = this.getDataFormat(dsRequest);
-            if (dataFormat == "iscServer") dataFormat = dataURL.match(/\.xml$/i) ? "xml" : "json";
-
-            var operationBinding = this.getOperationBinding(dsRequest);
-            
-            // Note: if someone's observing transformRequest/response, ensure we copy the
-            // original methods across - otherwise we'll get JS errors since we're not also
-            // copying the observers across to this one-time DS.
-            
-            var transformRequest = this.transformRequest,
-                transformResponse = this.transformResponse,
-                observers = this._observers;
-            if (observers) {
-                if (observers.transformRequest) {
-                    transformRequest = this[isc._obsPrefix + "transformRequest"]
+                if (this.logIsInfoEnabled("cacheAllData")) {
+                    this.logInfo("fetchingClientOnlyData: issuing oneTimeDS fetch", "cacheAllData");
                 }
-                if (observers.transformResponse) {
-                    transformResponse = this[isc._obsPrefix + "transformResponse"]
-                }
-            }
-            var oneTimeDS = isc.DataSource.create({
-                ID: this.ID+"_oneTime",
-                inheritsFrom: this.ID,
-                dataURL: dataURL,
-                dataFormat: dataFormat,
-                recordXPath: this.recordXPath,
-                // use our transformRequest/response on the one-time DS to canonicalize data to
-                // our internal testData format.
-                transformRequest: transformRequest,
-                transformResponse: transformResponse,
-                recordName: operationBinding.recordName || this.ID,
-                showPrompt: this.showPrompt
-            });
-            this.logInfo("clientOnly datasource performing one-time " + dataFormat +
-                         " fetch via: " + dataURL);
 
-            // reset our transformRequest/response to default DataSource versions b/c we'll
-            // be working against a local testData from now on and transforms no longer apply.
-            this.addProperties({
-                transformRequest: isc.DataSource.getInstanceProperty("transformRequest"),
-                transformResponse: isc.DataSource.getInstanceProperty("transformResponse")
-            });
+                // defer all other operations against this datasource until this fetch
+                // completes, starting with this one
+                this._deferredRequests = [dsRequest];
 
-            var ds = this;
-            // note: don't pass criteria to the one-time fetch as we want to fetch all the
-            // records for our cache, we'll apply the criteria in a follow-up local
-            // operation against the cache 
-            oneTimeDS.sendDSRequest({
-                operationType : "fetch",
-                callback : function (dsResponse, data) {
-                    if (dsResponse.status != isc.DSResponse.STATUS_SUCCESS) {
-                        ds.logWarn("one-time fetch failed with status: " + dsResponse.status +
-                                   " and messsage: " + (data ? data : "N/A") + 
-                                   ".  Initializing an empty Array as testData.");
-                        ds.testData = [];
-                    } else {
-                        ds.logInfo("One-time fetch complete: "+ (data ? data.length : "null") + " records");
-    
-                        ds.testData = ds.initializeSequenceFields(data);
-                    }            
-        
-                    var deferredRequests = ds._deferredRequests;
-                    delete ds._deferredRequests;
-                    // call all deferred requests
-                    for (var i = 0; i < deferredRequests.length; i++) {
-                        ds.sendDSRequest(deferredRequests[i]);
+                // perform a one-time fetch by creating a datasource that picks up the fields,
+                // but not the operationBindings or other properties.  This way we don't have
+                // to muck with this DS and try to restore settings
+
+                // if only testFileName is set, use that as the dataURL
+                var dataURL = this.dataURL || this.testFileName;
+
+                // if dataFormat is the default iscServer, set it based on the file extension
+                // of the dataURL, since it doesn't really make sense to have a clientOnly
+                // dataSource of type iscServer
+                var dataFormat = this.getDataFormat(dsRequest);
+                if (dataFormat == "iscServer") dataFormat = dataURL.match(/\.xml$/i) ? "xml" : "json";
+
+                var operationBinding = this.getOperationBinding(dsRequest);
+
+                // Note: if someone's observing transformRequest/response, ensure we copy the
+                // original methods across - otherwise we'll get JS errors since we're not also
+                // copying the observers across to this one-time DS.
+                
+                var transformRequest = this.transformRequest,
+                    transformResponse = this.transformResponse,
+                    observers = this._observers;
+                if (observers) {
+                    if (observers.transformRequest) {
+                        transformRequest = this[isc._obsPrefix + "transformRequest"]
                     }
-                    oneTimeDS.destroy();
-                },
-                willHandleError:true
-            });
+                    if (observers.transformResponse) {
+                        transformResponse = this[isc._obsPrefix + "transformResponse"]
+                    }
+                }
+                // check for recordName on the opBinding, then on this DS - failing 
+                // that, if this DS inherits from another DS, use the ID of the parent before 
+                // the child to work out the recordName
+                var localRecordName = operationBinding.recordName || this.recordName ||
+                        (this.inheritsFrom ? (
+                            isc.isA.String(this.inheritsFrom) ? 
+                                this.inheritsFrom : this.inheritsFrom.ID) 
+                        : this.ID);
+                var oneTimeDS = isc.DataSource.create({
+                    ID: this.ID+"_oneTime",
+                    inheritsFrom: this.ID,
+                    dataURL: dataURL,
+                    dataFormat: dataFormat,
+                    recordXPath: this.recordXPath,
+                    // use our transformRequest/response on the one-time DS to canonicalize data to
+                    // our internal testData format.
+                    transformRequest: transformRequest,
+                    transformResponse: transformResponse,
+                    recordName: localRecordName,
+                    showPrompt: this.showPrompt
+                });
+                this.logInfo("clientOnly datasource performing one-time " + dataFormat +
+                             " fetch via: " + dataURL);
 
-            return true; // request has been deferred, return true to halt further processing
+                // reset our transformRequest/response to default DataSource versions b/c we'll
+                // be working against a local testData from now on and transforms no longer apply.
+                this.addProperties({
+                    transformRequest: isc.DataSource.getInstanceProperty("transformRequest"),
+                    transformResponse: isc.DataSource.getInstanceProperty("transformResponse")
+                });
+
+                var ds = this;
+                // note: don't pass criteria to the one-time fetch as we want to fetch all the
+                // records for our cache, we'll apply the criteria in a follow-up local
+                // operation against the cache 
+
+                if (this.cacheAllData) {
+                    oneTimeDS.cacheAllData = false;
+                }
+
+                oneTimeDS.sendDSRequest({
+                    operationType : "fetch",
+                    willHandleError:true,
+                    callback : function (dsResponse, data) {
+                        var cacheRows;
+                        if (dsResponse.status != isc.DSResponse.STATUS_SUCCESS) {
+                            ds.logWarn("one-time fetch failed with status: " + dsResponse.status +
+                                       " and messsage: " + (data ? data : "N/A") + 
+                                       ".  Initializing an empty Array as testData.");
+                            cacheRows = [];
+                        } else {
+                            ds.logInfo("One-time fetch complete: "+ (data ? data.length : "null") + " records");
+        
+                            cacheRows = ds.initializeSequenceFields(data);
+                        }
+
+                        if (ds.cacheAllData) {
+                            ds.cacheLastFetchTime = new Date().getTime();
+                            ds.cacheResultSet = isc.ResultSet.create({
+                                dataSource: ds.ID,
+                                fetchMode: "local",
+                                allRows: cacheRows
+                            });
+                            ds.cacheLastFetchTime = new Date().getTime();
+                        }
+
+                        if (ds.clientOnly) {
+                            ds.cacheData = ds.testData = cacheRows;
+                        }
+
+                        ds.processDeferredRequests();
+                        oneTimeDS.destroy();
+                    }
+                });
+
+                return true; // request has been deferred, return true to halt further processing
+            }
         }
     },
 
     //> @method dataSource.getClientOnlyResponse()
-	// Return a "spoofed" response for a +link{clientOnly} DataSource.
+	// Return a "spoofed" response for a +link{clientOnly} or +link{cacheAllData} DataSource.
     // <P>
-    // The default implementation will use +link{dataSource.testData} to provide an appropriate
+    // The default implementation will use +link{dataSource.cacheData} to provide an appropriate
     // response, by using +link{applyFilter,client-side filtering} for a "fetch" request, and
     // by modifying the <code>testData</code> for other requests.
     // <P>
@@ -11360,36 +11885,45 @@ isc.DataSource.addMethods({
     // clientOnly) would be contacting the server.
     //
     // @param request (DSRequest) DataSource request to respond to
+    // @param serverData (Array of Record) for cacheAllData DataSources, the data from the local cache
     // @return (DSResponse) 
     // @visibility external
     //<
-	getClientOnlyResponse : function (request) {
+	getClientOnlyResponse : function (request, serverData) {
         //!OBFUSCATEOK
         // initialize the spoofed dataset
-        var serverData = this.testData;
+
+        serverData = serverData || this.testData;
+
+        // if we have serverData but no testData, it's a cacheAllData result - if we're also in
+        // clientOnly mode, we need to set up the clientOnly cache - set both cacheData and the
+        // now deprecated testData to the same array
+        if (serverData && !this.testData && this.clientOnly) 
+            this.cacheData = this.testData = serverData;
+
         if (!serverData || isc.isA.String(serverData)) {
 		    if (isc.isA.String(serverData)) {
                 // ID or expression
                 //>DEBUG
 				this.logInfo(this.ID + " datasource: using testData property as data");
                 //<DEBUG
-                this.testData = isc.eval(serverData);
+                this.cacheData = this.testData = isc.eval(serverData);
 			} else if (window[this.ID + "TestData"]) {
                 // dataset loaded in page under canonical name
                 //>DEBUG
 				this.logInfo(this.ID + " datasource: using " + this.ID + "TestData object as data");
                 //<DEBUG
-				this.testData = window[this.ID + "TestData"];
+				this.cacheData = this.testData = window[this.ID + "TestData"];
             } else {
                 // initialize to empty list
                 //>DEBUG
 				this.logInfo(this.ID + " datasource: testData property and " + this.ID +
 							 "TestData object not found, using empty list as data");
                 //<DEBUG
-				this.testData = [];
+				this.cacheData = this.testData = [];
 			}
+            serverData = this.testData;
         }
-        serverData = this.testData;
 
 		var operationType = request.operationType,
 			response = {
@@ -11459,14 +11993,14 @@ isc.DataSource.addMethods({
             // NOTE: for modification operations, we always return a copy, "copyLocalResults"
             // doesn't need to be set.
 			case "remove":
-			case "delete": // old name       
+			case "delete": // old name
                 var serverRecordIndex = this.findByKeys(request.data, serverData);
                 if (serverRecordIndex == -1) {
                     this.logWarn("clientOnly remove operation: Unable to find record matching criteria:" 
                                 + this.echo(request.data));
                 } else {
                     serverData.removeAt(serverRecordIndex);
-    				response.data = isc.addProperties({}, request.data);
+                    response.data = isc.addProperties({}, request.data);
                 }
 				break;
 			case "add": 
@@ -11565,10 +12099,10 @@ isc.DataSource.addMethods({
 	// Local Filtering 
 	// --------------------------------------------------------------------------------------------
 
-	// given values for the primary key fields, find the index of the unique matching record
-	findByKeys : function (record, recordSet, pos, endPos) {
+    // given values for the primary key fields, find the index of the unique matching record
+    findByKeys : function (record, recordSet, pos, endPos) {
         return recordSet.findByKeys(record, this, pos, endPos);
-	},
+    },
 
     //> @method dataSource.applyFilter()
     // Returns records in the passed Array that match the provided filter
@@ -11593,23 +12127,27 @@ isc.DataSource.addMethods({
 	applyFilter : function (data, criteria, requestProperties) {
 		var output = [];
 		if (!data || data.length == 0) return output;
-		
-		// If our criteria object is of type AdvancedCriteria, go down the new
-		// AdvancedFilter codepath
-		if (this.isAdvancedCriteria(criteria)) {
-		    return this.recordsMatchingAdvancedFilter(data, criteria, requestProperties);
-		}
 
-		// go through the list of items and add any items that match the criteria to the
-		// output
-		return this.recordsMatchingFilter(data, criteria, requestProperties);
-	},
+        if (this.autoConvertRelativeDates == true) {
+            criteria = this.convertRelativeDates(criteria);
+        }
+
+        // If our criteria object is of type AdvancedCriteria, go down the new
+        // AdvancedFilter codepath
+        if (this.isAdvancedCriteria(criteria)) {
+            return this.recordsMatchingAdvancedFilter(data, criteria, requestProperties);
+        }
+
+        // go through the list of items and add any items that match the criteria to the
+        // output
+        return this.recordsMatchingFilter(data, criteria, requestProperties);
+    },
 	
     // currently only applies to simple filtering, and not doc'd
     dropUnknownCriteria:true,
 
-	// return the records matching the criteria passed in
-	recordsMatchingFilter : function (records, filter, requestProperties) {
+    // return the records matching the criteria passed in
+    recordsMatchingFilter : function (records, filter, requestProperties) {
         var filterFields = isc.getKeys(filter),
             filterFieldsLength = filterFields.length,
             matches = [],
@@ -11897,7 +12435,6 @@ isc.DataSource.addMethods({
         // If our criteria objects are of type AdvancedCriteria, go down the new
         // AdvancedFilter codepath
         if (this.isAdvancedCriteria(newCriteria) || this.isAdvancedCriteria(oldCriteria)) {
-            
             var undef, 
                 result;
                 
@@ -11931,7 +12468,6 @@ isc.DataSource.addMethods({
                 result = this.compareAdvancedCriteria(newCriteria, oldCriteria, 
                                                     requestProperties);
             }
-
             // Catch-all - result should never be undefined at this point
             if (result == undef) result = -1;
             
@@ -12136,6 +12672,10 @@ isc.DataSource.addMethods({
 // An AdvancedCriteria is in effect a +link{Criterion} that has been marked with 
 // _constructor:"AdvancedCriteria" to mark it as complete criteria.
 // <P>
+// In addition to building a raw AdvancedCriteria object as described above, the
+// +link{DataSource.convertCriteria()} and +link{DataSource.combineCriteria()} methods
+// may be used to create and modify criteria based on simple fieldName / value mappings.
+// <P>
 // When passed to the SmartClient Server, AdvancedCriteria are automatically translated
 // to Java Objects, identically to other JavaScript data, by the rules given under 
 // +link{rpcRequest.data}.
@@ -12143,7 +12683,10 @@ isc.DataSource.addMethods({
 // Other servers may receive AdvancedCriteria in the most convenient format, for example,
 // a +link{dataSource.transformRequest()} might translate AdvancedCriteria directly into
 // a SQL-like language, or serialize to XML using +link{dataSource.xmlSerialize()}.
-// 
+// <P>
+// See +link{group:criteriaEditing,Criteria Editing} for information about
+// editing AdvancedCriteria in a DynamicForm.
+//
 // @inheritsFrom Criterion
 // @group advancedFilter
 // @treeLocation Client Reference/Data Binding/DataSource
@@ -12253,6 +12796,8 @@ isc.DataSource.addMethods({
 //
 // @value "equals" exactly equal to
 // @value "notEqual" not equal to 
+// @value "iEquals" exactly equal to, if case is disregarded
+// @value "iNotEqual" not equal to, if case is disregarded
 // @value "greaterThan" Greater than
 // @value "lessThan" Less than
 // @value "greaterOrEqual" Greater than or equal to
@@ -12437,6 +12982,29 @@ isc.DataSource.addMethods({
 // @visibility external
 //<
 
+//> @method operator.getCriterion()
+// In combination with +link{operator.editorType}, this override point allows you to define a
+// client-side only Operator that simply provides a custom UI for creating a Criterion based on
+// one of the built-in operators.
+// <P>
+// For example, the "between" operator allows AdvancedCriteria to be created that can select any
+// date range, however in a given application certain specific date ranges might be more
+// meaningful (eg "next week", "last quarter") and you might want to offer the user a picker for
+// those date ranges.  You could create an operator "presetDateRange" with an editorType 
+// indicating a custom SelectItem that shows available ranges, and then implement 
+// operation.getCriterion() to take the value from this SelectItem and produce a Criterion 
+// selecting the chosen date range.
+// <P>
+// Note that another approach, if it's not required that this custom interface appear in the
+// FilterBuilder, is just to have a separate DynamicForm for picking special date
+// ranges, and use +link{DataSource.combineCriteria()} to merge the criteria with the
+// FilterBuilder's criteria, as in +explorerExample{dynamicReporting,this sample}.
+// 
+// @param fieldName (String)
+// @param item (FormItem)
+// @return Criterion
+// @visibility external
+//<
 // ---------------------------------------------------------------------------------------
 
 //> @attr dataSource.strictSQLFiltering (boolean : false : IR) [A]
@@ -12583,7 +13151,7 @@ isc.DataSource.addClassMethods({
         }
         return title;
     },
-    
+
     //> @classMethod dataSource.convertCriteria()
     // Converts criteria expressed in SmartClient's simple criteria format to an AdvancedCriteria
     // object.  
@@ -12602,11 +13170,7 @@ isc.DataSource.addClassMethods({
         
         var subCriteria = [];
         for (var fieldName in criteria) {
-            if (textMatchStyle == "equals" || isc.isA.Number(criteria[fieldName])) { 
-                var operator = "equals";
-            } else {
-                operator = "iContains";
-            }
+            var operator = this.getCriteriaOperator(criteria[fieldName], textMatchStyle);
             
             if (isc.isA.Array(criteria[fieldName])) {
                 var disjunct = {
@@ -12633,6 +13197,20 @@ isc.DataSource.addClassMethods({
 
         aCriteria.criteria = subCriteria;
         return aCriteria;
+    },
+    
+    getCriteriaOperator : function (value, textMatchStyle) {
+        var operator;
+        if (isc.isA.Number(value) || isc.isA.Date(value)) {
+            operator = "equals";
+        } else if (textMatchStyle == "equals" || textMatchStyle == "exact") {
+            operator = "iEquals";
+        } else if (textMatchStyle == "startsWith") {
+            operator = "iStartsWith";
+        } else {
+            operator = "iContains";
+        }
+        return operator;    
     },
 
     
@@ -12662,6 +13240,7 @@ isc.DataSource.addClassMethods({
     //                                          convert a simple criteria object to an 
     //                                          AdvancedCriteria.  Defaults to "substring"
     // @return (Criteria) The combined criteria
+    // @example dynamicReporting
     // @visibility external
     //<
     combineCriteria : function(criteria1, criteria2, outerOperator, textMatchStyle) {
@@ -12817,8 +13396,11 @@ isc.DataSource.addClassMethods({
                 if (isc.isA.Number(floatValue)  && floatValue == value) {
                     sumValue += floatValue;
                 } else {
-                    // returning null indicates invalid value
-                    return null;
+                    // just ignore null / empty values
+                    if (value != null && value != isc.emptyString) {
+                        // returning null indicates invalid value
+                        return null;
+                    }
                 }
             }
             return sumValue;
@@ -12833,8 +13415,10 @@ isc.DataSource.addClassMethods({
                     count += 1;
                     total += floatVal;
                 } else {
-                    // returning null indicates invalid value
-                    return null;
+                    if (value != null && value != isc.emptyString) {
+                        // returning null indicates invalid value
+                        return null;
+                    }
                 }
             }
             return count > 0 ? total/count : null;
@@ -12855,8 +13439,10 @@ isc.DataSource.addClassMethods({
                         if (max == null) max = floatVal;
                         else if (max < value) max = floatVal;
                     } else {
-                        // returning null indicates invalid value
-                        return null;
+                        if (value != null && value != isc.emptyString) {
+                            // returning null indicates invalid value
+                            return null;
+                        }
                     }
                 }
             }
@@ -12871,6 +13457,9 @@ isc.DataSource.addClassMethods({
                     if (min == null) min = value.duplicate();
                     if (value.getTime() < min.getTime()) min = value.duplicate();
                 } else {
+                    // ignore empty values
+                    if (value == null || value == isc.emptyString) continue;
+
                     isNumber = true;
                     var floatVal = parseFloat(value);
                     if (isc.isA.Number(floatVal) && (floatVal == value)) {
@@ -12890,8 +13479,8 @@ isc.DataSource.addClassMethods({
                 var value = record[fields[i].name],
                     floatVal = parseFloat(value);                    
                 if (isc.isA.Number(floatVal) && (floatVal == value)) {
-                    if (multiplier == 0) multiplier = value;
-                    else multiplier = (multiplier * value);
+                    if (i == 0) multiplier = floatVal;
+                    else multiplier = (multiplier * floatVal);
                 } else {
                     // returning null indicates invalid value
                     return null;
@@ -13481,9 +14070,10 @@ isc._initBuiltInOperators = function () {
             var tested = record[fieldName], 
                 test = value;
             
+            if (isc.isA.Number(tested)) tested = "" + tested;
+            
             // Special-case code to match server-side exception when we get a request to do a string-
-            // match on a non-text field
-            //if ((test && !isc.isA.String(test)) || (!isc.isA.String(tested))) {
+            // match on a non-text field (note that numbers are OK - they are converted above)
             if (!isc.isA.String(tested)) {
                 return operator.negate;
             }
@@ -13498,9 +14088,6 @@ isc._initBuiltInOperators = function () {
             // Convert a null filter to the empty string, so our comparisons will work
             if (test == null) test = "";
             
-            // The following two line is removed to match reduced server-side functionality. See the 
-            // comments in Java method HibernateDataSource.stringComparison()
-            // if (isc.isA.Number(tested)) tested = "" + tested;
             if (isc.isA.Number(test)) test = "" + test;
             
             if (!isc.isA.String(test) || !isc.isA.String(tested)) return operator.negate;
@@ -13814,6 +14401,11 @@ isc._initBuiltInOperators = function () {
             //               new value both contains and is longer than old value). Obey the 
             //               caseInsensitive flag. If negate == true, the new field must be a 
             //               substring of the old one.
+            // 4 equals.     Return 0 if the old value exactly matches the old one.  This 
+            //               comparison is actually only used when in case-insensitive mode;
+            //               obviously, we simply compare for equality otherwise. Obey the 
+            //               caseInsensitive flag. If negate == true, the new field must not 
+            //               match the old one.
 
             var oldVal = oldCriterion.value;
             var newVal = newCriterion.value;
@@ -13830,38 +14422,54 @@ isc._initBuiltInOperators = function () {
             }
             
             if (newCriterion.fieldName == oldCriterion.fieldName 
-                    && newCriterion.value == oldCriterion.value) {
+                    && newCriterion.value == oldCriterion.value
+                    && !operator.equals) 
+            {
                 return 0;
             }
                 
+            if (operator.equals) {
+                if ((oldVal == newVal && !operator.negate) ||
+                    (oldVal != newVal && operator.negate))
+                {
+                    return 0;
+                }
+            }
+                
             if (operator.startsWith && !operator.negate && 
-                    newVal.length > oldVal.length && newVal.startsWith(oldVal)) {
+                    newVal.length > oldVal.length && newVal.startsWith(oldVal)) 
+            {
                 return 1;
             }
                 
                 
             if (operator.startsWith && operator.negate && 
-                    oldVal.length > newVal.length && oldVal.startsWith(newVal)) {
+                    oldVal.length > newVal.length && oldVal.startsWith(newVal)) 
+            {
                 return 1;
             }
 
             if (operator.endsWith && !operator.negate && 
-                    newVal.length > oldVal.length && newVal.endsWith(oldVal)) {
+                    newVal.length > oldVal.length && newVal.endsWith(oldVal)) 
+            {
                 return 1;
             }                
                 
             if (operator.endsWith && operator.negate && 
-                    oldVal.length > newVal.length && oldVal.endsWith(newVal)) {
+                    oldVal.length > newVal.length && oldVal.endsWith(newVal)) 
+            {
                 return 1;
             }
 
             if (!operator.startsWith && !operator.endsWith && !operator.negate && 
-                    newVal.length > oldVal.length && newVal.contains(oldVal)) {
+                    newVal.length > oldVal.length && newVal.contains(oldVal)) 
+            {
                 return 1;
             }                
                 
             if (!operator.startsWith && !operator.endsWith && operator.negate && 
-                    oldVal.length > newVal.length && oldVal.contains(newVal)) {
+                    oldVal.length > newVal.length && oldVal.contains(newVal)) 
+            {
                 return 1;
             }
                 
@@ -13933,7 +14541,16 @@ isc._initBuiltInOperators = function () {
         negate: false,
         valueType: "fieldType",
         condition: equality,
-        compareCriteria: equalityComp
+        compareCriteria: equalityComp,
+        getCriterion : function (fieldName, item) {
+            var result = { fieldName: fieldName, operator: this.ID };
+
+            if (isc.isA.RelativeDateItem(item))
+                result.value = item.getRelativeDate() || item.getValue();
+            else result.value = item.getValue();
+
+            return result;
+        }
     },
     
     {
@@ -13942,7 +14559,16 @@ isc._initBuiltInOperators = function () {
         negate: true,
         valueType: "fieldType",
         condition: equality,
-        compareCriteria: equalityComp
+        compareCriteria: equalityComp,
+        getCriterion : function (fieldName, item) {
+            var result = { fieldName: fieldName, operator: this.ID };
+
+            if (isc.isA.RelativeDateItem(item))
+                result.value = item.getRelativeDate() || item.getValue();
+            else result.value = item.getValue();
+
+            return result;
+        }
     },
     {
         ID: "greaterThan",
@@ -13950,7 +14576,16 @@ isc._initBuiltInOperators = function () {
         lowerBounds: true,
         valueType: "fieldType",
         condition: rangeCheck,
-        compareCriteria: rangeCheckComp
+        compareCriteria: rangeCheckComp,
+        getCriterion : function (fieldName, item) {
+            var result = { fieldName: fieldName, operator: this.ID };
+
+            if (isc.isA.RelativeDateItem(item))
+                result.value = item.getRelativeDate() || item.getValue();
+            else result.value = item.getValue();
+
+            return result;
+        }
     },
     {
         ID: "lessThan",
@@ -13958,7 +14593,16 @@ isc._initBuiltInOperators = function () {
         upperBounds: true,
         valueType: "fieldType",
         condition: rangeCheck,
-        compareCriteria: rangeCheckComp
+        compareCriteria: rangeCheckComp,
+        getCriterion : function (fieldName, item) {
+            var result = { fieldName: fieldName, operator: this.ID };
+
+            if (isc.isA.RelativeDateItem(item)) 
+                result.value = item.getRelativeDate() || item.getValue();
+            else result.value = item.getValue();
+
+            return result;
+        }
     },
     {
         ID: "greaterOrEqual",
@@ -13967,7 +14611,16 @@ isc._initBuiltInOperators = function () {
         inclusive: true,
         valueType: "fieldType",
         condition: rangeCheck,
-        compareCriteria: rangeCheckComp
+        compareCriteria: rangeCheckComp,
+        getCriterion : function (fieldName, item) {
+            var result = { fieldName: fieldName, operator: this.ID };
+
+            if (isc.isA.RelativeDateItem(item))
+                result.value = item.getRelativeDate() || item.getValue();
+            else result.value = item.getValue();
+
+            return result;
+        }
     },
     {
         ID: "lessOrEqual",
@@ -13976,7 +14629,16 @@ isc._initBuiltInOperators = function () {
         inclusive: true,
         valueType: "fieldType",
         condition: rangeCheck,
-        compareCriteria: rangeCheckComp
+        compareCriteria: rangeCheckComp,
+        getCriterion : function (fieldName, item) {
+            var result = { fieldName: fieldName, operator: this.ID };
+
+            if (isc.isA.RelativeDateItem(item)) 
+                result.value = item.getRelativeDate() || item.getValue();
+            else result.value = item.getValue();
+
+            return result;
+        }
     },
     {
         ID: "between",
@@ -13985,7 +14647,16 @@ isc._initBuiltInOperators = function () {
         upperBounds: true,
         valueType: "valueRange",
         condition: rangeCheck,
-        compareCriteria: rangeCheckComp
+        compareCriteria: rangeCheckComp,
+        getCriterion : function (fieldName, item) {
+            var result = { fieldName: fieldName, operator: this.ID };
+
+            if (isc.isA.RelativeDateItem(item)) 
+                result.value = item.getRelativeDate() || item.getValue();
+            else result.value = item.getValue();
+
+            return result;
+        }
     },
     {
         ID: "betweenInclusive",
@@ -13996,7 +14667,25 @@ isc._initBuiltInOperators = function () {
         valueType: "valueRange",
         inclusive: true,
         condition: rangeCheck,
-        compareCriteria: rangeCheckComp
+        compareCriteria: rangeCheckComp,
+        getCriterion : function (fieldName, item) {
+            var result = { fieldName: fieldName, operator: this.ID };
+
+            if (isc.isA.RelativeDateItem(item))
+                result.value = item.getRelativeDate() || item.getValue();
+            else result.value = item.getValue();
+
+            return result;
+        }
+    },
+    {
+        ID: "iEquals",
+        titleProperty: "iEqualsTitle",
+        equals: true,
+        caseInsensitive: true,
+        valueType: "fieldType",
+        condition: stringComparison,
+        compareCriteria: stringComparisonComp
     },
     {
         ID: "iContains",
@@ -14046,6 +14735,16 @@ isc._initBuiltInOperators = function () {
         titleProperty: "endsWithTitle",
         endsWith: true,
         hidden:true,
+        valueType: "fieldType",
+        condition: stringComparison,
+        compareCriteria: stringComparisonComp
+    },
+    {
+        ID: "iNotEqual",
+        titleProperty: "iNotEqualTitle",
+        caseInsensitive: true,
+        equals: true,
+        negate: true,
         valueType: "fieldType",
         condition: stringComparison,
         compareCriteria: stringComparisonComp
@@ -14272,9 +14971,18 @@ isc._initBuiltInOperators = function () {
                                            "and", "or", "not"]);
     
     isc.DataSource.setTypeOperators("text", ["regexp", "iregexp", "contains", "startsWith",
-                                               "endsWith", "iContains", "iStartsWith", "iEndsWith",
+                                               "endsWith", "iEquals", "iNotEqual", 
+                                               "iContains", "iStartsWith", "iEndsWith",
                                                "notContains", "notStartsWith", "notEndsWith", 
                                                "iNotContains", "iNotStartsWith", "iNotEndsWith",
+                                               "containsField", "startsWithField", "endsWithField"]);
+    
+    isc.DataSource.setTypeOperators("integer", ["iContains", "iStartsWith", "iEndsWith",
+                                               "iNotContains", "iNotStartsWith", "iNotEndsWith", 
+                                               "containsField", "startsWithField", "endsWithField"]);
+    
+    isc.DataSource.setTypeOperators("float", ["iContains", "iStartsWith", "iEndsWith",
+                                               "iNotContains", "iNotStartsWith", "iNotEndsWith", 
                                                "containsField", "startsWithField", "endsWithField"]);
 
 };
@@ -14371,7 +15079,7 @@ getDataSource : function () {
 
 getOperationId : function (operationType) {
     var operation = this.getOperation(operationType);
-    return operation == null ? null : operation.ID;
+    return operation == null ? null : (isc.isA.String(operation) ? operation : operation.ID);
 },
 
 
@@ -14393,7 +15101,7 @@ getOperation : function (operationType) {
     }
 
     // no operation specified, create an auto-operation using the dataSource provided
-    if (operationId == null) {
+    if (operationId == null || isc.isA.String(operationId)) {
         var dataSource = this.getDataSource();
         if (dataSource == null) {
             this.logWarn("can't getOperation for type: " + operationType + 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -398,7 +398,7 @@ showComplexFields:true,
 // @visibility external
 //<
 
-//> @attr databoundComponent.exportFields (Array of String : null : IRW)
+//> @attr dataBoundComponent.exportFields (Array of String : null : IRW)
 // The list of field-names to export.  If provided, the field-list in the exported output is 
 // limited and sorted as per the list.
 // <P>
@@ -408,22 +408,29 @@ showComplexFields:true,
 // @visibility external
 //<
 
-//> @attr databoundComponent.exportAll (boolean : false : IRW)
+//> @attr dataBoundComponent.exportAll (boolean : false : IRW)
 // Setting exportAll to true prevents the component from passing it's list of fields to the 
 // export call.  The result is the export of all visible fields from +link{dataSource.fields}.
 // <P>
 // If exportAll is false, an export operation will first consider 
-// +link{databoundComponent.exportFields}, if it's set, and fall back on all visible fields from
+// +link{dataBoundComponent.exportFields}, if it's set, and fall back on all visible fields from
 // +link{dataSource.fields} otherwise.
 //
 // @visibility external
 //<
 
+//> @attr dataBoundComponent.exportIncludeSummaries (boolean : true : IRW)
+// If Summary rows exist for this component, whether to include them when exporting client data.
+//
+// @visibility external
+//<
+exportIncludeSummaries: true,
+
 
 ignoreEmptyCriteria: true,
 
 
-dragRecategorize:true,
+dragRecategorize:false,
 
 //> @attr dataBoundComponent.preventDuplicates (boolean : null : IR)
 // If set, detect and prevent duplicate records from being transferred to this component, either via
@@ -499,7 +506,7 @@ addDropValues: true,
 fieldIdProperty:"name",
 
 
-//> @method databoundComponent.dragComplete()
+//> @method dataBoundComponent.dragComplete()
 // This method is invoked on the source component whenever a drag operation or 
 // +link{transferSelectedData()} completes.  This method is called when the entire chain of 
 // operations - including, for databound components, server-side updates and subsequent 
@@ -512,14 +519,14 @@ fieldIdProperty:"name",
 // @visibility external
 //<
 
-//> @method databoundComponent.dropComplete()
+//> @method dataBoundComponent.dropComplete()
 // This method is invoked whenever a drop operation or +link{transferSelectedData()} 
 // targeting this component completes.  A drop is considered to be complete when all the client-
 // side transfer operations have finished.  This includes any server turnarounds SmartClient 
 // needs to make to check for duplicate records in the target component; it specifically does 
 // not include any add or update operations sent to the server for databound components.  If 
 // you want to be notified when the entire drag operation - including server updates and cache
-// synchronization - has completed, override +link{databoundComponent.dragComplete,dragComplete}
+// synchronization - has completed, override +link{dataBoundComponent.dragComplete,dragComplete}
 // on the source component.<p>
 // There is no default implementation of this method; you are intended to override it if you 
 // are interested in being notified when drop operations complete.
@@ -889,7 +896,7 @@ createDefaultValuesManager : function (defaultMembers) {
     });
 },
 
-//> @method databoundComponent.getDataPathField()
+//> @method dataBoundComponent.getDataPathField()
 // For a component with a specified +link{DataSource}, find the associated dataSource field object
 // from a specified +link{type:dataPath,dataPath}.
 // @param dataPath (dataPath) dataPath for which the field definition should be returned.
@@ -1109,9 +1116,6 @@ addFieldValidators : function (fields) {
                 if (!isc.isAn.Array(field.validators)) {
                     field.validators = [field.validators];
                 }
-                if (!isc.isAn.Array(field.validators)) {
-                    field.validators = [field.validators];
-                }
                 // See if we already have a required validator.
                 // If so, we need to make sure the errorMessage is correct.
                 // If not, add a new required validator.
@@ -1311,8 +1315,16 @@ _setFieldState : function (fieldState, hideExtraDSFields) {
             } else continue;
         }
         remainingFields.remove(state.name);
-        if (state.visible == false) field.showIf = this._$false;
-        else field.showIf = null;
+        if (state.visible == false) {
+            field.showIf = this._$false;
+        } else {
+            field.showIf = null;
+            // set field.detail to false if the field is visible. This makes sure that
+            // ds.combineFieldData skips setting detail to true on this field if the
+            // field has been set to visible by the user.
+            field.detail = false;
+
+        }
         if (state.width != null && !isNaN(state.width)) field.width = state.width;
 
         if (state.title) field.title = state.title;
@@ -1996,7 +2008,7 @@ _canExportField : function (field) {
 },
 
 //>	@method dataBoundComponent.exportData()
-// Uses a "fetch" operation on the current +link{databoundComponent.dataSource,DataSource} to 
+// Uses a "fetch" operation on the current +link{dataBoundComponent.dataSource,DataSource} to 
 // retrieve data that matches the current filter and sort criteria for this component, then 
 // exports the resulting data to a file or window in the requested format.
 // <P>
@@ -2058,7 +2070,7 @@ setCriteria : function (criteria) {
     else this.initialCriteria = criteria;
 },
 
-//> @method databoundComponent.getCriteria()
+//> @method dataBoundComponent.getCriteria()
 // Retrieves a copy of the current criteria for this component (may be null)
 // @return (Criteria) current filter criteria
 //<
@@ -2292,7 +2304,14 @@ updateDataModel : function (filterCriteria, operation, context) {
     // update the context - this allows requestProperties like "showPrompt" / textMatchStyle
     // to change
     var resultSet = this.getData();
-    resultSet.setContext(context);      
+    
+    resultSet.setContext(context);
+    // if the ResultSet won't kick off an immediate fetch, kill the afterFlowCallback
+    // This is the callback passed into fetchData(...) and would normally be cleared by
+    // ResultSet.fetchDataReply()
+    // If we don't clear it here, the next time a fetch occurs (EG via 'invalidateCache()') the
+    // callback will occur (once) when that fetch completes.
+    if (!resultSet.willFetchData(filterCriteria)) delete context.afterFlowCallback;
     resultSet.setCriteria(filterCriteria);
 },
 
@@ -2407,6 +2426,7 @@ updateData : function (updatedRecord, callback, requestProperties) {
 // @visibility internal
 //<
 removeData : function (recordKeys, callback, requestProperties) {
+    
     return this._performDSOperation("remove", recordKeys, callback, requestProperties);
 },
 
@@ -2438,11 +2458,24 @@ _performDSOperation : function (operationType, data, callback, requestProperties
             // manaully fire dataChanged
             return this.data.dataChanged();
         } else if (operationType == "add") {
-            // dataChanged fires automatically
-            this.data.add(data);
+            // for listgrid grouping, add record to original data and regroup
+            if (this.originalData) { 
+                this.originalData.add(data);
+                this.dataChanged("add", null, null, data);
+            } else {
+                // dataChanged fires automatically
+                this.data.add(data);       
+            }
             return;
         }
     }
+    
+    // Call buildRequest - this will hang the default operationID (as well as various other
+    // properties) onto the request.
+    // We're passing the callback into performDSOperation directly so no need to hang it onto
+    // the request in buildRequest
+    requestProperties = this.buildRequest(requestProperties, operationType);
+    
     return this.getDataSource().performDSOperation(operationType, data, 
                                                    callback, requestProperties);
 },
@@ -2608,12 +2641,15 @@ removeSelectionMarkers : function (data) {
 //> @method dataBoundComponent.getSelection()
 // Returns all selected records, as an Array.
 //
+// @param [excludePartialSelections] When true, partially selected records will not be returned.
+//                                   Otherwise, both fully and partially selected records are
+//                                   returned.
 // @return (Array of ListGridRecord) list of records, empty list if nothing selected
 // @group  selection
 // @visibility internal
 // @example databoundRemove
 //<
-getSelection : function () {
+getSelection : function (excludePartialSelections) {
     if (!this.selection) return null;
 	if (this.canSelectCells) {
 		var selectedCells = this.selection.getSelectedCells();
@@ -2630,7 +2666,7 @@ getSelection : function () {
 		}
 		return cellRecords;
 	} else {
-		return this.selection.getSelection();
+		return this.selection.getSelection(excludePartialSelections);
 	}
 },
 
@@ -2656,6 +2692,32 @@ getSelectedRecord : function() {
 //<
 getSelectionObject : function() {
     return this.selection;
+},
+
+//> @method listGrid.isSelected()
+// Returns true if the record is selected.
+// 
+// @param record (ListGridRecord) record to check
+// @return (boolean) true if record is selected; false otherwise
+// @group selection
+// @visibility external
+//<
+isSelected : function (record) {
+    if (!record || !this.selection) return false;
+    return this.selection.isSelected(record);
+},
+
+//> @method listGrid.isPartiallySelected()
+// Returns true if the record is partially selected.
+// 
+// @param record (ListGridRecord) record to check
+// @return (boolean) true if record is partially selected; false otherwise
+// @group selection
+// @visibility external
+//<
+isPartiallySelected : function (record) {
+    if (!record || !this.selection) return false;
+    return this.selection.isPartiallySelected(record);
 },
 
 //> @groupDef selection
@@ -2685,6 +2747,23 @@ getSelectionObject : function() {
 //<
 selectRecord : function (record, state, colNum) {
     this.selectRecords(record, state, colNum);
+},
+
+//> @method dataBoundComponent.selectSingleRecord()
+// Select a single +link{Record} passed in explicitly, or by index, and deselect everything else.
+// When programmatic selection of records is a requirement and 
+// +link{dataBoundComponent.selectionType} is "single", use this method rather than 
+// +link{dataBoundComponent.selectRecord(), selectRecord()} to 
+// enforce mutually-exclusive record-selection.
+//
+// @param record (Record | number) record (or row number) to select
+// 
+// @group selection
+// @visibility external
+//<
+selectSingleRecord : function (record) {
+    this.deselectAllRecords();
+    this.selectRecord(record);
 },
 
 //> @method dataBoundComponent.deselectRecord()
@@ -3392,7 +3471,7 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget, call
                 }
                 isc.addProperties(record, this.getDropValues(record, sourceDS, 
                                           targetRecord, index, sourceWidget));
-                this._updateDataViaDataSource(record, sourceDS, null, sourceWidget);                          
+                this.updateDataViaDataSource(record, sourceDS, null, sourceWidget);                          
             }
             if (!wasAlreadyQueuing) isc.rpc.sendQueue();
         } else {
@@ -3422,10 +3501,9 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget, call
                     isc.addProperties(record, this.getDropValues(record, sourceDS, 
                                             targetRecord, index, sourceWidget));
                     if (dataSource != sourceDS) {
-                        // As per existing functionality in TreeGrid, allow the default recategorize-
-                        // via-fk functionality to be switched off via the dragRecategorize flag 
-                        // (which is not currently exposed)
-                        if (this.dragRecategorize) {
+                        // Allow the recategorize-via-fk functionality to be switched on via 
+                        // the dragRecategorize flag (which is not currently exposed)
+                        if (this.dragRecategorize || sourceWidget.dragDataAction == isc.Canvas.MOVE) {
                             
                             // If there is a foreign key relationship from the target DS to the 
                             // source DS, populate the foreignKey field on the record we're 
@@ -3441,10 +3519,12 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget, call
                             var undef;
                             for (var pk in pkFields) {
                                 if (fks[pk] !== undef) {
-                                    this.logWarn("ListGrid dragRecategorize: source has dataSource:" 
-                                                + sourceDS.getID() + ". foreignKey relationship with " +
-                                                "target dataSource " + dataSource.getID() + 
-                                                " is based on primary key which cannot be modified.");
+                                    if (this.dragRecategorize) {
+                                        this.logWarn("ListGrid dragRecategorize: source has dataSource:" 
+                                                    + sourceDS.getID() + ". foreignKey relationship with " +
+                                                    "target dataSource " + dataSource.getID() + 
+                                                    " is based on primary key which cannot be modified.");
+                                    }
                                     cannotRecat = true;
                                 }
                             }
@@ -3472,14 +3552,18 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget, call
                 if (this.isGrouped) {
                     // add to tree
                     for (var i = 0; i < dropRecords.length; i++) {
-                        if (!this._isDuplicateOnClient(dropRecords[i])) {
-                            this._addRecordToGroup(dropRecords[i], true);
+                        var record = {};
+                        isc.addProperties(record, dropRecords[i]);
+                        isc.addProperties(record, this.getDropValues(record, sourceDS, 
+                                            targetRecord, index, sourceWidget));
+                        if (!this._isDuplicateOnClient(record)) {
+                            this._addRecordToGroup(record, true);
                             
                             // add to originalData
                             // Ignore the index in this case - it will refer to the position within
                             // the tree which doesn't map to a position within the original data
                             // array
-                            this.originalData.add(dropRecords[i]);
+                            this.originalData.add(record);
                         }
                     }
                     // add to originalData
@@ -3491,6 +3575,10 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget, call
                     // is true
                     
                     for (var i = 0; i < dropRecords.length; i++) {
+                        var record = {};
+                        isc.addProperties(record, dropRecords[i]);
+                        isc.addProperties(record, this.getDropValues(record, sourceDS, 
+                                                targetRecord, index, sourceWidget));
                         if (index != null) {
                         
                             // Although _addIfNotDuplicate is an asynchronous method, we know
@@ -3498,14 +3586,14 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget, call
                             // there's no DataSource and thus no server contact), so if it returns
                             // false, we know authoritatively that no data was added and thus 
                             // index should not be incremented
-                            if (this._addIfNotDuplicate(dropRecords[i], null, sourceWidget, 
-                                                                        null, index)) {
+                            if (this._addIfNotDuplicate(record, null, sourceWidget, 
+                                                                null, index)) {
                                 // Because we're adding one-at-a-time, increment the index - otherwise,
                                 // the effect will be to insert into the grid in reverse order
                                 index++;
                             }
                         } else {
-                            this._addIfNotDuplicate(dropRecords[i], null, sourceWidget);
+                            this._addIfNotDuplicate(record, null, sourceWidget);
                         }
                     }  
                 }
@@ -3578,14 +3666,22 @@ _storeTransferState : function (impl, dropRecords, targetRecord, index, sourceWi
 },
 
 
-_updateDataViaDataSource : function(record, ds, updateProperties, sourceWidget) {
+updateDataViaDataSource : function(record, ds, updateProperties, sourceWidget) {
 
     var _listGrid = this;
+    
+    // Use updateOperation if applicable
+    if (this.updateOperation) {
+        if (updateProperties == null) updateProperties = {};
+        isc.addProperties(updateProperties, {operationId: this.updateOperation});
+    }
     
     if (!this.preventDuplicates) {
         if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
         sourceWidget._updatesSent++;
-        ds.updateData(record, function () {sourceWidget._updateComplete();}, updateProperties); 
+        ds.updateData(record, function (dsResponse, data, dsRequest) {
+            sourceWidget._updateComplete(dsResponse, data, dsRequest);
+        }, updateProperties); 
         return;
     }
     
@@ -3601,7 +3697,9 @@ _updateDataViaDataSource : function(record, ds, updateProperties, sourceWidget) 
         if (this.data.allMatchingRowsCached()) {
         if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
             sourceWidget._updatesSent++;
-            ds.updateData(record, function () {sourceWidget._updateComplete();}, updateProperties); 
+            ds.updateData(record, function (dsResponse, data, dsRequest) {
+                sourceWidget._updateComplete(dsResponse, data, dsRequest);
+            }, updateProperties); 
         } else { 
             // Cache is incomplete, we'll have to ask the server
             isc.Log.logDebug("Incrementing dup query count: was " + 
@@ -3617,8 +3715,8 @@ _updateDataViaDataSource : function(record, ds, updateProperties, sourceWidget) 
                     } else {
                         if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
                         sourceWidget._updatesSent++;
-                        ds.updateData(record, function () {
-                            sourceWidget._updateComplete();
+                        ds.updateData(record, function (dsResponse, data, dsRequest) {
+                            sourceWidget._updateComplete(dsResponse, data, dsRequest);
                         }, updateProperties); 
                     }
                     // If there are no further duplicate queries pending, we can finish up this
@@ -3674,7 +3772,12 @@ _updateDataViaDataSource : function(record, ds, updateProperties, sourceWidget) 
 _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, index, folder) {
     var ds = this.getDataSource(), 
         pks,
-        _listGrid = this;
+        _listGrid = this,
+        addProps = {};
+        
+    if (this.addOperation) {
+        isc.addProperties(addProps, {operationId: this.addOperation});
+    }
         
     if (ds) pks = ds.getPrimaryKeyFields();
 
@@ -3709,7 +3812,9 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
             
             if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
             sourceWidget._updatesSent++;
-            ds.addData(record, function () { sourceWidget._updateComplete(); });
+            ds.addData(record, function (dsResponse, data, dsRequest) { 
+                sourceWidget._updateComplete(dsResponse, data, dsRequest); 
+            }, addProps);
             return true;
         }
     }
@@ -3718,7 +3823,9 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
         if (ds) {
             if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
             sourceWidget._updatesSent++;
-            ds.addData(record, function () { sourceWidget._updateComplete(); });
+            ds.addData(record, function (dsResponse, data, dsRequest) { 
+                sourceWidget._updateComplete(dsResponse, data, dsRequest); 
+            }, addProps);
         } else {
             if (isc.Tree && isc.isA.Tree(this.data)) {
                 this.data.add(record, folder, index);
@@ -3754,7 +3861,9 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
                 
                 if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
                 sourceWidget._updatesSent++;
-                ds.addData(record, function () { sourceWidget._updateComplete(); });
+                ds.addData(record, function (dsResponse, data, dsRequest) { 
+                    sourceWidget._updateComplete(dsResponse, data, dsRequest); 
+                }, addProps);
                 return true
             } else {
                 // If we're dropping in a grid bound to a DS different from the source DS
@@ -3768,7 +3877,9 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
                     (foreignKeys && isc.firstKey(foreignKeys) && this.data.allMatchingRowsCached())) {
                     if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
                     sourceWidget._updatesSent++;
-                    ds.addData(record, function () { sourceWidget._updateComplete(); });
+                    ds.addData(record, function (dsResponse, data, dsRequest) { 
+                        sourceWidget._updateComplete(dsResponse, data, dsRequest); 
+                    }, addProps);
                     return true;
                 }
                 // We have a dataSource and client-side search failed to find a duplicate.  We need a 
@@ -3803,7 +3914,9 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
                     } else {
                         if (!sourceWidget._updatesSent) sourceWidget._updatesSent = 0;
                         sourceWidget._updatesSent++;
-                        ds.addData(record, function () { sourceWidget._updateComplete(); });
+                        ds.addData(record, function (dsResponse, data, dsRequest) { 
+                            sourceWidget._updateComplete(dsResponse, data, dsRequest); 
+                        }, addProps);
                     }
                     // If there are no further duplicate queries pending, we know exactly which
                     // attempted transfers were duplicates (if any), so we're in a position to 
@@ -4014,6 +4127,8 @@ transferDragData : function (transferExceptionList, targetWidget) {
         data = {};
     }
     
+    if (workSelection == null) workSelection = [];
+    
     // Filter the entries in the exception list out of the selection - we're not going to do
     // anything with them whatever the circumstances
     for (var i = 0; i < workSelection.length; i++) {
@@ -4134,8 +4249,12 @@ getDragData : function () {
 // @visibility internal
 //<
 cloneDragData : function () {
-    var selection = (this.selection && this.selection.getSelection) ?
-                                        this.selection.getSelection() : null;
+    var selection = this._selectionAtDragStart;
+    if (selection == null) { 
+        selection = (this.selection && this.selection.getSelection) ?
+                                       this.selection.getSelection() : null;
+    }
+    this._selectionAtDragStart = null;
     
     var copyData = this.dragDataAction == isc.Canvas.COPY || 
                    this.dragDataAction == isc.Canvas.CLONE;
@@ -4248,7 +4367,7 @@ isValidTransferSource : function (source) {
 // -----------------------------------------------------------------------------------
 // Drag tracker and drag line
 
-//>@method  databoundComponent.setDragTracker()
+//>@method  dataBoundComponent.setDragTracker()
 // Sets the custom tracker HTML to display next to the mouse when the user initiates a drag
 // operation on this component. Default implementation will examine +link{listGrid.dragTrackerMode}
 // and set the custom drag tracker to display the appropriate HTML based on the selected record.
@@ -4293,7 +4412,7 @@ setDragTracker : function () {
     // If dragTrackerMode is unrecognized, let the normal tracker show up.
 },	
 
-//> @method databoundComponent.getDragTrackerProperties()
+//> @method dataBoundComponent.getDragTrackerProperties()
 // Return properties to apply to the drag tracker when the user drags some record.<br>
 // Default implementation returns an object with attribute <code>opacity</code> set 
 // to <code>50</code> if +link{listGrid.dragTrackerMode} is set to <code>"record"</code>, 
@@ -4308,13 +4427,13 @@ getDragTrackerProperties : function () {
     return props;
 },
 
-//> @attr databoundComponent.dragTrackerStyle (CSSStyleName : "gridDragTracker" : IRW)
+//> @attr dataBoundComponent.dragTrackerStyle (CSSStyleName : "gridDragTracker" : IRW)
 // CSS Style to apply to the drag tracker when dragging occurs on this component.
 // @visibility external
 //<
 dragTrackerStyle:"gridDragTracker",
 
-//>	@method	databoundComponent.makeDragLine()	(A)
+//>	@method	dataBoundComponent.makeDragLine()	(A)
 //		@group	dragging, drawing
 //			make the dragLine 
 //		@return	(boolean)	false if this._dragLine already exists
@@ -4346,7 +4465,7 @@ makeDragLine : function () {
 	return true;
 },
 
-//>	@method	databoundComponent.hideDragLine()	(A)
+//>	@method	dataBoundComponent.hideDragLine()	(A)
 //		@group	dragging, drawing
 //			hide the dragLine
 //<
@@ -4402,7 +4521,7 @@ badFormulaResultValue: ".",
 //<
 missingSummaryFieldValue: "-",
 
-//> @attr databoundComponent.canAddFormulaFields (boolean : false : IRW)
+//> @attr dataBoundComponent.canAddFormulaFields (boolean : false : IRW)
 // Adds an item to the header context menu allowing users to launch a dialog to define a new
 // field based on values present in other fields, using the +link{FormulaBuilder}.
 // <P>
@@ -4414,7 +4533,7 @@ missingSummaryFieldValue: "-",
 //<
 canAddFormulaFields:false,
 
-//> @attr databoundComponent.addFormulaFieldText (String : "Add formula column..." : IRW)
+//> @attr dataBoundComponent.addFormulaFieldText (String : "Add formula column..." : IRW)
 // Text for a menu item allowing users to add a formula field
 //
 // @group i18nMessages
@@ -4422,9 +4541,9 @@ canAddFormulaFields:false,
 //<
 addFormulaFieldText: "Add formula column...",
 
-//> @method databoundComponent.addFormulaField
+//> @method dataBoundComponent.addFormulaField
 // Convenience method to display a +link{FormulaBuilder} to create a new Formula Field.  This 
-// is equivalent to calling +link{databoundComponent.editFormulaField, editFormulaField()} with 
+// is equivalent to calling +link{dataBoundComponent.editFormulaField, editFormulaField()} with 
 // no parameter.
 //
 // @group formulaFields
@@ -4434,7 +4553,7 @@ addFormulaField : function () {
     this.editFormulaField();
 },
 
-//> @attr databoundComponent.editFormulaFieldText (String : "Edit formula..." : IRW)
+//> @attr dataBoundComponent.editFormulaFieldText (String : "Edit formula..." : IRW)
 // Text for a menu item allowing users to edit a formula field
 //
 // @group i18nMessages
@@ -4442,7 +4561,7 @@ addFormulaField : function () {
 //<
 editFormulaFieldText: "Edit formula...",
 
-//> @attr databoundComponent.removeFormulaFieldText (String: "Remove formula..." : IRW)
+//> @attr dataBoundComponent.removeFormulaFieldText (String: "Remove formula..." : IRW)
 // Text for a menu item allowing users to remove a formula field
 //
 // @group i18nMessages
@@ -4450,7 +4569,7 @@ editFormulaFieldText: "Edit formula...",
 //<
 removeFormulaFieldText: "Remove formula...",
 
-//> @method databoundComponent.editFormulaField
+//> @method dataBoundComponent.editFormulaField
 // Method to display a +link{FormulaBuilder} to edit a formula Field.  If the function is called
 // without a parameter, a new field will be created when the formula is saved.
 //
@@ -4524,7 +4643,7 @@ getFormulaFunction : function (field) {
     return func;
 },
 
-//> @attr databoundComponent.canAddSummaryFields (boolean : false : IRW)
+//> @attr dataBoundComponent.canAddSummaryFields (boolean : false : IRW)
 // Adds an item to the header context menu allowing users to launch a dialog to define a new
 // text field that can contain both user-defined text and the formatted values present in other 
 // fields, using the +link{SummaryBuilder}.
@@ -4537,7 +4656,7 @@ getFormulaFunction : function (field) {
 //<
 canAddSummaryFields:false,
 
-//> @attr databoundComponent.addSummaryFieldText (String : "Add summary column..." : IRW)
+//> @attr dataBoundComponent.addSummaryFieldText (String : "Add summary column..." : IRW)
 // Text for a menu item allowing users to add a formula field
 //
 // @group i18nMessages
@@ -4545,9 +4664,9 @@ canAddSummaryFields:false,
 //<
 addSummaryFieldText: "Add summary column...",
 
-//> @method databoundComponent.addSummaryField
+//> @method dataBoundComponent.addSummaryField
 // Convenience method to display a +link{SummaryBuilder} to create a new Summary Field.  This 
-// is equivalent to calling +link{databoundComponent.editSummaryField, editSummaryField()} with 
+// is equivalent to calling +link{dataBoundComponent.editSummaryField, editSummaryField()} with 
 // no parameter.
 //
 // @group summaryFields
@@ -4557,7 +4676,7 @@ addSummaryField : function () {
     this.editSummaryField();
 },
 
-//> @attr databoundComponent.editSummaryFieldText (String : "Edit summary format..." : IRW)
+//> @attr dataBoundComponent.editSummaryFieldText (String : "Edit summary format..." : IRW)
 // Text for a menu item allowing users to edit the formatter for a field
 //
 // @group i18nMessages
@@ -4565,7 +4684,7 @@ addSummaryField : function () {
 //<
 editSummaryFieldText: "Edit summary format...",
 
-//> @attr databoundComponent.removeSummaryFieldText (String: "Remove summary format..." : IRW)
+//> @attr dataBoundComponent.removeSummaryFieldText (String: "Remove summary format..." : IRW)
 // Text for a menu item allowing users to remove a summary field
 //
 // @group i18nMessages
@@ -4573,7 +4692,7 @@ editSummaryFieldText: "Edit summary format...",
 //<
 removeSummaryFieldText: "Remove summary column..",
 
-//> @method databoundComponent.editSummaryField
+//> @method dataBoundComponent.editSummaryField
 // Method to display a +link{SummaryBuilder} to edit a Summary Field.  If the function is called
 // without a parameter, a new field will be created when the summary is saved.
 //
@@ -4706,7 +4825,7 @@ getSummaryFieldValue : function (field, record) {
     return this.getSummaryFunction(field)(record, field[this.fieldIdProperty], this);
 },
 
-//> @method databoundComponent.getRecordIndex()
+//> @method dataBoundComponent.getRecordIndex()
 // Get the index of the provided record.
 // <P>
 // Override in subclasses to provide more specific behavior, for instance, when data holds a
@@ -4720,7 +4839,7 @@ getRecordIndex : function (record) {
     return this.data.indexOf(record);
 },
 
-//> @method databoundComponent.getTitleFieldValue()
+//> @method dataBoundComponent.getTitleFieldValue()
 // Get the value of the titleField for the passed record
 // <P>
 // Override in subclasses 
@@ -4732,7 +4851,7 @@ getRecordIndex : function (record) {
 getTitleFieldValue : function (record) {},
 
 
-//> @method databoundComponent.getTitleField()
+//> @method dataBoundComponent.getTitleField()
 // Method to return the fieldName which represents the "title" for records in this
 // Component.<br>
 // If this.titleField is explicitly specified it will always be used.
@@ -4765,7 +4884,7 @@ getTitleField : function () {
    return this.titleField;
 },
 
-//> @method databoundComponent.getRecordHiliteCSSText()
+//> @method dataBoundComponent.getRecordHiliteCSSText()
 // Return all CSS style declarations associated with the hilites of a record's field.
 // @param record (Record)
 // @param cssText (String) if set, returned CSS will be appended to this text
@@ -4789,7 +4908,7 @@ getRecordHiliteCSSText : function (record, cssText, field) {
     return cssText;
 },
 
-//> @method databoundComponent.convertCSSToProperties()
+//> @method dataBoundComponent.convertCSSToProperties()
 // Convert a string containing CSS declarations into an object mapping CSS
 // camelCaps property names with the declared values.
 // @param css (string) Block of CSS style text
@@ -4827,7 +4946,7 @@ getExportFieldValue : function (record, fieldName, fieldIndex) {
     return this.getSpecificFieldValue(record, fieldName, false);
 },
 
-//> @method databoundComponent.getClientExportData()
+//> @method dataBoundComponent.getClientExportData()
 // Export visual description of component data into a JSON form suitable for export.
 // @param settings (Object) contains configuration settings for the export, including:<br/>
 //        includeHiddenFields (Boolean) - controls if hidden fields should be exported<br/>
@@ -4860,16 +4979,26 @@ getExportFieldValue : function (record, fieldName, fieldIndex) {
 getClientExportData : function (settings) {
     var data = this.originalData || this.data,
         exportData = [],
-        fields = this.getAllFields(),
+        fields = this.getClientExportFields(settings),
         includeHiddenFields,
         allowedProperties,
-        includeCollapsedNodes;
-        
+        includeCollapsedNodes
+    ;
+
     if (isc.isA.Object(settings)) {
         includeHiddenFields = settings.includeHiddenFields;
         allowedProperties = settings.allowedProperties;
         includeCollapsedNodes = settings.includeCollapsedNodes;
+        // support export fields as per server-side export
+        if (settings && settings.exportFields) {
+            // when exportFields is specified and unless includeHiddenFields is explicitly set to
+            // false, assume that the user actually wants to see the fields that he provided via
+            // exportFields.
+            if (includeHiddenFields !== false) includeHiddenFields = true;
+        }
     }
+
+    
     if (isc.isA.ResultSet(data)) data = data.getAllLoadedRows();
     if (isc.isA.ResultTree(data)) {
         if (includeCollapsedNodes) data = data.getAllNodes();
@@ -4878,37 +5007,81 @@ getClientExportData : function (settings) {
 
     // Generate a separate object for each row of data
     for (var dataRow = 0; dataRow < data.getLength(); dataRow++) {
-        var exportObject = {},
-            record = data[dataRow];
+        var record = data[dataRow],
+            exportObject = this.getRecordExportObject(record, fields, allowedProperties, 
+                includeHiddenFields, includeCollapsedNodes)
+        ;
 
-        // Iterate through all fields
-        for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-            var field = fields[fieldIndex];
-
-            // Skip field if it's hidden
-            if ((!this.fields.contains(field)) && !includeHiddenFields) continue;
-            
-            // get [ field name, field value ] pair
-            var fieldName = field.title || field.name,
-                fieldValue = this.getExportFieldValue(record, field.name, fieldIndex);
-                
-            
-            if (fieldValue == null || fieldValue == "&nbsp;") fieldValue = "";
-
-            // undo the effects of formatters that apply HTML to a field.
-            fieldValue = this.htmlUnescapeExportFieldValue(fieldValue);
-            var escapedFieldName = this.htmlUnescapeExportFieldTitle(fieldName);
-
-            exportObject[escapedFieldName] = fieldValue;
-            
-            // Get CSS and convert it to camelCaps
-            var cssText = this.getRecordHiliteCSSText(record, null, field),
-                cssProps = this.convertCSSToProperties(cssText, allowedProperties);
-            if (cssProps) exportObject[escapedFieldName + "$style"] = cssProps;
-        }
         exportData.push(exportObject);
     }
+
+    if (this.showGridSummary && this.summaryRow && this.exportIncludeSummaries) {
+        // append the summaries for this component if it has them
+        var summaryRow = this.summaryRow,
+            data = [summaryRow._summaryRecord];
+
+        for (var dataRow = 0; dataRow < data.getLength(); dataRow++) {
+            var record = data[dataRow],
+                exportObject = this.getRecordExportObject(record, fields, allowedProperties, 
+                    includeHiddenFields, includeCollapsedNodes)
+            ;
+
+            exportData.push(exportObject);
+        }
+    }
+
     return exportData;
+},
+getClientExportFields : function (settings) {
+    var fields = this.getAllFields();
+
+    if (isc.isA.Object(settings)) {
+        // support export fields as per server-side export
+        if (settings && settings.exportFields) {
+            var newFields = [];
+            for (var i = 0; i < fields.length; i++) {
+                if (settings.exportFields.contains(fields[i].name)) newFields.add(fields[i]);
+            }
+            fields = newFields;
+        }
+    }
+
+    return fields;
+},
+getRecordExportObject : function (record, fields, allowedProperties, includeHiddenFields, includeCollapsedNodes) {
+    var exportObject = {}
+
+    // Iterate through all fields
+    for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+        var field = fields[fieldIndex];
+
+        // Skip field if it's hidden
+        if ((!this.fields.contains(field)) && !includeHiddenFields) continue;
+        
+        // get [ field name, field value ] pair
+        var fieldName = field.title || field.name,
+            fieldValue = this.getExportFieldValue(record, field.name, fieldIndex);
+            
+        
+        if (fieldValue == null || fieldValue == "&nbsp;") fieldValue = "";
+
+        // undo the effects of formatters that apply HTML to a field.
+        fieldValue = this.htmlUnescapeExportFieldValue(fieldValue);
+        var escapedFieldName = this.htmlUnescapeExportFieldTitle(fieldName);
+
+        exportObject[escapedFieldName] = fieldValue;
+        
+        // Get CSS and convert it to camelCaps
+        var cssText = this.getRecordHiliteCSSText(record, null, field),
+            cssProps = this.convertCSSToProperties(cssText, allowedProperties);
+        if (cssProps) {
+            isc.addProperties(cssProps, this.getFormattingProperties(field, record[field.name]));
+        } else { 
+            cssProps = this.getFormattingProperties(field, record[field.name]);
+        }
+        if (cssProps) exportObject[escapedFieldName + "$style"] = cssProps;
+    }
+    return exportObject;
 },
 htmlUnescapeExportFieldTitle : function (fieldName) {
     return this.htmlUnescapeExportFieldValue(fieldName);
@@ -4920,7 +5093,56 @@ htmlUnescapeExportFieldValue : function (value) {
     return value;
 },
 
-//> @method databoundComponent.exportClientData()
+getFormattingProperties : function (field, value) {
+    if (field.type != "date" && field.type != "datetime") return;
+    
+    var dateFormatter;
+    
+    
+    if (field.displayFormat && isc.isA.Function(Date.prototype[field.displayFormat])) {
+        dateFormatter = field.displayFormat;
+    }
+    if (field.dateFormatter && isc.isA.Function(Date.prototype[field.dateFormatter])) {
+        dateFormatter = field.dateFormatter;
+    }
+    
+    // Probably no need to check this because it should have been copied onto the LGF, but 
+    // it does no harm
+    if (!dateFormatter) {
+        var dsFormat = this.getDataSource().getField(field.name).displayFormat;
+        if (dsFormat && isc.isA.Function(Date.prototype[dsFormat])) {
+            dateFormatter = dsFormat;
+        }
+    }
+    
+    // Defaults from the DBC
+    if (!dateFormatter) {
+        var dbcFormat = field.type == "date" ? this.dateFormatter : this.datetimeFormatter;
+        if (dbcFormat && isc.isA.Function(Date.prototype[dbcFormat])) {
+            dateFormatter = dbcFormat;
+        }
+    }
+    
+    
+    // ListGrid defaults to the default short date or datetime formatter, not the "normal"
+    // format
+    if (!dateFormatter) {
+        var shortFormat = field.type == "date" ? Date.prototype._shortFormat 
+                                               : Date.prototype._shortDatetimeFormat; 
+        if (shortFormat && isc.isA.Function(Date.prototype[shortFormat])) {
+            dateFormatter = shortFormat;
+        }
+    }
+    
+    if (dateFormatter) {
+        return {
+            dateFormatter: dateFormatter,
+            rawValue: value
+        }
+    }
+},
+
+//> @method dataBoundComponent.exportClientData()
 // Exports this component's data with client-side formatters applied, so is suitable for direct
 // display to users.  This feature requires the SmartClient server, but does not rely on any
 // server-side DataSources.
@@ -4928,12 +5150,12 @@ htmlUnescapeExportFieldValue : function (value) {
 // To export unformatted data from this component's dataSource, 
 // see +link{dataBoundComponent.exportData, exportData} which does not include client-side 
 // formatters, but relies on both the SmartClient server and server-side DataSources.
-// @param requestProperties (DSRequest properties) Request properties for the export
+// @param requestProperties (DSRequest Properties) Request properties for the export
 // @see dataSource.exportClientData
 // @visibility external
 //<
 exportClientData : function (requestProperties) {
-    var data = this.getClientExportData(),
+    var data = this.getClientExportData(requestProperties),
         props = requestProperties,
         format = props && props.exportAs ? props.exportAs : "csv",
         fileName = props && props.exportFilename ? props.exportFilename : "export",
@@ -4957,7 +5179,7 @@ exportClientData : function (requestProperties) {
 
 },
 
-//> @method databoundComponent.getSort()
+//> @method dataBoundComponent.getSort()
 // Return the +link{SortSpecifier}s representing the current sort configuration of this
 // component.
 // @return sortSpecifiers (Array of SortSpecifier) The current sort specification for this component
@@ -4967,7 +5189,7 @@ getSort : function () {
     return this._sortSpecifiers ? isc.shallowClone(this._sortSpecifiers) : null;
 },
 
-//> @method databoundComponent.setSort()
+//> @method dataBoundComponent.setSort()
 // Sort this component by a list of +link{SortSpecifier}s.  If the component's data is not a 
 // +link{ResultSet}, only the first specifier is applied.
 // 
@@ -4991,10 +5213,10 @@ setSort : function (sortSpecifiers) {
     }
 },
 
-//> @method databoundComponent.askForSort()
+//> @method dataBoundComponent.askForSort()
 // Show a dialog to configure the sorting of multiple fields on this component.  Calls through
 // to +link{multiSortDialog.askForSort}, passing this component as the fieldSource and the
-// current +link{databoundComponent.getSort, sort-specification} if there is one.
+// current +link{dataBoundComponent.getSort, sort-specification} if there is one.
 //
 // @visibility external
 //<
@@ -5384,7 +5606,8 @@ fireServerValidation : function (field, record, validationMode, showPrompt) {
 
 _handleServerValidationReply : function (dsResponse, data, dsRequest) {
     if (dsResponse.status == isc.DSResponse.STATUS_FAILURE) {
-        isc.logWarn("Server-side validation for " + field.name + " failed: " + dsResponse.data);
+        isc.logWarn("Server-side validation failed: " + dsResponse.data);
+        isc.say(dsResponse.data);
     }
     var context = dsResponse.clientContext,
         component = context.component,

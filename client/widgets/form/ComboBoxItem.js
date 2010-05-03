@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -157,7 +157,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // pickList is shown.
     modalPickList:false,
     
-    //>@attr    ComboBoxItem.showPickListOnKeypress  (boolean : true : IRW)
+    //> @attr ComboBoxItem.showPickListOnKeypress  (boolean : true : IRW)
     // Should the list of options be displayed whenever the user types into the 
     // the combo-box textArea, or only when the user clicks on the pick button or uses the 
     // explicit <code>Alt+Arrow Down</code> key combination?
@@ -165,7 +165,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     //<
     showPickListOnKeypress:true,
     
-    //>@attr    ComboBoxItem.completeOnTab (boolean : null : IRW)
+    //> @attr ComboBoxItem.completeOnTab (boolean : null : IRW)
     // If true, when the pickList is showing, the user can select the current value by hitting
     // the <code>Tab</code> key.
     // @visibility comboBox
@@ -381,13 +381,23 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         
         // If there's already something selected, just bail - we only want to select the first
         // item when the filter changes (and the old selection gets dropped).
-        if (this.pickList.selection.anySelected()) return;
+        if (this.pickList.selection.anySelected()) {
+            if (this.optionDataSource) {
+                var record = this.getSelectedRecord();
+
+                if (record) {
+                    this.pickList.clearLastHilite();
+                    this.delayCall("selectItemFromValue", [record[this.valueField]]);
+                }
+            }
+            return;
+        }
 
         var record = this.pickList.getRecord(0);
         // Don't attempt to select null / loading / separator rows
         if (record == null || Array.isLoading(record) || 
             record[this.pickList.isSeparatorProperty]) return;
-        
+
         selection.selectSingle(record);
         // Clear last hilite - required so keyboard navigatioin will pick up the current position
         // from the selection, not the last hilite position.

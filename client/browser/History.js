@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -36,7 +36,7 @@
 //
 // This class provides synthetic history support.  Using this class, you can create history
 // entries at any point and be called back when the user next navigates to any of these history
-// entires via any of the browser mechanisms that enable navigation: back/forward buttons,
+// entries via any of the browser mechanisms that enable navigation: back/forward buttons,
 // history dropdown and bookmarks.
 // <p>
 // The history entries created using this mechanism work just like history entries created
@@ -48,9 +48,11 @@
 // This module is usable independent of the rest of SmartClient - you can use it on pages that
 // don't load any other modules.
 // <p>
-// This module currently does not work in Safari, but works in all other browsers supported by
-// SmartClient.  Also, currently, if you set document.domain on the top-level page, the History
-// mechanism will behave sub-obtimally in IE - three clicks one the forward/back buttons will
+// <b>Platform Notes:</b><br>
+// In Safari (4.0 and above), this module has the limitation that the arbitrary data parameter
+// in addHistoryEntry() is not reliable.<br>
+// Internet Explorer: If you set document.domain on the top-level page, the History
+// mechanism will behave sub-optimally in IE - three clicks one the forward/back buttons will
 // be required to transition to the next history entry.
 // <p>
 // <b>Usage overview</b><br>
@@ -186,6 +188,8 @@ setHistoryTitle : function (title) {
 // you specified via +link{History.registerCallback}.  This data object can be anything you
 // want, but there are some caveats:
 // <ul>
+// <li>The data parameter is currently supported by all SmartClient-supported browsers except
+// <b>Safari</b></li>
 // <li>As long as the user has not navigated away from the top-level page (i.e. the user is
 // navigating within synthetic history entries only), whatever data you pass in will be handed
 // back to you.

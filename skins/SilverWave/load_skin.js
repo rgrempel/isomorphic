@@ -102,8 +102,8 @@ with (theWindow) {
         autoFit: true,
         autoFitDirection: isc.Canvas.HORIZONTAL
     });
-    isc.IButton.markAsFrameworkClass();
-    isc.IAutoFitButton.markAsFrameworkClass();
+    if (isc.IButton.markAsFrameworkClass != null) isc.IButton.markAsFrameworkClass();
+    if (isc.IAutoFitButton.markAsFrameworkClass != null) isc.IAutoFitButton.markAsFrameworkClass();
 
 
     isc.ImgButton.addProperties({

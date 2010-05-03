@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1616,6 +1616,8 @@ isc.LogViewer.addMethods({
 
     _logWindowPollInterval: 25,
     _initLogWindow : function (dontSaveState) {
+        
+        if (this._logWindow == null) return;
         if (isc.Browser.isIE) {
             // if we've set document.domain, then attempting to immediately set a property on
             // the new window, before it can adjust its document.domain automatically, results
@@ -1725,6 +1727,10 @@ isc.LogViewer.addMethods({
             targetID = target ? target.getID() : "";
         if (this.logWindowLoaded()) {
             this._logWindow.staticForm.setValue("lastMouseDown", targetID);
+            if (isc.AutoTest != null && isc.Log.showLocatorOnMouseDown) {
+                var autoTestLocator = isc.AutoTest.getLocator();
+                this._logWindow.staticForm.setValue("autoTestLocator", autoTestLocator || "none");
+            }
         }
     },
     updateRPC : function () {
@@ -1741,7 +1747,7 @@ isc.LogViewer.addMethods({
             result
         ;
         // NOTE: "this" is the Log so that this.logWarn, this.echo et al will work
-        if (isc.Browser.isIE) {
+        if (isc.Log.supportsOnError) {
             // in IE, if there's an error, we report it via window.onerror
             result = isc.Class.evalWithVars(expr, evalVars, this);
         } else {
@@ -1761,7 +1767,7 @@ isc.LogViewer.addMethods({
         if (lines.length > 1) expr = lines[0] + "...";
         if (expr.length > 200) expr = expr.substring(0,200) + "...";
         if (error) {
-            if (isc.Browser.isMoz) {
+            if (!isc.Log.supportsOnError) {
                 isc.Log._reportJSError(error);
                 return;
             }
@@ -1815,20 +1821,43 @@ isc.Log._logPrelogs();
 
 // capture a stack trace for every JS error.  
 //
-// Only IE fires window.onerror.  In IE, window.onerror never fires if you've installed MS' JS
-// debugger and have it enabled.  To fix, go to Tools->Internet Options->Advanced Tab and check
-// "Disable script debugging"
-if (!isc.Browser.isMoz && !isc.Browser.isSafari && !(window.isc_installOnError == false)) {
+// window.onerror:
+// - IE fires window.onerror.  In IE, window.onerror never fires if you've installed MS' JS
+//   debugger and have it enabled.  To fix, go to Tools->Internet Options->Advanced Tab and check
+//   "Disable script debugging"
+// - Moz fires window.onerror (observed on version 3.63, mac, reported as working on >=3.0)
+// - Chrome (5.0.342.9) does not fire window.onerror
+isc.Log.supportsOnError = (
+    isc.Browser.isIE ||
+    (isc.Browser.isMoz && isc.Browser.geckoVersion >= 20080529)
+);
+if (isc.Log.supportsOnError && !(window.isc_installOnError == false)) {
     
-    window.onerror = function (msg, file, lineNo) { 
+    window.onerror = function (msg, file, lineNo) {
+        
+        // arguments.caller is deprecated, equivalent of arguments.callee.caller.arguments
+        // (See getStackTrace implementation for more on how we work with errors)
+        //
+        // Note: In Moz, (FF 3.6.3) while onerror fires, it appears we can't walk the stack -
+        // arguments.callee.caller is always null at this point.
+        var callerArgs = arguments.caller;
+        if (callerArgs == null && arguments.callee.caller != null) {
+            callerArgs = arguments.callee.caller.arguments;
+        }
+        
         // one-time flag to avoid doubled reports for errors that are caught, go through
         // _reportJSError(), and are rethrown
-        if (arguments.caller && arguments.caller._errorReported) return;
-
-        var message = "Error:\r\t'" + msg + "'\r\tin " + file + "\r\tat line " + lineNo + 
-                       isc.Log.getStackTrace(arguments.caller);
+        if (callerArgs && callerArgs._errorReported) {
+            return;
+        }
+        
+        var message = "Error:\r\t'" + msg + "'\r\tin " + file + "\r\tat line " + lineNo;
+        if (callerArgs) {
+            message += isc.Log.getStackTrace(callerArgs);
+        }
+        
         isc.Log.logWarn(message);
-        if (isc.useIEDebugger) {
+        if (isc.Browser.isIE && isc.useIEDebugger) {
             if (confirm("Run debugger?" + "\r\r" + message)) {
                 debugger;
             }
@@ -1865,3 +1894,7 @@ isc._dataModelLogMessage = function (priority, message, category, timestamp) {
 
     //<DEBUG
 }
+
+
+
+

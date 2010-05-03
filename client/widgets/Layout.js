@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -528,7 +528,7 @@ isc.Layout.addProperties({
 // @visibility external
 //<
 
-//> @attr canvas.showResizeBar (boolean : false : IR)
+//> @attr canvas.showResizeBar (boolean : false : IRW)
 // When this Canvas is included as a member in a Layout, whether a resizeBar should be shown
 // after this member in the layout, to allow it to be resized.
 // <p>

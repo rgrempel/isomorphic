@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -249,6 +249,12 @@ isc.ResultSet.addProperties({
     // <code>endRow:initialData.length</code> and <code>totalRows:initialLength</code>.
     // Normal data paging will then occur if data is requested for row indices not filled via 
     // <code>initialData</code>.
+    // <P>
+    // <code>initialData</code> may be provided as a "sparse" array, that is, slots may be left
+    // null indicating rows that have not been loaded.  In this way you can create a ResultSet
+    // that is missing rows at the beginning of the dataset, but has loaded rows toward the end,
+    // so that you can create a component that is scrolled to a particular position of a dataset
+    // without loading rows at the beginning.
     //
     // @group fetching, cacheSync
     // @visibility external
@@ -584,6 +590,7 @@ init : function () {
     
     // support for seeding a ResultSet with data on init
     if (this.initialData) {
+        this.prepareSparseInitialData();
         this.fillCacheData(this.initialData);
         this.setFullLength(this.initialLength || this.totalRows || this.initialData.length);
     } else if (this.isPaged()) {
@@ -629,6 +636,27 @@ destroy : function () {
         }
     }
 },    
+
+prepareSparseInitialData : function () {
+    for (var i=0; i<this.initialData.length; i++) {
+        if (this.initialData[i] == Array.LOADING) this.initialData[i] = null;
+    }
+},
+
+getFirstDataElement : function () {
+    var firstIndex = this.getFirstUsedIndex();
+    if (this.localData) return this.localData[firstIndex];
+    else return this.get(0);
+},
+
+getFirstUsedIndex : function () {
+    if (this.localData) {
+        for (var i=0; i<this.localData.length; i++) {
+            if (this.localData[i] != null && this.localData[i] != Array.LOADING) return i;
+        }
+    }
+    return 0;
+},
 
 isPaged : function () { return this.fetchMode == "paged" },
 isLocal : function () { return this.fetchMode == "local" },
@@ -681,7 +709,9 @@ isEmpty : function () {
     
     return !this.lengthIsKnown() || this.getLength() <= 0;
 },
-canSortOnClient : function () { return this.shouldUseClientSorting() && (this.allMatchingRowsCached()||isc.isOffline()) },
+canSortOnClient : function () { 
+    return this.shouldUseClientSorting() && (this.allMatchingRowsCached()||isc.isOffline()); 
+},
 canFilterOnClient : function () { return this.shouldUseClientFiltering() && this.allRowsCached() },
 
 //> @method resultSet.getValueMap()
@@ -759,14 +789,53 @@ indexOf : function (item, pos, endPos) {
 },
 
 
-// XXX ignore slideList, which is called on D&D reorder in ListGrids.  
-// To support this properly we should either:
+// implement slideList so that databound resultsets can be reordered.  
+// Further enhancements include:
 // - support unsort(): correctly manage the fact that our order temporarily doesn't reflect
 //   current sort
 // - support permanent stored orders: if our DS declares that some field represents a permanent
 //   stored order, and we are currently sorted by that field, assume the user means to
 //   permanently reorder the record, and save changed field numbers
-slideList : function (selection, startIndex) { return; },
+slideList : function (selection, startIndex) { 
+    if (!this.allMatchingRowsCached() && !this.shouldUpdatePartialCache()) {
+        isc.logWarn('updatePartialCache is disabled: record position will not be shifted.');
+        return;
+    }
+   var output = [], i;
+
+    //if destination is negative, set to 0 
+    if (startIndex < 0) startIndex = 0;
+
+	// take all the things from this table before destination that aren't in the list to be moved
+	for(i = 0;i < startIndex;i++) {
+        // bail if we're sliding to/from a loading row
+        if (Array.isLoading(this.localData[i])) {
+            isc.logWarn('Sliding from a row position that has not yet been loaded, ignoring');
+            return;
+        }
+		if (!selection.contains(this.localData[i]))
+			output.add(this.localData[i]);       
+    }
+	// now put in all the things to be moved
+    for(i = 0;i < selection.length;i++) {
+		output.add(selection[i]);
+    }
+	// now put in all the things after destination that aren't in the list to be moved
+	for(i = startIndex;i < this.localData.length;i++) {
+        if (Array.isLoading(this.localData[i])) {
+            isc.logWarn('Sliding into a row position that has not yet been loaded, ignoring');
+            return;
+        }
+		if (!selection.contains(this.localData[i]))
+			output.add(this.localData[i]);
+    }
+    if (this.shouldUpdatePartialCache()) {
+        this.invalidateRowOrder();    
+    }
+	// set localData to the newly constructed array and fire dataChanged
+    this.localData = output;
+    this.dataChanged();
+},
 
 //>	@method		resultSet.get()
 // Returns the record at the specified position.
@@ -1073,6 +1142,8 @@ fetchRemoteData : function (serverCriteria, startRow, endRow) {
                      this.echoFull(serverCriteria) + this.getStackTrace());
     }
 
+    if (this.cachingAllData) requestProperties.cachingAllData = true;
+    
     this.getDataSource().fetchData(serverCriteria, 
                  {caller:this, methodName:"fetchRemoteDataReply"}, 
                  requestProperties);
@@ -1100,6 +1171,9 @@ fetchRemoteDataReply : function (dsResponse, data, request) {
         this._outOfSequenceResponses.add({dsResponse:dsResponse, data:data, request:request});
         return;
     }
+    
+    if (this.cachingAllData == true) delete this.cachingAllData;
+    
     // Clear the fetchingRequest flag if we're a non-paged resultSet
     if (!this.isPaged() && this._fetchingRequest == index) delete this._fetchingRequest;
     
@@ -1436,7 +1510,7 @@ setCriteria : function (newCriteria) {
         // - do local filtering if we have a complete cache only
         if (this.isLocal() || 
             (!this.allRowsCriteria && this.allRows && this.shouldUseClientFiltering())) 
-        {            
+        {
             // derive localData from the set of all rows
         	if (this.allRows != null) this.filterLocalData();
         } else {   
@@ -1645,6 +1719,7 @@ sortByProperty : function (property, sortDirection, normalizer, context) {
         if (this.allRows && (this.localData !== this.allRows)) {
             this.allRows.sortByProperties([property], [sortDirection], [normalizer], [context]);
         }
+       
         // If this is from a cache update, and we're sorting, avoid passing the updated
         // record info to dataChanged()
         delete this._lastUpdateOperation;

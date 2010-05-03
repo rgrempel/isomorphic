@@ -103,13 +103,13 @@ with (theWindow) {
         showFocusedAsOver:false
     });
     
-    isc.IButton.markAsFrameworkClass();
+    if (isc.IButton.markAsFrameworkClass != null) isc.IButton.markAsFrameworkClass();
 
     isc.defineClass("IAutoFitButton", "IButton").addProperties({
         autoFit: true,
         autoFitDirection: isc.Canvas.HORIZONTAL
     });
-    isc.IAutoFitButton.markAsFrameworkClass();
+    if (isc.IAutoFitButton.markAsFrameworkClass != null) isc.IAutoFitButton.markAsFrameworkClass();
 
     isc.ImgButton.addProperties({
         showFocused: true,

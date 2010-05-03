@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -112,6 +112,21 @@
 // that will run on the server.  see +link{group:velocitySupport} for an overview of Velocity
 // support within SmartClient.
 // <P>
+// The expression should evaluate to either boolean true or boolean false.  Note that this can 
+// be a normal boolean expression, a reference to a variable containing a boolean value, or a 
+// call to some logic that returns a boolean value (note that the strings "true" and "false"
+// are considered by Velocity to be the boolean values represented by those words).  All of 
+// the following are valid forms:
+// <p><code>
+// &nbsp;&nbsp;$value < 100<br>
+// &nbsp;&nbsp;$util.contains($value, "some string")<br>
+// &nbsp;&nbsp;$record.someVariable </code>(assuming that "someVariable" contains a boolean value)<code><br>
+// &nbsp;&nbsp;false </code>(not terribly useful as a validation - this would fail in every case)
+// <P>
+// If your expression does not return a boolean value, we assume false (and you will see a log
+// entry on the server indicating that this has happened).  If your expression is syntactically
+// invalid, an exception is thrown and the error message is displayed in the client.
+// <P>
 // Server-side custom validators have the following variables available:
 // <ul>
 // <li><b>dataSources</b> - The list of all DataSources, accessible by name (so, for example, 
@@ -158,8 +173,11 @@
 // <P>
 // The target object must implement a method whose first 4 arguments are:
 // <code>
-//    Object value, Map validationDefinition, String fieldName, Map record
+//    Object value, Validator validator, String fieldName, Map record
 // </code><p>
+// (<code>com.isomorphic.datasource.Validator</code> is a subclass of <code>Map</code> that 
+// represents a validator's configuration, and also provides APIs for implementing templated
+// error messages).<p>
 // You provide the name of the method to call by specifying 
 // +link{serverObject.methodName,methodName}
 // as part of the serverObject declaration.  If you do not specify a methodName, SmartClient 
@@ -395,7 +413,8 @@
 // @value integerRange
 // Tests whether the value for this field is a whole number within the range 
 // specified.  The <code>max</code> and <code>min</code> properties on the validator
-// are used to determine the acceptable range.
+// are used to determine the acceptable range, inclusive. To specify the range as
+// exclusive of the min/mix values, set <code>exclusive</code> to <code>true</code>.
 // <p>See +explorerExample{validationBuiltins}.
 // @value lengthRange
 // This validator type applies to string values only.  If the value is a string value
@@ -441,6 +460,8 @@
 // <code>validator.max</code>, which should be specified in
 // <a target=_blank href="http://www.w3.org/TR/xmlschema-2/#dateTime">XML Schema
 // date format</a> or as a live JavaScript Date object (for client-only validators only).
+// To specify the range as exclusive of the min/mix values, set <code>exclusive</code>
+// to <code>true</code>.
 // <p>
 // Note that the <code>errorMessage</code> for this validator will be evaluated as
 // a dynamicString - text within <code>\${...}</code> will be evaluated as JS code
@@ -458,7 +479,8 @@
 // @value floatRange
 // Tests whether the value for this field is a floating point number within the range 
 // specified.  The <code>max</code> and <code>min</code> properties on the validator
-// are used to determine the acceptable range.
+// are used to determine the acceptable range, inclusive. To specify the range as
+// exclusive of the min/mix values, set <code>exclusive</code> to <code>true</code>.
 // <p>
 // Note that the <code>errorMessage</code> for this validator will be evaluated as
 // a dynamicString - text within <code>\${...}</code> will be evaluated as JS code
@@ -651,7 +673,7 @@ isc.Validator.addClassProperties({
     //<        
     mustBeEarlierThan:"Must be earlier than ${max.toShortDate()}", 
     
-    //>@classAttr   Validator.mustBeShorterThan (string : "Must be less than \${max} characters" : [IRA])
+    //> @classAttr Validator.mustBeShorterThan (string : "Must be no more than \${max} characters" : IRA)
     // Default error message to display when standard <code>lengthRange</code> type validator
     // returns false because the value passed in has more than <code>validator.max</code> characters.
     // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
@@ -660,9 +682,9 @@ isc.Validator.addClassProperties({
     // @visibility external
     // @group i18nMessages    
     //<
-    mustBeShorterThan:"Must be less than ${max} characters",
+    mustBeShorterThan:"Must be no more than ${max} characters",
 
-    //>@classAttr   Validator.mustBeLongerThan (string : "Must be more than \${min} characters" : [IRA])
+    //> @classAttr Validator.mustBeLongerThan (string : "Must be at least \${min} characters" : IRA)
     // Default error message to display when standard <code>lengthRange</code> type validator
     // returns false because the value passed in has fewer than <code>validator.min</code> characters.
     // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
@@ -671,7 +693,7 @@ isc.Validator.addClassProperties({
     // @visibility external
     // @group i18nMessages    
     //<    
-    mustBeLongerThan:"Must be more than ${min} characters",
+    mustBeLongerThan:"Must at least than ${min} characters",
     
     //>@classAttr   Validator.mustBeExactLength (string : "Must be exactly \${max} characters" : [IRA])
     // Default error message to display when standard <code>lengthRange</code> type validator
@@ -1409,8 +1431,11 @@ isc.Validator.addClassProperties({
         required: {
             type: "required",
             title: "Required field",
-            defaultErrorMessage: isc.Validator.requiredField,
             condition : function (item, validator, value, record) {
+                // Default to displaying the 'requiredField' error message.
+                if (validator.errorMessage == null) 
+                    validator.errorMessage = isc.Validator.requiredField;
+            
                 return (value != null && !isc.is.emptyString(value));
             },
             action : function (result, item, validator, component) {
@@ -1726,7 +1751,7 @@ isc.Validator.addClassMethods({
 
         // Check for redefinition of validators and log warning
         for (var type in newDefinitions) {
-            if (this._validationDefinitions[type]) {
+            if (this._validatorDefinitions[type]) {
                 isc.logWarn("addValidatorDefinitions: Validator definition already exists " +
                             "for type " + type + ". Replacing.");
             }

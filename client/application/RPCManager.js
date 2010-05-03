@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -681,6 +681,26 @@ isc.RPCRequest.addClassMethods({
 // <p>
 // To enable this globally for all responses you can set RPCManager.omitNullMapValuesInResponse
 // in server.properties.
+//
+// @visibility external
+//<
+
+//> @attr RPCRequest.downloadResult (boolean : false : IRWA)
+//
+// If enabled, causes the RPCRequest to download the requested resource as a file, either 
+// showing the browser's Save dialog or displaying the file-content in 
+// +link{rpcRequest.downloadToNewWindow, a new browser window}.
+// <P>
+// Setting this attribute to true means that no callback will be fired and implies that the 
+// request will silently use +link{rpcRequest.transport, transport}: "hiddenFrame".
+// 
+// @visibility external
+//<
+
+//> @attr RPCRequest.downloadToNewWindow (boolean : false : IRWA)
+// 
+// When +link{rpcRequest.downloadResult, downloadResult} is true, setting this attribute to
+// true causes the content of the downloaded file to be displayed in a new browser window. 
 //
 // @visibility external
 //<
@@ -1651,6 +1671,12 @@ isLocalURL : function (url) {
     // @visibility external
     //<
     sendRequest : function (request) {
+        // handle call to sendRequest with useHttpProxy explicitly set - you're really supposed
+        // to call sendProxied() but this is a common mistake.  Checking for the isProxied flag
+        // avoids a loop since sendProxied() calls sendRequest() after reformatting the
+        // request.
+        if (request.useHttpProxy && !request.isProxied) return this.sendProxied(request);
+
         // we are delaying transactions and this is a periodic polling or similar request that
         // can be ignored in this circumstance, so drop it
         if (request.canDropOnDelay && this.delayingTransactions) return;
@@ -2468,7 +2494,11 @@ isLocalURL : function (url) {
             
             delete transaction.suspended;
             delete transaction.clearedPrompt;  
-            this.sendQueue();
+
+            // if this transaction was deferred because it was sent before page load,
+            // re-instate the arguments originally passed to sendQueue() if any
+            var args = transaction._args || isc.emptyObject;
+            this.sendQueue(args.callback, args.prompt, args.URL);
         //>DEBUG
         } else {
             this.logWarn("No transaction to resubmit: transaction number " 
@@ -2617,6 +2647,11 @@ isLocalURL : function (url) {
 
         
         if (!isc.Page.isLoaded()) {
+            transaction._args = {
+                callback: callback,
+                prompt: prompt,
+                URL: URL
+            };           
             if (!this.delayingTransactions) isc.Page.setEvent("load", this, isc.Page.FIRE_ONCE,
                                                                "resendDelayedTransactions");
             this.delayingTransactions = true;

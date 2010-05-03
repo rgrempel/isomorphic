@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -386,8 +386,9 @@ isc.Class.addClassMethods({
 	// differentiate between SmartClient classes (part of the smartClient framework) and
 	// subclasses created by specific applications
 	// @setter Class.markAsFrameworkClass()
-	// @visibility autoTest
-	//<
+    // @visibility external
+    // @group autoTest
+    //<
 	// Usually set at init time as part of ClassFactory.defineClass but we need to be able
 	// to also set this at runtime for the cases where we replace core smartclient classes - 
 	// for example IButton
@@ -396,8 +397,9 @@ isc.Class.addClassMethods({
 	// Mark this class as a framework class (member of the SmartClient framework).
 	// Sets +link{Class.isFrameworkClass}. May be used in debugging and by the
 	// AutoTest subsystem
-	// @visibility autoTest
-	//<
+    // @visibility external
+    // @group autoTest
+    //<
 	markAsFrameworkClass : function () {
 	    this.isFrameworkClass = true;
 	    this._instancePrototype.isFrameworkClass = true;
