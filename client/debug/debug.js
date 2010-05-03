@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -129,9 +129,15 @@ isc._debugMethods = {
     // General best practice is to call the method as "this.getStackTrace" whenever "this" is an
     // instance, or call the static classMethod on the +link{class:Log} class otherwise. 
     // <P>
-    // This API can currently only be supported in Internet Explorer.  See
-    // +link{group:debugging} for information on how to get equivalent information from other
-    // browsers.
+    // Platform Notes: In Mozilla Firefox, if Firebug is enabled, a stack trace will be logged
+    // to the firebug console in addition to the standard stack trace string returned by
+    // this method.
+    // <br>
+    // In browsers other than Internet Explorer a complete stack trace may not be available - 
+    // this occurs when a function is re-entrant (meaning it calls itself). In this case the
+    // stack will terminate with text indicating where the recursive function call occurred.
+    // <P>
+    // See +link{group:debugging} for further information information.
     //
     // @return (String) stack trace.  Use eg +link{method:isc.Class.logWarn()} to log to the
     // Developer Console.
@@ -151,16 +157,27 @@ isc._debugMethods = {
     getStackTrace : function (args, ignoreLevels, maxLevels) {
         
         
-      
+        var stack = "";
+        if (isc.Browser.isMoz) {
+            
+            
+            
+        }
         
+        stack += this._getStackTraceFromArgs(args,ignoreLevels,maxLevels);
         
         // If Firebug is present we can show a stack trace in it directly - see fireBugTrace()
         if (this.hasFireBug()) {
             isc.Log._fBugTrace = isc.Log._fBugTrace || 0;
             var traceId = "FBugTrace" + isc.Log._fBugTrace++;
-            return this.fireBugTrace(traceId);
-        } 
-
+            stack += "\r\n" + this.fireBugTrace(traceId);
+        }
+        
+        return stack;
+    },
+    
+    _getStackTraceFromArgs : function (args, ignoreLevels, maxLevels) {
+            
         // If we can't get at the properties necessary to do a stack walk just log a warning and 
         // quit
         if (!arguments || !arguments.callee || !arguments.callee.caller) {
@@ -230,7 +247,7 @@ isc._debugMethods = {
     // this help function
     fireBugTrace : function (traceId) {
         window.console.trace(traceId);
-        return " [Stack trace logged via Firebug: " + traceId + "]";
+        return " [Complete stack trace logged via Firebug: " + traceId + "]";
     },
 
     // get a report of local variable values from a frame (that is, a dump of local variable
@@ -259,6 +276,7 @@ isc._debugMethods = {
     // - with "stackwalking" try..catch blocks added to all methods, called from every catch
     //   block successively in order to walk the stack by catch..rethrow (any browser)
     _reportJSError : function (error, args, thisValue, frame) {
+
         
 
         // avoid reporting the same error twice
@@ -266,6 +284,7 @@ isc._debugMethods = {
         error._reported = true;
     
         var message = error.toString();
+        
         
         this.logWarn(message);
     },

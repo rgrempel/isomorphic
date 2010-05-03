@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -113,7 +113,7 @@ totalRows : 0,
 // cells) which happens to be in a grid with a viewport showing only 20 or so rows.
 // Incremental rendering causes a brief "flash" during scrolling as the visible portion of the
 // dataset is redrawn, and a better scrolling experience can be obtained in this situation by
-// drawing the entire dataset up front, which in this example would have negligable effect on
+// drawing the entire dataset up front, which in this example would have negligible effect on
 // initial draw time.
 // <P>
 // <code>drawAllMaxCells:0</code> disables this features.  You may want to disable this feature
@@ -363,16 +363,53 @@ emptyCellValue:"&nbsp;",
 // @visibility external
 //<
 
-//> @attr gridRenderer.fastCellUpdates (boolean: false : I)
-// Whether to speed up dynamic styling at the expense of slightly slower drawing.
+//> @attr gridRenderer.fastCellUpdates (boolean: varies : IRWA)
+//
+// Advanced property to improve performance for dynamic styling of gridRenderer cells
+// at the expense of slightly slower drawing.
 // <P>
 // <code>fastCellUpdates</code> speeds up the dynamic styling system used by rollovers,
 // selections, and custom styling that calls +link{gridRenderer.refreshCellStyle()}, at
 // the cost of slightly slower draw() and redraw() times.
-//
+// <P>
+// This property is enabled by default in Internet Explorer and only has an effect in that
+// browser.
+// <P>
+// Notes:
+// <ul>
+// <li>If any cell styles specify a a background image URL, the URL will be resolved relative
+//     to the page location rather than the location of the CSS stylesheet. This means cell
+//     styles with a background URL should either supply a fully qualified path, or the
+//     background image media should be made available at a second location for IE.</li>
+// <li>fastCellUpdates will not work if the styles involved are in an external stylesheet loaded
+//     from a remote host. Either the stylesheet containing cell styles needs to be loaded
+//     from the same host as the main page, or the cell styles need to be inlined in the html 
+//     of the bootstrap page.</li>
+// </ul>
+// Also note that this property can effect the baseStyle used for for listGrid bodies.
+// See +link{listGrid.getBaseStyle()}.
 // @visibility external
 //<
-//fastCellUpdates:false,
+fastCellUpdates:isc.Browser.isIE,
+
+//> @method gridRenderer.setFastCellUpdates()
+// Setter for +link{gridRenderer.fastCellUpdates}. Has no effect in browsers other than
+// Internet Explorer.
+// @param fastCellUpdates (boolean) whether to enable fastCellUpdates.
+// @visibility external
+//<
+setFastCellUpdates : function (fcu) {
+    if (fcu && !isc.Browser.isIE) {
+        this.fastCellUpdates = false;
+        this.logInfo("fastCellUpdates was enabled - this has no effect " +
+            "in browsers other than Internet Explorer. Disabling.");
+        return;
+    }
+    if (fcu == this.fastCellUpdates) return;
+    this.fastCellUpdates = fcu;
+    this.markForRedraw();
+},
+
 
 
 
@@ -451,9 +488,9 @@ initWidget : function () {
         this.showAllColumns = true;
     }
     
-    
-    if (this.fastCellUpdates && !isc.Browser.isIE) this.fastCellUpdates = false;
-    
+    // initialize fastCellUpdates via the setter.
+    // Disables this attribute where not supported
+    this.setFastCellUpdates(this.fastCellUpdates);
     
 },
 
@@ -685,7 +722,8 @@ getDrawArea : function (colNum) {
         var drawAheadRange = this.addDrawAhead(visibleRows[0], visibleRows[1], 
                                                totalRows, vScrollForward, true);
         
-        //this.logWarn("after adding drawAhead:" + drawAheadRange);
+        //this.logWarn("draw range: " + this._getViewportFillRows() + 
+        //             ", after adding drawAhead:" + drawAheadRange);
         
         startRow = drawAheadRange[0];
         endRow = drawAheadRange[1];
@@ -918,6 +956,7 @@ scrollTo : function (left, top, cssScroll,d) {
         if (this.scrollRedrawDelay == 0) {
             this.markForRedraw("scrolled");
         } else {
+            var _this = this;
             this.fireOnPause("scrollRedraw", "markForRedraw", this.scrollRedrawDelay);
         }
 
@@ -1027,12 +1066,32 @@ getTableChunkAt : function (logicalRowNum, logicalColNum) {
     }
 },
 
+// We need to ensure the table cache is clear after we've reset our inner HTML
+// - otherwise we'll be pointing to stale elements.
+// Clear the cache before we update inner HTML and 
+// also set a flag so any inadvertant calls to code that would re-cache coming
+// from getInnerHTML will not re-cache stale elements.
+// note: _updateInnerHTML is called if we have no children, otherwise
+// _updateParentHTML updates the innerHTML
+
 _updateInnerHTML : function (a,b,c,d) {
     if (this.cacheDOM) {
         this.drawVisibleChunks();
     } else {
-        this.invokeSuper(isc.GridRenderer, "_updateInnerHTML", a,b,c,d);
+      this._clearTableCache();
+      this._suppressTableCaching = true;
+
+       this.invokeSuper(isc.GridRenderer, "_updateInnerHTML", a,b,c,d);
+       
+       delete this._suppressTableCaching;
     }
+},
+
+_updateParentHTML : function (a,b,c,d) {
+    this._clearTableCache();
+    this._suppressTableCaching = true;
+    this.invokeSuper(isc.GridRenderer, "_updateParentHTML", a,b,c,d);
+    delete this._suppressTableCaching;
 },
 
 // in cacheDOM mode, this is called in lieu of normal redraw
@@ -1459,6 +1518,7 @@ finishAnimateRowHeight : function () {
 // returns the innerHTML for the table
 // If passed a startRow / endRow, it will return just the HTML for that fragment of the table.
 getTableHTML : function (colNum, startRow, endRow) {
+    if (isc._traceMarkers) arguments.__this = this;
 	//>DEBUG
 	// timing
     var t0 = isc.timeStamp();
@@ -1482,8 +1542,34 @@ getTableHTML : function (colNum, startRow, endRow) {
 	// Figure out rows and columns to actually draw
 	// ----------------------------------------------------------------------------------------
 
-    var drawRect = this.getDrawArea();
-    
+    var drawRect = this.getDrawArea(),
+        grid = this.grid,
+        scrollRowNum
+    ;
+
+    if (grid) {
+        if (grid._scrollCell) {
+            scrollRowNum = grid._scrollCell == null ? 0 :
+                isc.isAn.Array(grid._scrollCell) ? grid._scrollCell[0] : grid._scrollCell;
+        } else if (grid.data && grid.data.getFirstUsedIndex && drawRect[0] == 0) {
+            scrollRowNum = grid.data.getFirstUsedIndex();
+        }
+        if (scrollRowNum) {
+            var diff = drawRect[1]-drawRect[0],
+                lastRow = scrollRowNum+diff,
+                totalRows = this.getTotalRows()
+            ;
+
+            if (lastRow >= totalRows) {
+                scrollRowNum -= (lastRow-(totalRows-1))
+                lastRow = totalRows-1;
+            }
+            if (scrollRowNum < 0) scrollRowNum = 0;
+            drawRect[0] = scrollRowNum;
+            drawRect[1] = lastRow;
+        }
+    }
+
     if (!fragment) {
         this._firstDrawnRow = drawRect[0];
         this._lastDrawnRow = drawRect[1];
@@ -1844,55 +1930,65 @@ getTableHTML : function (colNum, startRow, endRow) {
 
             // set per-row pieces of cell HTML
 
-            // if we have fixed record heights (cell contents should be clipped vertically) set
-            // a height for every cell in this row.
-            if (this.fixedRowHeights || writeDiv) {
-                // use the getRowHeight function if it's defined, otherwise use the cellHeight
-                // property
-                var rowHeight = //>Animation
-                                isAnimationRow ? this._animatedShowRowHeight :
-                                //<Animation
-                                (this.getRowHeight != null ? 
-                                 this.getRowHeight(record, rowNum) : 
-                                 cellHeight),
-                    // If this widget has a 'shouldFixRowHeight()' method, check whether that returns
-                    // false (enables override of 'fixedRowHeights' on a per-row basis - currently
-                    // only used internally, for row-level editing of ListGrids)
-                    fixedRowHeight = //>Animation
-                                        isAnimationRow ||   //<Animation
-                                        (this.shouldFixRowHeight == null || 
-                                         this.shouldFixRowHeight(record, rowNum) != false); 
+            // establish row height to clip content (fixedRecordHeights:true) or as a minimum
+            // (fixedRowHeights:false)
+
+            // use the getRowHeight function if it's defined, otherwise use the cellHeight
+            // property
+            var rowHeight = //>Animation
+                            isAnimationRow ? this._animatedShowRowHeight :
+                            //<Animation
+                            (this.getRowHeight != null ? 
+                             this.getRowHeight(record, rowNum) : 
+                             cellHeight);
+
+            // If this widget has a 'shouldFixRowHeight()' method, check whether that returns
+            // false (enables override of 'fixedRowHeights' on a per-row basis - currently
+            // only used internally, for row-level editing of ListGrids)
+            var fixedRowHeight;
+            if (isAnimationRow) {
+                fixedRowHeight = true;
+            } else if (this.shouldFixRowHeight != null) {
+                fixedRowHeight = (this.shouldFixRowHeight(record, rowNum) != false);
+            } else {
+                fixedRowHeight = this.fixedRowHeights;
+            }
                                                  
-                //this.logWarn("rowNum: " + rowNum + 
-                //             ", rowHeight: " + rowHeight + 
-                //             ", cell height: " + (rowHeight - vPad));
+            //this.logWarn("rowNum: " + rowNum + 
+            //             ", rowHeight: " + rowHeight + 
+            //             ", this.fixedRowHeights: " + this.fixedRowHeights +
+            //             ", this row isFixed: " + fixedRowHeight);
 
-                // If this row is of fixed height, write the height out into the TD
-                if (fixedRowHeight) {
-                    // write a height attribute to enforce height
-                    cellHTML[heightAttrSlot] = heightAttr;
-                    cellHTML[heightSlot] = rowHeight - vPad;
+            // If this row is of fixed height, write the height out into the TD
+            if (fixedRowHeight) {
+                // write a height attribute to enforce height
+                cellHTML[heightAttrSlot] = heightAttr;
+                cellHTML[heightSlot] = rowHeight - vPad;
                     
+                cellHTML[minHeightCSS] = null;
+
+            // If the row can expand with content, avoid writing a height into the TD -
+            // use the min-height CSSText instead
+            } else {
+                // don't write a height attribute at all
+                cellHTML[heightAttrSlot] = null;
+                cellHTML[heightSlot] = null;
+
+                // Apply min css height to per-cell css... 
+                if (rowHeight == this.cellHeight && !this.fixedRowHeights) {
+                    // null it out, already handled by CSS that establishes cell height as a
+                    // minimum (in the "widthHTML" slot)
                     cellHTML[minHeightCSS] = null;
-
-                // If the row can expand with content, avoid writing a height into the TD -
-                // use the min-height CSSText instead
                 } else {
-                    // don't write a height attribute at all
-                    cellHTML[heightAttrSlot] = null;
-                    cellHTML[heightSlot] = null;
-                    
-                    // Apply min css height to per-cell css... 
                     cellHTML[minHeightCSS] = this._getMinHeightCSSText(record,rowNum);
                 }
+            }
                 
-                if (writeDiv) {
-                    // this method returns css text to set the height for the DIV
-                    
-                    cellHTML[divStart] = ">" + this._$cellClipDivStart +
-                           this._getCellDivCSSHeight(rowHeight, record, rowNum, isAnimationRow);
-                }
+            if (writeDiv) {
+                // this method returns css text to set the height for the DIV
                 
+                cellHTML[divStart] = ">" + this._$cellClipDivStart +
+                       this._getCellDivCSSHeight(rowHeight, record, rowNum, isAnimationRow);
             }
             
             // If we're drawing the record as a single cell, figure out which cells it's spanning
@@ -2223,8 +2319,20 @@ _getTDSpanHTML : function (span) {
 // the style's padding etc. [making the assumption that the padding etc is constant across potential
 // cell styles]
 _getFirstRecordStyle : function () {
+    var grid = this.grid,
+        rowNum = 0;
+
+    if (grid) {
+        if (grid._scrollCell) {
+            rowNum = grid._scrollCell == null ? 0 :
+                isc.isAn.Array(grid._scrollCell) ? grid._scrollCell[0] : grid._scrollCell;
+        } else if (grid.data && grid.data.getFirstUsedIndex) {
+            rowNum = grid.data.getFirstUsedIndex();
+        }
+    }
+
     return (this.getBaseStyle != null ? 
-            this.getBaseStyle(this.getCellRecord(0,0), 0, 0) :
+            this.getBaseStyle(this.getCellRecord(rowNum,0), 0, 0) :
             this.baseStyle);
 },
 
@@ -2800,8 +2908,12 @@ placeEmbeddedComponent : function (component) {
         colNum = component._currentColNum,
         topOrigin = this.getRowTop(rowNum),
         leftOrigin = colNum != null ? this.getColumnLeft(colNum) : 0,
-        width = (colNum != null && colNum >= 0) ? this.getColumnWidth(colNum) : this._fieldWidths.sum();
-
+        // to make component snap to right of visible area, use getInnerWidth() to demarcate
+        // the snap area, or the sum of all column widths, whichever is smaller
+        width = (colNum != null && colNum >= 0) ? this.getColumnWidth(colNum) : 
+            Math.min(this.getInnerWidth() + this.getScrollLeft(), this._fieldWidths.sum()) ;
+        
+            
     if (position == this._$within) {
         // Respect "snapTo" if specified
         // *Note: we are suppressing standard canvas percent sizing and snap-to behavior
@@ -3302,7 +3414,16 @@ getDOMTable : function (logicalRowNum, logicalColNum) {
     if (table == null) {
         var tableName = this.getTableElementId();
         var table = isc.Element.get(tableName);
-        if (table == null) return null; 
+
+        if (table == null) return null;
+        // If we're mid-redraw, don't re-cache the current table element
+        if (this._suppressTableCaching) {
+            
+            this.logInfo("getTableElement() called while updating table HTML. " +
+                "This call may be invalid as the table is being rewritten in the DOM. " +
+                "Suppressing caching of the current element.", "redrawing");
+            return table;
+        }
     }
     // cache table element
     return this._tableElement = table;
@@ -3458,7 +3579,6 @@ _updateCellStyle : function (record, rowNum, colNum, cell, className) {
                            this.shouldFixRowHeight(record, rowNum) != false),
         newHeight = (this.getRowHeight != null ? this.getRowHeight(record, rowNum) 
                                                   : this.cellHeight);
-                                               
     this.setRowHeight(rowNum, newHeight, record, className, shouldClip);
 },
 
@@ -3651,6 +3771,8 @@ _getCompleteCellCSSText : function (record, rowNum, colNum, className) {
         var styleText = isc.Element.getStyleText(className, true);
         
         if (styleText == null && isc.Page._remoteStyling) {
+            this.logInfo("fastCellUpdates set to true but this page loads styles from a " +
+                "remote stylesheet. This is unsupported - disabling fastCellUpdates.");
             this.fastCellUpdates = false;
             this.redraw();
         }
@@ -3820,8 +3942,9 @@ setRowStyle : function (rowNum, className, colNum) {
     var record = this.getCellRecord(rowNum, colNum);
 
     // for eg, rows that are about to be completely refreshed anyway
-    if (record && record._ignoreStyleUpdates) return;
-
+    if (record && record._ignoreStyleUpdates) {
+        return;
+    }
     
     
     // if a colNum was specified, update just the individual cell (we got a pointer to it
@@ -3852,8 +3975,8 @@ setRowStyle : function (rowNum, className, colNum) {
                     cell = row.cells[renderedCellNum];
 
                 }
-                
                 if (cell == null) continue;
+ 
                 // Pass in the optional record object, className and cell objects to avoid them
                 // being re-calculated.
                 this._updateCellStyle(record, rowNum, fieldNum, cell, className);
@@ -4119,10 +4242,21 @@ getRowPageTop : function (rowNum) {
 //
 // @return (number) height
 // @group sizing, positioning
+// @deprecated As of SmartClient 8.0, use +link{gridRenderer.getDrawnRowHeight}.
 //<
-// NOTE: this function must be named getRowSize because getRowHeight is a user-defined function
-// that returns the desired row height.
 getRowSize : function (rowNum) {
+    return this.getDrawnRowHeight(rowNum);
+},
+
+//>	@method	gridRenderer.getDrawnRowHeight() ([A])
+// Get the drawn height of a row.
+//
+// @param rowNum (number)
+//
+// @return (number) height
+// @group sizing, positioning
+//<
+getDrawnRowHeight : function (rowNum) {
     // treat all undrawn rows as though they were cellHeight tall 
     if (rowNum < this._firstDrawnRow || rowNum > this._lastDrawnRow) {
         return this.getAvgRowHeight();
@@ -5075,12 +5209,6 @@ _rowClick : function (rowNum, colNum) {
     // [These will be set to meaningful values if the event occurred over a valid cell].
     this._clickRow = this._clickCol = null;
 
-    // no record - just bail
-	if (!(rowNum >=0 && colNum >=0)) return;
-    
-    // if the record is explicitly disabled, return false to kill doubleClick etc
-    if (!this.cellIsEnabled(rowNum, colNum)) return false;
-    
     var mdR = this._mouseDownRow;
 
     // if the click occurred over a different record from the previous mousedown, just bail
@@ -5095,6 +5223,13 @@ _rowClick : function (rowNum, colNum) {
     if (isc.EH.getY() == this._mouseDownY) {
         colNum = this._mouseDownCol;
     }
+    
+    // no record - just bail
+	if (!(rowNum >=0 && colNum >=0)) return;
+    
+    // if the record is explicitly disabled, return false to kill doubleClick etc
+    if (!this.cellIsEnabled(rowNum, colNum)) return false;
+    
     
     // record the click cell details for double-click events to check
     this._clickRow = rowNum;
@@ -5370,10 +5505,9 @@ getColumnAutoSize : function (columnNum) {
 // clear anything we've cached about the HTML table we draw
 redraw : function (a,b,c,d) {
     this._resetEmbeddedComponents();
-
-	if (!this.cacheDOM) this._clearTableCache();
-
+  
     this.invokeSuper(isc.GridRenderer, "redraw", a,b,c,d);
+  
     // if we're redrawing in response to the end of 'fast scrolling', the suppresDrawAhead flag
     // will have been set in markForRedraw()
     // clear this now

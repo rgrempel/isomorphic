@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -377,7 +377,7 @@ transformView : function (obj) {
 // @visibility external
 //<
 handleError : function (rpcRequest, rpcResponse, jsError) {
-    this.logWarn(rpcResponse.data);
+    this.logWarn("ViewLoader received bad response:\n" + isc.echo(rpcResponse.data));
     this.setView(isc.Label.create({
         contents: jsError ? jsError.toString() : rpcResponse.data
     }));

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -131,8 +131,11 @@ isc.Img.addProperties( {
  
     //>	@attr	img.imageType		(ImageStyle : isc.Img.STRETCH : [IRW])
     //          Indicates whether the image should be tiled/cropped, stretched, or centered when the
-    //          size of this widget does not match the size of the image. See ImageStyle for
-    //          details
+    //          size of this widget does not match the size of the image. 
+    //          CENTER shows the image in it's natural size, but can't do so while the 
+    //          transparency fix is active for IE. The transparency fix can be manually disabled
+    //          by setting +link{usePNGFix} to false.
+    //          See ImageStyle for further details.
     //      @visibility external
     //      @group  appearance
     //<
@@ -166,8 +169,14 @@ isc.Img.addProperties( {
     // @include StatefulCanvas.showTitle
     // @visibility external
     //<
-    showTitle:false
+    showTitle:false,
     
+    //> @attr img.usePNGFix (boolean : true : [IR])
+    // If false, never apply the png fix needed in Internet Explorer to make png transparency
+    // work correctly.
+    // @visibility external
+    //<
+    usePNGFix: true
 });
 
 // add methods to the class

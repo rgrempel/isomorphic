@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -43,11 +43,12 @@ isc.FormItemFactory.addClassMethods({
                     lccn = "select";
                     if (!dontChangeObject) object.isSelectOther = true;
                 }
-            
+                
                 if (lccn == "select" || lccn == "selectitem") {
                     form = object.form || form;
-                    var useNativeSelect = (!isc.ListGrid || object.multiple || 
-                                          (form ? form.useNativeSelectItems : false));
+                    var useNativeSelect = (!isc.ListGrid || 
+                                  (object.multiple && object.multipleAppearance == "grid") || 
+                                  (form ? form.useNativeSelectItems : false));
                     if (useNativeSelect) className = "NativeSelectItem"
                     else className = "SelectItem";
                 }

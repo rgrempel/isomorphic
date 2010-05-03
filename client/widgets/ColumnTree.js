@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -45,6 +45,9 @@ isc.ColumnTree.addClassProperties({
 
 	//=	@const	ColumnTree.TREE_FIELD		default field to display a ColumnTree's nodes
 	TREE_FIELD : {
+	    // Arbitrary name - ListGrids expect their fields to be identified by a name, even
+	    // though in this case we're not representing a field in the record objects
+	    name:"treeField",
 	    width:"*",
     	getCellValue : function (list,record,recordNum,colNum) {
             return list.creator.getCellValue(list, record, recordNum, colNum);
@@ -836,7 +839,7 @@ useExistingDataModel : function (criteria, operation, context) {
 },
 
 createDataModel : function (criteria, operation, context) {
-    return this.createResultTree(criteria, context.callback, context, null);
+    return this.createResultTree(criteria, context.afterFlowCallback, context, null);
 },    
 
 updateDataModel : function (criteria, operation, context) {

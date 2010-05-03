@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -414,15 +414,37 @@ isc.TreeGrid.addProperties({
 	//<
 	showRoot:false,
     
-    //>	@attr	treeGrid.separateFolders		(boolean : false : IR)
-    //          Specifies whether folders and leaves should be segregated in the treeGrid display.
-    //          With separateFolders:true and sortDirection:"descending", folders are displayed
-    //          before their sibling leaves; with sortDirection:"ascending", leaves are displayed
-    //          before their sibling folders.
+    //>	@attr	treeGrid.separateFolders		(boolean : null : IR)
+    // If specified, this attribute will override +link{Tree.separateFolders} on the
+    // data for this treeGrid.
+    // <P>
+    // Specifies whether folders and leaves should be segregated in the treeGrid display.
+    // Use +link{treeGrid.sortFoldersBeforeLeaves} to customize whether folders appear before 
+    // or after their sibling leaves.
+    // <P>
+    // If unset, at the treeGrid level, the property can be set directly on
+    // +link{treeGrid.data,the tree data object} or for dataBound TreeGrids on the
+    // +link{treeGrid.dataProperties,dataProperties configuration object}.
+    //
     // @group treeField
-    //      @visibility external
+    // @visibility external
 	//<
-	separateFolders:false,
+//	separateFolders:false,
+
+    //> @attr treeGrid.sortFoldersBeforeLeaves (boolean : null : IR)
+    // If specified, this attribute will override +link{tree.sortFoldersBeforeLeaves} on
+    // the data for this treeGrid.
+    // <P>
+    // Specifies whether when +link{tree.separateFolders} is true, folders should be displayed
+    // before or after their sibling leaves in a sorted tree. If set to true, with
+    // sortDirection set to Array.ASCENDING, folders are displayed before their sibling leaves
+    // and with sort direction set to Array.DESCENDING they are displayed after. To invert
+    // this behavior, set this property to false.
+    // @group treeField
+    // @see treeGrid.separateFolders
+    // @visibility external
+    //<
+//    sortFoldersBeforeLeaves:null,
 
 	//>	@attr	treeGrid.displayNodeType (DisplayNodeType : isc.Tree.FOLDERS_AND_LEAVES : [IRW])
     //          Specifies the type of nodes displayed in the treeGrid. 
@@ -587,6 +609,15 @@ isc.TreeGrid.addProperties({
     //      @group  appearance
     //<
 	indentSize:20,
+    
+    //> @attr treeGrid.extraIconGap (integer : 2 : IR)
+    // The amount of gap (in pixels) between the extraIcon (see +link{treeGrid.getExtraIcon()})
+    // or checkbox icon and the +link{treeGrid.nodeIcon,nodeIcon}/
+    // +link{treeGrid.folderIcon,folderIcon} or node text.
+    // @group appearance
+    // @visibility external
+    //<
+    extraIconGap:2,
     
     //>	@attr	treeGrid.iconSize		(number : 16 : [IRW])
     //          The standard size (same height and width, in pixels) of node icons in this
@@ -1254,7 +1285,9 @@ setData : function (newData,a,b,c) {
 	if (!this.data) return;
 	
 	// set the separateFolders and showRoot options of the tree as well
-	this.data.separateFolders = this.separateFolders;
+	if (this.separateFolders != null) this.data.separateFolders = this.separateFolders;
+	if (this.sortFoldersBeforeLeaves != null)
+	    this.data.sortFoldersBeforeLeaves = this.sortFoldersBeforeLeaves;
 
     if (this.showRoot && isc.ResultTree && isc.isA.ResultTree(this.data)) {
         this.logWarn("showRoot may not be set with a databound treeGrid, unexpected " +
@@ -1397,8 +1430,11 @@ getEditFormItemFieldWidths : function (record) {
     if (!this.showRoot) level--;
     var indentSize = level * this.indentSize;
     indentSize += this.iconSize + this.getOpenerIconSize(record);
-    if (this._getCheckboxIcon(record)) indentSize += this._getCheckboxFieldImageWidth();
-    else if (this.getExtraIcon(record)) indentSize += this.iconSize;
+    if (this._getCheckboxIcon(record)) {
+        indentSize += (this._getCheckboxFieldImageWidth() + this.extraIconGap);
+    } else if (this.getExtraIcon(record)) {
+        indentSize += (this.iconSize + this.extraIconGap);
+    }
     
     var widths = this.Super("getEditFormItemFieldWidths", arguments),
         treeFieldNum = this.getTreeFieldNum();
@@ -2206,15 +2242,80 @@ transferNodes : function (nodes, folder, index, sourceWidget, callback) {
         {
             this._dropRecords[0].noRemove = true;
             var wasAlreadyQueuing = isc.rpc.startQueue();
+
+            // NOTE: We are possibly going to do some client-side reordering here.  Depending 
+            // on whether we're moving nodes forwards or backwards within their siblings, or
+            // neither (if we're reparenting) or both (if we have multiple selected), we'll be
+            // changing which index within the parent is the correct one to insert at.  Thus
+            // we'll establish upfront which is the correct sibling node to insert before, and
+            // always the actual index by reference to that node's current location as the 
+            // loop progresses
+            var currentChildren = dragTree.getChildren(folder);
+            var insertBeforeNode, undef;
+            if (index != null) {
+                if (index < currentChildren.length) {
+                    insertBeforeNode = currentChildren[index];
+                }
+            }
+            if (insertBeforeNode == undef) {
+                 insertBeforeNode = currentChildren[currentChildren.length - 1];
+            }
+
             for (var i = 0; i < nodes.length; i++) {
-                
-                var node = isc.addProperties({}, this.data.getCleanNodeData(nodes[i])),
-                    oldValues = isc.addProperties({}, node);
-                node[this.data.parentIdField] = folder[this.data.idField];
-                this._updateDataViaDataSource(node, dataSource, { 
-                    oldValues : oldValues,  
-                    parentNode : this.data.getParent(nodes[i])
-                }, sourceWidget);                          
+                var node = nodes[i];
+                if (this.saveLocally || 
+                        node[this.data.parentIdField] == folder[this.data.idField]) 
+                {
+                    // The user has dragged a node to a different location within the the same
+                    // parent.  This change cannot be automatically persisted, so we'll just
+                    // reflect the change locally so it doesn't appear to the user that nothing
+                    // has happened (though, in fact, nothing *has* happened - some kind of 
+                    // index update on the underlying persistent store needs to be performed in
+                    // order for a user interaction of this type to persist beyond the current
+                    // UI session).
+                    // If index is null, it's unclear what we should do.  We could either leave 
+                    // the node where it is, or move it to the end of the list (as we would if
+                    // we were adding to the parent).  This may change, but right now we just 
+                    // leave it where it is
+                    if (index != null) {
+                        currentChildren = dragTree.getChildren(folder);
+                        dragTree.move(node, folder, currentChildren.indexOf(insertBeforeNode));
+                    }
+                } else {
+                    
+                    // NOTE: getCleanNodeData() scrubs off the isOpen flag if it was auto-
+                    // generated, but we need to hang onto it, otherwise dragging an open 
+                    // folder from one parent to another causes it to snap shut.
+                    var saveIsOpenFlag = nodes[i]["_isOpen_" + this.data.ID];
+                    var node = isc.addProperties({}, this.data.getCleanNodeData(nodes[i], true, false)),
+                        oldValues = isc.addProperties({}, node);
+                    if (saveIsOpenFlag != null) node["_isOpen_" + this.data.ID] = saveIsOpenFlag;
+                    node[this.data.parentIdField] = folder[this.data.idField];
+                    var dropNeighbor = null,
+                        children = this.data.getChildren(folder);
+                    if (index == null) {
+                        dropNeighbor = children.get(children.length - 1);
+                    } else if (index > 0) {
+                        dropNeighbor = children.get(index - 1);
+                    }
+                    
+                    // We pass a number of parameters relating to this drop up to the server,
+                    // so that they are available in the callback.  This allows us to give
+                    // the impression that a drop has taken place at a particular position
+                    // within the parent.  This isn't what has actually happened - see the 
+                    // above comment about dragging nodes to different locations within the
+                    // same parent in a databound TreeGrid.
+                    this.updateDataViaDataSource(node, dataSource, { 
+                        oldValues : oldValues,  
+                        parentNode : this.data.getParent(nodes[i]),
+                        newParentNode : folder,
+                        dragTree : dragTree,
+                        draggedNode : node,
+                        draggedNodeList: nodes,
+                        dropNeighbor: dropNeighbor,
+                        dropIndex : index
+                    }, sourceWidget);                          
+                }
             }
             
         } else {
@@ -2223,8 +2324,10 @@ transferNodes : function (nodes, folder, index, sourceWidget, callback) {
         }
 	} else if (dataSource != null) {
          var canRecat;
-        if (this.dragRecategorize && sourceDS != null &&
-            this.data != null && isc.ResultTree && isc.isA.ResultTree(this.data))
+        if (this.dragRecategorize ||
+            (sourceDS != null && sourceDS != dataSource && this.data != null && 
+             isc.ResultTree && isc.isA.ResultTree(this.data) && 
+             sourceWidget.dragDataAction == isc.TreeGrid.MOVE))
         {
             // check for a foreign key relationship between some field in the source DS to some
             // field in the treeGrid DS
@@ -2269,7 +2372,7 @@ transferNodes : function (nodes, folder, index, sourceWidget, callback) {
                 isc.addProperties(node, 
                     this.getDropValues(node, sourceDS, folder, index, sourceWidget));
 
-                this._updateDataViaDataSource(node, sourceDS, null, sourceWidget);
+                this.updateDataViaDataSource(node, sourceDS, null, sourceWidget);
             }
         } else {
 
@@ -2310,6 +2413,66 @@ transferNodes : function (nodes, folder, index, sourceWidget, callback) {
     this._transferringRecords = false;
     
 },
+
+// NOTE: Overrides (but invokes) the DBC version
+_updateComplete : function (dsResponse, data, dsRequest) {
+    if (!dsRequest.dragTree) return;
+    
+    if (dsRequest.dragTree.getParent(dsRequest.newParentNode) == null) {
+        isc.logWarn("Target folder is no longer in the Tree in TreeGrid cache sync");
+        return;
+    }
+    
+    var neighbor = dsRequest.dropNeighbor,
+        dragTree = dsRequest.dragTree,
+        siblings = dragTree.getChildren(dsRequest.newParentNode),
+        nodeList = dsRequest.draggedNodeList,
+        idField = dragTree.idField,
+        nodePosition = nodeList.findIndex(idField, dsRequest.draggedNode[idField]),
+        index, undef;
+    if (neighbor == null) {
+        index = 0;
+    } else {
+        for (var i = 0; i < siblings.length; i++) {
+            var sibling = siblings[i];
+            if (sibling == neighbor) {
+                index = i + 1;
+                break;
+            }
+        }
+    }
+    
+    if (index !== undef) { 
+        // Step the insert point forward to ensure that nodes are inserted in the same order
+        // they were passed to folderDrop.  This is necessary because some of the nodes may 
+        // have already been moved into position synchronously (if we had a multi-node drag
+        // where the dragged nodes came from several parents)
+        //isc.logWarn("nodeList: " + nodeList.getProperty("Name"));
+        while (index < siblings.length) {
+        //    isc.logWarn("existing node: " + siblings[index].Name);
+            var existingIndex = nodeList.findIndex(idField, siblings[index][idField]);
+        //    isc.logWarn("existingIndex: " + existingIndex + ", nodePosition: " + nodePosition);
+            if (existingIndex == -1 || existingIndex > nodePosition) break;
+            index++;
+        }
+    }
+    
+    if (index === undef) {
+        isc.logWarn("Could not order dropped node by reference to neighbor; trying absolute index");
+        index = dsRequest.dropIndex;
+    }
+    
+    // If index is still undefined, something's gone wrong.  Log a warning and bail
+    if (index === undef) {
+        isc.logWarn("Unable to determine drop location in TreeGrid cache sync");
+        return;
+    }
+    
+    dragTree.move(dsRequest.draggedNode, dsRequest.newParentNode, index);
+    
+    this.Super("_updateComplete", arguments);
+},
+
 
 // Tree-specific HTML generation
 // --------------------------------------------------------------------------------------------
@@ -2455,12 +2618,13 @@ _getTreeCellTitleArray : function (value, record, recordNum, fieldNum, showOpene
         extraIcon = checkboxIcon || this.getExtraIcon(record),
         extraIconID = (recordNum != null ? this._extraIconIDPrefix+recordNum : null),
         extraIconSize = (checkboxIcon != null ?  this._getCheckboxFieldImageWidth() : this.iconSize),
+        extraIconGap = this.extraIconGap,
         icon = this.getIcon(record),
         iconID = (recordNum != null ? this._iconIDPrefix+recordNum : null)
     ;
         
     // extra icon if there is one
-    template[6] = (extraIcon ? this.getIconHTML(extraIcon, extraIconID, extraIconSize) : null);
+    template[6] = (extraIcon ? this.getIconHTML(extraIcon, extraIconID, extraIconSize, extraIconGap) : null);
     // folder or file icon
     template[7] = this.getIconHTML(icon, iconID, record.iconSize);
     
@@ -3036,8 +3200,13 @@ getIcon : function (node, defaultState) {
 
 // helper method - caches generated image templates on a per-draw basis for faster html generation.
 _$absMiddle : "absmiddle",
+_$iconExtraStuffTemplate : [
+    "style='margin-right:",    // [0]
+    ,                          // [1] padding on right of icon
+    "px;'"                     // [2]
+],
 _imgParams : {},
-getIconHTML : function (icon, iconID, iconSize) {
+getIconHTML : function (icon, iconID, iconSize, extraRightMargin) {
     if (icon == null) return isc.emptyString;
     
     if (iconSize == null) iconSize = this.iconSize;
@@ -3049,11 +3218,18 @@ getIconHTML : function (icon, iconID, iconSize) {
     // if not in cache, generate and store - keyed by the image src
     if (cache[icon] == null) {
         
+        var extraStuff;
+        if (extraRightMargin) {
+            var extraStuffTemplate = this._$iconExtraStuffTemplate;
+            extraStuffTemplate[1] = extraRightMargin;
+            extraStuff = extraStuffTemplate.join(isc.emptyString);
+        }
         var imgParams = this._imgParams;
         imgParams.src = icon;
         imgParams.width = imgParams.height = iconSize;
         imgParams.name = iconID;
         imgParams.align = this._$absMiddle;
+        imgParams.extraStuff = extraStuff;
         cache[icon] = this._getImgHTMLTemplate(imgParams);
     }
 

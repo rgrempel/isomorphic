@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -168,7 +168,7 @@ isc.Animation.addClassMethods({
     },
     
     //> @classMethod Animation.clearAnimation()
-    // Clear a registered animation action. Only meaningful if the regisetered animation has
+    // Clear a registered animation action. Only meaningful if the registered animation has
     // not completed (i.e. the specified duration for the action has not elapsed since the
     // action was registered). Will un-register the action and prevent it from firing again.
     // @param ID (string) ID for the action to be unregistered. This is the ID returned from
@@ -177,7 +177,7 @@ isc.Animation.addClassMethods({
     //<
     clearAnimation : function (ID) {
         for (var i=0; i<this.registry.length; i++) {       
-            if (this.registry[i].ID == ID) {                
+            if (this.registry[i] && this.registry[i].ID == ID) {                
                 this.registry.removeAt(i);
                 break;
             }
@@ -193,14 +193,14 @@ isc.Animation.addClassMethods({
     //<
     finishAnimation : function (ID) {
         for (var i = 0; i < this.registry.length; i++) {
-            if (this.registry[i].ID == ID) {
+            if (this.registry[i] && this.registry[i].ID == ID) {
                 var entry = this.registry[i];
                 break;
             }
         }
-        
+
         this.clearAnimation(ID);
-        this.fireAction(entry, 1, true);
+        if (entry) this.fireAction(entry, 1, true);
     },
     
     // fireTimer() - this is fired every interval and handles:

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1227,7 +1227,7 @@ observe : function (object, methodName, action) {
 // @param [timeoutCallback] (Function) Callback to fire if the timeout period elapses before the 
 //                                     observed method completes
 // @return (boolean) whether observation succeeded.  Observation may fail due to null object,
-//                   non-existant method or similar bad parameters
+//                   non-existent method or similar bad parameters
 //
 // @visibility external
 //<
@@ -1278,7 +1278,7 @@ waitFor : function (object, method, callback, timeout, timeoutCallback) {
 // @param [timeoutCallback] (Function) Callback to fire if the timeout period elapses before all 
 //                                     observed methods have fired
 // @return (boolean) whether observation succeeded.  Observation may fail due to null objects,
-//                   non-existant methods or similar bad parameters
+//                   non-existent methods or similar bad parameters
 //
 // @visibility external 
 //<

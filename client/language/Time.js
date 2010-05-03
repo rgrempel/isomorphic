@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -189,6 +189,19 @@ isc.Time.addClassProperties({
     // @group i18nMessages
     //<
     PMIndicator:" pm"
+
+    //> @classAttr Time.adjustForDST (boolean : true (see description) : RWA)
+    // Determines whether date/time formatters should consider the effect of Daylight Saving
+    // Time when computing offsets from UTC.  By default, this flag is set during framework
+    // initialization if SmartClient detects that it is running in a locale that is observing 
+    // DST this year.  If you do not want DST adjustments to be applied, set this flag to 
+    // false.<p>
+    // Note that setting this flag to true will have no effect unless you are in a locale 
+    // that is observing Daylight Saving Time this year; this is because we rely on the 
+    // browser for offset information, and browsers are only capable of returning local date
+    // and time information for the computer's current locale.
+    // @visibility external
+    //<
     
 });
 
@@ -254,9 +267,9 @@ isc.Time.addClassMethods({
             
         // Add the display timezone offset to the hours / minutes so we display the
         // time in the appropriate timezone
-        var hm = this._applyTimezoneOffset(hour, minutes, 
-                                            this.UTCHoursDisplayOffset,
-                                            this.UTCMinutesDisplayOffset);
+        var hm = this._applyTimezoneOffset(hour, minutes,
+                                            this.getUTCHoursDisplayOffset(date),
+                                            this.getUTCMinutesDisplayOffset(date));
         hour = hm[0];
         minutes = hm[1];
         
@@ -316,6 +329,7 @@ isc.Time.addClassMethods({
     
     // Note: technically being passed "1:00" is ambiguous - could be AM or PM.
     // We always interpret as 24 hour clock (so <12 = AM) unless am/pm is actually passed in.
+    
     parseInput : function (string, validTime, UTCTime) {
         var hours = 0,
             minutes = 0,
@@ -452,6 +466,7 @@ isc.Time.addClassMethods({
     //  time passed in is already in the specified display timezone.
     // @visibility external
     //<
+    
     createDate : function (hours, minutes, seconds, milliseconds, UTCTime) {
         var date = new Date();
         
@@ -523,11 +538,138 @@ isc.Time.addClassMethods({
                 (time1.getUTCMinutes() == time2.getUTCMinutes()) && 
                 (time1.getUTCSeconds() == time2.getUTCSeconds()));
         
+    },
+    
+    _performDstInit : function () {
+        var now = new Date(),
+            january = new Date(0),
+            july = new Date(0);
+
+        // Daylight Saving Time involves moving the clock forward in order to shift some of 
+        // the daylight from very early morning (when most people are asleep) to mid-evening
+        // (when people benefit from more hours of daylight, and energy can be saved that 
+        // would otherwise be needed for lighting).  Not every country observes DST, and those
+        // countries that do observe it set their own start and end dates, though there are 
+        // common approaches - for example, many European countries start DST during the last
+        // weekend of March and end it during the last weekend of October.
+        //
+        // Daylight Saving Time, if it is applicable at all, always starts sometime in spring 
+        // and ends ends sometime in autumn, but there is no more accurate rule than that.
+        // Currently, every country that observes DST does so by moving their local time 
+        // forward by one hour; however, other values have been used, so this cannot be relied
+        // upon either.
+        //
+        // It is common to transition to and from DST ar 02:00 local time - when
+        // DST starts, the local time jumps instantly to 03:00, when DST ends it jumps 
+        // instantly back to 01:00.  However, this is again a common approach rather than a
+        // rule.
+        // 
+        // Note that it is important to think in terms of seasons rather than months, because 
+        // the northern and southern hemispheres have opposite seasons.  Hence DST (if it 
+        // applies at all) starts in March/April and ends in October/November in the northern 
+        // hemisphere, and does the exact opposite in the southern hemisphere.
+        // 
+        // Because of all of this, and because the only timezone information you can retrieve 
+        // from a Javascript Date object is the number of minutes that particular date/time 
+        // is offset from UTC, we have quite limited information and must resort to roundabout
+        // techniques.  We can discover if we are in a locale that observes DST by checking
+        // the UTC offsets in January and July; if they are different, the current locale 
+        // observes DST.  
+        // 
+        // Going a step further than this, we can tell whether we are observing DST or normal 
+        // time on an arbitrary date: by looking to see whether the clock goes  forward or 
+        // backward in the early part of the year (spring in the northern hemisphere), we can 
+        // infer which hemisphere the current locale is in, and from that we can decide if 
+        // the offset in January is the DST or non-DST offset.  Then, we can check the offset
+        // of the given date against the offset in January; if it matches then it is in DST
+        // if we're in the southern hemisphere, and in normal time if we're in the northern 
+        // hemisphere.
+        //
+        // For more interesting information on this subject, see 
+        // http://www.timeanddate.com/time/aboutdst.html
+        
+        january.setUTCFullYear(now.getUTCFullYear());
+        january.setUTCMonth(0);
+        january.setUTCDate(1);
+        july.setUTCFullYear(now.getUTCFullYear());
+        july.setUTCMonth(6);
+        july.setUTCDate(1);
+            
+        var nowOffset = now.getTimezoneOffset();
+        this.januaryDstOffset = january.getTimezoneOffset();
+        var julyOffset = july.getTimezoneOffset();
+        
+        this.dstDeltaMinutes = this.januaryDstOffset - julyOffset;
+        if (this.dstDeltaMinutes > 0) {
+            // Time is offset further forward from UTC in July; this locale observes DST
+            // and is in the northern hemisphere (this logic is curiously backwards, because
+            // getTimezoneOffset() returns negative numbers for positive offsets)
+            this.southernHemisphere = false;
+            this.adjustForDST = true;
+            if (nowOffset == julyOffset) this.currentlyInDST = true;
+        } else if (this.dstDeltaMinutes < 0) {
+            // Time is offset further forward from UTC in January; this locale observes DST
+            // and is in the southern hemisphere
+            this.southernHemisphere = true;
+            this.adjustForDST = true;
+            if (nowOffset == this.januaryDstOffset) this.currentlyInDST = true;
+        } else {
+            // the delta is 0 and DST is not a factor in this locale
+            this.adjustForDST = false;
+        }
+            
+        // As noted above, all current observations of Daylight Saving Time involve moving 
+        // local time one hour forward, so right now these variables will always end up as
+        // 1 and 0 
+        this.dstDeltaMinutes = Math.abs(this.dstDeltaMinutes);
+        this.dstDeltaHours = Math.floor(this.dstDeltaMinutes / 60);
+        this.dstDeltaMinutes -= (this.dstDeltaHours * 60);
+    },
+
+    getUTCHoursDisplayOffset: function(date) {
+        // If we're currently inside DST and wanting to calculate an offset for a datetime 
+        // that is outside DST, we need to move the offset backwards because the offset we
+        // stored on the Time class during startup already includes the DST offset
+        var dstDelta = this.currentlyInDST ? -(this.dstDeltaHours) : 0;
+        if (this.adjustForDST) {
+            if (date.getTimezoneOffset() == this.januaryDstOffset) {
+                if (this.southernHemisphere) {
+                    dstDelta += this.dstDeltaHours;
+                }
+            } else {
+                if (!this.southernHemisphere) {
+                    dstDelta += this.dstDeltaHours;
+                }
+            }
+        }
+        return this.UTCHoursDisplayOffset + (this.adjustForDST ? dstDelta : 0);
+    },
+
+    getUTCMinutesDisplayOffset: function(date) {
+        var dstDelta = this.currentlyInDST ? -(this.dstDeltaMinutes) : 0;
+        if (this.adjustForDST) {
+            if (date.getTimezoneOffset() == this.januaryDstOffset) {
+                if (this.southernHemisphere) {
+                    dstDelta += this.dstDeltaMinutes;
+                }
+            } else {
+                if (!this.southernHemisphere) {
+                    dstDelta += this.dstDeltaMinutes;
+                }
+            }
+        }
+        return this.UTCMinutesDisplayOffset + (this.adjustForDST ? dstDelta : 0);
     }
+    
     
 });
 
+// Work out whether we're currently inside Daylight Saving Time, and compute the offset to 
+// apply on the transition.
+isc.Time._performDstInit();
+
 // set up the default timezone offset based on the browser locale here.
 isc.Time.setDefaultDisplayTimezone(new Date().getTimezoneOffset());
+
 
 

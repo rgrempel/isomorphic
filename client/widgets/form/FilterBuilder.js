@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -94,21 +94,22 @@ fieldPickerWidth: 150,
 operatorPickerWidth: 150,
 valueItemWidth: 150,
 
-fieldPicker: { 
+fieldPickerDefaults: { 
     type: "SelectItem", 
     name: "fieldName", 
     showTitle: false, 
-    changed : function () { this.form.creator.fieldNameChanged(this.form) }
+    textMatchStyle: "startsWith",
+    changed : function () { this.form.creator.fieldNameChanged(this.form); }
 },
 
-operatorPicker : {
+operatorPickerDefaults : {
     // list of operators
     name:"operator", 
     type:"select", 
     showTitle:false, 
     addUnknownValues:false, 
     defaultToFirstOption:true,
-    changed : function () { this.form.creator.operatorChanged(this.form) }
+    changed : function () { this.form.creator.operatorChanged(this.form); }
 },
 
 //> @attr filterClause.clause (AutoChild : null : IR)
@@ -142,7 +143,7 @@ removeButtonDefaults : {
     src:"[SKIN]/actions/remove.png",
     showRollOver:false, showDown:false,
     showDisabled:false, // XXX
-    click: function () { this.creator.remove() }
+    click: function () { this.creator.remove(); }
 },
 
 flattenItems: true
@@ -170,7 +171,8 @@ getField : function (fieldName) {
         field = this.getDataSource().getField(fieldName);
     } else {
         if (this.clause) {
-            field = this.clause.getField("fieldName").getSelectedRecord();
+            field = this.fieldData ? this.fieldData[fieldName] : null;
+            if (!field) field = this.clause.getField("fieldName").getSelectedRecord();
             if (!field) field = this.field;
             else this.field = field;
         }
@@ -197,13 +199,17 @@ combineFieldData : function (field, targetField) {
 setupClause : function () {
     if (this.showRemoveButton) this.addAutoChild("removeButton");
 
+    var fieldMap = {};
+
     if (this.showClause != false) {
         var items = [
-                isc.addProperties(isc.clone(this.fieldPicker), 
-                    { width: this.fieldPickerWidth}, this.fieldPickerProperties
+                isc.addProperties(isc.clone(this.fieldPickerDefaults), 
+                    { width: this.fieldPickerWidth}, this.fieldPickerProperties,
+                    {name:"fieldName"}
                 ),
-                isc.addProperties(isc.clone(this.operatorPicker), 
-                    { width: this.operatorPickerWidth }, this.operatorPickerProperties
+                isc.addProperties(isc.clone(this.operatorPickerDefaults), 
+                    { width: this.operatorPickerWidth }, this.operatorPickerProperties,
+                    { name:"operator" }
                 )
             ],
             criterion = this.criterion,
@@ -214,19 +220,19 @@ setupClause : function () {
         if (this.fieldName && this.dataSource) {
             // fieldName provided - change the type of the first DF field and set it's value -
             // this behavior is only supported when this.dataSource is present
-            var fieldName = this.fieldName,
-                field = this.getField(fieldName),
+            var specificFieldName = this.fieldName;
+            var field = this.getField(specificFieldName),
                 fieldTitle
             ;
 
-            items[0].type = "staticText";
+            isc.addProperties(items[0], { type: "staticText", clipValue: true, wrap: false });
 
-            if (!field || field.canFilter == false) fieldName = fieldNames[0];
+            if (!field || field.canFilter == false) specificFieldName = fieldNames[0];
             else if (this.showFieldTitles) {
-                fieldTitle = field.title ? field.title : fieldName;
+                fieldTitle = field.title ? field.title : specificFieldName;
             }
-            items[0].defaultValue = fieldTitle || fieldName;
-            selectedFieldName = fieldName;
+            items[0].defaultValue = fieldTitle || specificFieldName;
+            selectedFieldName = specificFieldName;
         } else {
             if (this.fieldDataSource) {
                 // change the fieldPicker to be a ComboBoxItem, setup the fieldDataSource as 
@@ -234,15 +240,14 @@ setupClause : function () {
                 isc.addProperties(items[0], {
                     type: "ComboBoxItem",
                     completeOnTab: true,
-                    textMatchStyle: "startsWith",
                     optionDataSource: this.fieldDataSource,
                     valueField: "name",
-                    displayField: this.showFieldTitles ? "title" : "name"
+                    displayField: this.showFieldTitles ? "title" : "name",
+                    pickListProperties: { reusePickList : function () { return false;} } 
                 });
                 if (this.field) items[0].defaultValue = this.field.name;
             } else {
                 // build and assign a valueMap to the fieldPicker item
-                var fieldMap = {};
                 for (var i = 0; i < fieldNames.length; i++) {
                     var fieldName = fieldNames[i],
                         field = this.getField(fieldName);
@@ -256,12 +261,12 @@ setupClause : function () {
                     }
                 }
                 items[0].valueMap = fieldMap;
-                
-                items[0].defaultValue = fieldNames[0];
-            }
 
+                items[0].defaultValue = isc.firstKey(fieldMap);
+            }
         }
 
+        this.fieldPicker = items[0];
         var fieldItem = items[0],
             operatorItem = items[1];
 
@@ -274,9 +279,10 @@ setupClause : function () {
                         fieldItem.defaultValue = criterion.fieldName;
                     } else {
                         isc.logWarn("Criterion specified field " + criterion.fieldName + ", which is not" +
-                                    " in the record. Using the first record field (" + fieldNames[0] + 
+                                    " in the record. Using the first record field (" + 
+                                    fieldMap ? isc.firstKey(fieldMap) : fieldNames[0] + 
                                     ") instead");
-                        fieldItem.defaultValue = fieldNames[0];
+                        fieldItem.defaultValue = fieldMap ? isc.firstKey(fieldMap) : fieldNames[0];
                     }
                 }
             }
@@ -332,10 +338,17 @@ setupClause : function () {
             items: items
         });
 
-        
+        this.fieldPicker = this.clause.getItem("fieldName");
+
+        this.operatorPicker = this.clause.getItem("operator");
     }
 
     this.addMembers([this.removeButton, this.clause]);
+    
+    if (this.fieldPicker && this.fieldPicker.type == "staticText") {
+        this.fieldPicker.prompt = this.fieldPicker.getValue();
+    }
+
 },
 
 // create the form items that constitute the clause, based on the DataSource field involved and
@@ -349,7 +362,9 @@ buildValueItemList : function (field, operator) {
     var fieldName = field.name,
         valueType = operator ? operator.valueType : "text",
         baseFieldType = isc.SimpleType.getType(field.type) || isc.SimpleType.getType("text"),
-        items = []
+        items = [],
+        props,
+        editorType = null
     ;
     
     // In case this is a user-defined type, derive the built-in base type it 
@@ -361,20 +376,27 @@ buildValueItemList : function (field, operator) {
     // We're not interested in the object, just the name
     baseFieldType = baseFieldType.name;
 
+    if (isc.isA.FilterBuilder(this.creator)) {
+        editorType = this.creator.getEditorType(fieldName, operator.ID);
+        if (editorType != null) baseFieldType = editorType;
+    }
+
     if (valueType == "valueSet") {  
         return;  // XXX - For now, we can't cope with these
 
     // a value of the same type as the field
     } else if (valueType == "fieldType" || valueType == "custom")  {
-        var editorType = null;
+        editorType = null;
         if (valueType == "custom" && operator && operator.editorType) {
             editorType = operator.editorType;
         }
 
         var fieldDef = isc.addProperties({
             type: baseFieldType, name: field.name, showTitle: false,
-            width: this.valueItemWidth, editorType: editorType,    
-            changed : function () { this.form.creator.valueChanged(this, this.form) }
+            width: this.valueItemWidth, editorType: editorType,
+            changed : function () { 
+                this.form.creator.valueChanged(this, this.form); 
+            }
         }, this.getValueFieldProperties(field.type, fieldName));
 
         // Pick up DataSource presentation hints
@@ -397,7 +419,7 @@ buildValueItemList : function (field, operator) {
         
         if (field.editorType == "SelectItem" || field.editorType == "ComboBoxItem") {
             if (field.editorProperties != null) {
-                var props = field.editorProperties;
+                props = field.editorProperties;
                 fieldDef = isc.addProperties(fieldDef, {
                     optionDataSource: props.optionDataSource ? props.optionDataSource : this.getDataSource(),
                     valueField: props.valueField ? props.valueField : field.name,
@@ -410,21 +432,24 @@ buildValueItemList : function (field, operator) {
 
     } else if (valueType == "fieldName") {
         // another field in the same DataSource
-        var props = {
+        props = {
             type: "select", name: "value", showTitle: false,
             width: this.valueItemWidth, 
-            changed : function () { this.form.creator.valueChanged(this, this.form) }
+            textMatchStyle: this.fieldPicker.textMatchStyle,
+            changed : function () { 
+                this.form.creator.valueChanged(this, this.form); 
+            }
         };
-
+        
         if (this.fieldDataSource) {
             // using a fieldDataSource - apply this as the optionDataSource
             props = isc.addProperties(props, {
                 type: "ComboBoxItem",
                 completeOnTab: true,
-                textMatchStyle: "startsWith",
                 optionDataSource: this.fieldDataSource,
                 valueField: "name",
-                displayField: this.showFieldTitles ? "title" : "name"
+                displayField: this.showFieldTitles ? "title" : "name",
+                pickListProperties: { reusePickList : function () { return false; } }
             });
         } else {
             var altFieldNames = this.getFieldNames(true);
@@ -448,10 +473,12 @@ buildValueItemList : function (field, operator) {
     } else if (valueType == "valueRange") {
         // two values of the same type as the field
 
-        var props = this.combineFieldData(
+        props = this.combineFieldData(
             isc.addProperties({ 
                 type: baseFieldType, showTitle: false, width: this.valueItemWidth,
-                changed : function () { this.form.creator.valueChanged(this, this.form); }
+                changed : function () { 
+                    this.form.creator.valueChanged(this, this.form); 
+                }
                 }, this.getValueFieldProperties(field.type, fieldName)
             ), field);
 
@@ -459,8 +486,10 @@ buildValueItemList : function (field, operator) {
             isc.addProperties({}, props, { name: "start" }),
             isc.addProperties(
                 { type: "staticText", name: "rangeSeparator", showTitle: false,
-                width: 1, defaultValue: this.rangeSeparator, shouldSaveValue:false,
-                changed : function () { this.form.creator.valueChanged(this, this.form); }
+                    width: 1, defaultValue: this.rangeSeparator, shouldSaveValue:false,
+                    changed : function () { 
+                        this.form.creator.valueChanged(this, this.form); 
+                    }
                 }, this.getValueFieldProperties(field.type, fieldName)
             ),
             isc.addProperties({}, props, { name: "end" })
@@ -515,7 +544,9 @@ remove : function () {
 },
 
 getValues : function () {
-    return this.clause ? this.clause.getValues() : null;
+    var clause = this.clause;
+
+    return clause.getValues();
 },
 
 //> @method filterClause.getCriterion()
@@ -528,9 +559,30 @@ getCriterion : function () {
     if (!this.clause) return null;
 
     var clause = this.clause,
-        criterion;
+        fieldName = this.fieldPicker.getValue() || this.fieldName,
+        operator = this.operatorPicker.getValue(),
+        valueField = clause.getField("value"),
+        startField = clause.getField("start"),
+        endField = clause.getField("end"),
+        criterion = clause.getValues()
+    ;
 
-    criterion = clause.getValues();
+    if (isc.isA.String(operator)) operator = this.getSearchOperator(operator);
+
+    if (operator.getCriterion && isc.isA.Function(operator.getCriterion)) {
+        if (valueField) {
+            criterion = operator.getCriterion(fieldName, valueField);
+        } else {
+            var startCriterion = operator.getCriterion(fieldName, startField),
+                endCriterion = operator.getCriterion(fieldName, endField);
+            
+            criterion.fieldName = startCriterion.fieldName;
+            criterion.operator = startCriterion.operator;
+            delete criterion.value;
+            criterion.start = startCriterion.value;
+            criterion.end = endCriterion.value;
+        }
+    }
 
     if (this.fieldName) criterion.fieldName = this.fieldName;
 
@@ -539,8 +591,6 @@ getCriterion : function () {
 
     // Ignore criteria where no value has been set, unless it is an operator (eg, isNull)
     // that does not require a value, or requires a start/end rather than a value
-    var operator = criterion.operator;
-    if (isc.isA.String(operator)) operator = this.getSearchOperator(operator);
     if (!operator || (operator.valueType != "none" && 
         operator.valueType != "valueRange" &&
         (criterion.value == null || 
@@ -548,13 +598,13 @@ getCriterion : function () {
     {
         return null;
     }
-    
+
     return criterion;
 },
 
 setDefaultFocus : function () {
     if (!this.clause) return;
-    this.clause.focusInItem("fieldName");
+    if (isc.isA.Function(this.clause.focusInItem)) this.clause.focusInItem("fieldName");
 },
 
 //> @method filterClause.validate
@@ -725,6 +775,16 @@ isc.FilterClause.registerStringMethods({
 //<
 isc.defineClass("FilterBuilder", "Layout");
 
+isc.FilterBuilder.addClassProperties({
+//> @attr filterBuilder.missingFieldPrompt (String: "[missing field definition]" : IR)
+// The message to display next to fieldNames that do not exist in the available dataSource.
+// @group i18nMessages
+// @visibility external
+//<
+missingFieldPrompt: "[missing field definition]"
+
+});
+
 isc.FilterBuilder.addClassMethods({
 
 //> @classMethod filterBuilder.getFilterDescription()
@@ -790,14 +850,16 @@ getCriterionDescription : function (criterion, dataSource) {
                 "returning through getFilterDescription.");
             return isc.FilterBuilder.getFilterDescription(criterion, dataSource);
         }
-        
+
         // just an unknown field - log a warning and bail
+        
+        result = fieldName + " " + isc.FilterBuilder.missingFieldPrompt + " ";
+
         isc.logWarn("FilterBuilder.getCriterionDescription: No such field '"+fieldName+"' "+
             "in DataSource '"+dataSource.ID+"'.");
-        return "";
+    } else {
+        result = (field.title ? field.title : fieldName) + " ";
     }
-    
-    result = (field.title ? field.title : fieldName) + " ";
 
     switch (operatorName)
         {
@@ -808,18 +870,18 @@ getCriterionDescription : function (criterion, dataSource) {
             case "greaterOrEqual": 
             case "between":
             case "notNull" : 
-                result += "is " + operatorMap[operatorName];
+                result += "is " + operatorMap[operatorName] || operatorName;
                 break;
             case "equals": 
-                result += "is equal to ";
+                result += "is equal to";
                 break;
             case "notEqual": 
                 result += "is not equal to";
                 break;
-            default: result += operatorMap[operatorName];
+            default: result += operatorMap[operatorName] || operatorName;
         }
-    
-    if (operator.valueType == "valueRange") result += start + " and " + end;
+
+    if (operator.valueType == "valueRange") result += " " + start + " and " + end;
     else if (operatorName != "notNull") result += " " + value;
 
     return result;
@@ -843,7 +905,7 @@ defaultWidth:400,
 // will have type-ahead auto-completion.
 // <P>
 // The records returned from the <code>fieldDataSource</code> must have properties 
-// corresponding to a +link{DataSourceField} defintion, at a minimum, 
+// corresponding to a +link{DataSourceField} definition, at a minimum, 
 // +link{DataSourceField.name,"name"} and +link{DataSourceField.type,"type"}.  Any property 
 // legal on a DataSourceField is legal on the returned records, including 
 // +link{DataSourceField.valueMap,valueMap}.
@@ -864,11 +926,12 @@ defaultWidth:400,
 //
 // @visibility external
 //<
-fieldPicker: { 
+fieldPickerDefaults: { 
     type: "SelectItem", 
     name: "fieldName", 
+    textMatchStyle: "startsWith",
     showTitle: false, 
-    changed : function () { this.form.creator.fieldNameChanged(this.form) }
+    changed : function () { this.form.creator.fieldNameChanged(this.form); }
 },
 
 //> @attr filterBuilder.fieldPickerProperties (FormItem Properties : null : IR)
@@ -906,7 +969,7 @@ setDataSource : function(ds) {
 //<
 
 //> @attr filterBuilder.saveOnEnter (boolean : null : IR)
-// If true, when the user hits the Enter key while focussed in a text-item in this 
+// If true, when the user hits the Enter key while focused in a text-item in this 
 // FilterBuilder, we automatically invoke the user-supplied +link{filterBuilder.search()} method.
 // @visibility external
 //< 
@@ -956,7 +1019,7 @@ removeButtonDefaults : {
     showRollOver:false, showDown:false,
     showDisabled:false, // XXX
     //prompt:"Remove",
-    click: function () { this.creator.removeButtonClick(this.clause) }
+    click: function () { this.creator.removeButtonClick(this.clause); }
 },
 
 //> @attr filterBuilder.showAddButton (boolean : true : IR)
@@ -986,7 +1049,7 @@ addButtonDefaults : {
     src:"[SKIN]/actions/add.png",
     showRollOver:false, showDown:false, 
     //prompt:"Add",
-    click: function () { this.creator.addButtonClick(this.clause) }
+    click: function () { this.creator.addButtonClick(this.clause); }
 },
 
 buttonBarDefaults : {
@@ -1014,7 +1077,7 @@ removeButtonClick : function (clause) {
 removeClause : function (clause) {
     // remove the clause from the clauses array and destroy it
     this.clauses.remove(clause);
-    this.clauseStack.hideMember(clause, function () { clause.destroy(); })
+    if (this.clauseStack) this.clauseStack.hideMember(clause, function () { clause.destroy(); });
     // update the first removeButton
     this.updateFirstRemoveButton();
 },
@@ -1220,7 +1283,7 @@ initWidget : function () {
             // layer of nesting, so we manage it here.
             var removeButton = this.removeButton = this.createAutoChild("removeButton", {
                 click : function () { 
-                    this.creator.parentClause.removeButtonClick(this.creator)
+                    this.creator.parentClause.removeButtonClick(this.creator);
                 }
             });
             this.addMember(removeButton);
@@ -1244,7 +1307,7 @@ initWidget : function () {
     }
     this.addAutoChildren(["buttonBar", "addButton", "subClauseButton"]);
 
-    this.setCriteria(this.criteria)
+    this.setCriteria(this.criteria);
 },
 
 
@@ -1279,8 +1342,9 @@ addNewClause : function (criterion, field) {
         removeButtonPrompt: this.removeButtonPrompt,
         retainValuesAcrossFields: this.retainValuesAcrossFields,
         fieldDataSource: this.fieldDataSource,
-        fieldPicker: this.fieldPicker,
         field: field,
+        fieldData: this.fieldData,
+        fieldPickerDefaults: this.fieldPickerDefaults,
         fieldPickerProperties: this.fieldPickerProperties,
         remove : function () {
             this.creator.removeClause(this);
@@ -1291,7 +1355,7 @@ addNewClause : function (criterion, field) {
         }
     });
 
-    this._addClause(filterClause);
+    return this._addClause(filterClause);
 },
 
 //> @method filterBuilder.addClause()
@@ -1302,7 +1366,7 @@ addNewClause : function (criterion, field) {
 //<
 addClause : function (filterClause) {
     // add the passed filterClause
-    if (!filterClause) return;
+    if (!filterClause) return filterClause;
 
     var _this = this;
 
@@ -1313,9 +1377,9 @@ addClause : function (filterClause) {
     filterClause.fieldNameChanged = function () {
         this.Super("fieldNameChanged", arguments);
         _this.fieldNameChanged(this);
-    }
+    };
 
-    this._addClause(filterClause);
+    return this._addClause(filterClause);
 },
 
 _addClause : function (filterClause) {
@@ -1324,9 +1388,10 @@ _addClause : function (filterClause) {
     var clauseStack = this.clauseStack;
     var position = Math.max(0, clauseStack.getMemberNumber(this.buttonBar));
     clauseStack.addMember(filterClause, position);
-    clauseStack.showMember(filterClause, function () { filterClause.setDefaultFocus() });
+    clauseStack.showMember(filterClause, function () { filterClause.setDefaultFocus(); });
 
     this.updateFirstRemoveButton();
+    return filterClause;
 },
 
 //> @method filterBuilder.getChildFilters()
@@ -1391,7 +1456,7 @@ validate : function () {
 // @visibility external
 //<
 getFieldOperators : function (fieldName) {
-    var field = this.getPrimaryDS().getField(fieldName)
+    var field = this.getPrimaryDS().getField(fieldName);
     return this.getPrimaryDS().getFieldOperators(field); 
 },
 
@@ -1441,7 +1506,7 @@ subClauseButtonDefaults : {
     //title:"+()", // need an icon for this
     autoFit:true,
     //prompt:"Add Subclause",
-    click : function () { this.creator.addSubClause(this.clause) }
+    click : function () { this.creator.addSubClause(this.clause); }
 },
 
 //> @attr filterBuilder.bracket (AutoChild : null : IR)
@@ -1480,8 +1545,8 @@ addSubClause : function (criterion) {
         topOperatorAppearance:"bracket",
         topOperator: operator || this.defaultSubClauseOperator,
         clauseConstructor: this.clauseConstructor,
-        filterPicker: this.filterPicker,
-        filterPickerProperties: this.filterPickerProperties,
+        fieldPickerDefaults: this.fieldPickerDefaults,
+        fieldPickerProperties: this.fieldPickerProperties,
         fieldDataSource: this.fieldDataSource,
         fieldData: this.fieldData,
         visibility:"hidden",
@@ -1496,7 +1561,7 @@ addSubClause : function (criterion) {
 
     this.clauseStack.addMember(clause, this.clauses.length-1);
     this.clauseStack.showMember(clause, function () { 
-        clause.topOperatorForm.focusInItem("operator") 
+        clause.topOperatorForm.focusInItem("operator");
         clause.bracket.setHeight(clause.getVisibleHeight());
     });
 
@@ -1566,18 +1631,40 @@ setCriteria : function (criteria) {
 
     this.clearCriteria(true);
 
-    if (this._initializingClauses && !this.fieldData) {
+    if (!this._loadingFieldData && this.fieldDataSource && criteria) {
         // fetch the necessary field-entries so they can be passed into the filterClauses
         if (isc.isA.String(this.fieldDataSource) )
             this.fieldDataSource = isc.DS.getDataSource(this.fieldDataSource);
 
-        var _this = this;
-        this.fieldDataSource.fetchData(null, 
-            function (data) {
-                _this.fetchFieldsReply(data, criteria);
+        var _this = this,
+            fieldsInUse = this.fieldDataSource.getCriteriaFields(criteria),
+            fieldCriteria = {}
+        ;
+
+        if (fieldsInUse && fieldsInUse.length > 0) {
+            // construct an advanvcedCriteria to use when requesting used fields from the 
+            // fields DS
+            fieldCriteria = { _constructor: "AdvancedCriteria", operator: "or", criteria: [] };
+            for (i=0; i<fieldsInUse.length; i++) {
+                var fieldName = fieldsInUse[i],
+                    cachedField = this.fieldData ? this.fieldData[fieldName] : null;
+
+                if (!cachedField) {
+                    fieldCriteria.criteria[fieldCriteria.criteria.length] = 
+                        { fieldName: "name", operator: "equals", value: fieldName };
+                }
             }
-        );
-        return;
+
+            if (fieldCriteria.criteria.length != 0) {
+                this._loadingFieldData = true;
+                this.fieldDataSource.fetchData(fieldCriteria, 
+                    function (data) {
+                        _this.fetchFieldsReply(data, criteria);
+                    }
+                );
+                return;
+            }
+        }
     }
 
     if (!criteria) {
@@ -1607,8 +1694,7 @@ setCriteria : function (criteria) {
     } else {
         for (var i = 0; i < criteria.criteria.length; i++) {
             var criterion = criteria.criteria[i],
-                field;
-            if (this.fieldData) field = this.fieldData.find( "name", criterion.fieldName );
+                field = this.fieldData ? this.fieldData[criterion.fieldName] : null;
             this.addCriterion(criterion, field);
         }
         // possible in the trivial case of a top-most operator of "add" and an empty set of
@@ -1617,13 +1703,19 @@ setCriteria : function (criteria) {
     }
 
     delete this._initializingClauses;
+    this._loadingFieldData = false;
     this.clauseStack.show();
     this.redraw();
     this.filterReady();
 },
 
 fetchFieldsReply : function (data, criteria) {
-    this.fieldData = data.data;
+    if (this.fieldData) {
+        var newFields = isc.getValues(this.fieldData);
+        newFields.addList(data.data);
+        this.fieldData = newFields.makeIndex("name");
+    } else this.fieldData = data.data.makeIndex("name");
+
     this.setCriteria(criteria);
 },
 
@@ -1633,8 +1725,8 @@ fetchFieldsReply : function (data, criteria) {
 //<
 clearCriteria : function (dontCheckEmpty) {
     
-    var animation = this.clauseStack.animateMembers;
-    this.clauseStack.animateMembers = false;
+    var animation = this.clauseStack ? this.clauseStack.animateMembers : null;
+    if (this.clauseStack) this.clauseStack.animateMembers = false;
 
     while (this.clauses.length > 0) {
         this.removeClause(this.clauses[0]);
@@ -1642,7 +1734,7 @@ clearCriteria : function (dontCheckEmpty) {
 
     if (!dontCheckEmpty && !this.allowEmpty) this.addNewClause();
 
-    this.clauseStack.animateMembers = animation;
+    if (this.clauseStack) this.clauseStack.animateMembers = animation;
 },
 
 //> @method filterBuilder.addCriterion()
@@ -1657,13 +1749,11 @@ addCriterion : function (criterion, field) {
     if (criterion.criteria) {
         var clause = this.addSubClause(criterion);
         for (var idx = 0; idx < criterion.criteria.length; idx++) {
-            if (this.fieldData) {
-                field = this.fieldData.find("name", criterion.criteria[idx].fieldName);
-            }
+            field = this.fieldData ? this.fieldData[criterion.criteria[idx].fieldName] : null;
             clause.addCriterion(criterion.criteria[idx], field);
         }
     } else {
-        this.addNewClause(criterion, field)
+        this.addNewClause(criterion, field);
     }
 
 },
@@ -1697,6 +1787,48 @@ itemChanged : function () {
 },
 
 fieldNameChanged : function (filterClause) {
+},
+
+//> @method FilterBuilder.getEditorType()
+// Returns the type of editor to use for the field.
+// <P>
+// Default behavior is to use the +link{operator.editorType} for a custom operator, otherwise, 
+// use +link{RelativeDateItem} for before/after/between operators on date fields, otherwise, 
+// use the same editor as would be chosen by a +link{SearchForm}.
+//
+// @param fieldName (DataSourceField) DataSourceField definition
+// @param operatorId (OperatorId) +link{OperatorId} for the chosen operator
+// @return (SCClassName) SmartClient class to use (must be subclass of FormItem)
+// @visibility external
+//<
+getEditorType : function (fieldName, operatorId) {
+    var ds = this.getPrimaryDS(),
+        className,
+        field;
+
+    var operator = ds.getSearchOperator(operatorId);
+
+    // return the operator's editorType, if it has one
+    if (operator.editorType) return operator.editorType;
+    if (operator.getEditorType && isc.isA.Function(operator.getEditorType))
+        return operator.getEditorType();
+
+    // return RelativeDateItem if the field is a Date
+    if (ds) field = ds.getField(fieldName);
+    if (field && 
+        (operatorId == "equals" || operatorId == "notEqual" || 
+        operatorId == "lessThan" || operatorId == "greaterThan" || 
+        operatorId == "between" || operatorId == "betweenInclusive" ||
+        operatorId == "greaterOrEqual" || operatorId == "lessOrEqual")) 
+    {
+        if (field && isc.SimpleType.inheritsFrom(field.type, "date")) return "RelativeDateItem";
+    }
+
+    if (field) 
+        return isc.FormItemFactory.getItemClassName({}, field.type, null);
+    else
+        return isc.FormItemFactory.getItemClassName({}, "text", null);
+
 }
 
 });

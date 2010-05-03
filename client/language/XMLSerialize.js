@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -284,8 +284,12 @@ _xmlSerializeObject : function (name, object, objPath, objRefs, prefix, isRoot) 
 	// Aug 2008 - moved this check before the call to isc.Comm._xmlOpenTag, to ensure that it
 	// uses the correct name for non-Class objects with a _constructor - without this change,
 	// it was returning mismatched open and close tags
+    // April 2010 - added "RelativeDate" as a class-name to ignore, so that relative dates
+    // can be sent up to the server as part of criteria without having their "value" property
+    // renamed
     if (isc.isAn.Instance(object)) name = object.getClassName();
-    else if (object._constructor && object._constructor != "AdvancedCriteria") name = object._constructor;
+    else if (object._constructor && object._constructor != "AdvancedCriteria" &&
+        object._constructor != "RelativeDate") name = object._constructor;
 
 	// open xml tag
     //

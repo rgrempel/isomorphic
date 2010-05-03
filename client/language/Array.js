@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -950,7 +950,7 @@ findAll : function (property, value) {
         var multiVal = isc.isAn.Array(value);
         for (var i = 0; i < l; i++) {
             var item = this[i];
-			if (item && multiVal ? value.contains(item[property]) : item[property] == value) {
+            if (item && (multiVal ? value.contains(item[property]) : item[property] == value)) {
                 if (matches == null) matches = [];
                 matches.add(item);
             }

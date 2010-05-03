@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -27,6 +27,7 @@ isc.SpinnerItem.addClassProperties({
     // @visibility external
     //<
     INCREASE_ICON:  {width:16, height:9, src:"[SKIN]/DynamicForm/Spinner_increase_icon.png",
+                        name:"increase",
                         showOver:true,  
                         // We don't need to support native focus, and we'll use mouseStillDown
                         // rather than standard icon click to handle activation
@@ -39,6 +40,7 @@ isc.SpinnerItem.addClassProperties({
     // @visibility external
     //<
     DECREASE_ICON:  {width:16, height:9, src:"[SKIN]/DynamicForm/Spinner_decrease_icon.png",
+                        name:"decrease",
                         showOver:true,  
                         imgOnly:true,
                         hspace:0

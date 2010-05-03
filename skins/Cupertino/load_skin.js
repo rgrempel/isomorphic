@@ -41,14 +41,14 @@ with (theWindow) {
     // define IButton so examples that support the new SmartClient skin image-based
     // button will fall back on the CSS-based Button with this skin
 	isc.ClassFactory.defineClass("IButton", "Button");
-	isc.IButton.markAsFrameworkClass();
+	if (isc.IButton.markAsFrameworkClass != null) isc.IButton.markAsFrameworkClass();
 	
 	isc.ClassFactory.defineClass("IAutoFitButton", "AutoFitButton");
-	isc.IAutoFitButton.markAsFrameworkClass();
+	if (isc.IAutoFitButton.markAsFrameworkClass != null) isc.IAutoFitButton.markAsFrameworkClass();
 	
 	// Have IMenuButton duplicate MenuButton
 	isc.ClassFactory.defineClass("IMenuButton", "MenuButton");
-	isc.IMenuButton.markAsFrameworkClass();
+	if (isc.IMenuButton.markAsFrameworkClass != null) isc.IMenuButton.markAsFrameworkClass();
     
 	// ListGrid skinning	
 	if (isc.ListGrid) {										  
@@ -56,7 +56,9 @@ with (theWindow) {
 			bodyBackgroundColor:"#DEDEDE",
 			// copy the header (.button) background-color to match when sort arrow is hidden
 			backgroundColor:"#CCCCCC",
-			showSortArrow:isc.ListGrid.CORNER
+			showSortArrow:isc.ListGrid.CORNER,
+            expansionFieldImageWidth : 16,
+            expansionFieldImageHeight : 16
 		});
 	}
 	

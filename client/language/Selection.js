@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -256,19 +256,37 @@ multipleSelected : function () {
 },
 
 
-//>	@method	selection.getSelection()
-//			Return an ordered array of all of the selected items
-//		@group	selection
-//
-//		@return		(array)		list of selected items
+//> @method selection.getSelection()
+// Return an ordered array of all of the selected items
+// @param [excludePartialSelections] When true, partially selected records will not be returned.
+//                                   Otherwise, all fully and partially selected records are
+//                                   returned.
+// @return (array) list of selected items
+// @group selection
 // @visibility external
 //<
-getSelection : function ()	{
-	// if the selection is dirty, cache it again
-	if (this._dirty)	this.cacheSelection();
+getSelection : function (excludePartialSelections) {
+    // if the selection is dirty, cache it again
+    if (this._dirty)	this.cacheSelection();
 
-	// return the cached selection list
-	return this._cache;
+    // return the cached selection list if possible
+    var selection = this._cache;
+ 
+    // If partial selections are excluded, built a new list of full selections only.
+    if (excludePartialSelections == true && selection != null && selection.length > 0) {
+        var cache = this._cache;
+        selection = [];
+
+        // Cache includes both fully and partially selected nodes.
+        for (var i = 0; i < cache.length; i++) {
+            var item = cache[i];
+            if (!this.isPartiallySelected(item)) {
+                selection[selection.length] = item;
+            }
+        }               
+    }
+
+    return selection;
 },
 
 

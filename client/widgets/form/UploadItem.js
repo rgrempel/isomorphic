@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -91,7 +91,7 @@ isc.UploadItem.addMethods({
         // UploadItems don't support setting the value. If a change handler returned false, or
         // we otherwiser attempted to change the value, log a warning and drop that changed val
         if (this._changeValue != newValue) {
-            this.logWarn("Upload Items do not support programatically modifying the value entered " +
+            this.logWarn("Upload Items do not support programmatically modifying the value entered " +
                          "by the user. Ignoring attempt to update from change handler");
         }
 

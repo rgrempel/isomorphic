@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -300,7 +300,7 @@ actionsArePendingForEvent : function (eventType) {
 
 
 //>	@classMethod	Page.registerKey()
-// Fire some action when the Page recieves a keyPress event from a certain key.<br>
+// Fire some action when the Page receives a keyPress event from a certain key.<br>
 // Note that if a widget has keyboard focus, this action will fire only after any widget-level
 // keyPress handlers have fired and bubbled the event up to the top of their ancestor chain.<br>
 // Multiple actions can be registered to fire on a single keyPress using this method, and can
@@ -309,7 +309,7 @@ actionsArePendingForEvent : function (eventType) {
 // This differs from calling +link{Page.setEvent()} with the <code>"keyPress"</code>
 // events registered via <code>setEvent()</code> will fire <i>before</i> widget level handlers 
 // respond to the event, and will fire for every <code>keyPress</code> event, not just those
-// triggerred by some specific key or key-combination.
+// triggered by some specific key or key-combination.
 // 
 // 
 // @group	KeyRegistry
@@ -384,7 +384,7 @@ registerKey : function (key, action, target) {
 //		@group	KeyRegistry
 //		@see	Page.registerKey()
 //
-//		@param	actionID (KeyName) Name of key to clear registry enties for.
+//		@param	actionID (KeyName) Name of key to clear registry entries for.
 //		@param	[target] (object) target specified when the action was registered for the key.
 //
 // @visibility external

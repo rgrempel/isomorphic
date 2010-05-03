@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -529,6 +529,15 @@ isc.FormItem.addProperties({
     // @getter FormItem.getDisplayFieldName()
     //<
     
+    //> @attr formItem.multipleValueSeparator   (string : ', ' : IR) 
+    // If this item is displaying multiple values, this property will be the
+    // string that separates those values for display purposes.
+    //
+    // @group display_values
+    // @visibility external
+    //<
+    multipleValueSeparator: ", ",
+    
     //> @attr formItem.fetchMissingValues   (boolean : true : IRWA)
     // If +link{FormItem.displayField} is specified for this item, should the item 
     // perform a fetch on the +link{FormItem.optionDataSource} to retrieve the display value
@@ -754,6 +763,13 @@ isc.FormItem.addProperties({
     // @visibility external
     //<
     
+    //> @attr formItem.pickerIconName (String : "picker" : [IRA])
+    // If +link{formItem.showPickerIcon} is true, this attribute specifies the 
+    // +link{formItemIcon.name} applied to the picker icon
+    // @visibility external
+    //<
+    pickerIconName:"picker",
+    
     //> @attr formItem.pickerIconSrc   (SCImgURL : "" : [IRWA])
     // If +link{formItem.showPickerIcon} is true for this item, this property governs the
     // src of the picker icon image to be displayed.
@@ -926,15 +942,16 @@ isc.FormItem.addProperties({
     // Exposed on TextItem and TextAreaItem directly since it won't apply to other items.
     
     
-    //> @attr   formItem.changeOnKeypress   (boolean : true : RW)
-    //  Should this form item fire its changeHandler (and store its value in the form) on every
-    //  keypress.
-    //  Set to false to suppress the 'change' handler fired (and the value stored) on every keypress.
-    //  <br>
-    //  Note: If false, the value returned by 'getValue()' will not reflect the value displayed in
-    //  the form item element as long as focus is in the form item element.
+    //> @attr formItem.changeOnKeypress (boolean : true : IRW)
+    // Should this form item fire its +link{formItem.change(),change} handler (and store its
+    // value in the form) on every keypress? Set to <code>false</code> to suppress the 'change'
+    // handler firing (and the value stored) on every keypress.
+    // <p>
+    // Note: If <code>false</code>, the value returned by +link{formItem.getValue(),getValue}
+    // will not reflect the value displayed in the form item element as long as focus is in
+    // the form item element.
     // 
-    //      @group  eventHandling, values
+    // @group  eventHandling, values
     //<    
     changeOnKeypress:true,
     
@@ -1096,7 +1113,12 @@ isc.FormItem.addProperties({
     // Size and Layout
 	// --------------------------------------------------------------------------------------------
     //>	@attr	formItem.width		(number : "*" : IRW)
-	// By default, items take up the entire width of their cell
+    // Width of the FormItem.  Can be either a number indicating a fixed width in pixels, or
+    // "*" indicating the FormItem fills the space allocated to it's column (or columns, for a
+    // +link{colSpan,column spanning} item).
+    // <P>
+    // See the +link{group:formLayout} overview for details.
+    //
 	// @group formLayout
     // @visibility external
     // @example columnSpanning
@@ -1104,13 +1126,26 @@ isc.FormItem.addProperties({
 	width:"*",							
 
     //>	@attr	formItem.height		(number : 20 : IRW)
-	// Default height of this item.
+    // Height of the FormItem.  Can be either a number indicating a fixed height in pixels, a
+    // percentage indicating a percentage of the overall form's height, or "*" indicating take
+    // whatever remaining space is available. 
+    // <P>
+    // See the +link{group:formLayout} overview for details.
+    //
 	// @group formLayout
     // @visibility external
     // @example formLayoutFilling
 	//<
     
 	height:20,
+	
+	//> @attr formItem.cellHeight (number : null : IRW)
+	// If specified, this property will govern the height of the cell in which this form
+	// item is rendered.
+	// Will not apply when the containing DynamicForm sets <code>itemLayout:"absolute"</code>.
+	// @visibility external
+	//<
+	
 
     //>	@attr formItem.colSpan		(number : 1 : IRW)
 	// Number of columns that this item spans.  
@@ -1428,6 +1463,18 @@ isc.FormItem.addProperties({
         //  @visibility external
         //  @example formIcons
         //<
+        
+        //> @attr formItemIcon.name (string : null : IR)
+        // Identifier for this form item icon. This identifier (if set) should be unique
+        // within this form item and may be used to get a pointer to the icon object
+        // via +link{FormItem.getIcon()}.
+        // @visibility external
+        //<
+        // Note: Also used by the AutoTest subsystem - if the name is autoGenerated, we can't
+        // guarantee it won't change as the application changes (specifically the order of
+        // icons for this form item changes).
+        // For auto-generated icons, such as the picker we should always provide a reliable
+        // standard name
     
         //> @attr   formItemIcon.src (string : null : IRW)
         //      If set, this property determines this icon's image source.
@@ -1777,7 +1824,7 @@ isc.FormItem.addProperties({
     // @visibility external
     //<
     
-    //> @attr FormItem.hoverVAlign (measure : null : [IRW])
+    //> @attr FormItem.hoverVAlign (VerticalAlignment : null : [IRW])
     // Vertical text alignment  for text displayed in this item's hover canvas, if shown.
     // @see DynamicForm.itemHoverVAlign
     // @group Hovers
@@ -1830,6 +1877,7 @@ isc.FormItem.addProperties({
     // item is part of a form with no +link{dataBoundComponent.dataSource,dataSource}, the 
     // <code>operator</code> attribute will have no effect. 
     //
+    // @group criteriaEditing
     // @visibility external
     //<
     
@@ -2298,7 +2346,9 @@ isc.FormItem.addMethods({
     
     getCellHeight : function (reportOverflowedSize) {
         if (isc._traceMarkers) arguments.__this = this;
-
+        
+        if (this.cellHeight != null) return this.cellHeight;
+        
         var height = this.getHeight(reportOverflowedSize);
         if (!isc.isA.Number(height)) return height;
 
@@ -2330,6 +2380,12 @@ isc.FormItem.addMethods({
         }
               
         return height;
+    },
+    // Forms only write a height into the cell containing the form item if shouldFixRowHeight
+    // is true.
+    // If we have an explicit cellHeight specified, consider the height of this item "fixed"!
+    shouldFixRowHeight : function () {
+        return this.cellHeight != null;
     },
     
     // Returns the space taken up around this form item by the cell (determined from
@@ -2639,7 +2695,7 @@ isc.FormItem.addMethods({
     },
 
     
-    // getTextPickerIconidth() / height()
+    // getTextPickerIconWidth() / height()
     // returns the size of the picker icon's cell (used for writing out HTML - not retrieved by looking at
     // the DOM element in question).
     getPickerIconWidth : function () {
@@ -3043,7 +3099,6 @@ isc.FormItem.addMethods({
     _$standaloneEnd:"</SPAN>",
     _$standaloneSpan:"_standaloneSpan",
     getStandaloneItemHTML : function (value, includeHint, includeErrors) {
-
         // Write a span around the item with this form's ID as the eventProxy -- this ensures
         // that events are handled by the form rather than whatever the next parent canvas is
         var output = isc.SB.create(),
@@ -3373,7 +3428,6 @@ isc.FormItem.addMethods({
 	//<
     
     getInnerHTML : function (value, includeHint, includeErrors, returnArray) {
-    
         // Inactive content: such as printHTML:
         // If we're marked as inactive while getting innerHTML set the _currentInactiveContext
         // flag if it hasn't been set already
@@ -3634,7 +3688,7 @@ isc.FormItem.addMethods({
                 errorHTML = this.getErrorHTML(errors);
             }
         }
-        
+
         var vAlign = this.iconVAlign,
             displayValue = this.mapValueToDisplay(value),
             writeOuterTable = this._writeOuterTable(includeHint, showErrors),
@@ -4080,9 +4134,9 @@ isc.FormItem.addMethods({
             
             isc.addProperties(props, this.pickerIconDefaults, this.pickerIconProperties);
             
-            // apply an ID to it to make it a 'valid' icon type object - allows us to get
+            // apply a name to it to make it a 'valid' icon type object - allows us to get
             // a pointer to its HTML element
-            if (props._id == null) this._setIconId(props);
+            this._setupIconName(props, this.pickerIconName);
 
             this._pickerIcon = props;
             
@@ -4534,7 +4588,7 @@ isc.FormItem.addMethods({
         if (shouldRefocus) this.form._suppressFocusHandlerForItem(this);
         // If appropriate stick focus back into the icon which previously had it
         if (this._redrawFocusIcon) {
-            var icon = this._getIcon(this._redrawFocusIcon);
+            var icon = this.getIcon(this._redrawFocusIcon);
             delete this._redrawFocusIcon;
             if (icon) {
                 if (shouldRefocus) {
@@ -4702,7 +4756,7 @@ isc.FormItem.addMethods({
     _setUpIcons : function () {
         var icons = this.icons;
         if (icons == null) return;
-
+        
         for (var i = 0; i < icons.length; i++) {
             var icon = icons[i];
             
@@ -4716,10 +4770,11 @@ isc.FormItem.addMethods({
     // Split into a separate method so this can be called separately if icons are applied after
     // setUpIcons has been run (See ExpressionItem for an example of this)
     _setUpIcon : function (icon) {
-        // apply an identifier to the icon (to be written into the DOM) to ensure that the
+        // apply an identifier to the icon (to be written into the DOM as an attribute) 
+        // to ensure that the
         // appropriate click action is fired on a click, and allow us to get a pointer
         // back to the icon image / link elements in the DOM
-        if (icon._id == null) this._setIconId(icon);
+        this._setupIconName(icon);
             
         // Set the '_disabled' flag on the icon. We use this to track whether we need to
         // update HTML when the icon gets enabled / disabled
@@ -4734,7 +4789,6 @@ isc.FormItem.addMethods({
     //      @return (HTML)      HTML for the icons
     //<
     getIconsHTML : function () {
-
         if (!this.showIcons || this.icons == null) return "";
         var hasFocus = this._hasRedrawFocus(true);
         
@@ -4772,10 +4826,36 @@ isc.FormItem.addMethods({
         return hasFocus;
     },
     
-    _setIconId : function (icon) {
-        if (icon._id != null) return icon;        
+    // setupIconName
+    // Given an icon object, ensure it has a unique name, autoGenerating one if appropriate
+    // This method is called on init and on setIcons so should be able to test for 
+    // uniqueness here.
+    
+    _setupIconName : function (icon, name) {
+        if (name == null) name = icon.name;
+        // Backcompat: We used to use icon._id.
+        // This was never exposed so developers shouldn't have been setting this
+        // attribute but for safety, if this is set, respect it
+        if (name == null && icon._id != null) {
+            this.logWarn("Attempting to use '_id' property as icon name - this property has been deprecated in favor of 'name'");
+            name = icon._id;
+        }
+        if (name != null) {
+            // test for uniqueness - names must be unique or getIcon / updateIconSrc etc will fail
+            var collisions = this.icons ? this.icons.findAll("name", name) : [];
+            if (collisions != null && collisions.length > 0 &&
+                (collisions.length > 1 || collisions[0] != icon))
+            {
+                this.logWarn("This form item has more than one icon with the same specified name:"
+                    + name + ". Ignoring this name and using an auto-generated one instead.");
+                name = null;
+            } else {
+                icon.name = name;
+                return icon;
+            }
+        }
         if (this._nextIconId == null) this._nextIconId = 0;
-        icon._id =  "_" + this._nextIconId++;
+        icon.name =  "_" + this._nextIconId++;
         return icon;
     },
     
@@ -4836,7 +4916,7 @@ isc.FormItem.addMethods({
             // as window[itemID].foo(), as well as being passed to the 'bubbleEvent()' method
             // on the Form.
             itemID = this.getItemID(),
-            iconID = icon._id;        
+            iconID = icon.name;        
         // If the icon is marked as 'imgOnly', just return the img tag - event handling should
         // be handled by the Form Item itself
         if (icon.imgOnly) {
@@ -4864,7 +4944,7 @@ isc.FormItem.addMethods({
                 isc.FormItem._iconTemplate = [
                     // link html
                     "<a ID='",                  // 0
-                    ,                           // 1: link elementID: this._getIconLinkId(icon._id)
+                    ,                           // 1: link elementID: this._getIconLinkId(icon.name)
                     "'",                        // 2
                       
                     
@@ -5072,17 +5152,17 @@ isc.FormItem.addMethods({
 
     // Internal methods to get a pointer to Icon's HTML elements in the DOM
     _getIconLinkElement : function (icon) {
-        icon = this._getIcon(icon);
+        icon = this.getIcon(icon);
         if (icon == null || icon.imgOnly) return null;
-        var elementID = this._getIconLinkId(icon._id);
+        var elementID = this._getIconLinkId(icon.name);
         return isc.Element.get(elementID);
     },
     
     _getIconImgElement : function (icon) {
-        icon = this._getIcon(icon);
+        icon = this.getIcon(icon);
         if (icon == null) return null;
 
-        var elementID = this._getIconImgId(icon._id);
+        var elementID = this._getIconImgId(icon.name);
         return isc.Element.get(elementID);
     },
     
@@ -5178,7 +5258,7 @@ isc.FormItem.addMethods({
     // (Used by 'setDisabled')
     setIconEnabled : function (icon) {
         
-        icon = this._getIcon(icon);
+        icon = this.getIcon(icon);
         if (!icon) return;
         
         // Track the enabled / disabled state on the icon. This avoids us updating the 
@@ -5231,9 +5311,9 @@ isc.FormItem.addMethods({
         if (!isc.isAn.Object(icon)) return;
 
         // If the icon's ID hasn't been set yet, set it now
-        // (Can happen if the icon has never been written out as part of getIconsHTML())
-        if (icon._id == null) {
-            this._setIconId(icon);
+        
+        if (icon.name == null) {
+            this._setupIconName(icon);
         }
 
         var currentlyVisible = this._shouldShowIcon(icon);
@@ -5386,29 +5466,35 @@ isc.FormItem.addMethods({
         }
     },
     
-    //_getIcon() given an icon's ID (unique within this form item), retrieve a pointer to the
-    // icon.
-    // Note this is an internal method - developers have no access to the _id property applied
-    // to icons
-    _getIcon : function (id) {
+    //> @method FormItem.getIcon()
+    // Given an +link{formItemIcon.name} return a pointer to the icon definition
+    // @param name (string) specified +link{formItemIcon.name}
+    // @return (FormItemIcon) form item icon matching the specified name
+    // @visibility external
+    //<
+    getIcon : function (name) {
+        if (name == null) return;
+    
         var icon;
         if (this.icons) {
             for (var i = 0; i < this.icons.length; i++) {
                 // make sure we fire the click action of the appropriate object in the 'icons' array
-                if (this.icons[i] == id || this.icons[i]._id == id) icon = this.icons[i];
+                if (this.icons[i] == name || this.icons[i].name == name) icon = this.icons[i];
             }
         }
         if (!icon && this.showPickerIcon) {
+            if (isc.isAn.Object(name)) name = name.name;
             var pickerIcon = this.getPickerIcon();
-            if (pickerIcon.id == id || pickerIcon.id == id.id) icon = pickerIcon;
+            if (pickerIcon && pickerIcon.name == name) icon = pickerIcon;
         }
         if (!icon) {
-            this.logInfo("FormItem unable to get pointer to icon with ID:"+ id +
-                         " - Invalid ID, or icons array has been inappropriately modified." +
+            this.logInfo("FormItem unable to get pointer to icon with name:"+ name +
+                         " - Invalid name, or icons array has been inappropriately modified." +
                          " To update icon[s] for some form item, use the method 'setIcons()'.")
         }
         return icon;
     },
+    
     
     // _setIconImgState() - an internal method to show the 'over' / 'focused' image for an icon.
     _setIconImgState : function (icon, over, focused) {
@@ -5795,6 +5881,7 @@ isc.FormItem.addMethods({
             this.logInfo("not returning focus element since it doesn't match " +
                          "document.activeElement", "nativeFocus");
             if (this.hasFocus) {
+                this.hasFocus = false;
                 this.elementBlur();
             }
             this._currentFocusElement = null;
@@ -5903,7 +5990,7 @@ isc.FormItem.addMethods({
         var itemInfo = event.itemInfo;
         return (itemInfo &&
                 (itemInfo.overControlTable || this._overTextBox(event) ||
-                 (itemInfo.overIcon && this._getIcon(itemInfo.overIcon) == this.getPickerIcon()) 
+                 (itemInfo.overIcon && this.getIcon(itemInfo.overIcon) == this.getPickerIcon()) 
                 )
                );
     },
@@ -6097,7 +6184,18 @@ isc.FormItem.addMethods({
         // to transform.
         if (isc.isAn.Array(map)) return defaultValue;
         
-		var value = isc.getValueForKey(key, map, defaultValue);
+		var value;
+		// for multi-select items, key might be an array of selected values.
+		// Display them as a list of display values, separated by the multipleValueSeparator
+		if (isc.isAn.Array(key)) {		    
+		    value = "";
+		    for (var i = 0; i < key.length; i++) {
+		        value += isc.getValueForKey(key[i], map, defaultValue);    
+		        if (i != key.length - 1) value += this.multipleValueSeparator;
+		    }
+		} else {
+		    value = isc.getValueForKey(key, map, defaultValue);
+		}
         return value;
 	},
 	
@@ -6396,7 +6494,10 @@ isc.FormItem.addMethods({
     _$smart:"smart",
 	setValue : function (newValue, allowNullValue) {
         
-        this._setValueCalled = true;  
+        this._setValueCalled = true;
+        // set _selectedRecord to null. It will get set to point to the
+        // fetched record in fetchMissingValueReply(), if called.
+        this._selectedRecord = null;
         // If we have focus, remember the selection so we can retain the cursor insertion point
         // - useful for the case where this is a simple data transform, such as case-shifting
         var resetCursor = (this.maintainSelectionOnTransform && this.hasFocus && 
@@ -6539,7 +6640,8 @@ isc.FormItem.addMethods({
             // valueMap anyway
             if (!this.filterLocally) return;
         }
-        
+        // store the record that was fetched, so it can be retrieved via getSelectedRecord()
+        this._selectedRecord = record;
         // Add to the special 'displayFieldValueMap'
         // This is combined with any explicitly specified valueMap by 'getValueMap()'
         if (this._displayFieldValueMap == null) this._displayFieldValueMap = {};
@@ -6580,6 +6682,25 @@ isc.FormItem.addMethods({
         this.updateValueMap(needsRefresh);
     },
     
+    //> @method formItem.getSelectedRecord()
+    // get the record returned from the +link{optionDataSource} when +link{fetchMissingValues}
+    // is true, and the missing value is fetched. Note: If the item is initialized with a value, 
+    // this will return null.
+    // @return (ListGridRecord) selected record
+    // @visibility external
+    //<
+    getSelectedRecord : function () {
+        if (!this._selectedRecord && this._value != null && this.optionDataSource) {
+            // we have a value but no _selectedRecord - map this._selectedRecord to the 
+            // record associated with the current value
+            if (this.pickList && this.pickList.data) 
+                this._selectedRecord = this.pickList.data.find(this.valueField, this._value);
+
+        }
+
+         return this._selectedRecord;
+    },
+
     //>	@method	formItem.clearValue()
 	// Clear the value for this form item.
     // <P>
@@ -6611,7 +6732,7 @@ isc.FormItem.addMethods({
     
 	setElementValue : function (newValue, dataValue) {
         if (!this.isDrawn()) return;
-        
+       
         var undef;
         if (dataValue === undef) {  
             dataValue = this._value;
@@ -7038,7 +7159,7 @@ isc.FormItem.addMethods({
     // or checkboxes used to show/hide other form items.
     // <p>
     // A <code>shouldSaveValue:false</code> item should be given a value either via
-    // +link{formItem.defaultValue} or by calling can use
+    // +link{formItem.defaultValue} or by calling
     // +link{dynamicForm.setValue,form.setValue(item, value)} or 
     // +link{formItem.setValue,formItem.setValue(value)}.  Providing a value via
     // +link{dynamicForm.values,form.values} or +link{dynamicForm.setValues,form.setValues()} 
@@ -7072,7 +7193,9 @@ isc.FormItem.addMethods({
 
     //> @method formItem.getCriteriaFieldName()
     // Returns the name of the field to use in a Criteria object for this item
+    //
     // @return (String)    the name of the field to use in a Criteria object for this item
+    // @group criteriaEditing
     //<
     // The main current use for this method is when filtering a field that has a displayField,
     // using a ComboBoxItem. Depending on whether the user selected from the picklist or just 
@@ -7084,10 +7207,88 @@ isc.FormItem.addMethods({
 
     //> @method formItem.getCriteriaValue()
     // Returns the value of the field to use in a Criteria object for this item
+    //
     // @return (String)    the value of the field to use in a Criteria object for this item
+    // @group criteriaEditing
     //<
     getCriteriaValue : function () {
         return this.getValue();
+    },
+    
+    //> @method formItem.hasAdvancedCriteria()
+    // Does this form item produce an +link{AdvancedCriteria} sub criterion object?
+    // If this method returns true, +link{dynamicForm.getValuesAsCriteria()} on the
+    // form containing this item will always return an +link{AdvancedCriteria} object, calling
+    // +link{formItem.getCriterion()} on each item to retrieve the individual criteria.
+    // <P>
+    // Default implementation will return <code>true</code> if +link{formItem.operator} is
+    // explicitly specified.
+    //
+    // @return (boolean) true if this item will return an AdvancedCriteria sub-criterion.
+    //
+    // @group criteriaEditing
+    // @visibility external
+    //<
+    hasAdvancedCriteria : function () {
+        return this.operator != null;
+    },
+    
+    // getOperator() returns the operator for this form item
+    // will return this.operator if specified, otherwise the default operator for the type
+    // being edited by this item.    
+    getOperator : function () {
+        
+        if (this.operator) {
+            var operator = this.operator;
+        } else {
+            if (this.valueMap || this.optionDataSource || 
+                    isc.SimpleType.inheritsFrom(this.type, "enum")) {
+                operator = "equals";
+            } else {
+                operator = "iContains";
+            }
+        }
+        
+        return operator;
+        
+    },
+    
+    //> @method formItem.canEditCriterion() [A]
+    // When a dynamic form is editing an advanced criteria
+    // object via +link{DynamicForm.setValuesAsCriteria()}, this method is used to to determine
+    // which sub-criteria apply to which form item(s).
+    // <P>
+    // This method will be called on each item, and passed the sub-criterion of the
+    // AdvancedCriteria object. It should return true if the item can edit the criterion,
+    // otherwise false. If it returns true, setValuesAsCriteria() will call 
+    // +link{formItem.setCriterion()} to actually apply the criterion to the form item, and
+    // +link{dynamicForm.getValuesAsCriteria()} can subsequently retrieve the edited criterion
+    // by calling +link{formItem.getCriterion()}.
+    // <P>
+    // Default implementation will return true if the criterion <code>fieldName</code> and
+    // <code>operator</code> match the fieldName and operator (or default operator) for
+    // this item.
+    //
+    // @param criterion (Criterion) sub-criterion from an AdvancedCriteria object
+    // @return (boolean) return true if this item can edit the criterion in question.
+    //
+    // @group criteriaEditing
+    // @visibility external
+    //<
+    canEditCriterion : function (criterion) {
+        if (criterion.fieldName != null && criterion.fieldName == this.getCriteriaFieldName()) {
+            if (criterion.operator != this.getOperator()) {
+                this.logWarn("Attempting to edit AdvancedCriteria in a dynamicForm. Criteria " +
+                    "includes a value for field:" + criterion.fieldName + 
+                    ". Matches the fieldName for this item, but the specified operator:" + 
+                    criterion.operator + " does not match the operator for this form item:" + 
+                    this.getOperator() + ". Unclear how to combine values for this field, so " +
+                    "leaving original criterion in place.");
+                return false;
+            }
+            return true;
+        }
+        return false;
     },
     
         
@@ -7100,12 +7301,24 @@ isc.FormItem.addMethods({
 	// generally quite flexible and powerful enough for most requirements.  An example of a case
     // where you might want to override this method is if you wanted to implement a date range 
     // selection (ie, date &gt; x AND date &lt; y) on a form that was combining its other criteria 
-    // fields with an OR.
+    // fields with an "or" operator.
+    // <P>
+    // Note that this method is part of the criteria editing subsystem: if overridden, it
+    // is likely that you will want to also override +link{formItem.hasAdvancedCriteria()} to
+    // ensure this method is called by the form, and to support editing of existing advanced
+    // criteria you may also need to override +link{formItem.canEditCriterion()} and 
+    // +link{formItem.setCriterion()}.
+    // <P>
+    // The default implementation will return a criterion including the form item value, fieldName
+    // and specified +link{formItem.operator}, or a default operator derived from the
+    // form item data type if no explicit operator is specified.
     //
+    // @return (Criterion) criterion object based on this fields current edited value(s).
+    // @group criteriaEditing
     // @visibility external
     //<
     getCriterion : function () {
-        var value = this.getValue();
+        var value = this.getCriteriaValue();
         if (value == null || isc.is.emptyString(value)) return;
 		// multi-selects are returned as an array.  
 		if (isc.isAn.Array(value)) {
@@ -7113,25 +7326,31 @@ isc.FormItem.addMethods({
             if (value.length == 0 || value.contains(isc.emptyString)) return;
         }
         
-        if (this.operator) {
-            var operator = this.operator;
-        } else {
-            if (this.valueMap || this.optionDataSource || 
-                    isc.SimpleType.inheritsFrom(this.type, "enum")) {
-                operator = "equals";
-            } else {
-                operator = "iContains";
-            }
-        }
+        var operator = this.getOperator();
+        
 
         return {
-            fieldName: this.criteriaField ? this.criteriaField : this.name,
+            fieldName: this.getCriteriaFieldName(),
             operator: operator, 
             value: value
         }
     },
     
-
+    //> @method formitem.setCriterion() [A]
+    // Update this form item to reflect a criterion object from within an AdvancedCriteria.
+    // Called by +link{DynamicForm.setValuesAsCriteria()} when +link{formItem.canEditCriterion()}
+    // returns true for this item.
+    // <P>
+    // Default implementation simply calls +link{formItem.setValue} with the <code>value</code>
+    // of the criterion passed in
+    // @param criterion (Criterion) criterion to edit
+    // @group criteriaEditing
+    // @visibility external
+    //<
+    setCriterion : function (criterion) {
+        this.setValue(criterion.value);
+    },
+  
     
     // Errors
 	// --------------------------------------------------------------------------------------------
@@ -8222,7 +8441,7 @@ isc.FormItem.addMethods({
     // Note that Safari doesn't fully support focus/blur on icons - see comments in 
     // getIconHTML() for further details
     _iconFocus : function (id, element) {        
-        var icon = this._getIcon(id);
+        var icon = this.getIcon(id);
         if (icon != null) {
             
             var prompt = (icon.prompt != null ? icon.prompt : this.iconPrompt)    
@@ -8237,7 +8456,7 @@ isc.FormItem.addMethods({
     },
     
     _iconBlur : function (id, element) {
-        var icon = this._getIcon(id);
+        var icon = this.getIcon(id);
         if (icon != null) {
 
             window.status="";
@@ -8268,7 +8487,7 @@ isc.FormItem.addMethods({
         // We use the standard icon code to write out our validation error icon - if this is
         // where the event occurred, pass that through to a separate handler.
         if (id == this.getErrorIconId()) return this._handleErrorIconMouseOver();
-        var icon = this._getIcon(id);
+        var icon = this.getIcon(id);
         if (icon != null) {
 
             // If appropriate set the 'over' state for the icon img
@@ -8289,7 +8508,7 @@ isc.FormItem.addMethods({
 
     _iconMouseOut : function (id) {
         if (id == this.getErrorIconId()) return this._handleErrorIconMouseOut();    
-        var icon = this._getIcon(id);
+        var icon = this.getIcon(id);
         if (icon != null) {
             window.status = "";
             
@@ -8312,7 +8531,7 @@ isc.FormItem.addMethods({
     //
     //<
     _iconClick : function (id) {
-        var icon = this._getIcon(id);
+        var icon = this.getIcon(id);
         if (icon == null) return;
         if (this.iconIsDisabled(icon)) return;
         if (icon.click != null) {
@@ -8330,7 +8549,7 @@ isc.FormItem.addMethods({
 
     _$Enter:"Enter",
     _iconKeyPress : function (id) {
-        var icon = this._getIcon(id);
+        var icon = this.getIcon(id);
         if (icon) {
             var keyName = isc.EH.getKey(),
                 character = isc.EH.getKeyEventCharacter();
@@ -8735,7 +8954,7 @@ isc.FormItem.addMethods({
     },
     
     iconIsDisabled : function (icon) {
-        icon = this._getIcon(icon);
+        icon = this.getIcon(icon);
         if (!icon) return;
         // if we're in a disabled container that trumps 'neverDisable'
         if (this.containerWidget && this.containerWidget.isDisabled()) return true;
@@ -8770,11 +8989,7 @@ isc.FormItem.addMethods({
 
             element = canFocus ? this.getFocusElement() : null;            
         if (!canFocus || !element) {
-            // If we are a child element of a containerItem, and we're not focusable, put focus
-            // on the parent instead.
-            // Catches cases where (for example) the parent's items array has changed or one option 
-            // has been disabled on redraw
-            if (this.parentItem) this.parentItem.focusInItem();
+            
             // This method will return null if we don't have an HTML element, or the
             // element is currently not drawn into the DOM
             return;
@@ -8863,7 +9078,7 @@ isc.FormItem.addMethods({
     // focusInIcon()
     // - explicitly puts focus into an icon
     focusInIcon : function (icon) {
-        icon = this._getIcon(icon);
+        icon = this.getIcon(icon);
         if (icon == null || icon.imgOnly) return;
         var element = this._getIconLinkElement(icon);     
         if (element != null) element.focus();
@@ -8872,7 +9087,7 @@ isc.FormItem.addMethods({
     // blurIcon()
     // - take focus from an icon
     blurIcon : function (icon) {
-        if (isc.isA.String(icon)) icon = this._getIcon(icon);    
+        if (isc.isA.String(icon)) icon = this.getIcon(icon);    
         if (icon == null || !this.icons || !this.icons.contains(icon) || icon.imgOnly) return;
         var element = this._getIconLinkElement(icon);
 
@@ -8977,7 +9192,12 @@ isc.FormItem.addMethods({
 
         // If there are pending server validations that could affect this field,
         // block UI interaction until they complete. Skip any further handlers as well.
-        if (this.form.blockOnFieldBusy(this)) return false;
+        
+        if ((this.grid && this.grid.blockOnFieldBusy(this))
+            || (!this.grid && this.form.blockOnFieldBusy(this)))
+        {
+            return false;
+        }
 
         // If necessary fire this.editorEnter
         this.handleEditorEnter()

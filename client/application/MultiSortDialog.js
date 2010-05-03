@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -467,9 +467,9 @@ isc.MultiSortPanel.addMethods({
     },
 
     setButtonTitles : function (enable) {
-        this.addLevelButton.setTitle(this.addLevelButtonTitle);
-        this.deleteLevelButton.setTitle(this.deleteLevelButtonTitle);
-        this.copyLevelButton.setTitle(this.copyLevelButtonTitle);
+        if (this.addLevelButton) this.addLevelButton.setTitle(this.addLevelButtonTitle);
+        if (this.deleteLevelButton) this.deleteLevelButton.setTitle(this.deleteLevelButtonTitle);
+        if (this.copyLevelButton) this.copyLevelButton.setTitle(this.copyLevelButtonTitle);
     },
 
     setButtonStates : function () {
@@ -479,11 +479,11 @@ isc.MultiSortPanel.addMethods({
             anySelected = grid.anySelected(),
             selectedIndex = grid.getRecordIndex(grid.getSelectedRecord())
         ;
-        this.addLevelButton.setDisabled(numLevels >= maxLevels);
-        this.deleteLevelButton.setDisabled(!anySelected);
-        this.copyLevelButton.setDisabled(!anySelected || numLevels >= maxLevels); 
-        this.levelUpButton.setDisabled(!anySelected || selectedIndex == 0);
-        this.levelDownButton.setDisabled(!anySelected || selectedIndex == numLevels-1); 
+        if (this.addLevelButton) this.addLevelButton.setDisabled(numLevels >= maxLevels);
+        if (this.deleteLevelButton) this.deleteLevelButton.setDisabled(!anySelected);
+        if (this.copyLevelButton) this.copyLevelButton.setDisabled(!anySelected || numLevels >= maxLevels); 
+        if (this.levelUpButton) this.levelUpButton.setDisabled(!anySelected || selectedIndex == 0);
+        if (this.levelDownButton) this.levelDownButton.setDisabled(!anySelected || selectedIndex == numLevels-1); 
     },
 
     // support setting the fields array after creation-time
@@ -497,6 +497,11 @@ isc.MultiSortPanel.addMethods({
 
     setSortFields : function () {
         var fields = [];
+
+        this.optionsGrid.getField("property").title = this.propertyFieldTitle;
+        
+        if (!this.fields) return;
+        
         // parse the fields array removing any canSort: false fields
         for (var i=0; i<this.fields.length; i++) {
             var field = this.fields[i];
@@ -516,7 +521,6 @@ isc.MultiSortPanel.addMethods({
                 fieldMap[key] = isc.DataSource.getAutoTitle(key);
         }
 
-        this.optionsGrid.getField("property").title = this.propertyFieldTitle;
         this.optionsGrid.setValueMap("property", fieldMap);
         if (!this._maxLevels || this.maxLevels > keyCount) this.maxLevels = keyCount;
     },

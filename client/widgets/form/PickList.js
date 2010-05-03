@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -69,7 +69,7 @@ isc.PickListMenu.addProperties({
     canResizeFields:false,
     // Since we don't support drag resize of fields, turn canFreezeFields off by default
     canFreezeFields:false,
-
+    
     styleName:"pickListMenu",
     bodyStyleName:"pickListMenuBody"
     
@@ -109,12 +109,35 @@ isc.PickListMenu.addMethods({
         return this.Super("getValueIcon", arguments);
     },
 
+    // override recordClick 
+    recordClick : function (viewer,record,recordNum,field,fieldNum,value,rawValue) {       
+        // hide before firing itemClick.
+        // This avoids issues with focus, where the itemClick action is expected to put focus
+        // somewhere that is masked until this menu hides.
+        if (!this.allowMultiSelect) this.hide();
+        // add support for click handlers on the individual rows
+        // make itemClick a stringMethod?
+        if (record != null) this.itemClick(record);
+        
+    },
+    
     // 'pick' the selected value on click.  Matches Windows ComboBox behavior
     itemClick : function (record) {
         var formItem = this.formItem,
-            fieldName = formItem.getValueFieldName(),
-            value = record[fieldName];
-        formItem.pickValue(value);
+            fieldName = formItem.getValueFieldName();            
+            
+        if (this.allowMultiSelect) {
+             var sel = this.getSelection();
+             var values = [];
+             for (var i = 0; i < sel.length; i++) {
+                 var currSel = sel[i];
+                 values.add(currSel[fieldName]);    
+             }       
+             formItem.pickValue(values);
+         } else {
+         	 var value = record[fieldName];
+             formItem.pickValue(value);
+         }
     },
 
     hide : function (a,b,c,d) {         
@@ -408,8 +431,11 @@ isc.PickList.addInterfaceProperties({
     // @see pickListFields
     // @visibility external
     //<
-    pickListHeaderHeight:22
+    pickListHeaderHeight:22,
 
+    
+    allowMultiSelect: true
+    
     
     // --------------------------------------------------------------------------------------
     // Data / databinding
@@ -478,7 +504,7 @@ isc.PickList.addInterfaceProperties({
     // <P>
     // The data will be retrieved via a "fetch" operation on the DataSource, passing the 
     // +link{PickList.pickListCriteria} (if set) as criteria, and passing
-    // +link{optionFilterContext} (if set) as DSRequest properties.
+    // +link{optionFilterContext} (if set) as DSRequest Properties.
     // <P>
     // The fetch will be triggered when the pickList is first shown, or, you can set
     // +link{SelectItem.autoFetchData,autoFetchData:true} to fetch when the FormItem is
@@ -585,7 +611,7 @@ isc.PickList.addInterfaceMethods({
 
         // Only pass in the param to show when the filter is complete if we're waiting for
         // data - otherwise we'll show the pickList explicitly (below).
-        if (!this.pickList) this.makePickList(waitForData);
+        if (!this.pickList) this.makePickList(waitForData, null, queueFetches);
         // This will ensure the pickList is associated with this form item and set up its
         // data and fields.        
         
@@ -663,9 +689,17 @@ isc.PickList.addInterfaceMethods({
         else this.filterDataBoundPickList(requestProperties, !maintainCache);
     },
     
+    mapValueToDisplay : function (internalValue, a, b, c) {
+        if (this.isSelectOther) {
+            if (internalValue == this.otherValue) return this.otherTitle;
+            if (internalValue == this.separatorValue) return this.separatorTitle;
+        }
+
+        return this.invokeSuper(isc.SelectItem, "mapValueToDisplay", internalValue,a, b, c);
+	},
     // Create the pickList for this widget.
     
-    makePickList : function (show, request) {
+    makePickList : function (show, request, queueFetches) {
         //>DEBUG
         var startTime = isc.timeStamp();
         //<DEBUG
@@ -689,15 +723,16 @@ isc.PickList.addInterfaceMethods({
             // overrides specific to form item pickLists.
             // The pattern we will use is to set the pickList up here, then override the
             // properties to allow us to reuse the list for other 
-        
+            
             // Determine desired properties from the various init params.
             var pickListProperties = this.pickListProperties || {};
             if (this.sortField != null) pickListProperties.sortField = this.sortField;
             if (this.sortFieldNum != null) pickListProperties.sortFieldNum = this.sortFieldNum;
             if (this.sortDirection != null) pickListProperties.sortDirection = this.sortDirection;
+                   
             this.pickList = isc.PickListMenu.create(
                                 // no need to set up showPickList - this is done with setFields
-                                { headerHeight:this.pickListHeaderHeight }, 
+                                { headerHeight:this.pickListHeaderHeight}, 
                                 pickListProperties
                             );
 
@@ -712,7 +747,7 @@ isc.PickList.addInterfaceMethods({
         }
 
         // fire 'setUpPickList' to set up the specific properties relevant to this form item
-        this.setUpPickList(show, false, request);
+        this.setUpPickList(show, queueFetches, request);
         //>DEBUG
         if (this.logIsInfoEnabled("timing"))
             this.logInfo("Time to initially create pickList:" + (isc.timeStamp() - startTime), "timing");
@@ -873,8 +908,12 @@ isc.PickList.addInterfaceMethods({
         isc.addProperties(pickListProperties, {
             // Ensure there's a pointer back to the form item
             formItem:this,
-            
-            baseStyle:this.pickListBaseStyle,
+            // if the cellHeight for the picklist is greater than the normal cell
+            // height, use the default listgrid css class instead ('cell')
+            // The pickListBaseStyle in some skins uses media specifically designed
+            // for the default height, which looks bad for larger heights.
+            baseStyle: (this.pickList.cellHeight > this.pickList.normalCellHeight) ? 
+                "cell" : this.pickListBaseStyle,
             
             hiliteColor:this.pickListHiliteColor,
             hiliteTextColor:this.pickListHiliteTextColor,
@@ -890,10 +929,34 @@ isc.PickList.addInterfaceMethods({
             // notify the new item whenever we get fresh data (replaces previous dataArrived
             // implementation which would notify the previous form item)
             dataArrived : function (startRow, endRow) {
+                if (isc._traceMarkers) arguments.__this = this;
                 this.Super("dataArrived", arguments);
                 if (this.formItem) this.formItem.handleDataArrived(startRow,endRow,this);
             }
         });
+         if (this.multiple && this.multipleAppearance == "picklist" 
+                && this.allowMultiSelect) 
+         {
+            pickListProperties.selectionAppearance = "checkbox";
+            pickListProperties.allowMultiSelect = true;
+         
+            pickListProperties.enableSelectOnRowOver = false;
+            pickListProperties.selectionType = "simple";
+            
+            pickListProperties.className = "listGrid";
+            pickListProperties.bodyStyleName = "gridBody";
+            
+        } else {
+            // rowStyle is the default selectionAppearance
+            pickListProperties.selectionAppearance = "rowStyle";
+            pickListProperties.allowMultiSelect = false;
+            
+            pickListProperties.enableSelectOnRowOver = true;
+            pickListProperties.selectionType = "single";
+            
+            pickListProperties.className="scrollingMenu",
+            pickListProperties.bodyStyleName="pickListMenuBody"
+        }
 
         this.pickList.setProperties(pickListProperties);
         
@@ -1002,6 +1065,7 @@ isc.PickList.addInterfaceMethods({
     // cell value (unless there's an explicit display field value for the record in question
     // in which case the "right" behavior is ambiguous)
     _formatDisplayFieldCellValue : function (value,record,rowNum,colNum,grid) {
+        
         if (value != null) return value;
         var item = grid.formItem,
             valueField = item.getValueFieldName()
@@ -1010,7 +1074,6 @@ isc.PickList.addInterfaceMethods({
     },
     
     formatPickListValue : function (value,fieldName,record) {
-        
         // apply standard formatter to the value in the single generated field for
         // standard pick lists.
         // This handles formatters applied via simpleType as well as any
@@ -1153,9 +1216,11 @@ isc.PickList.addInterfaceMethods({
         }
         
         this.pickList.setFields(fields);
-
+        // if we're showing a checkbox column and only 1 other field, hide the header
+        var hideHeaderThresh = (this.multiple && this.multipleAppearance == "picklist" 
+                               && this.allowMultiSelect == true) ? 2 : 1;
         // Show the header if there are multiple fields.
-        if (fields.length > 1) {
+        if (fields.length > hideHeaderThresh) {
             // we are likely to be sharing a pickList across items, each of which may have a
             // different header height, so reset each time the header is shown
             // (No ops if no change anyway)
@@ -1199,7 +1264,7 @@ isc.PickList.addInterfaceMethods({
         }        
     },
     
-    _filterPickList : function (show, request, delayed) {
+    _filterPickList : function (show, request, delayed) {        
         if (delayed) show = this._showOnDelayedFilter;
         delete this._showOnDelayedFilter;
         this._showOnFilter = show;
@@ -1211,14 +1276,12 @@ isc.PickList.addInterfaceMethods({
             // Pass the (already set up) fields into the 'setDataSource' method.
             if (this.pickList.getDataSource() != ds) {
                 this.pickList.setDataSource(ds, this.pickList.fields);
-            }
-
+            }                
             // Will fall through to filterComplete() when the filter op. returns.        
             this.filterDataBoundPickList(request);
         } else {
             // Ignore any requestProperties passed in for a client-only filter.
-            
-            var records = this.filterClientPickListData();
+            var records = this.filterClientPickListData();           
             
             if (this.pickList.data != records) this.pickList.setData(records);
 
@@ -1335,8 +1398,8 @@ isc.PickList.addInterfaceMethods({
     //                  
     // @visibility external
     //<
-    getClientPickListData : function () {
-        return isc.PickList.optionsFromValueMap(this);
+    getClientPickListData : function () {        
+        return isc.PickList.optionsFromValueMap(this);       
     },
     
     // Override point to notify the item that the pickList has been shown / hidden
@@ -1358,29 +1421,41 @@ isc.PickList.addInterfaceMethods({
         return this.selectItemFromValue(this.getValue());        
     },
     
-    selectItemFromValue : function (value) {
-        // If the value is already selected we can just return. This is much quicker for most
-        // cases since we don't have to iterate through the pickList data array
-        var record = this.pickList.getSelectedRecord(),
-            valueField = this.getValueFieldName();
-        if (record && (record[valueField] == value)) return true;
-        
-        var data = this.pickList.getData(),
-            dataSource = this._getOptionsFromDataSource() ? this.getOptionDataSource() : null;
-        if (dataSource != null) {
+    selectItemFromValue : function (value) {        
+        if (!isc.isAn.Array(value)) value = [value];
+        var records = this.pickList.getSelection(),
+            valueField = this.getValueFieldName(),
+            allValuesFound = true,
+            lastFoundRec;
+        for (var i = 0; i < value.length; i++) {
+            var currVal = value[i], 
+                record;
+            // If the value is already selected we can just return. This is much quicker for most
+            // cases since we don't have to iterate through the pickList data array   
+            if (records.find(valueField, currVal)) continue;
             
-            var cache = data.localData;
-            if (cache) record = cache.find(valueField, value);
-        } else {
-            record = data.find(valueField, value);            
+            var data = this.pickList.getData(),
+                dataSource = this._getOptionsFromDataSource() ? this.getOptionDataSource() : null;
+            if (dataSource != null) {
+                
+                var cache = data.localData;
+                if (cache) record = cache.find(valueField, currVal);
+            } else {
+                record = data.find(valueField, currVal);            
+            }
+    
+            if (record) {
+                
+                if (this.pickList.allowMultiSelect) this.pickList.selectRecord(record);
+                else this.pickList.selection.selectSingle(record);
+                lastFoundRec = data.indexOf(record);
+            } else {
+                allValuesFound = false;    
+            }
         }
-
-        if (record) {
-            this.pickList.selection.selectSingle(record);
-            this.pickList.scrollRecordIntoView(data.indexOf(record));
-        }
-        // Return a boolean to indicate whether we successfully found and selected a record
-        return (record != null)
+        if (lastFoundRec != null) this.pickList.scrollRecordIntoView(lastFoundRec);
+        // Return a boolean to indicate whether we successfully found and selected all records
+        return allValuesFound;
     },
 
     
@@ -1517,9 +1592,9 @@ isc.PickList.addInterfaceMethods({
             }
             
         }
-                    
+
         this.pickList.filterData(criteria, {target:this, methodName:"filterComplete"}, context);
-        
+
         if (synchronousFilter) this.filterComplete();
         else this._fetchingPickListData = true;
     },
@@ -1530,7 +1605,7 @@ isc.PickList.addInterfaceMethods({
         if (this.defaultToFirstOption && this.getValue() == null && startRow == 0) {
             this.setToDefaultValue();
         }
-       
+
         if (this.dataArrived) this.dataArrived(startRow,endRow,data);
     },
     //> @method PickList.dataArrived()
@@ -1596,8 +1671,9 @@ isc.PickList.addInterfaceMethods({
     _$substring : "substring",
     separatorRows : [{ isSeparator:true }],
     filterClientPickListData : function () {
-        var data = this.getClientPickListData(),
-            criteria = this.getPickListFilterCriteria();
+        var data = this.getClientPickListData();        
+        var criteria = this.getPickListFilterCriteria();  
+            
         if (criteria == null || isc.isA.emptyObject(criteria)) return data;
         
         var matches = [],
@@ -1689,6 +1765,12 @@ isc.PickList.addInterfaceMethods({
                              isc.Element._getVBorderPad(pickList.bodyStyleName)),
             requiredHeight = recordsHeight + headerHeight + pickList.getVBorderPad() +
                                 bodyBorderPad;
+        
+        // we support showing the filter editor in a pickList - if this is happening
+        // accomodate it's height as well
+        if (pickList.showFilterEditor) {
+            requiredHeight += pickList.filterEditorHeight;
+        }
 
         
         return Math.min(requiredHeight, maxHeight);
@@ -1834,7 +1916,7 @@ isc.PickList.addClassMethods({
     optionsFromValueMap : function (item) {
         var valueMap = item.getValueMap(),
             records = [];
-            
+           
         if (valueMap == null) valueMap = [];
         
         // We have to turn the valueMap into an array of record type objects.
@@ -1854,7 +1936,7 @@ isc.PickList.addClassMethods({
                 i++;
             }
         }
-
+       
         return records;
     }
 });

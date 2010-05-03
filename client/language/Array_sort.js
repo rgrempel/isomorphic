@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -116,8 +116,8 @@ setSort : function (sortSpecifiers) {
 
 sortByProperties : function () {
 
-    var normalizedArray = Array._normalizedValues,
-        wrongTypeArray = Array._unexpectedTypeValues;
+    var normalizedArray = isc._normalizedValues,
+        wrongTypeArray = isc._unexpectedTypeValues;
     
     // Support being called with either the signature 
     //  (["prop1", "prop2", ...], [dir1, dir2, ...], [norm1, norm2, ...])    
@@ -160,10 +160,12 @@ sortByProperties : function () {
         norms = this.normalizers,
         contexts = this.contexts;
     
+    var start = isc.timestamp();
+
     for (var i = 0; i < props.length; i++) {    
     
         // remember the sort directions on the Array object -- retrieved in _compareNormalized
-        Array._sortDirections[i] = this.sortDirections[i];
+        isc._sortDirections[i] = this.sortDirections[i];
     
         var property = props[i],
             normalizer = norms[i],
@@ -207,6 +209,8 @@ sortByProperties : function () {
             for (var ii = 0, l = this.length, item;ii < l;ii++) {
                 item = this[ii];
                 if (item == null) {
+                    // If any nulls were detected during the sort notify the developer
+                    isc._containsNulls = true;
                     continue;
                 }
                 
@@ -240,7 +244,11 @@ sortByProperties : function () {
             var normalizerMap = this.normalizers[i];
             for (var ii = 0, l = this.length, item; ii < l ;ii++) {
                 item = this[ii];
-                if (item == null) continue;
+
+                if (item == null) {
+                    isc._containsNulls = true;
+                    continue;
+                }
                 
                 var sortPropValue = item[this.sortProps[i]];
                 if (sortPropValue == null) sortPropValue = '';
@@ -260,17 +268,91 @@ sortByProperties : function () {
         }
     }   // END of the for loop
 
-    // perform the actual sort
-    this.sort(Array._compareNormalized);
+    //isc.logWarn("normalizing took: " + (isc.timestamp() - start) + "ms");
 
-    // If the comparitor funciton hit any nulls, notify the developer
     
-    if (Array._containsNulls) {
-        isc.Log.logWarn("Attempt to sort array by property hit null entry where a record should be. Array:" + 
-                        isc.Log.echo(this));
-        Array._containsNulls = null;
+    
+    // worth pre-computing for the common case that there are no values of unexpected type
+    var hasUnexpectedTypeValues = false;
+    for (var i = 0; i < isc._unexpectedTypeValues.length; i++) {
+        if (isc._unexpectedTypeValues[i].length > 0) {
+            hasUnexpectedTypeValues = true;
+            break;
+        }
+    }
+    isc._hasUnexpectedTypeValues = hasUnexpectedTypeValues;
+
+    //isc.logWarn("about to sort, hasUnexpectedTypeValues: " + isc._hasUnexpectedTypeValues + 
+    //            ", normalizedValues: " + isc.echoFull(isc._normalizedValues) +
+    //            ", unexpectedTypes: " + isc.echoFull(isc._unexpectedTypeValues) +
+    //            " directions: " + isc._sortDirections);
+
+    
+    var normalizedValues = isc._normalizedValues,
+        directions = isc._sortDirections,
+        hasUnexpectedTypeValues = isc._hasUnexpectedTypeValues;
+
+    var arr = this;
+    arr.compareAscending = Array.compareAscending;
+    arr.compareDescending = Array.compareDescending;
+
+    // define comparator function for sorting by property - uses already stored out normalized
+    // values and sort-directions
+    var compareNormalized = 
+function (a,b) {
+
+    // For null values we'll always compare 'null' regardless of the field property
+    var aIndex = (a != null ? a._tempSortIndex : null),
+        bIndex = (b != null ? b._tempSortIndex : null);
+
+    for (var i = 0; i < normalizedValues.length; i++) {
+         
+        var aFieldValue = normalizedValues[i][aIndex],
+            bFieldValue = normalizedValues[i][bIndex];
+
+        // if both values were not the expected type, compare them directly in un-normalized
+        // form.  Note if only one value was unexpected type, by comparing normalized values we
+        // will sort values of unexpected type to one end, since the standard normalizers all
+        // normalize unexpected type values to the lowest values in the type's range.
+        if (hasUnexpectedTypeValues && aFieldValue != null && bFieldValue != null) {
+            var unexpectedTypes = isc._unexpectedTypeValues,
+                aWrongType = unexpectedTypes[i][aIndex],
+                bWrongType = unexpectedTypes[i][bIndex];
+            if (aWrongType != null && bWrongType != null) {
+                aFieldValue = aWrongType;
+                bFieldValue = bWrongType;
+            }
+        }
+    
+        var returnVal = (directions[i] ? arr.compareAscending(aFieldValue, bFieldValue) 
+                                       : arr.compareDescending(aFieldValue, bFieldValue));
+
+        //isc.Log.logWarn("compared: " + isc.Log.echo(aFieldValue) + " to " +
+        //             isc.Log.echo(bFieldValue) + ", returning: " + returnVal);
+
+        // If we have a non-equal result, return it, otherwise we'll check the next property
+        // in array.sortProps
+        if (returnVal != 0) return returnVal;
     }
 
+    // at this point we've gone through every field in the sort, and these 2 items match in
+    // each case -- just return 0 to indicate no order pref.
+    return 0;                    
+};
+
+    var start = isc.timeStamp();
+
+    // perform the actual sort
+    this.sort(compareNormalized);
+
+    //isc.logWarn("sorted in: " + (isc.timeStamp() - start) + "ms");
+
+    // if we hit any nulls, warn the developer
+    if (isc._containsNulls) {
+        isc.Log.logWarn("Attempt to sort array by property hit null entry where a record should be. Array:" + 
+                        isc.Log.echo(this));
+        isc._containsNulls = null;
+    }
 
     // Clear out the index temporarily stored on each item, and empty the temp arrays of
     // sort values / directions
@@ -278,7 +360,7 @@ sortByProperties : function () {
     this.clearProperty("_tempSortIndex");
     normalizedArray.clear();
     wrongTypeArray.clear();
-    Array._sortDirections.clear();
+    isc._sortDirections.clear();
     
     // call dataChanged in case anyone is observing it
     this.dataChanged();
@@ -482,58 +564,6 @@ _matchesType : function (object, type) {
     return (this._standardTypeMap[type] == objectType);
 },
 
-// Central array for temp storage of normalized values for sorting
-
-_normalizedValues:[],
-_unexpectedTypeValues:[],
-_sortDirections:[],
-
-// Comparator function for sorting by property - uses already stored out normalized values and
-// sort-directions
-_compareNormalized : function (a,b) {
-
-    // If any nulls were detected during the sort notify the developer
-    
-    if (a == null || b == null) {
-        this._containsNulls = true;
-    }      
-
-    var normalizedValues = Array._normalizedValues,
-        unexpectedTypes = Array._unexpectedTypeValues,
-        directions = Array._sortDirections,
-        // For null values we'll always compare 'null' regardless of the field property
-        aIndex = (a != null ? a._tempSortIndex : null),
-        bIndex = (b != null ? b._tempSortIndex : null);
-        
-    for (var i = 0; i < normalizedValues.length; i++) {
-        var aFieldValue = (aIndex != null ? normalizedValues[i][aIndex] : null),
-            bFieldValue = (bIndex != null ? normalizedValues[i][bIndex] : null);
-
-        // if both values were not the expected type, compare them directly in un-normalized
-        // form.  Note if only one value was unexpected type, by comparing normalized values we
-        // will sort values of unexpected type to one end, since the standard normalizers all
-        // normalize unexpected type values to the lowest values in the type's range.
-        if (aFieldValue != null && bFieldValue != null) {
-            var aWrongType = unexpectedTypes[i][aIndex],
-                bWrongType = unexpectedTypes[i][bIndex];
-            if (aWrongType != null && bWrongType != null) {
-                aFieldValue = aWrongType;
-                bFieldValue = bWrongType;
-            }
-        }
-        var returnVal = (directions[i] ? Array.compareAscending(aFieldValue, bFieldValue) 
-                                   : Array.compareDescending(aFieldValue, bFieldValue));
-        //isc.Log.logWarn("compared: " + isc.Log.echo(aFieldValue) + " to " +
-        //             isc.Log.echo(bFieldValue) + ", returning: " + returnVal);
-
-        // If we have a non-equal result, return it, otherwise we'll check the next property
-        // in array.sortProps
-        if (returnVal != 0) return returnVal;
-    }
-    // at this point we've gone through every field in the sort, and these 2 items match in
-    // each case -- just return 0 to indicate no order pref.
-    return 0;                    
-},
 
 
 
@@ -550,12 +580,10 @@ _compareNormalized : function (a,b) {
 compareAscending : function (first, second) {
     if (first != null && first.localeCompare != null) {
         var lc = first.localeCompare(second);
-        if (this.adjustLocaleCompare()) lc -= 2;
         return lc;
     }
     if (second != null && second.localeCompare != null) {
         var lc = second.localeCompare(first);
-        if (this.adjustLocaleCompare()) lc -= 2;
         return lc;
     }
 	return (second > first ? -1 : second < first ? 1 : 0);
@@ -574,26 +602,60 @@ compareAscending : function (first, second) {
 compareDescending : function (first, second) {
     if (first != null && first.localeCompare != null) {
         var lc = first.localeCompare(second);
-        if (this.adjustLocaleCompare()) lc -= 2;
         return -1 * lc
     }
     if (second != null && second.localeCompare != null) {
         var lc = second.localeCompare(first);
-        if (this.adjustLocaleCompare()) lc -= 2;
         return -1 * lc;
     }
 	return (second < first ? -1 : second > first ? 1 : 0);
-},
-
-
-adjustLocaleCompare : function () {
-    if (!isc.Browser.isSafari) return false;
-    if (Array._mustAdjustNativeLocaleCompare == null) {
-        var b = "b";
-        Array._mustAdjustNativeLocaleCompare = (b.localeCompare("a") == 3);
-    }
-    return Array._mustAdjustNativeLocaleCompare;
 }
 
+//>Safari3 Safari comparators for broken localeCompare
+,
+safariCompareAscending : function (first, second) {
+    if (first != null && first.localeCompare != null) {
+        var lc = first.localeCompare(second);
+        return lc - 2;
+    }
+    if (second != null && second.localeCompare != null) {
+        var lc = second.localeCompare(first);
+        return lc - 2;
+    }
+	return (second > first ? -1 : second < first ? 1 : 0);
+},
+safariCompareDescending : function (first, second) {
+    if (first != null && first.localeCompare != null) {
+        var lc = first.localeCompare(second);
+        return -1 * (lc - 2);
+    }
+    if (second != null && second.localeCompare != null) {
+        var lc = second.localeCompare(first);
+        return -1 * (lc - 2);
+    }
+	return (second < first ? -1 : second > first ? 1 : 0);
+}
+//<Safari3
+
 });
+
+// Central array for temp storage of normalized values for sorting
+
+isc._normalizedValues = [];
+isc._unexpectedTypeValues = [];
+isc._sortDirections = [];
+
+
+
+//>Safari3
+(function () {
+    if (isc.Browser.isSafari) {
+        var b = "b";
+        if (b.localeCompare("a") == 3) {
+            Array.compareAscending = Array.safariCompareAscending;
+            Array.compareDescending = Array.safariCompareDescending;
+        }
+    }
+})();
+//<Safari3
 

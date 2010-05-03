@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1341,16 +1341,16 @@ dragAppearance:isc.EH.TRACKER,
 dragTrackerMode: "title",
 
 //>@method  tileGrid.setDragTracker()
-// @include databoundComponent.setDragTracker()
+// @include dataBoundComponent.setDragTracker()
 // @visibility external
 //<
 
 //> @method tileGrid.getDragTrackerProperties()
-// @include databoundComponent.getDragTrackerProperties()  
+// @include dataBoundComponent.getDragTrackerProperties()  
 //<
 
 //> @attr tileGrid.dragTrackerStyle (CSSStyleName : "gridDragTracker" : IRW)
-// @include databoundComponent.dragTrackerStyle
+// @include dataBoundComponent.dragTrackerStyle
 //<
 
 //> @method tileGrid.getTitleField()

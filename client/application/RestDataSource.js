@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -230,9 +230,9 @@
 // specify dataProtocol as "getParams" for the fetch operation, and "postParams" for update,
 // add and remove operations.
 // <P>
-// <b>Hierachical (Tree) data:</b>
+// <b>Hierarchical (Tree) data:</b>
 // <P>
-// To create a hierachical DataSource, in the DataSource's <code>fields</code> array, a field 
+// To create a hierarchical DataSource, in the DataSource's <code>fields</code> array, a field 
 // must be specified as the parent id field - the field which will contain a pointer to the
 // id of each node's parent. 
 // This can be achieved by setting the +link{DataSourceField.foreignKey} and the 
@@ -275,7 +275,7 @@
 // &lt;/response&gt;
 // </pre>
 // The structure of responses for Add, Update and Delete type requests will be the 
-// same regardless of whether the data is hierachical. However you should be aware that 
+// same regardless of whether the data is hierarchical. However you should be aware that 
 // the underlying data storage may need to be managed slightly differently in some cases.<br>
 // Specifically, Add and Update operations may change the structure of the tree by returning a 
 // new parent id field value for the modified node. Depending on how your data is stored you 
@@ -358,7 +358,7 @@ isc.RestDataSource.addProperties({
     // When using dataFormat:"json" and dataProtocol:"postMessage" should we use the
     // +link{JSONEncoder.prettyPrint} feature to enable indented, highly readable JSON messages.
     // <P>
-    // True by default because the bandwidth involved is generally neglible and the benefits for
+    // True by default because the bandwidth involved is generally negligible and the benefits for
     // troubleshooting are key.
     //
     // @visibility external
@@ -440,7 +440,7 @@ isc.RestDataSource.addProperties({
     //<
     
     //> @attr RestDataSource.sendMetaData (boolean : true : IR)
-    // Should operation meta data be included when assmebling parameters to send 
+    // Should operation meta data be included when assembling parameters to send 
     // to the server? If true, meta data parameters will be prefixed with the 
     // +link{RestDataSource.metaDataPrefix}.<br>
     // Applies to operations where OperationBinding.dataProtocol is set to 

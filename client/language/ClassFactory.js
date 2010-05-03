@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -648,6 +648,10 @@ isc.addMethods(isc.ClassFactory, {
     
     getNextGlobalID : function (object) {
         var classString = object != null && isc.isA.String(object.Class) ? object.Class : null;
+        return this.getNextGlobalIDForClass(classString);
+        
+    },
+    getNextGlobalIDForClass : function (classString) {
         
         if (classString) {
             var freed = this._freedGlobalIDs[classString]

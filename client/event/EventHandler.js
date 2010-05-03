@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -138,19 +138,37 @@ isc.EventHandler.addClassProperties(
 	//<
     maskNativeTargets:true,
 						
-	//=	@const	isc.EventHandler.STILL_DOWN_DELAY	amount of time between mouseStillDown messages (msec)
+	//>	@classAttr	isc.EventHandler.STILL_DOWN_DELAY (integer : 100 : IRWA)
+    // amount of time between mouseStillDown messages (msec)
+    // @visibility external
+    //<
 	STILL_DOWN_DELAY 	: 100,
-	//=	@const	isc.EventHandler.DOUBLE_CLICK_DELAY	amount of time between doubleClicks (msec)
+	
+	//=	@classAttr	isc.EventHandler.DOUBLE_CLICK_DELAY	amount of time between doubleClicks (msec)
     
 	DOUBLE_CLICK_DELAY  : 500,
-    //=	@const	isc.EventHandler.IDLE_DELAY			amount of time between idle messages (msec)
+    //> @classAttr isc.EventHandler.IDLE_DELAY (integer : 10 : IRWA)
+    // amount of time between idle messages (msec)
+    // @visibility external
+    //<
 	IDLE_DELAY 			: 10,
 
-    //=	@const	isc.EventHandler.STOP_BUBBLING		return this from a child event to stop the event propagating to its parent
+	//> @classAttr isc.EventHandler.STOP_BUBBLING (string : "***STOP***" : IRA)
+	// Return this constant from a child event to stop the event propagating to its parent,
+	// without suppressing any native browser handling associated with the event.
+	// Developers should not need to modify this value - it should be treated as read-only
+	// in most circumstances.
+	// @visibility external
+	//<
 	STOP_BUBBLING : "***STOP***",		
 
 
-	//=	@const	isc.EventHandler.ALL_EDGES	default set of edges to resize from (all)
+	//>	@classAttr	isc.EventHandler.ALL_EDGES	(Array of string : ["T","L","B","R","TL","TR","BL","BR"] : IR)
+	// Constant containing the full set of edges a component may be resized from.
+	// When a component is marked as canDragResize, this will be the default set of edges
+	// from which it may be resized.
+	// @visibility external
+	//<
 	ALL_EDGES : ["T","L","B","R","TL","TR","BL","BR"],
 
     eventTypes :	{	
@@ -184,7 +202,7 @@ isc.EventHandler.addClassProperties(
         //        Fires when the mouse moves on the Page.
         // @value "mouseUp"
         //        Fires when the left mouse button released on the Page.
-        // @value "cick"
+        // @value "click"
         //        Fires when the user clicks the mouse on the Page.
         // @value "doubleClick"
         //        Fires when the uesr double-clicks on the Page.
@@ -286,7 +304,7 @@ isc.EventHandler.addClassProperties(
         
     },
 
-    //> @const isc.EventHandler._eventHandlerArgString    
+    //> @classAttr isc.EventHandler._eventHandlerArgString    
     // Argument string for event handler stringMethods
     // @visibility internal
     //<
@@ -883,7 +901,7 @@ handleUnload : function (DOMevent) {
 },
 
 //> @groupDef keyboardEvents
-// SmartClient allows keybaord events to be captured at the page level via 
+// SmartClient allows keyboard events to be captured at the page level via 
 // +link{isc.Page.registerKey()} or +link{Page.setEvent()} or at the widget level
 // via +link{canvas.keyDown()}, +link{canvas.keyPress()}, and +link{canvas.keyUp}.
 // <P>
@@ -1004,10 +1022,9 @@ handleKeyDown : function (nativeEvent, scEventProperties) {
         var target = lastEvent.keyTarget;
         //EH.logWarn("nativeEvent: " + EH.echoDOM(nativeEvent) +
         //           ", nativeTarget: " + EH.echoLeaf(lastEvent.nativeTarget));
-    
+        //EH.logWarn("lastEvent.target (before re-calling getEventTargetCanvas()):" + target); 
         if (target == null) target = this.getEventTargetCanvas(nativeEvent,
                                                                lastEvent.nativeKeyTarget);
-
         if (EH.targetIsEnabled(target))
             returnVal = (EH.bubbleEvent(target, EH.KEY_DOWN, eventInfo) != false);
     }
@@ -1423,12 +1440,14 @@ doHandleMouseDown : function (DOMevent, syntheticEvent) {
 	// if the target is not enabled, we shouldn't continue
     if (!EH.targetIsEnabled(target)) return false;
     
+    var forceIEFocusTarget;
+    
     if (target && !target.hasFocus) {
         // call 'focus' to focus on the widget.
     
         
         if ( ((isc.Browser.isMoz && target.canSelectText) || isc.Browser.isSafari )
-             && target._useFocusProxy ) 
+             && target._useFocusProxy )
         {
             EH.focusInCanvas(target);
             
@@ -1441,12 +1460,13 @@ doHandleMouseDown : function (DOMevent, syntheticEvent) {
         
         
         } else if (isc.Browser.isIE) {
+            
             var nativeElement = event.nativeTarget;
             if (nativeElement && nativeElement.tagName == this._$IMG) {
                 var style = nativeElement.style,
                     filter = style ? style.filter : null;
                 if (filter.contains(this._$alphaImgFilter)) {
-                    target.focus();
+                    forceIEFocusTarget = target;
                 }
             }
         }
@@ -1457,6 +1477,8 @@ doHandleMouseDown : function (DOMevent, syntheticEvent) {
     if (target) EH.prepareForDragging(target);
     // bubble the mouseDown event to anyone who wants it
     var handlerReturn = EH.bubbleEvent(target, eventType, null, targetIsMasked);
+    if (forceIEFocusTarget != null) forceIEFocusTarget.focus();
+    
 	if (handlerReturn == false) {
         // a an explicit "false" returned from mouseDown will cancel dragging
         delete EH.dragTarget;
@@ -1738,7 +1760,7 @@ __handleMouseMove : function (DOMevent, event) {
         // send the mouseOver event to the target
         if (target) {
             EH.handleEvent(target, EH.MOUSE_OVER);
-            // use 'getHoverTarget()' to determine which widget should recieve a hover event.
+            // use 'getHoverTarget()' to determine which widget should receive a hover event.
             hoverTarget = target.getHoverTarget(event);
         }
         
@@ -2367,6 +2389,7 @@ blurFocusCanvas : function (target, isNative) {
     if (isNative) this._thread = oldThread; //<DEBUG
 },
 _blurFocusCanvas : function (target, isNative) {
+    //this.logWarn("_blurFocusCanvas will clear this._focusCanvas");
     if (this._focusCanvas) {
         var focusCanvas = this._focusCanvas;
 
@@ -2409,6 +2432,7 @@ focusInCanvas : function (target, isNative) {
     if (isNative) this._thread = oldThread; //<DEBUG
 },
 _focusInCanvas : function (target, isNative) {
+    //this.logWarn("_focusInCanvas. Will set this._focusCanvas");
     // if no target, or target doesn't want focus, or target has focus already just bail
     if (!target || target.hasFocus || !target._canFocus() || target.isDisabled() ) return;
     
@@ -3160,6 +3184,12 @@ handleDragStop : function () {
 _$BODY:"BODY", _$HTML:"HTML",
 _$eventProxyAttributeName:"eventProxy",
 getEventTargetCanvas : function (DOMevent, target) {
+    
+    // DOMevent may be null if this method is being used to just
+    // locate a canvas from a DOM element explicitly.
+    
+    if (DOMevent == null) DOMevent = {};
+    
     var EH = this,
         wd = this.getWindow();
 
@@ -3257,8 +3287,9 @@ getEventTargetCanvas : function (DOMevent, target) {
         }
 
         // now we have the final target of the event
-        if (this.logIsInfoEnabled() && 
-            DOMevent.type != "mousemove" && DOMevent.type != "selectstart") 
+        
+        if (this.logIsInfoEnabled() && !DOMevent || 
+            (DOMevent.type != "mousemove" && DOMevent.type != "selectstart")) 
         {
             if (target != null) {
                 this.logInfo("Target Canvas for event '" + DOMevent.type + "': " + target);
@@ -4637,9 +4668,8 @@ dispatch : function (handler, event) {
     this._setThread(this._threadCodes[event.type] || event.type); 
     
     
-
     
-    if (!isc.Browser.isMoz) {
+    if (isc.Log.supportsOnError) {
         var result = handler.call(this, event);
     } else {
         //var start = isc.timeStamp();
@@ -5148,7 +5178,7 @@ leftButtonDown : function (event) {
 //		right mouse button on Windows.  This is taken into account automatically.<br>
 //      Opera: 
 //      The Opera browser does not pass right mouse button events to JavaScript code by default
-//      (the user must explictly enable this bahavior via a menu item). Therefore we 
+//      (the user must explicitly enable this behavior via a menu item). Therefore we 
 //      treat <b>Shift+Ctrl+Click</b> as a context click in Opera.
 //
 //		@group	mouseEvents
@@ -5159,7 +5189,7 @@ leftButtonDown : function (event) {
 //                                  Default is to use isc.EventHandler.lastEvent.
 rightButtonDown : function (event) {
 	if (!event) event = this.lastEvent;
-	return (event.buttonNum == 2) || 
+	return (event.buttonNum == 2) || (event.button == 2) || 
            (isc.Browser.isMac && event.ctrlKey) || 
            // Notes:
            // We use shift+ctrl+click because
@@ -5797,7 +5827,7 @@ canvasDestroyed : function (canvas) {
 //        If the user clicks outside the date-picker while it is showing it's year menu, both the
 //        menu and the picker should be dismissed.
 //        If the user clicks on the date-picker but outside the year menu (while it is visible),
-//        the year menu should be dismissed and the date picker should recieve a click event.
+//        the year menu should be dismissed and the date picker should receive a click event.
 //        Therefore we need intelligent nesting of soft CM's where the masks track their
 //        'unmaskedTargets' and click actions independantly.
 //      - Modal window widgets can contain any other widget.  If a modal widow is shown containing
@@ -5853,10 +5883,10 @@ canvasDestroyed : function (canvas) {
 // when clicked.
 // @visibility external
 // @group   clickMask
-// @value   "hard"   When the mask recieves a click, it will fire its click action, 
+// @value   "hard"   When the mask receives a click, it will fire its click action, 
 //                  and cancel the event, leaving the clickMask up.
 HARD:"hard",
-// @value   "soft"   When the mask recieves a click, it will fire its click action, 
+// @value   "soft"   When the mask receives a click, it will fire its click action, 
 //                  then dismiss the clickMask and allow the event to proceed to its target.
 SOFT:"soft",
 //<

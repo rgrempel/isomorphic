@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1555,7 +1555,7 @@ isc.WebService.getPrototype().toString = function () {
 // }); 
 // </pre>
 // NOTE: additional code is required to handle authentication and other details, see the
-// complete code in isomorphicSDK/examples/databinding/SalesForce.
+// complete code in smartclientSDK/examples/databinding/SalesForce.
 // <P>
 // In this usage, any DSRequest performed on this DataSource invokes the web service operation
 // named by the <code>wsOperation</code> property on the corresponding operationBinding, and

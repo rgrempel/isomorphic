@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -974,7 +974,7 @@ datePickerHoverText: "Choose a date",
 // ----------------------------------------------------------------------------------------
 dayViewConstructor: "DaySchedule",
 
-weekViewConstructor: "DaySchedule",
+weekViewConstructor: "WeekSchedule",
 
 monthViewConstructor: "MonthSchedule",
 
@@ -1808,7 +1808,8 @@ _getEventsInRange : function (start, end) {
         for (var i = 0; i < this.data.getLength(); i++) { 
             
             var curr = this.data.get(i);
-            if (!curr[this.startDateField]) return [];
+            
+            if (!curr || !curr[this.startDateField]) return [];
             // add the event if we're showing weekends or the date is not a weekend
             // The event won't get added only when !this.showWeekends and it is a weekend
             // subtle change: use only startDate instead of startDate and endDate to determine if
@@ -2187,10 +2188,12 @@ setChosenDate : function (newDate) {
     this._oldDate = this.chosenDate;
     this.chosenDate = newDate;
     this._setChosenWeek();
+    
     // redraw monthview if need be
     if (this._oldDate.getFullYear() != this.year || this._oldDate.getMonth() != this.month) { 
         if (this.monthView) this.monthView.refreshEvents();
     } 
+    
     // check if the week needs redrawn
     var startDate = new Date(this._oldDate.getFullYear(), this._oldDate.getMonth(), 
         this._oldDate.getDate() - this._oldDate.getDay());
@@ -2372,7 +2375,7 @@ draw : function (a, b, c, d) {
     }
     
    
-}, 
+},  
 
 /*
 getSnapGapPixels : function (snapGap, grid) {
@@ -2397,7 +2400,8 @@ _getTabs : function () {
     }
     if (this.showMonthView != false) {
         this.monthView = this.createAutoChild("monthView", 
-            {baseStyle: this.baseStyle, viewName: "month" } );
+            {baseStyle: this.baseStyle, viewName: "month",
+             bodyConstructor:"MonthScheduleBody"} );
         nTabs.add({title: this.monthViewTitle, pane: this.monthView, viewName: "month" });
     }
     if (this.showTimelineView != false) {
@@ -2624,7 +2628,7 @@ createChildren : function () {
                     });
                     // set datasource then fields...other way around doesn't work
                     this.setDataSource(dialogDS);
-                    this.setFields(isc.clone(this.calendar.eventDialogFields));
+                    this.setFields(isc.shallowClone(this.calendar.eventDialogFields));
                 },
 
                 submit : function () {
@@ -3244,7 +3248,8 @@ _getMinutePixels : function (minutes, rowHeight, viewName) {
 },
 
 monthViewEventClick : function (rowNum, colNum, eventIndex) {
-    var evt = this.monthView.data[rowNum]["event" + (colNum + 1)][eventIndex];
+    var events = this.monthView.getEvents(rowNum, colNum);
+    var evt = events[eventIndex];
     if (this.eventClick(evt, "month")) this._showEventEditor(evt);   
 },
 
@@ -3270,8 +3275,10 @@ monthViewEventClick : function (rowNum, colNum, eventIndex) {
 getDayBodyHTML : function (date, events, calendar, rowNum, colNum) {
     
     var day = date.getDay();
-    // this.monthView.getRowHeight() doesn't seem to return the correct value, not sure why
-    var evtArr = events, lineHeight = 15, rHeight = this.monthView.getRowSize(1);
+    
+    var evtArr = events, lineHeight = 15,
+        record = this.monthView.data ? this.monthView.data[1] : null,
+        rHeight = this.monthView.getRowHeight(record, 1);
     var retVal = "";
     for (var i = 0; i < evtArr.length; i++) {
         var eTime = evtArr[i][this.startDateField].getHours();
@@ -4051,9 +4058,18 @@ isc.DaySchedule.addProperties({
    
 });
 
+// WeekSchedule
+// --------------------------------------------------------------------------------------------
+isc.ClassFactory.defineClass("WeekSchedule", "DaySchedule");
+
+
 // MonthSchedule
 // --------------------------------------------------------------------------------------------
 isc.ClassFactory.defineClass("MonthSchedule", "ListGrid");
+
+// Create a separate subclass for month schedule body
+
+isc.ClassFactory.defineClass("MonthScheduleBody", "GridBody");
 
 isc.MonthSchedule.changeDefaults("headerButtonProperties", {
     showRollOver: false, 
@@ -4217,7 +4233,30 @@ isc.MonthSchedule.addProperties({
         return obj;
     },
     
-     getDayFromCol : function (colNum) {
+    // utility method used for retrieving events from a given row and column number.
+    // used by calendar.monthViewEventCick
+    getEvents : function (rowNum, colNum) {
+        var day = this.getDayFromCol(colNum);
+        var dayIndex = this.fields.get(colNum)._dayIndex
+        var events = this.data[rowNum]["event" + dayIndex];
+        return events;
+    },
+    
+    getEventCell : function (event) {
+        var data = this.data;
+        for (var colNum = 0; colNum < this.fields.length; colNum++) {
+            var dayIndex = this.fields[colNum]._dayIndex,
+                eventTitle = "event" + dayIndex;
+            for (var rowNum = 0; rowNum < data.length; rowNum++) {
+                var events = data.get(rowNum)[eventTitle];
+                if (events != null && events.contains(event)) {
+                    return [rowNum,colNum];
+                }
+            }
+        }
+    },
+    
+    getDayFromCol : function (colNum) {
         var dayNum = this.fields.get(colNum)._dayNum;
         return dayNum;
         
@@ -6187,5 +6226,9 @@ _eventScaffolding: [
 ]
 
 });
+
+
+// Call the AutoTest method to apply Calendar-specific methods now we've loaded
+isc.AutoTest.customizeCalendar();
 
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -268,10 +268,17 @@ call : function (appID, className, methodName) {
         if (requestData.requestParams) {
             isc.addProperties(request, this.requestParams, requestData.requestParams);
             delete requestData.requestParams;
+
+            // if downloadResult is true, ensure the file is downloaded via the browser's Save 
+            // dialog - set transport: "hiddenFrame" and switch off showPrompt
+            if (requestData.downloadResult == true) {
+                requestData.showPrompt = false;
+                requestData.transport = "hiddenFrame";
+            }
         }
         request.callback = requestData.callback;
         delete requestData.callback;
-        
+
         request.data = requestData;
     } else {
         // external style - as in method signature

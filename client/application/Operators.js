@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-03-13 (2010-03-13)
+ * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -41,6 +41,20 @@ isc.defineClass("Operators", "Class").addClassProperties({
     // @visibility external
     //<
     notEqualTitle: "not equal",
+
+    //> @classAttr Operators.iEqualsTitle (String : "equals (disregard case)" : IR)
+    // Title for the "iEquals" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    iEqualsTitle: "equals (disregard case)",
+
+    //> @classAttr Operators.iNotEqualTitle (String : "not equal (disregard case)" : IR)
+    // Title for the "iNotEqual" operator
+    // @group i18nMessages
+    // @visibility external
+    //<
+    iNotEqualTitle: "not equal (disregard case)",
 
     //> @classAttr Operators.greaterThanTitle (String : "greater than" : IR)
     // Title for the "greaterThan" operator
