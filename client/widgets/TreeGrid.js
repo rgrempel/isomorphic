@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2418,7 +2418,11 @@ transferNodes : function (nodes, folder, index, sourceWidget, callback) {
 _updateComplete : function (dsResponse, data, dsRequest) {
     if (!dsRequest.dragTree) return;
     
-    if (dsRequest.dragTree.getParent(dsRequest.newParentNode) == null) {
+    // If the node we're dropping into is not in the tree (ie, it is neither the root node
+    // nor the child of another node), warn the user and bail
+    if (dsRequest.newParentNode != this.data.root &&
+        dsRequest.dragTree.getParent(dsRequest.newParentNode) == null)
+    {
         isc.logWarn("Target folder is no longer in the Tree in TreeGrid cache sync");
         return;
     }
@@ -2468,7 +2472,9 @@ _updateComplete : function (dsResponse, data, dsRequest) {
         return;
     }
     
-    dragTree.move(dsRequest.draggedNode, dsRequest.newParentNode, index);
+//    dragTree.move(dsRequest.draggedNode, dsRequest.newParentNode, index);
+    var nodeToMove = this.data.find(idField, dsRequest.draggedNode[idField]);
+    dragTree.move(nodeToMove, this.data.getParent(nodeToMove), index);
     
     this.Super("_updateComplete", arguments);
 },

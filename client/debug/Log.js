@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1828,8 +1828,8 @@ isc.Log._logPrelogs();
 // - Moz fires window.onerror (observed on version 3.63, mac, reported as working on >=3.0)
 // - Chrome (5.0.342.9) does not fire window.onerror
 isc.Log.supportsOnError = (
-    isc.Browser.isIE ||
-    (isc.Browser.isMoz && isc.Browser.geckoVersion >= 20080529)
+    isc.Browser.isIE 
+    //|| (isc.Browser.isMoz && isc.Browser.geckoVersion >= 20080529)
 );
 if (isc.Log.supportsOnError && !(window.isc_installOnError == false)) {
     

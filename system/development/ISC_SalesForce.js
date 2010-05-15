@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-05-02/LGPL Development Only (2010-05-02)
+  Version SC_SNAPSHOT-2010-05-15/LGPL Development Only (2010-05-15)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -4557,41 +4557,41 @@ xsElementRef:true
 })
 ]
 })
-isc.SForce=isc.WebService.get("urn:partner.soap.sforce.com");if(isc.SForce){isc.A=isc.SForce.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.detailFields=["Id","Type","ParentId","LastModifiedDate","LastModifiedById","LastActivityDate","CreatedDate","CreatedById"];isc.A.hiddenFields=["SystemModstamp"];isc.B.push(isc.A.getHeaderData=function(_1){var _2={};if(_1.operationType=="fetch")_2.QueryOptions={batchSize:75};if(this.sessionId!=null)_2.SessionHeader={sessionId:this.sessionId};return _2}
-,isc.A.login=function(_1,_2,_3){this.callOperation("login",{username:_1,password:_2},"//default:result",{target:this,methodName:"loginReply"},{willHandleError:true,$40z:_3,showPrompt:true,prompt:"Logging into SalesForce.."})}
-,isc.A.loginReply=function(_1,_2,_3,_4){if(_3.status<0){return this.fireCallback(_4.$40z,"loginData",[false])}
+isc.SForce=isc.WebService.get("urn:partner.soap.sforce.com");if(isc.SForce){isc.A=isc.SForce.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.detailFields=["Id","Type","ParentId","LastModifiedDate","LastModifiedById","LastActivityDate","CreatedDate","CreatedById"];isc.A.hiddenFields=["SystemModstamp"];isc.B.push(isc.A.getHeaderData=function isc_SForce_getHeaderData(_1){var _2={};if(_1.operationType=="fetch")_2.QueryOptions={batchSize:75};if(this.sessionId!=null)_2.SessionHeader={sessionId:this.sessionId};return _2}
+,isc.A.login=function isc_SForce_login(_1,_2,_3){this.callOperation("login",{username:_1,password:_2},"//default:result",{target:this,methodName:"loginReply"},{willHandleError:true,$40z:_3,showPrompt:true,prompt:"Logging into SalesForce.."})}
+,isc.A.loginReply=function isc_SForce_loginReply(_1,_2,_3,_4){if(_3.status<0){return this.fireCallback(_4.$40z,"loginData",[false])}
 var _5=_1[0];this.logDebug("login data: "+this.echo(_5));this.dataURL=_5.serverUrl;this.sessionId=_5.sessionId;this.logInfo("got sessionID: "+this.sessionId);this.fireCallback(_4.$40z,"loginData",[_5])}
-,isc.A.ensureLoggedIn=function(_1,_2,_3){if(this.sessionId)return this.fireCallback(_1);var _4=this;isc.showLoginDialog(function(_5,_6){if(_5==null)return;_4.login(_5.username,_5.password,function(_7){_6(_7);if(_7)isc.Class.fireCallback(_1)})},isc.addProperties({title:"Please log in to SalesForce",dismissable:_2},_3))}
-,isc.A.getEntityList=function(_1){this.$400=_1;this.callOperation("describeGlobal",null,"//default:types",{target:this,methodName:"describeGlobalReply"})}
-,isc.A.describeGlobalReply=function(_1){this.fireCallback(this.$400,"list",[_1])}
-,isc.A.getEntity=function(_1,_2){var _3=this;this.callOperation("describeSObjects",{sObjectType:_1},null,function(_4){_3.describeObjectReply(_4,_1,_2)})}
-,isc.A.describeObjectReply=function(_1,_2,_3){var _4=_1.result,_5=_4.fields;var _6=this.convertSchema(_4,_2);if(this.logIsDebugEnabled()){this.logDebug("converted schema: "+this.echoAll(_6.getFields()))}
+,isc.A.ensureLoggedIn=function isc_SForce_ensureLoggedIn(_1,_2,_3){if(this.sessionId)return this.fireCallback(_1);var _4=this;isc.showLoginDialog(function(_5,_6){if(_5==null)return;_4.login(_5.username,_5.password,function(_7){_6(_7);if(_7)isc.Class.fireCallback(_1)})},isc.addProperties({title:"Please log in to SalesForce",dismissable:_2},_3))}
+,isc.A.getEntityList=function isc_SForce_getEntityList(_1){this.$400=_1;this.callOperation("describeGlobal",null,"//default:types",{target:this,methodName:"describeGlobalReply"})}
+,isc.A.describeGlobalReply=function isc_SForce_describeGlobalReply(_1){this.fireCallback(this.$400,"list",[_1])}
+,isc.A.getEntity=function isc_SForce_getEntity(_1,_2){var _3=this;this.callOperation("describeSObjects",{sObjectType:_1},null,function(_4){_3.describeObjectReply(_4,_1,_2)})}
+,isc.A.describeObjectReply=function isc_SForce_describeObjectReply(_1,_2,_3){var _4=_1.result,_5=_4.fields;var _6=this.convertSchema(_4,_2);if(this.logIsDebugEnabled()){this.logDebug("converted schema: "+this.echoAll(_6.getFields()))}
 _6.sfFields=_4.fields;this.fireCallback(_3,"schema",[_6])}
-,isc.A.convertSchema=function(_1,_2){var _3=_1.fields,_4=[];for(var i=0;i<_3.length;i++){var _6=_3[i],_7={};_7.name=_6.name;if(this.detailFields.contains(_7.name))_7.detail=true;if(this.hiddenFields.contains(_7.name))_7.hidden=true;var _8=_6.soapType;if(_8.contains(":"))_8=_8.substring(_8.indexOf(":")+1);_7.type=_8;_7.title=_6.label;_7.canEdit=_6.updateable;if(_6.type=="id")_7.primaryKey=true;if(_6.length!=0)_7.length=_6.length;_4.add(_7)}
+,isc.A.convertSchema=function isc_SForce_convertSchema(_1,_2){var _3=_1.fields,_4=[];for(var i=0;i<_3.length;i++){var _6=_3[i],_7={};_7.name=_6.name;if(this.detailFields.contains(_7.name))_7.detail=true;if(this.hiddenFields.contains(_7.name))_7.hidden=true;var _8=_6.soapType;if(_8.contains(":"))_8=_8.substring(_8.indexOf(":")+1);_7.type=_8;_7.title=_6.label;_7.canEdit=_6.updateable;if(_6.type=="id")_7.primaryKey=true;if(_6.length!=0)_7.length=_6.length;_4.add(_7)}
 var _9=_1.childRelationships,_10=[];if(_9){for(var i=0;i<_9.length;i++){var _11=_9[i];_10.add({dsName:_11.childSObject,fieldName:_11.field})}}
 return isc.SFDataSource.create({sfName:_1.name,ID:_2,childRelations:_10,fields:_4})}
-,isc.A.deploySControl=function(_1,_2){if(this.SControlDS==null){this.getEntity("SControl",function(_3){isc.SForce.SControlDS=_3;isc.SForce.deploySControl(_1,_2)});return}
+,isc.A.deploySControl=function isc_SForce_deploySControl(_1,_2){if(this.SControlDS==null){this.getEntity("SControl",function(_3){isc.SForce.SControlDS=_3;isc.SForce.deploySControl(_1,_2)});return}
 var _3=this.SControlDS;_3.fetchData({Name:_1},function(_4,_5){isc.SForce.installSControl(_1,_2,_5,_3)})}
-,isc.A.installSControl=function(_1,_2,_3,_4){var _5=this.getSControlHTML(_2);if(_3.length>0){_4.updateData({Id:_3[0].Id,HTMLWrapper:_5})}else{_4.addData({Name:_1,HTMLWrapper:_5})}}
-,isc.A.getSControlHTML=function(_1){if(this.htmlPrefix==null){var _2=this.controlIsomorphicDir;this.htmlPrefix=["<HTML>\r<BODY>\r<SCRIPT>window.isomorphicDir = '",_2,"'</SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Core.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Foundation.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Containers.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Grids.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Forms.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_DataBinding.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_SalesForce.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Kapow.js'></SCRIPT>\r","<SCRIPT src='",_2,"skins/",this.controlSkin,"/load_skin.js'></SCRIPT>\r","<SCRIPT>\r",'   var service = isc.WebService.get("urn:partner.soap.sforce.com");\r','   service.sessionId = "{!User_Session_ID}";\r','   service.dataURL = "{!API_Partner_Server_URL_60}";\r\r'].join("")}
+,isc.A.installSControl=function isc_SForce_installSControl(_1,_2,_3,_4){var _5=this.getSControlHTML(_2);if(_3.length>0){_4.updateData({Id:_3[0].Id,HTMLWrapper:_5})}else{_4.addData({Name:_1,HTMLWrapper:_5})}}
+,isc.A.getSControlHTML=function isc_SForce_getSControlHTML(_1){if(this.htmlPrefix==null){var _2=this.controlIsomorphicDir;this.htmlPrefix=["<HTML>\r<BODY>\r<SCRIPT>window.isomorphicDir = '",_2,"'</SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Core.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Foundation.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Containers.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Grids.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Forms.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_DataBinding.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_SalesForce.js'></SCRIPT>\r","<SCRIPT src='",_2,"system/modules/ISC_Kapow.js'></SCRIPT>\r","<SCRIPT src='",_2,"skins/",this.controlSkin,"/load_skin.js'></SCRIPT>\r","<SCRIPT>\r",'   var service = isc.WebService.get("urn:partner.soap.sforce.com");\r','   service.sessionId = "{!User_Session_ID}";\r','   service.dataURL = "{!API_Partner_Server_URL_60}";\r\r'].join("")}
 return this.htmlPrefix+_1+'</SCRIPT>\r</BODY></HTML>'}
-);isc.B._maxIndex=isc.C+12;isc.defineClass("SFResultSet","ResultSet");isc.A=isc.SFResultSet.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.transformData=function(_1,_2){this.context=this.context||{};this.context.queryLocator=_2.queryLocator}
-,isc.A.setCriteria=function(_1){var _2=this.Super("setCriteria",arguments);if(_2){this.context=this.context||{};this.context.queryLocator=null}}
-);isc.B._maxIndex=isc.C+2;isc.defineClass("SFDataSource","DataSource");isc.A=isc.SFDataSource.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.serviceNamespace="urn:partner.soap.sforce.com";isc.A.operationBindings=[{operationType:"fetch",wsOperation:"query",recordXPath:"//schema:records"},{operationType:"fetch",operationId:"queryMore",wsOperation:"queryMore",recordXPath:"//schema:records"},{operationType:"update",wsOperation:"update",recordName:"SaveResult"},{operationType:"add",wsOperation:"create",recordName:"SaveResult"},{operationType:"remove",wsOperation:"delete",recordName:"DeleteResult"}];isc.A.resultSetClass="SFResultSet";isc.A.autoLogin=true;isc.B.push(isc.A.transformRequest=function(_1){var _2=_1.data;if(!isc.isAn.Array(_2))_2=[_2];if(_1.operationType=="remove"){return{ids:_2.getProperty("Id")}}
+);isc.B._maxIndex=isc.C+12;isc.defineClass("SFResultSet","ResultSet");isc.A=isc.SFResultSet.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.transformData=function isc_SFResultSet_transformData(_1,_2){this.context=this.context||{};this.context.queryLocator=_2.queryLocator}
+,isc.A.setCriteria=function isc_SFResultSet_setCriteria(_1){var _2=this.Super("setCriteria",arguments);if(_2){this.context=this.context||{};this.context.queryLocator=null}}
+);isc.B._maxIndex=isc.C+2;isc.defineClass("SFDataSource","DataSource");isc.A=isc.SFDataSource.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.serviceNamespace="urn:partner.soap.sforce.com";isc.A.operationBindings=[{operationType:"fetch",wsOperation:"query",recordXPath:"//schema:records"},{operationType:"fetch",operationId:"queryMore",wsOperation:"queryMore",recordXPath:"//schema:records"},{operationType:"update",wsOperation:"update",recordName:"SaveResult"},{operationType:"add",wsOperation:"create",recordName:"SaveResult"},{operationType:"remove",wsOperation:"delete",recordName:"DeleteResult"}];isc.A.resultSetClass="SFResultSet";isc.A.autoLogin=true;isc.B.push(isc.A.transformRequest=function isc_SFDataSource_transformRequest(_1){var _2=_1.data;if(!isc.isAn.Array(_2))_2=[_2];if(_1.operationType=="remove"){return{ids:_2.getProperty("Id")}}
 if(_1.operationType!="fetch"){_2.setProperty("type",this.sfName||this.ID);return{sObjects:_2}}
 if(_1.queryLocator){_1.operationId="queryMore";return{queryLocator:_1.queryLocator}}
 var _3=_1.data,_4="select "+this.getFieldNames().join(",")+" "+"from "+(this.sfName||this.ID);if(_3!=null&&!isc.isAn.emptyObject(_3)){_4+=" where ";for(var _5 in _3){_4+=_5+"='"+_3[_5]+"' "}}
 return{queryString:_4}}
-,isc.A.transformResponse=function(_1,_2,_3){var _4=_2.operationType;if(_4!="fetch"){var _5=_3.selectString("//default:success");if(_5!="true"){_1.errors=this.convertValidationErrors(_3);this.logWarn("save failed, errors are: "+this.echo(_1.errors));_1.status=-1;return _1}
+,isc.A.transformResponse=function isc_SFDataSource_transformResponse(_1,_2,_3){var _4=_2.operationType;if(_4!="fetch"){var _5=_3.selectString("//default:success");if(_5!="true"){_1.errors=this.convertValidationErrors(_3);this.logWarn("save failed, errors are: "+this.echo(_1.errors));_1.status=-1;return _1}
 if(_4!="remove"){var _6=isc.addProperties({},_2.oldValues,_2.data.sObjects[0]);if(_4=="add"){_6.Id=_1.data[0].id}
 _1.data=_6}else{var _7=_1.data[0].id;_1.data={Id:_7};this.logWarn("cache sync data on remove: "+this.echo(_1.data))}
 return _1}
 var _8=_3.selectString("//default:queryLocator");if(_8!=null&&!isc.isAn.emptyString(_8)){_1.queryLocator=_8}
 _1.totalRows=_3.selectNumber("//default:size");var _9=_1.data;for(var i=0;i<_9.length;i++){if(isc.isAn.Array(_9[i].Id))_9[i].Id=_9[i].Id[0]}
 return _1}
-,isc.A.fetchData=function(_1,_2,_3,_4){var _5=this;if(this.autoLogin&&!_4){isc.SForce.ensureLoggedIn(function(){_5.fetchData(_1,_2,_3,true)});return}
+,isc.A.fetchData=function isc_SFDataSource_fetchData(_1,_2,_3,_4){var _5=this;if(this.autoLogin&&!_4){isc.SForce.ensureLoggedIn(function(){_5.fetchData(_1,_2,_3,true)});return}
 return this.Super("fetchData",arguments)}
-,isc.A.convertValidationErrors=function(_1){var _2=_1.selectNodes("//default:errors"),_3={};for(var i=0;i<_2.length;i++){var _5=_2[i];_5=isc.xml.toJS(_5);_3[_5.fields]=_5.message}
+,isc.A.convertValidationErrors=function isc_SFDataSource_convertValidationErrors(_1){var _2=_1.selectNodes("//default:errors"),_3={};for(var i=0;i<_2.length;i++){var _5=_2[i];_5=isc.xml.toJS(_5);_3[_5.fields]=_5.message}
 return _3}
 );isc.B._maxIndex=isc.C+4}
 isc._moduleEnd=isc._SalesForce_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('SalesForce module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'SalesForce'.");}
@@ -4599,7 +4599,7 @@ isc._moduleEnd=isc._SalesForce_end=(isc.timestamp?isc.timestamp():new Date().get
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-05-02/LGPL Development Only (2010-05-02)
+  Version SC_SNAPSHOT-2010-05-15/LGPL Development Only (2010-05-15)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

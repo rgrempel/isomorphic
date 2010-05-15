@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -170,8 +170,73 @@ isc.Class.addClassMethods({
 
         
 
+        if (this.autoDupMethods) { 
+            isc.Class.duplicateMethods(this, this.autoDupMethods); 
+        }
+
         this._initializedClasses[this.Class] = true;
     },
+
+    // to get around native browser limitations with stack traces being unable to proceed
+    // through recursively called methods, create duplicates of certain key functions on every
+    // class and instance.  
+    
+    duplicateMethods : function (target, methodNames) {
+        // skip certain ultralight classes
+        if (target.Class && this.dontDup[target.Class]) return;
+
+        for (var i = 0; i < methodNames.length; i++) {
+            var methodName = methodNames[i];
+
+            this.duplicateMethod(methodName, target);
+        }
+    },
+    duplicateMethod : function (methodName, target) {
+        if (!target) target = this;
+
+        var method = target[methodName];
+
+        if (method == null) return;
+
+        // avoid duplicating a duplicate, which would force Super() to follow multiple
+        // _originalMethod links to discover the true original method.
+        if (method._originalMethod) {
+            while (method._originalMethod) method = method._originalMethod;
+            //this.logWarn("double dup: " + methodName + " on target: " + target);
+        }
+
+        //!DONTOBFUSCATE
+        var dup;
+        if (method.toSource == null) { // IE, Safari
+            dup = eval("dup = " + method.toString());
+        } else {
+            dup = eval(method.toSource());
+        }
+
+        // figure out the method's name
+        if (!method._fullName) isc.Func.getName(method, true);
+            /*
+            name = (isc.isA.ClassObject(target) ? "[c]" : "") +
+                    (target.Class ? target.Class : "") + 
+                    "." + methodName + "[d]";
+            */
+        dup._fullName = method._fullName + "[d]";
+
+        // to allow Super() to do correct comparisons with superclass implementations
+        dup._originalMethod = method;
+
+        target[methodName] = dup;
+
+        return dup;
+    },
+    dontDup : {
+        StringBuffer : true,
+        Action : true,
+        MathFunction : true,
+        JSONEncoder : true
+    },
+    // class-level auto-dups
+    //autoDupMethods: [ "fireCallback" ],
 
     // NOTE: we have to use a structure like this instead of just checking a property on the
     // class object (eg this._initialized) because any property would be inherited from
@@ -694,6 +759,14 @@ isc.Class.addClassMethods({
 	Super : function (methodName, args, nativeArguments) {
         if (isc._traceMarkers) arguments.__this = this;
 
+        // see Class.duplicateMethods() - Super is dup'd once at init, then dup'd on the fly
+        // each time it's called so that recursive super calls on the same instance can be
+        // traced through
+        if (this.autoDupMethods && isc.isAn.Instance(this)) {
+            this.duplicateMethod("Super");
+            this.duplicateMethod("invokeSuper");
+        }
+    
         // if args is clearly not an Array or Arguments object, make it an Array.  NOTE: you
         // can still fool us by passing an object with a .length property which is neither an
         // Array or Arguments object - to avoid this we'd have to be able to reliably
@@ -736,10 +809,13 @@ isc.Class.addClassMethods({
     _getOriginalMethod : function (methodName, theProto) {
         var method = theProto[methodName];
 
-        while (method && method._origMethodSlot) {
+        while (method != null && method._origMethodSlot) {
             //this.logWarn("indirect installed on: " + theProto + ": " + this.echoLeaf(method));
             method = theProto[method._origMethodSlot];
         }
+
+        
+        if (method != null && method._originalMethod != null) method = method._originalMethod;
 
         return method;
     },
@@ -1098,10 +1174,9 @@ isc.Class.addClassMethods({
 
         var returnVal;
         
-        if (!catchErrors || !isc.Browser.isMoz) {
-           returnVal = method.apply(target, args);             
+        if (!catchErrors || isc.Log.supportsOnError) {
+            returnVal = method.apply(target, args);             
         } else {
-        
             try {
                 returnVal = method.apply(target, args);
             } catch (e) {
@@ -1151,7 +1226,7 @@ isc.Class.addClassMethods({
     },
     
  
-    //>@classMethod Class.fireOnPause()
+    //> @classMethod Class.fireOnPause()
     // Given some repeatedly performed event (EG keypress, scroll, etc), set up an action
     // to fire when the events have stopped occurring for some set period.
     // @param id (string) arbitrary identifier for the action
@@ -1627,7 +1702,17 @@ isc.Class.addMethods({
 
 		// call the init() routine on the new instance
 	    this.init(A,B,C,D,E,F,G,H,I,J,K,L,M);
+    
+        if (this.autoDupMethods) { 
+            isc.Class.duplicateMethods(this, this.autoDupMethods); 
+        }
         return this;
+    },
+    
+    // instance-level auto-dups
+    //autoDupMethods: [ "fireCallback", "Super", "invokeSuper", "getInnerHTML" ],
+    duplicateMethod : function (methodName) {
+        isc.Class.duplicateMethod(methodName, this);
     },
 
 	//>	@method	class.getUniqueProperties
@@ -1801,7 +1886,7 @@ isc.Class.addMethods({
 	//	@return (object)	prototype object for this instance
 	//<
 	getPrototype : function () {
-		return this._prototype;
+		return this._scPrototype;
 	},
 	
 	
@@ -2555,10 +2640,11 @@ isc.Class.addMethods({
 	//<
     
     fireCallback : function (callback, argNames, args, catchErrors) {
-        return isc.Class.fireCallback(callback, argNames, args, this, catchErrors);
+        
+        return this.getClass().fireCallback(callback, argNames, args, this, catchErrors);
     },
     
-    //>@method class.delayCall()
+    //> @method class.delayCall()
     //  This is a helper to delay a call to some method on this object by some specified
     //  amount of time.
     // @param methodName (string) name of the method to call
@@ -2570,11 +2656,11 @@ isc.Class.addMethods({
     // @visibility external
     //<
     delayCall : function (methodName, arrayArgs, time) {
-        return isc.Class.delayCall(methodName, arrayArgs, time, this);
+        return this.getClass().delayCall(methodName, arrayArgs, time, this);
     },
 
     
-    //>@method Class.fireOnPause()
+    //> @method Class.fireOnPause()
     // Given some repeatedly performed event (EG keypress, scroll, etc), set up an action
     // to fire when the events have stopped occurring for some set period.
     // @param id (string) arbitrary identifier for the action

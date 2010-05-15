@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -19,7 +19,7 @@
 // Interface for defining and editing a single grid hilite Rule
 
 //>	@class HiliteRule
-// A widget for editing the criteria of a single +link{class:DataboundComponent} hilite.  
+// A widget for editing the criteria of a single +link{class:DataBoundComponent} hilite.  
 // The default implementation presents a series of +link{class:FormItem, formItems}
 // for selecting the various elements of a simple criterion and a foreground or background
 // color.  To specify more complex criteria, include both foreground and background colors or
@@ -51,13 +51,9 @@ isc.HiliteRule.addProperties({
         _constructor: "DynamicForm",
         numCols: 3,
         items: [
-            { name: "cycler", type: "CycleItem", showTitle: false, valign: "center", 
+            { name: "colorType", type: "SelectItem", showTitle: false, valign: "center", 
                 valueMap: { foreground: "Foreground", background: "Background" },
-                valueIcons: { 
-                    foreground: "[SKINIMG]/DynamicForm/checked.png",
-                    background: "[SKINIMG]/DynamicForm/unchecked.png"
-                },
-                defaultValue: "foreground"
+                defaultValue: "foreground", width: 100
             },
             { name: "color", title: "Color", type: "ColorItem", width: 80 }
         ]
@@ -142,6 +138,8 @@ isc.HiliteRule.addMethods({
                 this.isAdvanced = true;
         }
 
+        if (isc.isA.String(this.dataSource)) this.dataSource = isc.DS.getDataSource(this.dataSource);
+        
         if (this.isAdvanced) {
             // need to show a removeButton, label and editButton here instead of an isc.FilterClause
             var description = isc.FilterBuilder.getFilterDescription(
@@ -149,36 +147,42 @@ isc.HiliteRule.addMethods({
                 this.dataSource
             );
 
+            var missingField = (description.indexOf(isc.FilterBuilder.missingFieldPrompt) >= 0);
+
             this.membersMargin = 2;
-            this.addAutoChild("removeButton");
+            this.addAutoChild("removeButton", { disabled: missingField ? true : false });
             this.addAutoChild("advancedClauseLabel", 
                 {
                     contents: description,
-                    prompt: description
+                    prompt: description,
+                    disabled: missingField ? true : false
                 }
             );
-            this.addAutoChild("advancedClauseEditButton"); 
+            this.addAutoChild("advancedClauseEditButton", { disabled: missingField ? true : false }); 
             this.addMembers([
                 this.removeButton, this.advancedClauseLabel, this.advancedClauseEditButton
             ]);
         } else {
+            var missingField = (this.dataSource.getField(this.fieldName) == null);
+
             this.addAutoChild("clause", 
                 { 
                     dataSource: this.dataSource,
                     fieldName: this.fieldName,
                     criterion: this.criterion ? this.criterion.criteria : null,
                     showRemoveButton: this.showRemoveButton,
+                    disabled: missingField ? true : false,
                     remove : function () {
                         this.creator.remove();
                     }
                 }
             );
             this.addMember(this.clause);
-            this.addAutoChild("hiliteForm");
+            this.addAutoChild("hiliteForm", { disabled: missingField ? true : false });
             if (this.criterion) {
                 this.hiliteForm.setValues(
                     { 
-                        cycler: (this.criterion.textColor ? "foreground" : "background"),
+                        colorType: (this.criterion.textColor ? "foreground" : "background"),
                         color: (this.criterion.textColor ? this.criterion.textColor : this.criterion.backgroundColor)
                     }
                 );
@@ -207,13 +211,13 @@ isc.HiliteRule.addMethods({
         if (this.isAdvanced) {
             result = this.criterion;
         } else {
-            var cycleValue = this.hiliteForm.getValue("cycler"),
+            var colorTypeValue = this.hiliteForm.getValue("colorType"),
                 colorValue = this.hiliteForm.getValue("color"),
                 criterion = this.clause.getCriterion();
 
             result.criteria = criterion;
 
-            if (cycleValue == "foreground") {
+            if (colorTypeValue == "foreground") {
                 result.textColor = colorValue;
                 result.cssText = "color:" + colorValue + ";";
             } else {
@@ -238,11 +242,11 @@ isc.HiliteRule.addMethods({
         this.advancedHiliteDialog = isc.Window.create({
             title: "Advanced Hilite Editor",
             width: isc.Page.getWidth()/2,
-            height: 300,
-            overflow: "visible",
+            height: 1,
             isModal: true,
             showModalMask: true,
             showResizer: true,
+            autoSize: true,
             autoCenter: true,
             items: [
                 isc.AdvancedHiliteEditor.create({
@@ -285,7 +289,7 @@ isc.HiliteRule.addMethods({
 
 //>	@class HiliteEditor
 // A widget for defining and editing a set of +link{class:HiliteRule, hilite rules} for use by 
-// +link{class:DataboundComponent, databoundComponents}.  Presents a list of available fields 
+// +link{class:DataBoundComponent, dataBoundComponents}.  Presents a list of available fields 
 // and allows editing of simple hilites directly and more complex hilites via  
 // +link{class:AdvancedHiliteEditor}s. 
 //
@@ -325,7 +329,7 @@ isc.HiliteEditor.addProperties({
             this.creator.addAdvancedHilite();
         }
     },
-    
+
     //> @attr hiliteEditor.fieldList (AutoChild : null : IR)
     // AutoChild +link{class:ListGrid} showing the list of fields to create hilites for.
     //
@@ -423,34 +427,49 @@ isc.HiliteEditor.addMethods({
         ]);
 
         if (this.fieldDataSource) {
-            this.fieldList.autoFetchData = true;
-            this.fieldList.setDataSource(this.fieldDataSource);
-            this.fieldList.setFields([
-                { name: "name", showIf: "false" },
-                { name: "title", title: "Available Fields" },
-                { name: "type", showIf: "false" }
-            ]);
+            this.setupFieldList();
         } else {
-            var ds = this.getDataSource();
-
-            var fieldNames = this.fieldNames || ds.getFieldNames(),
-                fieldListData = this.fieldListData = [];
-            for (var i = 0; i < fieldNames.length; i++) {
-                var fieldName = fieldNames[i],
-                    field = ds.getField(fieldName),
-                    fieldTitle = field.title;
-                if (field.hidden) continue;
-                fieldTitle = fieldTitle ? fieldTitle : fieldName;
-                fieldListData.add({name: fieldName, title: fieldTitle})
+            this.dataSource = this.getDataSource();
+            
+            if (this.dataSource) {            
+                this.getClientOnlyFieldDS();
+            } else {
+                this.logWarn("No DataSource present.");
             }
-            this.fieldListData = fieldListData;
-            this.fieldList.setData(this.fieldListData);
         }
         this.fieldList.markForRedraw();
 
         this.setHilites(this.hilites);
     },
 
+    // override point - if showFieldList is false, override this method to set up data for 
+    // whatever replacement list is provided
+    setupFieldList : function () {
+        this.fieldList.showFilterEditor = true;
+        this.fieldList.autoFetchData = true;
+        this.fieldList.setDataSource(this.fieldDataSource);
+        this.fieldList.setFields([
+            { name: "name", showIf: "false" },
+            { name: "title", title: "Available Fields" },
+            { name: "type", showIf: "false" }
+        ]);
+    },
+
+    getClientOnlyFieldDS : function () {
+        this.fieldDataSource = isc.DataSource.create({
+            ID: "localFieldDS",
+            fields: [
+                { name: "name", showIf: "false" },
+                { name: "title", title: "Available Fields" },
+                { name: "type", showIf: "false" }
+            ],
+            testData: isc.getValues(this.dataSource.getFields()),
+            clientOnly: true
+        });
+
+        this.setupFieldList();
+    },
+    
     //> @method hiliteEditor.addHilite()
     // Adds a new HiliteRule for a passed record.
     //
@@ -490,11 +509,12 @@ isc.HiliteEditor.addMethods({
         this.advancedHiliteDialog = isc.Window.create({
             title: "Advanced Hilite Editor",
             width: isc.Page.getWidth()/2,
-            height: 300,
+            height: 1,
             isModal: true,
             showModalMask: true,
             showResizer: true,
             canDragResize: true,
+            autoSize: true,
             autoCenter: true,
             items: [
                 isc.AdvancedHiliteEditor.create({
@@ -591,7 +611,7 @@ isc.HiliteEditor.addMethods({
 
 //>	@class AdvancedHiliteEditor 
 // A widget for editing a single, advanced +link{class:HiliteRule, hilite rule} for use by  
-// +link{class:DataboundComponent, databoundComponents}.  Where a simple hilite provides  
+// +link{class:DataBoundComponent, dataBoundComponents}.  Where a simple hilite provides  
 // configuration of a single criterion and either foreground or background color for  
 // application to a single field, an advanced hilite can specify more complex criteria which can 
 // both test and affect multiple fields and allow both background and foreground colors to 
@@ -605,6 +625,9 @@ isc.AdvancedHiliteEditor.addProperties({
     // editor for advanced  highlights
     // ---------------------------------------------------------------------------------------
 
+    padding: 10,
+    membersMargin: 10,
+
     //> @attr advancedHiliteEditor.filterBuilder (AutoChild : null : IR)
     // AutoChild +link{class:FilterBuilder} for configuring the criteria for this Hilite.
     //
@@ -616,7 +639,7 @@ isc.AdvancedHiliteEditor.addProperties({
         groupTitle:"Filter",
         padding:8,
         maxHeight: 200,
-        overflow: "automatic"
+        overflow: "visible"
     },
     
     //> @attr advancedHiliteEditor.hiliteForm (AutoChild : null : IR)
@@ -630,7 +653,7 @@ isc.AdvancedHiliteEditor.addProperties({
         groupTitle:"Appearance",
         extraSpace:4,
         padding:8,
-        numCols:4
+        numCols: 6
     },
 
     hiliteButtonsDefaults : {
@@ -688,7 +711,7 @@ isc.AdvancedHiliteEditor.addProperties({
 });
 
 isc.AdvancedHiliteEditor.addMethods({
-    
+
     initWidget : function () {
         this.Super("initWidget", arguments);
 
@@ -699,17 +722,17 @@ isc.AdvancedHiliteEditor.addMethods({
         );
 
         var items = [
-            {title:"Target Field(s)", name:"fieldName", multiple:true, type:"select", rowSpan:2,
-             defaultDynamicValue:"isc.firstKey(item.valueMap)"},
+            {title:"Target Field(s)", name:"fieldName", multiple:true, allowMultiSelect: true,
+                type:"select"
+            },
             {title:"Text", name:"textColor", type:"color" },
             {title:"Background", name:"backgroundColor", type:"color" }
         ];
 
         this.addAutoChild("hiliteForm");
-        
+
         if (this.fieldDataSource) {
             items[0] = isc.addProperties({}, items[0], {
-                height: 100,
                 valueField: "name",
                 displayField: "title",
                 optionDataSource: this.fieldDataSource

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2560,7 +2560,7 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
     // The usage of declaring children as an instance prototype property is OK so long as the
     // children are specified as objects, not live Canvii, and none of classes involved assume
     // they have a unique copy of any shared subobjects.
-    //if (this.children != null && this.children === this._prototype.children) {
+    //if (this.children != null && this.children === this._scPrototype.children) {
         //this.logWarn("Detected children array as instance property")
         //this.children = this.children.duplicate();
     //}
@@ -7133,7 +7133,7 @@ getChildCount : function () {
 // @group	clickMask
 //
 // @param	clickAction	    (callback)	action to fire when the user clicks on the mask
-// @param	mode        (clickMaskMode)	whether to automatically hide the clickMask on mouseDown
+// @param	mode        (ClickMaskMode)	whether to automatically hide the clickMask on mouseDown
 //                                      and suppress the mouseDown event from reaching
 //                                      the target under the mouse
 // @param   unmaskedTargets (widget | array of widgets) 
@@ -14487,7 +14487,7 @@ getFocusHandle : function () {
 //
 //	@param	newState			(boolean) pass false to blur or anything else to focus
 //<
-setFocus : function (newState) {
+setFocus : function (newState, reason) {
     if (!this._readyToSetFocus(newState)) return;
     var focusHandle = this.getFocusHandle();
 
@@ -14576,11 +14576,11 @@ _restoreFocus : function () {
 // @group	focus
 // @visibility external
 //<
-focus : function () {
+focus : function (reason) {
 
     if (isc._traceMarkers) arguments.__this = this;
     
-    this.setFocus(true);
+    this.setFocus(true, reason);
 },
 
 
@@ -14590,9 +14590,9 @@ focus : function () {
 // @group	focus
 // @visibility external
 //<
-blur : function () {
+blur : function (reason) {
     if (isc._traceMarkers) arguments.__this = this;
-    this.setFocus(false);
+    this.setFocus(false, reason);
 },
 
 // focusAtEnd(): Helper method for synthetic tabIndex stuff - puts focus at the 'beginning' or
@@ -14610,9 +14610,9 @@ focusAtEnd : function (start) {
 //		@group	focus
 //      @visibility internal
 //<
-_setFocusWithoutHandler : function (state) {
+_setFocusWithoutHandler : function (state, reason) {
     this._suppressFocusChanged = true;
-    this.setFocus(state);
+    this.setFocus(state, reason);
     
     
 },
@@ -15137,6 +15137,7 @@ _focusInNextTabElement : function (forward, mask) {
     } while(nextWidget && 
             (isc.EH.targetIsMasked(nextWidget, mask) || nextWidget.isDisabled() || 
              !nextWidget.isDrawn() || !nextWidget.isVisible()  || !nextWidget._canFocus()))
+
     if (nextWidget) {
         //>DEBUG
         this.logInfo("focusInNextTabElement() shifting focus to:"+ nextWidget, "syntheticTabIndex");
@@ -15144,7 +15145,6 @@ _focusInNextTabElement : function (forward, mask) {
         
         
         nextWidget.focusAtEnd(forward)
-        
     } else if (forward) {        
         //>DEBUG
         this.logInfo("focusInNextTabElement() shifting focus to first widget", "syntheticTabIndex");

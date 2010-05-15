@@ -660,7 +660,7 @@ with (theWindow) {
             expansionFieldFalseImage: "[SKINIMG]/TreeGrid/opener_closed.png",
             expansionFieldImageWidth : 22,
             expansionFieldImageHeight : 22,
-            _expansionFieldWidth: 10,
+            expansionFieldWidth: 10,
             checkboxFieldImageWidth : 13,
             checkboxFieldImageHeight : 13
             
@@ -827,7 +827,7 @@ with (theWindow) {
         });
     }
     if(isc.MiniDateRangeItem) {
-        isc.MiniDateRangeItem.changeDefaults("pickerIcon", {
+        isc.MiniDateRangeItem.changeDefaults("pickerIconDefaults", {
             src: "[SKIN]/DynamicForm/date_control.png"
         });
     }

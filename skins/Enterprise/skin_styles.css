@@ -1187,14 +1187,14 @@ border-top:1px solid #abadb3;
 .groupNode {
 	font-family:Arial,Verdana,sans-serif; font-size:11px; text-overflow:ellipsis;
 	color:#333333;
-    border:1px solid;
-    border-color:#FFFFFF transparent #EFEFEF;    
+    border-bottom:1px solid;
+    border-bottom-color: #EDEDED;        
 }
 
 .specialCol {
 	font-family:Arial,Verdana,sans-serif; font-size:11px; text-overflow:ellipsis;
 	color:#333333;
-    background-color:#eff1f1;
+    background-color:#fafafa;
 }
 
 .tallCell,
@@ -1207,21 +1207,21 @@ border-top:1px solid #abadb3;
 .tallCellSelectedOverDark,
 .tallCellDisabled,
 .tallCellDisabledDark {
- 
+
  }
 .cellDark,
 .recordSummaryCell,
 .recordSummaryCellDark {
-    background-color:#eff1f1;
+    background-color:#fafafa;
 }
 .gridSummaryCell,
 .gridSummaryCellDisabled {
-    border-top:1px solid gray; 
-    border-bottom:1px solid gray; 
+    border-top:1px solid gray;
+    border-bottom:1px solid gray;
     background-color:#ececec;
 }
 .tallCellDark {
-	background-color:#eff1f1;
+	background-color:#fafafa;
 }
 .cellOver,
 .cellOverDark,
@@ -1282,7 +1282,7 @@ border-top:1px solid #abadb3;
     font-weight:bold;
     font-family:Tahoma,Verdana,sans-serif;
 	color:#3764a3;
-    border-bottom: 2px solid #8299b8;    
+    border-bottom: 2px solid #8299b8;
 }
 
 /*Tree styling*/
@@ -1329,7 +1329,7 @@ border-top:1px solid #abadb3;
 
 .treeCellDark,
 .treeTallCellDark {
-	background-color:#eff1f1;
+	background-color:#fafafa;
 }
 .treeCellOver,
 .treeCellOverDark {

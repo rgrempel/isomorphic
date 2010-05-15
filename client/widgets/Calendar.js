@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -3006,25 +3006,15 @@ createChildren : function () {
 setDateLabel : function () {
     if (!this.dateDisplay) return;
     if (this.dayViewSelected()) { // day tab
-       this.dateDisplay.setContents( 
-       "<b>" + this.chosenDate.getShortMonthName() + " " + this.chosenDate.getDate() 
-       + ", " + this.chosenDate.getFullYear() + "</b>");        
+        this.dateDisplay.setContents("<b>" + 
+            Date.getFormattedDateRangeString(this.chosenDate) + "</b>");
     } else if (this.weekViewSelected()) { // week tab
         var dateRange = this._getWeekRange();
         var startDate = dateRange[0];
         var endDate = dateRange[1];
-        
-        if (startDate.getMonth() != endDate.getMonth()) { // week spans two different months
-            this.dateDisplay.setContents(
-                "<b>" + startDate.getShortMonthName() + " " + startDate.getDate() 
-                + ", " + startDate.getFullYear() + " - " 
-                + endDate.getShortMonthName() + " " + endDate.getDate() 
-                + ", " + endDate.getFullYear() + "</b>");
-        } else {
-            this.dateDisplay.setContents(
-                "<b>" + startDate.getShortMonthName() + " " + startDate.getDate() + " - " 
-                + endDate.getDate() + " " + startDate.getFullYear() + "</b>");    
-        }
+
+        this.dateDisplay.setContents("<b>" + 
+            Date.getFormattedDateRangeString(startDate, endDate) + "</b>");
     } else if (this.monthViewSelected()) { // month tab
         this.dateDisplay.setContents("<b>" + this.chosenDate.getShortMonthName()
             + " " + this.chosenDate.getFullYear() + "</b>");
@@ -3034,9 +3024,6 @@ setDateLabel : function () {
             ebtView.formatDateForDisplay(eDate) + "</b>";
         this.dateDisplay.setContents(contents);
     }
-     
-    
-    
 },
 
 _getWeekRange : function () {

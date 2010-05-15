@@ -54,6 +54,11 @@ isc.ExampleTree.create({
                         description:"\n        <p>Rows are fetched automatically as the user drags the scrollbar. Drag the \n        scrollbar quickly to the bottom to fetch a range near the end (a prompt will appear \n        during server fetch).</p>\n        <p>Scroll slowly back up to fill in the middle.</p>\n        <p>Another key unique feature of SmartClient is lazy rendering of <b>columns</b>. Most \n        browsers cannot handle displaying a large number of column and have serious \n        performance issues. SmartClient, however, does not render all columns outside the \n        visible area by default and only renders them as you scroll horizontally. You can \n        however disable this feature if desired.</p>\n        <p>You can control how far ahead of the currently visible area rows should be \n        rendered. This is expressed as a ratio from viewport size to rendered area size. \n        The default is 1.3.</p>\n        <p>Tweaking drawAheadRatio allows you to make tradeoffs between continuous \n        scrolling speed vs initial render time and render time when scrolling by large \n        amounts.</p> "
                     },
                     {
+                        icon:"[ISO_DOCS_SKIN]/images/silkicons/application_view_detail.png",
+                        ref:"adaptiveFilter",
+                        title:"Adaptive Filter"
+                    },
+                    {
                         icon:"[ISO_DOCS_SKIN]/images/silkicons/sc_insertformula.png",
                         ref:"filterBuilderBracket",
                         title:"Advanced Filter"
@@ -67,6 +72,11 @@ isc.ExampleTree.create({
                         icon:"[ISO_DOCS_SKIN]/images/silkicons/application_side_tree.png",
                         ref:"dynamicGrouping",
                         title:"Dynamic Grouping"
+                    },
+                    {
+                        icon:"[ISO_DOCS_SKIN]/images/silkicons/application_side_tree.png",
+                        ref:"summaryGrid",
+                        title:"Grid Summaries"
                     },
                     {
                         icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png",
@@ -648,7 +658,7 @@ isc.ExampleTree.create({
                     },
                     {
                         isOpen:false,
-                        title:"Filter",
+                        title:"Filtering",
                         description:"\n    SmartClient grids provide interactive filtering of standard and custom data types,\n    with automatic client/server coordination.\n",
                         children:[
                             {
@@ -678,6 +688,7 @@ isc.ExampleTree.create({
                                 description:"\n        Begin typing a country name into in the filter box for the Country column.  Grids can \n        be configured to filter as you type.        \n        "
                             },
                             {
+                                descriptionHeight:"165",
                                 id:"adaptiveFilter",
                                 jsURL:"grids/filtering/adaptiveFilter.js",
                                 title:"Adaptive Filter",
@@ -687,7 +698,7 @@ isc.ExampleTree.create({
                                         url:"supplyItem.ds.xml"
                                     }
                                 ],
-                                description:"\n        SmartClient combines large dataset handling with <b>adaptive</b> use of\n        client-side filtering.  Begin typing an Item name in the filter box above the \"Item\"\n        column.  When the dataset becomes small enough, SmartClient switches to client-side\n        filtering automatically.  Delete part of the item name to see SmartClient automatically\n        switch back to server-side filtering.  The label underneath the grid flashes briefly \n        every time SmartClient needs to visit the server.\n        "
+                                description:"\n        SmartClient combines large dataset handling with <b>adaptive</b> use of\n        client-side filtering.  Begin typing an Item name in the filter box above the \"Item\"\n        column (for example, enter \"add\").  When the dataset becomes small enough, SmartClient\n        switches to client-side filtering automatically - enter more letters, or criteria on\n        other columns, to see this.  The label underneath the grid flashes briefly\n        every time SmartClient needs to visit the server.\n        <P>\n        Delete part of the item name to see SmartClient automatically switch back to\n        server-side filtering when necessary.  \n        <P>\n        Adaptive filtering eliminates up to 90% of the most costly types of server contact\n        (searching through large datasets), <b>dramatically improving responsiveness and\n        scalability</b>.\n        "
                             },
                             {
                                 id:"advancedFilter",
@@ -786,7 +797,7 @@ isc.ExampleTree.create({
                     },
                     {
                         isOpen:false,
-                        title:"Sort",
+                        title:"Sorting",
                         description:"\n    SmartClient grids provide interactive sorting of standard and custom data types,\n    with automatic client/server coordination.\n",
                         children:[
                             {
@@ -1170,8 +1181,8 @@ isc.ExampleTree.create({
                                 url:"grids/ds/orderItemLocalDS.ds.js"
                             }
                         ],
-                        descriptionHeight:"180",
-                        description:"\n        ListGrids support displaying summaries of the current data set in various ways:\n        <P>\n        Fields from individual records can be summarized into a single field value. In this\n        example the <code>\"Total\"</code> field displays a summary value calculated by\n        multiplying the <code>\"Quantity\"</code> and <code>\"Price\"</code> fields.\n        <P>\n        Summaries can also be displayed for multiple records. This example shows a summary row\n        at the end of each group in the grid as well as an overall summary row with information\n        about every record in the grid. Note that in addition to standard summary functions\n        such as <code>\"sum\"</code> to generate a total, or <code>\"count\"</code> to generate\n        a count of records, completely custom functions may be used. This is demonstrated in\n        the <code>\"Category\"</code> field where a custom function determines how many\n        categories exist in this dataset. \n        "
+                        descriptionHeight:"210",
+                        description:"\n        ListGrids support displaying summaries of the current data set in various ways:\n        <P>\n        Fields from individual records can be summarized into a single field value. In this\n        example the <code>\"Total\"</code> field displays a summary value calculated by\n        multiplying the <code>\"Quantity\"</code> and <code>\"Price\"</code> fields.\n        <P>\n        Summaries can also be displayed for multiple records. This example shows a summary row\n        at the end of each group in the grid as well as an overall summary row with information\n        about every record in the grid. Note that in addition to standard summary functions\n        such as <code>\"sum\"</code> to generate a total, or <code>\"count\"</code> to generate\n        a count of records, completely custom functions may be used. This is demonstrated in\n        the <code>\"Category\"</code> field where a custom function determines how many\n        categories exist in this dataset. \n        <P>\n        Click to edit and summaries are dynamically recalculated to reflect your changes.\n        "
                     },
                     {
                         id:"customColumns",

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -49,9 +49,9 @@ isc._start = new Date().getTime();
 
 // versioning - values of the form ${value} are replaced with user-provided values at build time.
 // Valid values are: version, date, project (not currently used)
-isc.version = "SC_SNAPSHOT-2010-05-02/LGPL Development Only";
-isc.versionNumber = "SC_SNAPSHOT-2010-05-02";
-isc.buildDate = "2010-05-02";
+isc.version = "SC_SNAPSHOT-2010-05-15/LGPL Development Only";
+isc.versionNumber = "SC_SNAPSHOT-2010-05-15";
+isc.buildDate = "2010-05-15";
 isc.expirationDate = "";
 
 // license template data

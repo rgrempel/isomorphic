@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -9,7 +9,7 @@
  * http://smartclient.com/license
  */
 
- 
+
 
 
 
@@ -46,9 +46,12 @@ isc.CanvasItem.addProperties({
     },
     
     _canvas_focusInNextTabElement : function (forward, mask) {
-        return this.canvasItem.form._focusInNextTabElement(forward, mask);
+        if (isc.isA.DynamicForm(this)) {
+            return this.Super("_focusInNextTabElement", arguments);
+        } else 
+            return this.canvasItem.form._focusInNextTabElement(forward, mask);
     }
-    
+
     
   	//> @attr	canvasItem.canvas		(Canvas : null : [IRW])
     //
@@ -427,7 +430,7 @@ isc.CanvasItem.addMethods({
         // size the Canvas to the final size determined by the resize policy
         this.sizeCanvas();
         
-        // Ensure that the canvas has it's tab index written out as tspecified
+        // Ensure that the canvas has it's tab index written out as specified
         this._setElementTabIndex(this.getGlobalTabIndex());
 
         
@@ -626,7 +629,7 @@ isc.CanvasItem.addMethods({
     getCriterion : function () {
         if (isc.isA.DynamicForm(this.canvas)) {
             return this.canvas.getValuesAsAdvancedCriteria();
-        }
+        } else return this.Super("getCriterion", arguments);
     },
     
     //> @method canvasItem.setCriterion()

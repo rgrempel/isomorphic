@@ -472,7 +472,7 @@ with (theWindow) {
         isc.DateItem.addProperties({
             pickerIconWidth:19,
             pickerIconHeight:16,
-            pickerIconSrc:"[SKIN]/controls/date_control.gif"
+            pickerIconSrc:"[SKIN]/controls/date_control.png"
         })
     }
     if (isc.SpinnerItem) {
@@ -555,7 +555,16 @@ with (theWindow) {
         })
     }
 
-
+// ----------------------------------------
+// 18) Calendar
+//----------------------------------------
+    if (isc.Calendar) {
+        isc.Calendar.changeDefaults("datePickerButtonDefaults", {
+            showDown:false,
+            showOver : false,
+            src:"[SKIN]/DynamicForm/date_control.png"
+        });
+    }
 
 // specify where the browser should redirect if not supported
 isc.Page.checkBrowserAndRedirect("[SKIN]/unsupported_browser.html");

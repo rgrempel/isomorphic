@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -6324,7 +6324,6 @@ isc.ListGrid.addProperties( {
         width:21,
         showHeaderContextMenuButton:false,
         showDefaultContextMenu:false,
-        title: "[Remove record]",
         showTitle: false,
         canEdit:false,
         canSort:false,
@@ -8755,6 +8754,9 @@ initWidget : function () {
         this.setOverflow("visible");
     }
 
+    // store off the initial sortDirection - we'll revert to this when unsorting
+    this._baseSortDirection = this.sortDirection;
+
 	// initialize the data object, setting it to an empty array if it hasn't been defined
 	this.setData(this.data ? null : this.getDefaultData());
 
@@ -8893,8 +8895,10 @@ setData : function (newData) {
     }
 
     // if data doesn't support setSort (resultSet and Array do), disable multiSort
-    if (!this.data.setSort) this.canMultiSort = false;
-    else if (this.dataSource) this.canMultiSort = this.dataSource.canMultiSort;
+    if (!this.data.setSort) 
+        this.canMultiSort = false;
+    else if (this.dataSource && this.canMultiSort != false) 
+        this.canMultiSort = this.dataSource.canMultiSort;
 
     if (this._sortSpecifiers) {
         // check for _sortSpecifiers being set *before* checking for initialSort - this 
@@ -8916,13 +8920,7 @@ setData : function (newData) {
             } else field = this.getUnderlyingField(this.sortField);
         }
         if (field) {
-            var direction = field.sortDirection != null ? 
-                (Array.shouldSortAscending(field.sortDirection) ? 
-                    "ascending" : "descending") :
-                (this.sortDirection ?
-                    (Array.shouldSortAscending(this.sortDirection) ? 
-                        "ascending" : "descending") 
-                    : "ascending");
+            var direction = this._getFieldSortDirection(field);
             this.setSort(
                 [
                     {property: field[this.fieldIdProperty], direction: direction }
@@ -8954,6 +8952,14 @@ setData : function (newData) {
         delete this._lastStoredSelectedState;
     }
 
+    if (this.body) {
+        var drawArea = this.body._oldDrawArea;
+
+        // the old and new drawAreas differ and the extents of the new data are present - 
+        // fire the notification method and update the stored _oldDrawArea
+        if (drawArea != null) this._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3]);
+    }
+
 	// mark us as dirty so we'll be redrawn if necessary
     this._markBodyForRedraw("setData");
 },
@@ -8978,6 +8984,18 @@ _canSort : function (field) {
         } else return canSort;
     } 
     return canSort;
+},
+
+// helper method to get an appropriate sortDirection for a field
+_getFieldSortDirection : function (field) {
+    var direction = field.sortDirection != null ? 
+        (Array.shouldSortAscending(field.sortDirection) ? 
+            "ascending" : "descending") :
+        (this.sortDirection ?
+            (Array.shouldSortAscending(this.sortDirection) ? 
+                "ascending" : "descending") 
+            : "ascending");
+    return direction;
 },
 
 // Override createSelectionModel, from DataBoundComponent, to set the body's selection object
@@ -10519,6 +10537,7 @@ setFields : function (newFields) {
             
             isc.addProperties(removeField, this.removeFieldDefaults, this.removeFieldProperties);
             if (removeField.name == null) removeField.name = "_removeField";
+            if (removeField.title == null) removeField.title = this.removeFieldTitle;
             if (removeField.cellIcon == null) removeField.cellIcon = this.removeIcon;
             if (removeFieldNum == -1) {
                 this.completeFields.add(removeField);
@@ -11210,8 +11229,9 @@ setDataSource : function (dataSource, fields) {
     
     this.discardAllEdits();
     // if ds.canMultiSort is specified, set this on the grid also
-    if (!this.data.setSort) this.canMultiSort = false;
-    else 
+    if (!this.data.setSort) 
+        this.canMultiSort = false;
+    else if (this.canMultiSort != false) 
         this.canMultiSort = (dataSource && dataSource.canMultiSort != null ? 
             dataSource.canMultiSort : true);
 },
@@ -13143,7 +13163,7 @@ _drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, bod
 
         if (record == Array.LOADING) continue;
 
-        if (this.showRecordComponents && record) {
+        if (this.showRecordComponents && record && !record._isGroup) {
             var startCol=0, endCol=0,
                 shouldShowRecordRecordComponent;
 
@@ -13160,7 +13180,7 @@ _drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, bod
                 } else {
                     shouldShowRecordComponent = this.showRecordComponent(record);
                 }
-            
+
                 // If showRecordComponentsByCell is false this loop will always run just once
                 // and the colNum is essentially ignored!
                 for (var i = startCol; i <= endCol; i++) {
@@ -13756,8 +13776,8 @@ getPrintHTML : function (printProperties, callback) {
     
 
     var body = this.body;
-    // we may have getPrintHTML called while we're undrawn - if we'll need to set up our children
-    // here
+    // we may have getPrintHTML called while we're undrawn - if so, we'll need to set up our 
+    // children here
     if (body == null) {
         this.createChildren();
         body = this.body;
@@ -15277,11 +15297,14 @@ getGridSummary : function (field) {
     
     // If we have outstanding / unsaved edits, we want to use those in our calculations
     var editRows = this.getAllEditRows();
-    if (editRows.length > 0) {
+    if (editRows != null && editRows.length > 0) {
         // ensure we don't stomp on our live data array!
         localData = localData.duplicate();
-        for (var i = 0; i < editRows.length; i++) {
-            localData[editRows[i]] = this.getEditedRecord(editRows[i]); 
+        
+        for (var i = 0; i < localData.length; i++) {
+            var record = localData[i];
+            var rowNum = this.getEditSessionRowNum(record);
+            if (rowNum != null) localData[i] = this.getEditedRecord(rowNum, null, true);
         }
     }    
     // getGridSummary() is an override point on a listGridField which allows the developer to
@@ -15635,7 +15658,6 @@ showSummaryRow : function () {
                 // if we're getting data from a dataSource no special override here
                 if (this.dataSource != null) return this.Super("getCellRecord", arguments);
                 
-                
                 if (rowNum != 0) return null;
                 
                 // If we have a summary record already created, return it
@@ -15926,7 +15948,7 @@ setFilterValues : function (values) {
 updateFilterEditor : function () {
     var editor = this.filterEditor;
     if (!editor) return;
-    
+
     var values = this._getFilterEditorValues();
     this.filterEditor.setEditValues(0, values);
 },
@@ -15960,7 +15982,7 @@ _getFilterEditorValues : function () {
         for (var i = 0; i < this.completeFields.length; i++) {
             values[this.completeFields[i].name] = this.completeFields[i].defaultFilterValue;
         }
-        
+
     // If we do have a set of filter values, trim out any that aren't included in filter-editor
     // fields - this avoids the user having inaccessible criteria values [for hidden fields
     // leave the values in place - the user can access them via the right-click functionality to
@@ -15985,35 +16007,70 @@ _getFilterEditorValues : function () {
             } else {
                 simpleCriteria = {};
                 
-                var innerCrit;
-                
-                // support a single level criteria object like {fieldName:..., operator:..., value:...}
-                if (currentCriteria.operator != "and") {
-                    innerCrit = [currentCriteria];
+                var innerCrit,
+                    ds = this.dataSource ? this.getDataSource(this.dataSource) : null
+                ;
+
+                if (isc.isAn.Array(currentCriteria.criteria) && 
+                        (currentCriteria.criteria.length > 1 || 
+                            (currentCriteria.criteria.length == 1 && 
+                            (currentCriteria.criteria[0].operator != "equals" && 
+                            currentCriteria.criteria[0].operator != "iContains")))
+                        && 
+                        isc.DS.getCriteriaFields(currentCriteria, ds).getUniqueItems().length == 1) 
+                {
+                    // we have just a single advancedCriteria that contains non "equals" or 
+                    // "iContains" criterion for a single same field
+                    var fieldNames = isc.DS.getCriteriaFields(currentCriteria, ds).getUniqueItems();
+                    simpleCriteria[fieldNames[0]] = currentCriteria;
                 } else {
-                    innerCrit = currentCriteria.criteria;
-                }
-                for (var i = 0; i < innerCrit.length; i++) {
-                    var fieldCrit = innerCrit[i],
-                        fieldName = innerCrit[i].fieldName;
-                        
-                    if (fieldName && fields.find("name", fieldName)) {
-                        
-                        var value = innerCrit[i].value,
-                            compareOperator = isc.DataSource.getCriteriaOperator(value, 
-                                                            this.autoFetchTextMatchStyle);
-                            
-                        if (compareOperator != fieldCrit.operator) {
-                            this.logWarn("Advanced criteria includes criteria for field:" + 
-                                fieldName + " with operator " + fieldCrit.operator + 
-                                ". Unable to display this type of criteria in the filter editor.");
+                    // support a single level criteria object like {fieldName:..., operator:..., value:...}
+                    if (currentCriteria.operator != "and") {
+                        innerCrit = [currentCriteria];
+                    } else {
+                        //innerCrit = currentCriteria.criteria;
+                        innerCrit = isc.isAn.Array(currentCriteria.criteria) ?
+                            currentCriteria.criteria : [currentCriteria.criteria];
+                    }
+                
+                    for (var i = 0; i < innerCrit.length; i++) {
+                        var fieldCrit = innerCrit[i],
+                            fieldName = fieldCrit ? fieldCrit.fieldName : null;
+
+                        if (!fieldName && isc.DS.isAdvancedCriteria(fieldCrit)) {
+                            // we have an advancedCriteria for a field - if it applies only to
+                            // a single field, see whether the itemType for that field can 
+                            // accept AdvancedCriteria and use it if it can, otherwise log a 
+                            // warning
+                            var fieldNames = isc.DS.getCriteriaFields(fieldCrit, ds).getUniqueItems();
+                            if (fieldNames && fieldNames.length == 1) {
+                                fieldName = fieldNames[0];
+                                simpleCriteria[fieldName] = fieldCrit;
+                            } else {
+                                this.logWarn("SubCriteria is AdvancedCriteria and references "+
+                                    "multiple fields: "+fieldNames);
+                            }
                         } else {
-                            simpleCriteria[fieldName] = fieldCrit.value;
+                    
+                            if (fieldName && fields.find("name", fieldName)) {
+                                
+                                var value = innerCrit[i].value,
+                                    compareOperator = isc.DataSource.getCriteriaOperator(value, 
+                                                                    this.autoFetchTextMatchStyle);
+                                    
+                                if (compareOperator != fieldCrit.operator) {
+                                    this.logWarn("Advanced criteria includes criteria for field:" + 
+                                        fieldName + " with operator " + fieldCrit.operator + 
+                                        ". Unable to display this type of criteria in the filter editor.");
+                                } else {
+                                    simpleCriteria[fieldName] = fieldCrit.value;
+                                }
+                            }
                         }
                     }
                 }
             }
-            
+
             for (var i = 0; i < fields.length; i++) {
                 var fieldName = fields[i].name;
                 // If this field is mapped to a displayField, AND its value in the criteria is null
@@ -18195,6 +18252,7 @@ getEditItem : function (editField, record, editedRecord, rowNum, colNum, width, 
             }
         } 
 
+        item.type = editField.type;
         // pick a form item type appropriate for embedded editing
         
         // explicit specification
@@ -19018,7 +19076,7 @@ setEditValues : function (rowNum, editValues, suppressDisplay) {
     }
 	// store the new edit value 
     this._storeEditValues(rowNum, colNum, editValues);
-    
+
     if (suppressDisplay || !this.isDrawn() || !this.body) {
         
         // If suppress display is passed we do still want to redraw the summary row if there
@@ -20039,7 +20097,6 @@ _filter : function (type, criteria, callback, requestProperties, doneSaving) {
             !(isc.ResultSet && isc.isA.ResultSet(this.data) &&
                   this.data.compareCriteria(criteria, this.data.getCriteria()) == 0) ) 
         {
-         
             this.showLostEditsConfirmation({target:this, methodName:"_continueFilter"},
                                            {target:this, methodName:"_cancelFilter"});
             this._filterArgs = {
@@ -22963,7 +23020,7 @@ clearFieldError : function (rowNum, fieldName, dontDisplay) {
 
 //> @method listGrid.clearRowErrors()
 //  Clear any stored validation errors for some row
-//  @group  validtion
+//  @group  validation
 //  @param  rowNum  (number)    index of row to clear validation error for
 // @visibility external
 // @see listGrid.setRowErrors()
@@ -23639,7 +23696,7 @@ drop : function () {
 },
 
 
-//> @method listGrid.recordDrop
+//> @method listGrid.recordDrop()
 // Process a drop of one or more records on a ListGrid record.
 // <P>
 // This method can be overridden to provide custom drop behaviors, and is a more appropriate
@@ -25883,14 +25940,23 @@ headerClick : function (fieldNum, header) {
         specifier = this.isSortField(fieldName) ? this.getSortSpecifier(fieldName) : null,
         EH = isc.EventHandler,
         key = EH.getKey(),
-        shiftDown = EH.shiftKeyDown()
+        shiftDown = EH.shiftKeyDown(),
+        globalSortDir = this._baseSortDirection,
+        sortDir = this.getSpecifiedField(fieldName).sortDirection
     ;
 
     if (shiftDown && this.canMultiSort) {
         // add this field to the sort-configuration, or alter it if it's already sorted
         if (this.isSortField(fieldName)) {
-        	// reverse the sort-direction of this field
-            this.toggleSort(fieldName);
+            if (sortDir == globalSortDir || this.canUnsort == false) {
+                // reverse the sort-direction of this field
+                this.toggleSort(fieldName);
+            } else {
+                // unsort the field - if this is the only sorted field, or the last field in
+                // a multiSort arrangement, no visual resort will occur - otherwise, a visual
+                // resort occurs to reapply remaining sort-specifiers
+                this.toggleSort(fieldName, "unsort");
+            }
         } else {
             // add this field to the sort-configuration
             this._addSort(fieldName);
@@ -25898,9 +25964,16 @@ headerClick : function (fieldNum, header) {
     } else {
 
         if (this.isSortField(fieldName) && this.getSortFieldCount() == 1) {
-            this.toggleSort(fieldName);
+            if (sortDir == globalSortDir || this.canUnsort == false) {
+                this.toggleSort(fieldName);
+            } else {
+                this.toggleSort(fieldName, "unsort");
+            }
         } else {
-            this.setSort([{property: fieldName, direction: "ascending"}]);
+            this.setSort([{
+                property: fieldName, 
+                direction: globalSortDir ? "ascending" : "descending" 
+            }]);
         }
     }
 
@@ -26899,6 +26972,7 @@ getHeaderContextMenuItems : function (fieldNum) {
                 icon: "[SKINIMG]actions/sort_descending.png",
                 click: "menu.doSort(" + sortFieldNum + ", 'descending')"
             };
+            needSeparator = true;
         }
         if (this.canMultiSort) {
             if (!field) {
@@ -26906,6 +26980,7 @@ getHeaderContextMenuItems : function (fieldNum) {
                     title: this.configureSortText,
                     click: "menu.grid.askForSort();"
                 });
+                needSeparator = true;
             }
             if (!field || this.isSortField(field[this.fieldIdProperty])) {
                 menuItems.add({
@@ -26917,9 +26992,9 @@ getHeaderContextMenuItems : function (fieldNum) {
                     click: field ? "menu.doSort(" + sortFieldNum + ", 'unsort')" :
                         "menu.grid.clearSort();"
                 });
+                needSeparator = true;
             }
         }
-        needSeparator = true;
     }
     if (!field && this.showFilterEditor) {
         if (needSeparator) menuItems.add({ isSeparator: true });
@@ -27182,13 +27257,31 @@ sorterClick : function () {
 	if (!this.canSort) return false;
 
     var sortFieldNum = this._getSortFieldNum();
-    this.sort(
-        sortFieldNum, 
-        (sortFieldNum != null ? 
-            !Array.shouldSortAscending(this.getField(sortFieldNum).sortDirection) : 
-            null)
-    );
     
+    if (sortFieldNum != null) {
+        var sortField = this.getField(sortFieldNum),
+            fieldName = sortField[this.fieldIdProperty],
+            globalSortDir = this._baseSortDirection,
+            sortDir = sortField.sortDirection
+        ;
+        if (this.isSortField(fieldName)) {
+            // we're already sorted - decide whether to toggle or unsort
+            if (globalSortDir == sortDir || this.canUnsort == false) {
+                this.toggleSort(fieldName);
+            } else {
+                this.toggleSort(fieldName, "unsort");
+            }
+        } else {
+            this.setSort({ property: fieldName, direction: globalSortDir });
+        }
+    } else {
+        this.sort(
+            sortFieldNum, 
+            (sortFieldNum != null ? 
+                !Array.shouldSortAscending(this.getField(sortFieldNum).sortDirection) : 
+                null)
+        );
+    }
 },
 
 
@@ -27354,7 +27447,10 @@ unsort : function () {
         // reset sort directions
         var field = this.getField(sortField);
         if (field) field.sortDirection = null;
-        this.sortDirection = isc.ListGrid.getInstanceProperty("sortDirection");
+
+        
+        //this.sortDirection = isc.ListGrid.getInstanceProperty("sortDirection");
+        this.sortDirection = this._baseSortDirection;
 
         // note that we're not sorted anymore
         this._setSortFieldNum(null);
@@ -27470,9 +27566,9 @@ sort : function (sortFieldNum, sortDirection) {
     if (sortDirection == null) {
         // default to the sortField or overall grid sort direction
         sortDirection = (sortField.sortDirection != null ? 
-                         sortField.sortDirection : this.sortDirection);
+                         sortField.sortDirection : this._baseSortDirection);
     }
-    
+
     // normalize the sort direction to a boolean and store it on the grid
     this.sortDirection = sortDirection = Array.shouldSortAscending(sortDirection);
 
@@ -27573,7 +27669,7 @@ toggleSort : function (fieldName, direction) {
 },
 
 _addSort : function (sortField, sortDirection) {
-    var direction = sortDirection == false ? false : true;
+    var direction = sortDirection != null ? sortDirection : this._baseSortDirection;
     this.addSort(
         {
             property: sortField,
@@ -28648,6 +28744,16 @@ regroup : function (fromSetData) {
         this.setSelectedState(this._lastStoredSelectedState);
         delete this._lastStoredSelectedState;
     }
+    
+    if (this.body) {
+        var drawArea = this.body._oldDrawArea;
+
+        // the old and new drawAreas differ and the extents of the new data are present - 
+        // fire the notification method and update the stored _oldDrawArea
+        if (drawArea != null) this._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3]);
+    }
+    this.markForRedraw("regroup");
+
 },
 retainOpenStateOnRegroup:true,
 

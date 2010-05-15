@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -866,7 +866,7 @@ get : function (pos) {
 	return this.getRange(pos, pos+1)[0];
 },
 
-//>	@method		resultSet.getRange()
+//>	@method resultSet.getRange()
 // Return the items between position start and end, non-inclusive at the end, possibly 
 // containing markers for records that haven't loaded yet.
 // <P>
@@ -1469,7 +1469,7 @@ setCriteria : function (newCriteria) {
         // use clone to deep copy so we duplicate dates, arrays etc
         newCriteria = isc.clone(newCriteria);
     }
-        
+
     this.criteria = newCriteria;
     this._textMatchStyle = (this.context && this.context.textMatchStyle) ? 
                                 this.context.textMatchStyle : null;
@@ -2957,6 +2957,11 @@ invalidateRowOrder : function () {
 
 rowOrderInvalid : function () {
     return this._invalidRowOrder;
+},
+
+dataChanged : function () {
+    
+    if (this.onDataChanged) this.onDataChanged()
 },
 
 // Selection

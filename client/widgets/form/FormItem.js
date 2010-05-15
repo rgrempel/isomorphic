@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -172,11 +172,27 @@ isc.FormItem.addClassMethods({
     // Applied directly to the element, so we need to determine which item we are a part of
     // and call the appropriate focus/blur handler method on that item.
     _nativeFocusHandler : function () {
+        if (!window.isc || !isc.DynamicForm) return;
+
+        isc.EH._setThread("IFCS");
+
+        var result;
+        if (isc.Log.supportsOnError) {
+            result = isc.FormItem.__nativeFocusHandler(this);
+        } else {
+            try {
+                result = isc.FormItem.__nativeFocusHandler(this);
+            } catch (e) {
+                isc.Log._reportJSError(e);
+            }
+        }
+        isc.EH._clearThread();
+        return result;
+    },
+    __nativeFocusHandler : function (element) {
         
         //!DONTCOMBINE
-        if (!window.isc || !isc.DynamicForm) return;
-        var element = this,
-            itemInfo = isc.DynamicForm._getItemInfoFromElement(element),
+        var itemInfo = isc.DynamicForm._getItemInfoFromElement(element),
             item = itemInfo.item;
         
         
@@ -188,18 +204,34 @@ isc.FormItem.addClassMethods({
         if (item) {
             return item._nativeElementFocus(element, item);
         }
+        isc.EH._clearThread();
     },
     
     _nativeBlurHandler : function () {
         // Check for blur being fired on page unload (when the isc object is out of scope)
-        //!DONTCOMBINE
-        if (!window.isc) return;
-        var element = this,
-            itemInfo = isc.DynamicForm._getItemInfoFromElement(element),
-            item = itemInfo.item;
-            if (item && item.hasFocus) {
-                return item._nativeElementBlur(element, item);
+        if (!window.isc || !isc.DynamicForm) return;
+
+        isc.EH._setThread("IBLR");
+        var result;
+        if (isc.Log.supportsOnError) {
+            result = isc.FormItem.__nativeBlurHandler(this);
+        } else {
+            try {
+                result = isc.FormItem.__nativeBlurHandler(this);
+            } catch (e) {
+                isc.Log._reportJSError(e);
             }
+        }
+        isc.EH._clearThread();
+        return result;
+    },
+    __nativeBlurHandler : function (element) {
+        //!DONTCOMBINE
+        var itemInfo = isc.DynamicForm._getItemInfoFromElement(element),
+            item = itemInfo.item;
+        if (item && item.hasFocus) {
+            return item._nativeElementBlur(element, item);
+        }
     },
     
     // IE specific handler for oncut / onpaste
@@ -5821,12 +5853,12 @@ isc.FormItem.addMethods({
     
     hasDataElement : function () {
         // Most FormItems either always have or always do not have an element, however we make
-        // this a function rather than accessing the _hasDataElement flag directly subclasses
-        // such as the ContainerItem class may do more complicated things which make this
-        // method's return value vary.
+        // this a function rather than accessing the _hasDataElement flag directly because
+        // subclasses such as the ContainerItem class may do more complicated things which 
+        // make this method's return value vary.
         return this._hasDataElement;
     },
-    
+
 	//>	@method	formItem.getElement()
 	//  Deprecated form of getDataElement() - kept for backwards compatability.
 	//		@group	elements
@@ -5838,7 +5870,7 @@ isc.FormItem.addMethods({
 	getElement : function (itemName) {
         return this.getDataElement(itemName);
     },
-    
+
     //> @method formItem.getFocusElement()
     // Returns the HTML element that should receive focus when 'focusInItem()' is called on this
     // form item.
@@ -5894,8 +5926,8 @@ isc.FormItem.addMethods({
 	//>	@method	formItem.getDataElement()
     //      Return a pointer to the form element containing the value for this form item, or
     //      null if it doesn't currently exist.
-    //      Will always return null if this form item type does not have an associated data element
-    //      which can be determined by formItem.hasDataElement()
+    //      Will always return null if this form item type does not have an associated data 
+    //      element which can be determined by formItem.hasDataElement()
     //
 	//		@group	elements
 	//
@@ -5921,7 +5953,7 @@ isc.FormItem.addMethods({
         if (!this.isDrawn()) return;
         
         
-     
+
         // cache the result of getElementById, cleared in redrawn()/cleared()/destroy()   
         var dataElement = this._dataElement;
         if (dataElement == null) {
@@ -6455,6 +6487,8 @@ isc.FormItem.addMethods({
 	//<
     saveValue : function (value, isDefault) {
 
+        //this.logWarn("saving value: " + value + this.getStackTrace());
+
         var undef;
         this._value = value;
         // set or clear the flag indicating whether this is a default value.
@@ -6763,7 +6797,7 @@ isc.FormItem.addMethods({
                 this.adjustOverflow("textBox value changed");
             }
         }
-        
+
         // If we didn't get a pointer to our text box, we would expect the sub item to
         // implement an appropriate override to setElementValue()
 	},
@@ -6849,8 +6883,8 @@ isc.FormItem.addMethods({
     _showInFieldHint : function () {
         if (!this._showingInFieldHint) {
             // Set field class to our hint style
-            if (this.hasDataElement()) {
-                var element = this.getDataElement();
+            var element = this.getDataElement();
+            if (element) {
                 element.className = this._getInFieldHintStyle();
             } else {
                 var textBox = this._getTextBoxElement();
@@ -6870,8 +6904,8 @@ isc.FormItem.addMethods({
     _hideInFieldHint : function () {
         if (this._showingInFieldHint) {
             // Reset field class to the default style
-            if (this.hasDataElement()) {
-                var element = this.getDataElement();
+            var element = this.getDataElement();
+            if (element) {
                 element.className = this.getTextBoxStyle();
             } else {
                 var textBox = this._getTextBoxElement();
@@ -7007,14 +7041,20 @@ isc.FormItem.addMethods({
 
         // Bail if we have already saved the value (avoids firing change on arrow keypresses,
         // etc.)
-        if (this.compareValues(newValue, this._value)) return true;
+        if (this.compareValues(newValue, this._value)) {
+            //this.logWarn("FI._updateValue: not saving, value unchanged: " + this._value);
+            return true;
+        }
         
         // This method may have been tripped by the developer's change handler somehow
         // (most common example - causing formItem to blur() when changeOnBlur is true)
         // If this is the case, bail unless the value passed in differs from the value we're
         // about to save (stored as this._changeValue)
         if (this._changingValue) {
-            if (this.compareValues(newValue, this._changeValue)) return true;
+            if (this.compareValues(newValue, this._changeValue)) {
+                //this.logWarn("FI._updateValue: bailing on redundant change: " + this._changeValue);
+                return true;
+            }
             
         }
         
@@ -7045,6 +7085,8 @@ isc.FormItem.addMethods({
         this.updateAppearance(newValue);
 
         // save the value
+        //this.logWarn("FI._updateValue: old value: " + this._value + ", newValue: " + newValue + 
+        //             ", will save: " + (!this.compareValues(newValue, this._value)));
         if (!this.compareValues(newValue, this._value)) this.saveValue(newValue);
         
         delete this._changeValue;
@@ -7242,7 +7284,9 @@ isc.FormItem.addMethods({
             var operator = this.operator;
         } else {
             if (this.valueMap || this.optionDataSource || 
-                    isc.SimpleType.inheritsFrom(this.type, "enum")) {
+                isc.SimpleType.inheritsFrom(this.type, "enum") ||
+                isc.SimpleType.inheritsFrom(this.type, "boolean"))
+            {
                 operator = "equals";
             } else {
                 operator = "iContains";
@@ -8165,20 +8209,23 @@ isc.FormItem.addMethods({
     },
     
     
-	//>	@method	formItem.elementChanged()
-	// Handle a change event from an element.
-    // <p>
-    // If redrawOnChange is set, entire form will redraw.
-    //
-	//		@group	event handling
-	//<
+	// Handle a change event from an element.  Called directly by handlers on the native HTML
+    // element
 	elementChanged : function () {
         isc.EH._setThread("ICHG");
 
         this.logDebug("native change");
         // updateValue() will handle firing any validators, validate-on-change change handlers,
         // and will save the value.
-        this.updateValue();
+        if (isc.Log.supportsOnError) {
+            this.updateValue();
+        } else {
+            try {
+                this.updateValue();
+            } catch (e) {
+                isc.Log._reportJSError(e);
+            }
+        }
     
         isc.EH._clearThread();
 
@@ -8985,9 +9032,8 @@ isc.FormItem.addMethods({
         // Verify that the form is visible (Script errors occur if you attempt to focus
         // on a hidden item)
         var canFocus = this.isVisible() && this._canFocus() && !this.isDisabled(),
-
-
             element = canFocus ? this.getFocusElement() : null;            
+
         if (!canFocus || !element) {
             
             // This method will return null if we don't have an HTML element, or the
@@ -9011,7 +9057,6 @@ isc.FormItem.addMethods({
                 isc.FormItem._aboutToFireNativeElementFocus(this);
                 isc.EventHandler._unconfirmedFocus = this;
                 element.focus();
-
 
                 //if (isc.Browser.isIE) {
                 //    this.logDebug("called element focus" + isc.EH._getActiveElementText(),
@@ -9104,7 +9149,6 @@ isc.FormItem.addMethods({
     // Form.elementFocus() to handle bubbling the focus event through the Form item hierarchy.
     
     _nativeElementFocus : function (element, itemID) {
-        isc.EH._setThread("IFCS");
         if (isc.EH._unconfirmedFocus == this) delete isc.EH._unconfirmedFocus
         isc.EH._logFocus(this, true);
         
@@ -9123,13 +9167,11 @@ isc.FormItem.addMethods({
         this._currentFocusElement = element;
         
         var result = this.form.elementFocus(element, itemID);
-        isc.EH._clearThread();
 
         return result;
     },
     
     _nativeElementBlur : function (element, itemID) {
-        isc.EH._setThread("IBLR");
         if (isc.EH._unconfirmedBlur == this) delete isc.EH._unconfirmedBlur
 
         // If we're pending an update, and we've lost focus, update now 
@@ -9143,7 +9185,6 @@ isc.FormItem.addMethods({
         delete this._currentFocusElement;
         
         var result = this.form.elementBlur(element, itemID);
-        isc.EH._clearThread();
         return result;
     },
 
@@ -9304,11 +9345,12 @@ isc.FormItem.addMethods({
     _moveFocusWithinItem : function (forward) {
         var items = this.items,
             icons = this.icons;
+
         // catch the common case where we have only one natively focusable element
         if ((items == null || items.length == 0) && (icons == null || icons.length == 0)) {
             return false;
         }
-            
+
         var iconIndex = this.getFocusIconIndex(),
             itemIndex;
 
@@ -9319,7 +9361,7 @@ isc.FormItem.addMethods({
                 itemIndex = items.indexOf(targetItem);
             }
         }
-        
+
         // If we don't have focus, no-op
         if ((itemIndex == null || itemIndex == -1) && iconIndex == null) {
             return false;
@@ -9495,8 +9537,20 @@ isc.FormItem.addMethods({
         return false;
     },
     _handleInput : function () {   
+        isc.EH._setThread("INP");
         // If masked edit is enabled, changeOnKeypress is handled there.
-        if (this.changeOnKeypress && !this.mask) this.updateValue();
+        if (this.changeOnKeypress && !this.mask) {
+            if (isc.Log.supportsOnError) {
+                this.updateValue();
+            } else {
+                try {
+                    this.updateValue();
+                } catch (e) {
+                    isc.Log._reportJSError(e);
+                }
+            }
+        }
+        isc.EH._clearThread();
     },
     
     // Native oncut / onpaste handlers for IE

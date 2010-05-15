@@ -80,7 +80,7 @@ with (theWindow) {
     // Calendar skinning
     if (isc.Calendar) {
         isc.Calendar.changeDefaults("datePickerButtonDefaults", {
-            src:"[SKIN]/controls/date_control.gif",
+            src:"[SKIN]/DynamicForm/date_control.png",
             showDown:false
         })
     }

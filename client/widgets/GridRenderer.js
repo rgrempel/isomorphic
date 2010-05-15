@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -390,6 +390,7 @@ emptyCellValue:"&nbsp;",
 // See +link{listGrid.getBaseStyle()}.
 // @visibility external
 //<
+
 fastCellUpdates:isc.Browser.isIE,
 
 //> @method gridRenderer.setFastCellUpdates()
@@ -704,7 +705,7 @@ getDrawArea : function (colNum) {
     if (this.showAllRows || showAllCells) {
         // draw all rows
 		startRow = 0;
-		endRow = totalRows - 1;
+		endRow = Math.max(totalRows - 1, 0);
     } else {
         // ordinary incremental rendering
 
@@ -2951,16 +2952,16 @@ placeEmbeddedComponent : function (component) {
         // you're expected to use a Stack or Layout to manage them.
 
         // float at the bottom of the row, rather than the top 
-        topOrigin += this.cellHeight;
+        
+        //topOrigin += this.cellHeight;
+        
         component.moveTo(leftOrigin, topOrigin);
         
         // Note that setWidth() may adjust the visibleHeight of the component.
         
         
-//        if (colNum != null) {
-            component.setWidth(width);
-            
-//        }
+        component.setWidth(width);
+
     }
 
     var showing = this.isDrawn();
@@ -3003,9 +3004,13 @@ placeEmbeddedComponent : function (component) {
             // content to top-align properly
             this.refreshRow(rowNum);
         }
-   
     }
+
     if (showing) {
+        if (position != this._$within) {
+            var offset = this.getDrawnRowHeight(rowNum) - component.getVisibleHeight() - 1;
+            component.moveTo(null, this.getRowTop(rowNum) + offset);
+        }
         if (!component.isVisible()) {            
             if (this.shouldAnimateEmbeddedComponent(component)) {
                 component.animateShow();
@@ -5008,7 +5013,8 @@ setSelection : function (selection) {
                      "observer._cellSelectionChanged(observed.changedCells)");
     } else {
         this.observe(this.selection, "setSelected",
-                     "observer._rowSelectionChanged(observed.lastSelectionItem,observed.lastSelectionState)");
+                     
+                     "observer._rowSelectionChanged(observed.lastSelectionItem,!!observed.lastSelectionState)");
     }
 },
 
@@ -5033,7 +5039,7 @@ _cellSelectionChanged : function (cellList) {
 },
 
 _rowSelectionChanged : function (record, state) {
-	// call user-defined handler and bail (don't hilite rows) if it returns false
+	// call user-defined handler and bail (don't hilite rows) if it returns false.  
 	if (this.selectionChanged && (this.selectionChanged(record, state) == false)) return false;
 
 	// refresh the affected records to visually indicate selection

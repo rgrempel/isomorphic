@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -154,12 +154,11 @@ isc._debugMethods = {
     // @include method:class.getStackTrace
     // @visibility external
     //<
-    getStackTrace : function (args, ignoreLevels, maxLevels) {
+    getStackTrace : function (args, ignoreLevels, maxLevels, skipFBugTrace) {
         
         
         var stack = "";
         if (isc.Browser.isMoz) {
-            
             
             
         }
@@ -167,7 +166,7 @@ isc._debugMethods = {
         stack += this._getStackTraceFromArgs(args,ignoreLevels,maxLevels);
         
         // If Firebug is present we can show a stack trace in it directly - see fireBugTrace()
-        if (this.hasFireBug()) {
+        if (this.hasFireBug() && !skipFBugTrace) {
             isc.Log._fBugTrace = isc.Log._fBugTrace || 0;
             var traceId = "FBugTrace" + isc.Log._fBugTrace++;
             stack += "\r\n" + this.fireBugTrace(traceId);
@@ -190,15 +189,19 @@ isc._debugMethods = {
         if (args == null) args = arguments.caller || arguments.callee.caller.arguments;
         var output = []; 
         
-        // skip some of the stack (useful to eg, a logging subsystem) 
-        for (var i = 0; i < ignoreLevels; i++) {
-            if (args.caller != null) args = args.caller;
-        }
-
         // in earlier versions of IE we can use arguments.caller to walk up the stack
         // This actually allows us to get past recursive function calls in a way that
         // arguments.callee.caller does not - use it if available
         var useArgsCaller = isc.Browser.isIE && isc.Browser.version <= 6;
+
+        // skip some of the stack (useful to eg, a logging subsystem) 
+        for (var i = 0; i < ignoreLevels; i++) {
+            if (!useArgsCaller) {
+                args = args.callee.caller.arguments;
+            } else {
+                args = args.caller;
+            }
+        }
 
         var func = args.callee;
 
@@ -209,6 +212,10 @@ isc._debugMethods = {
         var numLevels = 0;
         
         while (func != null && args != null && numLevels < maxLevels) {
+            if (args.timerTrace) {
+                output.add("\nStack trace for setTimeout() call:   " + args.timerTrace);
+                break;
+            }
             if (!useArgsCaller) {
                 if (seenFuncs.contains(func)) {
                     output.add("    ** recursed on " + isc.Func.getName(func, true));
@@ -276,7 +283,6 @@ isc._debugMethods = {
     // - with "stackwalking" try..catch blocks added to all methods, called from every catch
     //   block successively in order to walk the stack by catch..rethrow (any browser)
     _reportJSError : function (error, args, thisValue, frame) {
-
         
 
         // avoid reporting the same error twice
@@ -285,7 +291,23 @@ isc._debugMethods = {
     
         var message = error.toString();
         
+        // do an in-browser transform of the Moz native stack to make it more readable.
+        if (isc.Browser.isMoz) {
+            if (error.stack) {
+                var trace;
+                try {
+                    trace = this.transformMozStackTrace(error.stack);
+                } catch (e) {
+                    trace = error.stack;
+                }
+                message += "\n" + trace;
+            } else {
+                message += "  [No error.stack available]";
+            }
+        }
+
         
+
         this.logWarn(message);
     },
 
@@ -293,6 +315,212 @@ isc._debugMethods = {
 
     
 
+
+    // Parsing Moz native traces
+    // ---------------------------------------------------------------------------------------
+    // Do an in-browser transform of the Moz native stack to make it more readable.
+    //
+    // FF theoretically provides an onerror notification, but it seems flaky, and it is not
+    // possible to walk the stack via arguments.caller.callee in this notification even when it
+    // does fire.  So the best we can get when an error occurs is the native error.stack,
+    // which we transform here for readability.
+    //
+    // How good is it:
+    // - if function names have been embedded into framework code with server-side help, we can
+    //   correctly identify and print the class and method for all framework functions that go
+    //   through the obfuscator
+    //   - this is better than the current state of parsing with the help of a server-side Perl
+    //     script, which frequently misidentifies functions 
+    // - worse than stack walking via arguments.callee.caller, where:
+    //   - we can identify all functions, regardless of whether they went through the
+    //     obfuscator
+    //   - we can directly access arguments and format them more meaningfully (eg, show than an
+    //     object being passed to a method is an SC class, and show it's ID)
+
+    transformMozStackTrace : function (trace) {
+        var lines = trace.split("\n"),
+            output = isc.StringBuffer.create(),
+            appDir = isc.Page.getAppDir(),
+            hostAndProtocol = window.location.protocol + "//" + window.location.host;
+     
+        //isc.logWarn("original trace: " + lines.join("\n\n"));
+     
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i],
+                parenIndex = line.indexOf("("),
+                atIndex = line.lastIndexOf("@"),
+                argNames = null,
+                className = null,
+                methodName = null;
+     
+            //isc.logWarn("parsing line: " + line);
+     
+            var functionName = line.substring(0, parenIndex); 
+            if (functionName == "") {
+                functionName = "unnamed";
+            } else if (functionName.startsWith("isc_")) {
+                var isClassMethod;
+                if (functionName.startsWith("isc_c_")) {
+                    functionName = functionName.substring(6);
+                    isClassMethod = true;
+                } else {
+                    functionName = functionName.substring(4);
+                }
+                className = functionName.substring(0, functionName.indexOf("_"));
+                methodName = functionName.substring(className.length+1);
+     
+                var clazz = isc.ClassFactory.getClass(className),
+                    method;
+                if (clazz) {
+                    method = isClassMethod ? 
+                         clazz[methodName] : clazz.getInstanceProperty(methodName);
+                }
+                if (method != null) {
+                    functionName = isc.Func.getName(method, true);
+                    //isc.logWarn("Got live method: " + isc.Func.getName(method, true) +
+                    //            " from functionName: " + functionName);
+                    var argString;
+                    if (!isClassMethod) {
+                        // takes into account StringMethods
+                        argString = clazz.getArgString(methodName);
+                    } else {
+                        argString = isc.Func.getArgString(method);
+                    }
+                    argNames = argString.split(",");
+                    // NOTE: we checked to see if the live stack might still be there, since that would
+                    // let us just call the normal getStackTrace() facility with the exception just
+                    // serving to help us locate the leaf method, but as expected, only the stack above
+                    // the try..catch is intact.  This does mean that we could call getStackTrace() for
+                    // the top of the stack instead of parsing the Moz native trace, but not currently
+                    // doing this since it could hit recursion issues and might mislead you into
+                    // thinking two arguments differed since our traces provide more information (eg
+                    // they look for an ID and display that)
+                    //if (method.caller) {
+                    //    isc.logWarn("method.caller: " + isc.Func.getName(method.caller, true) +
+                    //                "\n" + isc.Log.getCallTrace(method.caller.arguments));
+                 } else {
+                    functionName = functionName.replace(/_{1}/, ".");
+                    functionName = functionName.replace(/_{2}/, "._");
+                 }
+            }
+     
+            output.append("    ", functionName, "(");
+     
+            var argString = line.substring(parenIndex+1, atIndex-1),
+                argNum = 0;
+         
+            while (argString && argString.length > 0) {
+                if (argNum > 0) output.append(", ");
+                if (argNames) output.append(argNames[argNum] + "=>");
+                var lastLength = argString.length;
+                argString = this.parseMozArgument(argString, output);
+                if (argString.length == lastLength) {
+                    isc.logWarn("failure to parse next arg at:\n" + argString);
+                    break;
+                }
+                argNum++;
+            }
+                                                 
+            output.append(")");
+
+            // add source path and line number
+            output.append(this.getSourceLine(line.substring(atIndex), appDir, hostAndProtocol));
+
+            output.append("\n");
+        }
+        return output.toString();
+     },
+     
+     // parse an argument from a line in a Moz native stack trace
+     parseMozArgument : function (argString, output) {
+
+        //isc.logWarn("parsing argString: " + argString);
+       
+        var firstChar = argString.charAt(0);
+    
+        if (firstChar == "\"") { // string argument
+            // look for an unquoted closing quote
+            var stringEnd = argString.search(/[^\\]"/);
+            if (stringEnd == -1) stringEnd = argString.length; // shouldn't happen
+    
+            var stringArg = argString.substring(0, stringEnd+2);
+            // enforce max size
+            if (stringArg.length > 40) {
+                stringArg = stringArg.substring(0,40) + "...\"[ " + stringArg.length + "]";
+            }
+            output.append(stringArg);
+            return argString.substring(stringEnd+3);
+    
+        } else if (firstChar == "[") { // object argument
+            var closeBrace = argString.substring(1).indexOf("]"),
+                objectString = argString.substring(0, closeBrace+2);
+            // shorten this common case
+            if (objectString == "[object Object]") objectString = "{Obj}";
+    
+            output.append(objectString);
+            return argString.substring(closeBrace+3);
+    
+        } else if (argString.startsWith("(void 0)")) {
+            output.append("undef");
+            return argString.substring(9);
+    
+        } else if (argString.startsWith("undefined")) {
+            output.append("undef");
+            return argString.substring(10);
+    
+        } else if (argString.startsWith("(function ")) {
+            var signature = argString.substring(1,argString.indexOf("{"));
+            if (signature.endsWith(" ")) signature = signature.substring(0, signature.length-1);
+            output.append(signature);
+    
+            var functionEnd = argString.indexOf("}),");
+            if (functionEnd == -1) return ""; // no more arguments
+            return argString.substring(functionEnd+3);
+    
+        } else { // other argument
+            var nextComma = argString.indexOf(",");
+            if (nextComma == -1) nextComma = argString.length;
+            output.append(argString.substring(0, nextComma));
+            return argString.substring(nextComma+1);
+        }
+       
+    },
+
+    // return an intelligently shortened version of the source file and line number
+    getSourceLine : function (sourceLine, appDir, hostAndProtocol) {
+
+        // detect core modules
+        var modulesStart = sourceLine.indexOf("/system/modules/ISC_"),
+            devModulesStart = sourceLine.indexOf("/system/development/ISC_");
+           
+        // option to not show core modules    
+        if (!this.logIsDebugEnabled("traceLineNumbersCore")) return "";
+
+        // core modules: trim off everything but module name
+        if (modulesStart != -1) {
+            sourceLine = sourceLine.substring(modulesStart + 16);
+        } else if (devModulesStart != -1) {
+            sourceLine = sourceLine.substring(devModulesStart + 20) + "[d]";
+        }
+
+        // core modules: trim out the version parameter (just noise)
+        if (modulesStart != -1 || devModulesStart != -1) {
+            var versionIndex = sourceLine.indexOf("?isc_version");
+            if (versionIndex != -1) {
+                sourceLine = sourceLine.substring(0, versionIndex) +
+                    sourceLine.substring(sourceLine.indexOf(":"));
+            }
+        }
+           
+        // other files: show obviously relative paths as relative
+        if (sourceLine.startsWith(appDir)) {
+            sourceLine = sourceLine.substring(appDir.length);
+        } else if (sourceLine.startsWith(hostAndProtocol)) {
+            sourceLine = sourceLine.substring(hostAndProtocol.length);
+        }
+
+        return " @ " + sourceLine;
+    },
 
     
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -717,7 +717,10 @@ sortByProperty : function (property, direction, normalizer, context) {
 // @group modification
 // @visibility external
 //<
-dataChanged : function () {}
+dataChanged : function () {
+    
+    if (this.onDataChanged) this.onDataChanged()
+}
 
 //>	@method		list._startChangingData()	(A)
 //			Internal method to indicate that data will be changed within the context of a function.

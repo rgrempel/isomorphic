@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -103,16 +103,19 @@ isc.RelativeDateItem.addClassMethods({
     // <ul>
     // <li>direction: the direction in which the quantity applies - one of + or - </li>
     // <li>quantity: the number of units of time to apply - a number </li>
-    // <li>timeUnit: the timeUnit to use - one of ms, s, mn, h, d, w, q, y, dc, c </li>
+    // <li>timeUnit: an abbreviated timeUnit to use - one of ms (millisecond), s (second), 
+    //      mn (minute), h (hour), d (day), w (week), m (month), q (quarter, 3-months), 
+    //      y (year), dc (decade) or c (century). </li>
     // <li>[qualifier]: an optional timeUnit encapsulated in square-brackets and used to offset 
     //      the calculation - eg. if +1d is "plus one day", +1d[W] is "plus one day from the 
-    //      end of the week" </li>
+    //      end of the week".  You may also specify another complete RelativeDateString as the
+    //      [qualifier], which offers more control - eg, +1d[+1W] indiates "plus one day from 
+    //      the end of NEXT week".</li>
     // </ul>
     // <P>
     // 
     // @visibility external
     //<
-
 
     //> @classMethod relativeDateItem.getAbsoluteDate() 
     //  Converts a +link{type:RelativeDate} to a concrete Date.
@@ -438,7 +441,7 @@ isc.RelativeDateItem.addProperties({
 
     //> @type TimeUnit
     //   An enum of time-units available for use with the +link{RelativeDateItem}
-    //
+    // 
     // @value "millisecond"    a millisecond time-unit
     // @value "second"    a second time-unit
     // @value "minute"    a minute time-unit
@@ -665,12 +668,12 @@ isc.RelativeDateItem.addProperties({
     quantityFieldDefaults: {
         type: "SpinnerItem",
         name: "quantityField",
-        width: 80,
+        width: 60,
         min: 0,
         step: 1,
         showTitle: false,
         shouldSaveValue: false,
-        iconVAlign: "top"
+        selectOnFocus: true
     },
 
     //> @attr relativeDateItem.showChooserIcon (boolean : true : IRW)
@@ -788,11 +791,9 @@ isc.RelativeDateItem.addProperties({
     //<
     editorConstructor: "DynamicForm",
     editorDefaults: {
-        numCols: 3,
+        numCols: 4,
         width: 290,
-        colWidths: [130, 80, 80],
-        margin: 0,
-        padding: 0,
+        colWidths: [130, "*", "*"],
         itemChanged : function (item, newValue) {
             this.creator.updateValue(this.getValuesAsCriteria());
         }
@@ -839,25 +840,25 @@ isc.RelativeDateItem.addProperties({
 
 isc.RelativeDateItem.addMethods({
     
-//    this.border = "2px solid blue";
-    
     init : function () {
         this._createEditor();
         this.Super("init", arguments);
     },
-    
+
     isEditable : function () {
         return true;
     },
 
     _createEditor: function(){
         var ds;
-        var dynProps = {};
+        var dynProps = { _suppressColumnDiscrepencies: true };
         this.addAutoChild("editor", dynProps);
         this.canvas = this.editor;        
 
         var _this = this,
-            items = [];
+            items = [],
+            blurbIndex=2
+        ;
 
         items[0] = isc.addProperties({}, this.valueFieldDefaults, this.valueFieldProperties,
             { 
@@ -876,12 +877,29 @@ isc.RelativeDateItem.addMethods({
                 }
             } 
         );
+        
+        if (this.showChooserIcon) {
+            blurbIndex = 3;
+            items[2] = { name: "iconPlaceholder", type: "staticText", width: 1, 
+                showTitle: false,
+                icons: [
+                    isc.addProperties({ prompt: this.pickerIconPrompt }, 
+                        this.pickerIconDefaults, this.pickerIconProperties,
+                            {
+                                click : function () {
+                                _this.showPicker();
+                            }
+                        }
+                    )
+                ]
+            };
+        }
 
         // set a default baseDate is one wasn't provided
         this.baseDate = this.baseDate || new Date();
 
         if (this.showCalculatedDateField) {
-            items[2] = isc.addProperties({}, this.calculatedDateFieldDefaults, 
+            items[blurbIndex] = isc.addProperties({}, this.calculatedDateFieldDefaults, 
                 this.calculatedDateFieldProperties,
                 { cellStyle: this.getHintStyle() });
         }
@@ -893,17 +911,8 @@ isc.RelativeDateItem.addMethods({
         if (this.showCalculatedDateField) 
             this.calculatedDateField = this.canvas.getField("calculatedDateField");
         if (this.showChooserIcon) {
-            this.quantityField.icons.add(
-                isc.addProperties({ prompt: this.pickerIconPrompt }, 
-                    this.pickerIconDefaults, this.pickerIconProperties,
-                    {
-                        click : function () {
-                            _this.showPicker();
-                        }
-                    }
-                )
-            );
-            this.pickerIcon = this.quantityField.icons.find("name", "chooserIcon");
+            this.iconPlaceholder = this.canvas.getField("iconPlaceholder");
+            this.pickerIcon = this.iconPlaceholder.icons.find("name", "chooserIcon");
         }
 
         this.setValue(this.defaultValue);
@@ -911,6 +920,7 @@ isc.RelativeDateItem.addMethods({
     
     valueFieldChanged : function (value) {
         this.fieldChanged();
+        if (this.quantityField.isVisible()) this.quantityField.delayCall("focusInItem");
     },
     quantityFieldChanged : function (value) {
         this.fieldChanged();
@@ -925,16 +935,7 @@ isc.RelativeDateItem.addMethods({
 
         if (!showQuantity) {
             this.quantityField.hide();
-            if (this.showChooserIcon && this.pickerIcon != null) {
-                if (!this.valueField.icons) this.valueField.icons = [];
-                if (this.valueField.icons.length == 0)
-                    this.valueField.icons.add(this.pickerIcon);
-            }
         } else {
-            if (this.showChooserIcon && this.pickerIcon != null) {
-                if (this.valueField.icons && this.valueField.icons.length>0) 
-                    this.valueField.icons.removeAt(0);
-            }
             this.quantityField.show();
         }
 
@@ -960,6 +961,7 @@ isc.RelativeDateItem.addMethods({
 
     setValue : function (value) {
         if (value == null) {
+            this.valueField.setValue(null);
             this.valueFieldChanged(value);
             return;
         }
@@ -1180,11 +1182,7 @@ isc.RelativeDateItem.addMethods({
             item
         ;
 
-        if (form.getItem(0).icons && form.getItem(0).icons.length > 0) {
-            item = form.getItem(0);
-        } else {
-            item = form.getItem(1);
-        } 
+        item = form.getItem("iconPlaceholder");
 
         left += item.getLeft();
         left += Math.round((item.getVisibleWidth() - (this.getPickerIconWidth() /2)) -

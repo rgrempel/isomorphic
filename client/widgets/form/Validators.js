@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -505,6 +505,7 @@
 // <p>
 // Validators of this type have +link{attr:ValidatorDefinition.requiresServer,requiresServer} 
 // set to <code>true</code> and do not run on the client.
+// <p>See +explorerExample{uniqueCheckValidation}.
 // @value hasRelatedRecord
 // Returns true if the record implied by a relation exists.  The relation can be 
 // derived automatically from the +link{attr:DataSourceField.foreignKey} attribute of 
@@ -693,7 +694,7 @@ isc.Validator.addClassProperties({
     // @visibility external
     // @group i18nMessages    
     //<    
-    mustBeLongerThan:"Must at least than ${min} characters",
+    mustBeLongerThan:"Must be at least ${min} characters",
     
     //>@classAttr   Validator.mustBeExactLength (string : "Must be exactly \${max} characters" : [IRA])
     // Default error message to display when standard <code>lengthRange</code> type validator
@@ -1467,7 +1468,7 @@ isc.Validator.addClassProperties({
                     else component.enableField(fieldName);
                 } else {
                     if (result == true) component.setFieldCanEdit(fieldName, false);
-                    else component.setfieldCanEdit(fieldName, true);
+                    else component.setFieldCanEdit(fieldName, true);
                 }
             }
         },

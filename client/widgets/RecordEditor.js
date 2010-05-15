@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -325,11 +325,9 @@ isc.RecordEditor.addMethods({
         var newCriteria = this._editRowForm.getValuesAsCriteria(null,true);
         var grid = this.sourceWidget,
             data = grid.data,
-            
-            criteria;
-            
-        var undef;
-            
+            criteria,
+            undef;
+
         // If the old criteria is advanced, we will use a top-level "AND" to combine it
         // with the new criteria (replacing any top level overlaps on the specified fields)
         if (data && grid.dataSource != null && 
@@ -364,7 +362,7 @@ isc.RecordEditor.addMethods({
                     // doesn't match it!
                     && this.canEditCell(0, this.getFieldNum(criteria.fieldName))) 
                 {
-                    //this.logWarn("converting single field advanced criteria to simple critiera");
+                    // this.logWarn("converting single field advanced criteria to simple critiera");
                     criteria = isc.DataSource.filterCriteriaForFormValues(newCriteria);
                     
                 // Any other non-top-level-and criteria: add a top level 'and' criteria
@@ -384,41 +382,36 @@ isc.RecordEditor.addMethods({
                 // We want to go through and replace all the fields we contain, then add
                 // any fields we missed
                 var topCriteria = criteria.criteria;
+
                 if (topCriteria == null) topCriteria = [];
-                for (var i = 0; i < topCriteria.length; i++) {
-                    var innerCrit = topCriteria[i];
-                    //this.logWarn(" inner criteria:" + this.echo(innerCrit));
-        
-                    if (innerCrit.fieldName && 
-                        this.getField(innerCrit.fieldName) 
-                        && this.canEditCell(0, this.getFieldNum(innerCrit.fieldName))) 
-                    {
-                        // this.logWarn("inner criteria collides with edited val - clearing:" + innerCrit.fieldName);
-                        topCriteria[i] = null;
+
+                this.processExistingCriteria(topCriteria);
+
+                topCriteria.removeEmpty();
+
+                if (isc.DS.isAdvancedCriteria(newCriteria)) topCriteria.add(newCriteria);
+                else {
+                    for (var fieldName in newCriteria) {
+                        // Don't explicitly apply null values to the criteria or we'll end up
+                        // with requirements that foo == null when the user actually clears a
+                        // field value.
+                        if (newCriteria[fieldName] == null) continue;
+                        
+                        if (this.logIsInfoEnabled())
+                            this.logInfo("_getFilterCriteria: adding new criteria" + this.echo(newCriteria));
+                        var operator = isc.DataSource.getCriteriaOperator(
+                                            newCriteria[fieldName],
+                                            this.sourceWidget.autoFetchTextMatchStyle
+                                       );
+                        topCriteria.add({fieldName:fieldName, operator:operator, value:newCriteria[fieldName]});
                     }
                 }
-                topCriteria.removeEmpty();
-                
-                for (var fieldName in newCriteria) {
-                    // Don't explicitly apply null values to the criteria or we'll end up
-                    // with requirements that foo == null when the user actually clears a
-                    // field value.
-                    if (newCriteria[fieldName] == null) continue;
-                    
-                    //this.logWarn("adding new criteria" + this.echo(newCriteria));
-                    var operator = isc.DataSource.getCriteriaOperator(
-                                        newCriteria[fieldName],
-                                        this.sourceWidget.autoFetchTextMatchStyle
-                                   );
-                    topCriteria.add({fieldName:fieldName, operator:operator, value:newCriteria[fieldName]});
-                }
             }
-            
-            // this.logWarn("advanced criteria (combined):" + isc.Comm.serialize(criteria));
-            
-        
+
+            //this.logWarn("advanced criteria (combined):\n\n" + isc.echoFull(criteria));
+
         } else {
-         
+
             var oldCriteria = isc.addProperties({}, data.criteria);
             // If we have a field with a mapped displayField, it's possible that last time we 
             // filtered, we did so on the base field and this time we're filtering on the display
@@ -434,18 +427,67 @@ isc.RecordEditor.addMethods({
                     mapped.add(item.displayField);
                 }
             }
-            var undef;
+
+            var fieldNames = isc.DS.getCriteriaFields(newCriteria),
+                undef;
+
             for (var key in oldCriteria) {
-                if (mapped.contains(key)) oldCriteria[key] = undef;
+                // if the field has a mapped displayField, or also appears in the newCriteria,
+                // remove it from the oldCriteria.
+                if (mapped.contains(key) || fieldNames.contains(key))
+                    oldCriteria[key] = undef;
             }
-            
+
             isc.addProperties(oldCriteria, newCriteria);
             criteria = isc.DataSource.filterCriteriaForFormValues(oldCriteria);
         }
-        //this.logWarn("Criteria to apply (from filter editor):" + this.echo(criteria));
+        //this.logWarn("Criteria to apply (from filter editor):" + this.echoFull(criteria));
+
+        // strip off any additional outer adv-crit objects - no point having them there
+        if (criteria && criteria.criteria && criteria.criteria.length == 1) {
+            while (criteria.criteria.length == 1) {
+                var subCrit = criteria.criteria[0];
+                if (!isc.DS.isAdvancedCriteria(subCrit)) break;
+                criteria = subCrit;
+            }
+        }
+
+        if (criteria && isc.DS.isAdvancedCriteria(criteria)) {
+            if ((criteria.criteria && criteria.criteria.length == 0) || !criteria.criteria)
+                // don't return an AdvancedCriteria if there's no sub-criteria (null or empty)
+                criteria = {};
+        }
 
         return criteria;
     },
+
+    processExistingCriteria : function (topCriteria) {
+        for (var i = 0; i < topCriteria.length; i++) {
+            var innerCrit = topCriteria[i];
+
+            if (this.logIsInfoEnabled())
+                this.logInfo("processExistingCriteria: inner criteria:" + this.echo(innerCrit));
+
+            if (isc.DS.isAdvancedCriteria(innerCrit)) {
+                this.processExistingCriteria(innerCrit);
+                if (topCriteria.length = 0) {
+                    topCriteria = null;
+                    return;
+                }
+                continue;
+            }
+
+            if (innerCrit.fieldName && 
+                this.getField(innerCrit.fieldName) 
+                && this.canEditCell(0, this.getFieldNum(innerCrit.fieldName))) 
+            {
+                if (this.logIsInfoEnabled())
+                    this.logInfo("processExistingCriteria: inner criteria collides with edited val - clearing:" + innerCrit.fieldName);
+                topCriteria[i] = null;
+            }
+        }
+    },
+
 
     // Add the record to the source widget's data object
     // This method is not completely functional yet - see comments within the method body

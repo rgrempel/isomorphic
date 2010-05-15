@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -137,7 +137,11 @@ isc.RichTextEditor.addProperties({
     styleControls : [
         "boldSelection", "italicSelection", "underlineSelection"
     ],
-    
+
+    fontPrompt : "Set Font ...",
+    fontSizePrompt : "Set Font Size ...",
+    linkUrlTitle : "Hyperlink URL:",
+
     // Properties to apply to the style controls.
     // These are picked up based on their name.
     //  NOTE: on a per-instance basis we also pick up this.boldSelectionProperties, etc.
@@ -486,10 +490,10 @@ isc.RichTextEditor.addProperties({
     },
     
     _makeFontNamesMap : function () {
-        return this._makeFontMap("Set Font ...", this.fontNames);
+        return this._makeFontMap(this.fontPrompt, this.fontNames);
     },
     _makeFontSizesMap : function () {
-        return this._makeFontMap("Set Font Size ...", this.fontSizes);    
+        return this._makeFontMap(this.fontSizePrompt, this.fontSizes);    
     },
 
     
@@ -617,7 +621,7 @@ isc.RichTextEditor.addProperties({
     // Creating links
     createLink : function () {
         var editor = this;
-        isc.askForValue("Hyperlink URL:", function (value) {
+        isc.askForValue(this.linkUrlTitle, function (value) {
             if (value == null) return;
             editor.fireAction("createLink", value);
         }, { defaultValue: "http://", width: 320 });

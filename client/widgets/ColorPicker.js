@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -27,7 +27,15 @@
 // @visibility external
 //<
 
-isc.ClassFactory.defineClass("ColorPicker", isc.Window).addClassMethods({
+isc.ClassFactory.defineClass("ColorPicker", isc.Window);
+
+// add class properties
+isc.ColorPicker.addClassProperties({
+	MORE_BUTTON_TITLE:"More >>",
+	LESS_BUTTON_TITLE:"<< Less"
+});
+
+isc.ColorPicker.addClassMethods({
     
 //> @classMethod ColorPicker.getSharedColorPicker
 // Returns the shared global ColorPicker. 
@@ -60,14 +68,14 @@ getSharedColorPicker: function (properties, keepCurrentState) {
             if (picker._currentPickMode == 'simple') {  
                 picker.removeComplexElements();
                 if (picker.allowComplexMode) {
-                    picker.modeToggleButton.setTitle("More >>");
+                    picker.modeToggleButton.setTitle(isc.ColorPicker.MORE_BUTTON_TITLE);
                 }
             } else {
                 if (!picker._rgbForm) {
                     picker.createComplexElements();
                 }
                 picker.addComplexElements();
-                picker.modeToggleButton.setTitle("<< Less");
+                picker.modeToggleButton.setTitle(isc.ColorPicker.LESS_BUTTON_TITLE);
             }
         }        
         
@@ -163,7 +171,7 @@ showModeToggleButton: true,
 modeToggleButtonConstructor: isc.IButton,
 
 modeToggleButtonDefaults: {
-    title: "More >>",
+    title: isc.ColorPicker.MORE_BUTTON_TITLE,
     width: 80,
     autoParent: "buttonLayout",
     click: function () { 
@@ -1181,11 +1189,11 @@ _togglePickMode : function () {
             this.createComplexElements();
         }
         this.addComplexElements();
-        this.modeToggleButton.setTitle("<< Less");
+        this.modeToggleButton.setTitle(isc.ColorPicker.LESS_BUTTON_TITLE);
     } else {
         this._currentPickMode = "simple";            
         this.removeComplexElements();
-        this.modeToggleButton.setTitle("More >>"); 
+        this.modeToggleButton.setTitle(isc.ColorPicker.MORE_BUTTON_TITLE);
     }
     this.modeToggleButton.setState("");
 }

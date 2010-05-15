@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -176,7 +176,8 @@ initWidget : function () {
     // overridden by the user in tabProperties.
     tabDefaults.vertical =
         (this.tabBarPosition == isc.Canvas.LEFT || this.tabBarPosition == isc.Canvas.RIGHT);
-    tabDefaults.skinImgDir = this.buttonConstructor.getInstanceProperty("skinImgDir") +
+    var buttonClass = isc.ClassFactory.getClass(this.buttonConstructor);
+    tabDefaults.skinImgDir = buttonClass.getInstanceProperty("skinImgDir") +
         this.tabBarPosition + "/";
     
     // have iconClick close the tabs if appropriate
@@ -430,13 +431,28 @@ setupButtonFocusProperties : function () {
 _updateFocusButton : function (buttonNum) {
     
     
-    // Suppress selection on right-click by default
+    // Suppress selection of tabs on right-click by forcing focus back to whatever tab had
+    // it before (this method is fired as focus tries to move to the right-clicked tab)
     
     if (!this.selectTabOnContextClick && isc.EH.rightButtonDown()) {
         if (this._currentFocusButton != null && 
             this.getButton(buttonNum) != this._currentFocusButton) 
         {
-            this._currentFocusButton.delayCall("focus");
+            var targetButtonNum = this.getButtonNumber(this._currentFocusButton);
+            
+            this._currentFocusButton.focus(); 
+            var _this = this;
+            isc.Timer.setTimeout(function () {
+                var targetTab = _this.getButton(targetButtonNum);
+
+                if (!targetTab) return;
+    
+                if (!isc.EH.targetIsMasked(targetTab)) {
+                    targetTab.focus();
+                } else {
+                    _this.selectTab(targetButtonNum);
+                }
+            }, 0);
         }
         return;
     }

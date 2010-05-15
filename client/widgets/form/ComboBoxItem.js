@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -318,30 +318,95 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
             // If completeOnTab is true, pick the currently selected value on tab.
             // Also do so if autoComplete:"smart" is enabled (inline autoCompletion),
             // as tab accepts an inline completion.
+
             
             if (pickList && pickList.isVisible() && keyName == this._$Tab && 
                 (this.completeOnTab || this._getAutoCompleteSetting() == this._$smart))
             {
                 var selection = pickList.getSelectedRecord();
                 if (selection != null) pickList.itemClick(selection);
+                //this.logWarn("completing on keyDown, selection was: " + isc.echo(selection) +
+                //             " value now: " + this.getValue());
             }
-            
         }
         
         return this.Super("handleKeyDown", arguments);
     },
 
+    addUnknownValues:true,
+
+    // when addUnknownValues is false, on field exit, drop any value that doesn't have a valid
+    // completion
+    handleEditorExit : function () {
+        if (this.addUnknownValues) return this.Super("handleEditorExit", arguments);
+
+        var value = this.getValue();
+        if (value == null) {
+            this.setElementValue("");
+            return this.Super("handleEditorExit", arguments);
+        }
+
+        var displayValue = this.mapValueToDisplay(value);
+        //this.logWarn("editorExit: value: " + value + " has display value: " + displayValue);
+        if (displayValue == value) {
+            // if the user-entered value doesn't match anything in the current pickList, drop
+            // it now
+            this.clearValue();
+        } else {
+            this._updateValue(value, true);
+        }
+        this.Super("handleEditorExit", arguments);
+    },
+
+    // when addUnknownValues is false, don't allow values that have no valid completions to
+    // become this item's value, trigger change()/changed() or be saved to the form
+    _updateValue : function (value, forceSave) {
+        if (this.addUnknownValues || forceSave) return this.Super("_updateValue", arguments);
+
+        // when a value is selected, the element value is changed to show the display value.
+        // We will receive change notifications for this (eg onblur) but this should not be
+        // considered a change to the underlying value of the FormItem
+        var elementValue = this.getElementValue();
+        if (value == elementValue && this.mapValueToDisplay(this.getValue()) == elementValue) {
+            return;
+        }
+
+        var displayValue = this.mapValueToDisplay(value);
+        //this.logWarn("_updateValue: value: " + value + " has display value: " + displayValue);
+        if (displayValue == value) {
+            // if the user-entered value doesn't match anything in the current pickList, the
+            // official value is now considered null
+            //this.logWarn("_updateValue: nulling out value that has no completions");
+            this.saveValue(null);
+            // continue to filter the picklist based on the user-entered value
+            this.refreshPickList(value);
+            return;
+        }
+        // otherwise go ahead and consider this a value change and store the value as the
+        // official new value
+        return this.Super("_updateValue", arguments);
+    },
     // Override handleChange to re filter the list on every change (which occurs on every 
-    // keypress)
+    // keypress).  Note handleChange() is not called if addUnknownValues is false and the user
+    // entered value has no completion - in that case, pickList refersh is triggered directly from
+    // _updateValue()
     handleChange : function (newValue, oldValue) {
+        //this.logWarn("handleChange: newValue: " + newValue + " oldValue: " + oldValue);
         var returnVal = this.Super("handleChange", arguments);
         if (returnVal == false) return false;
 
+        this.refreshPickList(newValue);
+    },
+    // refresh the pickList for a change in the user-entered value
+    refreshPickList : function (newValue) {
+        //this.logWarn("refreshPickList called with newValue: " + newValue +
+        //             ", valuePicked: " + this._valuePicked);
+
         // Check for the change handler having modified the value to be saved.
-        newValue = this._changeValue;
+        newValue = this._changeValue || newValue;
         
         var isEmpty = (!newValue || newValue == isc.emptyString);        
-        
+
         // clear out the shownOnEmpty string if we're not empty any more
         if (!isEmpty) delete this._shownOnEmpty;
 
@@ -354,7 +419,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
             // At this point we know the change is ok, but the new value has not yet been saved
             // Save the value out so our filter will work
             
-            this.saveValue(newValue);
+            if (this.addUnknownValues) this.saveValue(newValue);
         
             // showPickList will set up the pickList initially, or if already set up
             // will re-filter
@@ -559,7 +624,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         var crit = this.optionCriteria  || {};
         if (this.alwaysFilterWithValue || this.filterWithValue) {
             
-            var value = this.getDisplayValue(),
+            var value = this.addUnknownValues ? this.getDisplayValue() : this.getElementValue(),
                 fieldName = (this.getDisplayFieldName() || this.getValueFieldName());
                 
             crit[fieldName] = value;
@@ -673,7 +738,8 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // update the value of this item, and fire the change handler.
     pickValue : function (value) {
         var displayValue = this.mapValueToDisplay(value);
-        this.setElementValue(displayValue);
+        if (this.addUnknownValues) this.setElementValue(displayValue);
+        else this.setValue(value);
         
         // Hang a flag on the item so that we don't re-show the pick list
         this._valuePicked = true;
@@ -698,8 +764,11 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
             this.setUpPickList(this.pickList.isVisible());
         }
         // The display-version of the value is likely to have changed, so update the element
-        // value at this point.
-        this.setElementValue(this.mapValueToDisplay(this.getValue()));
+        // value at this point (but never update the typed-in value when addUnknownValues is
+        // false)
+        if (this.addUnknownValues) {
+            this.setElementValue(this.mapValueToDisplay(this.getValue()));
+        }
     },    
     
     // Override setValue and mapValueToDisplay to ensure that on an explicit setValue() to

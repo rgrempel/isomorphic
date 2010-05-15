@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -25,6 +25,7 @@ if (isc.addProperties == null) {
 }
 
 isc.addGlobal("evalSA", function (expression) {
+    //!OBFUSCATEOK
     if (isc.eval) isc.eval(expression);
     else eval(expression);                        
 });
