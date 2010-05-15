@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1242,7 +1242,7 @@ handleKeyPress : function (nativeEvent, scEventProperties) {
         }
         if (topHardMask != null) {
             var focusCanvas = EH._focusCanvas;
-            
+
             if (focusCanvas != null) {
                 //>DEBUG
                 this.logInfo("Telling focus canvas:" + focusCanvas + " to shift focus", 
@@ -1424,7 +1424,7 @@ doHandleMouseDown : function (DOMevent, syntheticEvent) {
     }
 
     // NOTE: although we do send a rightMouseDown, we don't send a rightMouseMove or rightMouseUp at
-    // the moment.  rightMouseDown is needed to implement a cell or record selection model that
+    // the moment.  rightMouseDown is needed to implement a record or cell selection model that
     // matches Windows Explorer and Excel respectively - rightMouseMove and rightMouseUp are more
     // exotic.
     var eventType = EH.rightButtonDown() ? EH.RIGHT_MOUSE_DOWN : EH.MOUSE_DOWN;
@@ -1614,7 +1614,7 @@ handleMouseMove : function (DOMevent) {
         if (EH.delayedMouseMoveTimer == null) {
             EH.delayedMouseMoveTimer = 
                  isc.Timer.setTimeout({target:EH, methodName:"_delayedMouseMove",
-                                       args:[isc.timeStamp()]}, 0);
+                                       args:[isc.timeStamp()]}, 0, true);
         }
         EH._lastMouseMoveTime = 0;
         
@@ -2082,11 +2082,7 @@ _handleMouseUp : function (DOMevent, fakeEvent) {
 },
 
 
-//>	@classMethod	isc.EventHandler.clearDragProperties()
-//			Clear all the miscellaneous isc.EventHandler properties set as a result of dragging.
-//		@group	mouseEvents
-// @visibility internal
-//<
+// Clear all the miscellaneous isc.EventHandler properties set as a result of dragging.
 clearDragProperties : function () {
 	var EH = this;
 	EH.dragging = false;
@@ -2106,15 +2102,8 @@ clearDragProperties : function () {
 },
 
 
-//>	@classMethod	isc.EventHandler.handleContextMenu()
-//			Special handler for context menu events.
-//
-//		@group	mouseEvents
-//		@param	event		(DOM event) DOM event object (as passed by isc.EventHandler)
-//		@return				(boolean)	false == cancel native event processing
-//										anything else == continue native event processing
-// @visibility internal
-//<
+// handle context menu events.  Can be called directly by the browser or synthetically.
+
 handleContextMenu : function (DOMEvent) {
 	// Some browsers (like Mac IE) have problems dealing with events fired before the page
     // finishes loading.  Just skip mouse event processing if the page hasn't loaded yet.
@@ -2133,7 +2122,6 @@ handleContextMenu : function (DOMEvent) {
 },
 
 _handleContextMenu : function (DOMEvent) {
-
     
     var fromMouseEvent = isc.Browser.isSafari || (this.lastEvent.eventType == isc.EH.MOUSE_UP);
     
@@ -2471,7 +2459,7 @@ getMaskedFocusCanvas : function (mask) {
     if (mask) return mask._maskedFocusCanvas;
 },
 
-// helper method fired when focus goes onto a widget which may be covered by a clickmask.
+// fired when focus goes onto a widget which may be covered by a clickmask.
 // if the mask is soft, it automatically dismisses that clickMask and fires the click
 // action.
 checkMaskedFocus : function (target) {
@@ -3935,12 +3923,21 @@ bubbleEvent : function (target, eventType, eventInfo, targetIsMasked) {
 	var logBubble = this.logIsDebugEnabled() && !this._dontLogBubble[eventType];
     //<DEBUG
 
-    // if the virtual clickMask is up, prevent all mouse events from going to any Canvii except
-    // the ones above the clickMask
+    // check if this widget is masked, and, if a click on this widget would be cancelled, block
+    // all mouse events from going to the target.  This prevents rollovers and other
+    // indications of interactivity from appearing on components when in fact a click will do
+    // nothing.
+    //
+    // Note that a mouseDown that dismisses a soft clickmask does so before reaching this
+    // check.
     
     var isMouseEvent = this.isMouseEvent(eventType);
     if (isMouseEvent) {
-        if (targetIsMasked == null) targetIsMasked = this.targetIsMasked(target);
+        
+        if (targetIsMasked == null) {
+            
+            targetIsMasked = this.targetIsMasked(target, null);
+        }
         if (targetIsMasked) {
             if (logBubble) {
                 this.logDebug(eventType + " on " + target + " blocked by clickmask");
@@ -4638,6 +4635,8 @@ runTeas : function () {
     }
 },
 
+// NOTE: other codes exist in eg FormItem.js for other places where we get a direct call from
+// the DOM
 _threadCodes : {
     load : "LOD",
     mousedown : "MDN",
@@ -4655,7 +4654,6 @@ _threadCodes : {
 _$nativeEvents:"nativeEvents",
 
 dispatch : function (handler, event) {
-    
     
     
     if (isc._evalRunning != null) {
@@ -5842,15 +5840,15 @@ canvasDestroyed : function (canvas) {
 //      EventHandler.addUnmaskedTargets()).
 //      Deprecated: The Canvas 'bringToFront()' method automatically adds widgets to the 
 //      unmaskedTargets list of the formost clickMask - deprecated as of build 5.5, but 
-//      still works. Developers are encouraged to user unmask() instead.
+//      still works.  Developers are encouraged to use unmask() instead.
 //      Note that when a widget is 'unmasked' wrt a particular clickMask, it is effectively 
 //      unmasked wrt any click masks underneath that one as well.
 //      o If a "hard" clickMask is showing, we only support it having top-level
 //        unmasked targets -- we can't support an unmasked child of a masked parent for
 //        "hard" masks. [We DO support this for soft masks].
-//        - the only known, cross-browser way to truly intercept all events, including events 
-//          that might be received by handlers directly written into native elements, is to 
-//          place a physical element ("screenspan") over the whole screen
+//       - the only known, cross-browser way to truly intercept all events, including events 
+//         that might be received by handlers directly written into native elements, is to 
+//         place a physical element ("screenspan") over the whole screen
 //       - anything that is to be unmasked therefore has to be ready to have it's top-most 
 //         element change zIndex to get above the screenspan, and this is generally not ok to 
 //         for eg some widget nested deeply in a series of Layouts, since this might effectively 
@@ -5860,10 +5858,11 @@ canvasDestroyed : function (canvas) {
 //         waitForSave *and* stopOnErrors set, which is a corner case where it would be acceptable 
 //         to place limitations or require special coding to make masking work
 //       - alternatives include:
-//         o individually masking everything else on the screen (too slow)
+//         o individually masking everything else on the screen by generating elements to place
+//           on top (too slow)
 //         o creating a top-level mask composed of 4 pieces with a rectangular opening for the
-//          unmasked, non-top-level widget: complicated, especially if multiple widgets 
-//          non-top-level widgets can become unmasked together, and they may move
+//           unmasked, non-top-level widget: complicated, especially if multiple widgets 
+//           non-top-level widgets can become unmasked together, and they may move
 //      o We never support an unmasked parent with a masked child widget.
 //      o We always mask and unmask all peers (and descendants of peers) of a widget with 
 //        the widget. Use cases include scrollbars, edges, shadows.
@@ -5878,17 +5877,17 @@ canvasDestroyed : function (canvas) {
 
 
 
-//> @type   clickMaskMode
+//> @type ClickMaskMode
 // Passed as a parameter to +link{Canvas.showClickMask} to determine the masks behavior
 // when clicked.
-// @visibility external
-// @group   clickMask
-// @value   "hard"   When the mask receives a click, it will fire its click action, 
+// @value "hard"   When the mask receives a click, it will fire its click action, 
 //                  and cancel the event, leaving the clickMask up.
 HARD:"hard",
-// @value   "soft"   When the mask receives a click, it will fire its click action, 
+// @value "soft"   When the mask receives a click, it will fire its click action, 
 //                  then dismiss the clickMask and allow the event to proceed to its target.
 SOFT:"soft",
+// @group clickMask
+// @visibility external
 //<
 
 
@@ -5916,7 +5915,7 @@ SOFT:"soft",
 //
 // @group   clickMask
 // @param   clickAction     (string | method)   action to fire when the clickMask is clicked
-// @param   mode    (clickMaskMode)       
+// @param   mode    (ClickMaskMode)       
 //      Should this mask be dismissed and allow events to proceed on outside click.
 //      If passed <code>null</code> the mask will be drawn in <code>"hard"</code> mode.
 // @param   unmaskedTargets (widget | Array of widgets)
@@ -6949,18 +6948,20 @@ addUnmaskedTargets : function (targets, maskID) {
 
 //> @classMethod    isc.EventHandler.targetIsMasked() (A)
 //
-//      return whether this Canvas is masked by the clickMask
+// Return whether this Canvas is masked by the clickMask
 //
-//      @group  clickMask
-//      @param  target  (widget)    target of the mouseDown event.
-//      @param  [maskID] (string)   ID of click mask to check against - if not passed in, method
-//                                  will determine whether the widget is above the top clickMask.
-//      @return         (boolean)   true if masked, false if not masked.
-//      @visibility eventhandler
+// @param target (widget) target of the event.
+// @param [maskID] (string) ID of click mask to check against - if not passed in, method
+//                          will determine whether the widget is above the top clickMask.
+// @param [hardMaskedOnly] (boolean) whether to consider only hard masks when checking
+//                                   for masking
+// @return (boolean)   true if masked, false if not masked.
+// @group clickMask
+// @visibility eventhandler
 //<
-targetIsMasked : function (target, maskID) {
+targetIsMasked : function (target, maskID, cancelOnly) {
     var registry = this.clickMaskRegistry;
-    if (registry.length ==0) return false;
+    if (registry.length == 0) return false;
     
     // if we weren't given a target, a clickmask is up and the event occurred over a 
     // native page element rather than a widget - so the target is masked.
@@ -6978,10 +6979,21 @@ targetIsMasked : function (target, maskID) {
     }
     
     var initialIndex = registry.indexOf(mask);
-    for (var i =  initialIndex; i < registry.length; i++) {
+    var wouldCancelClick = false;
+    for (var i = initialIndex; i < registry.length; i++) {
         // On the first iteration we already have a pointer to the mask
         if (i != initialIndex) mask = registry[i];
         
+        // consider only masks that would cancel a click
+        if (cancelOnly) {
+            if (mask.mode == isc.EH.HARD || mask.mode == isc.EH.SOFT_CANCEL) {
+                wouldCancelClick = true;
+            } else {
+                //this.logWarn("ignoring mask with mode: " + mask.mode);
+                continue;
+            }
+        }
+
         if (mask._unmaskedTargets) {
             if (mask._unmaskedTargets[target.getID()]) return false;
             
@@ -6997,7 +7009,7 @@ targetIsMasked : function (target, maskID) {
         }
     }
     
-    return true;
+    return (cancelOnly && !wouldCancelClick ? false : true);
 },
 
 //> @classMethod    isc.EventHandler.clickMaskClick()

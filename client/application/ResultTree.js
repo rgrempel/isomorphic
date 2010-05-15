@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -722,9 +722,10 @@ addCacheData : function (updateData) {
 _addNodeToCache : function (node, pk) {
     if (pk == null) pk = this.getDataSource().getPrimaryKeyFieldNames()[0];
     
-    var parentId = node[this.parentIdField],
-    parentNode = parentId != null ? this.find(pk, parentId) 
-                                   : (this.defaultNewNodesToRoot ? this.getRoot() : null); 
+    var parentId = node[this.parentIdField];
+    var parentNode = parentId != null ? this.find(pk, parentId) 
+                                      : (this.defaultNewNodesToRoot || this.rootValue == null
+                                            ? this.getRoot() : null)
     
     // Duplicate the node when adding it -- this is required to avoid us writing 
     // properties onto the object directly
@@ -776,7 +777,9 @@ updateCacheData : function (updateData) {
             // the change may have reparented a node.
             if (updateRow[this.parentIdField] != node[this.parentIdField]) {
                 var newParentNode = this.find(pk, updateRow[this.parentIdField]);
-                if (newParentNode == null && this.defaultNewNodesToRoot) {
+                if (newParentNode == null && 
+                    (this.defaultNewNodesToRoot || this.rootValue == null))
+                {
                     newParentNode = this.getRoot();
                 }
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -531,11 +531,6 @@ removeEvery : function (value) {
     return this;
 },
 
-//>	@method		array.dataChanged()	(A)
-// @include list.dataChanged()
-//<
-dataChanged : function () {},
-
 // methods to ensure dataChanged() fired only once when a series of changes are made: see List.js
 _startChangingData : function () {
     var undef;
@@ -545,6 +540,14 @@ _startChangingData : function () {
 
 _doneChangingData : function () {
 	if (--this._dataChangeFlag == 0) this.dataChanged();
+},
+
+//>	@method		array.dataChanged()	(A)
+// @include list.dataChanged()
+//<
+dataChanged : function () {
+    
+    if (this.onDataChanged) this.onDataChanged()
 },
 
 // In some cases we want to perform a one-liner - call dataChanged unless we're inside a data

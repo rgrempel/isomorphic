@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -55,7 +55,6 @@ shouldSaveValue:true,
 // The end of this DateRange.
 // @visibility external
 //<
-
 
 //> @attr dateRangeItem.fromTitle (string : "From" : IR)
 // The title for the "from" part of the range.
@@ -154,9 +153,9 @@ hasAdvancedCriteria : function () {
 //> @method dateRangeItem.getCriterion()
 // Returns the Criterion entered in the date field.
 // <P>
-// If both dates are entered, a Criterion with an "and" +link{type:OperatorId,operator} will be
+// A Criterion with an "and" +link{type:OperatorId,operator} will be
 // returned with both a "greaterThan" and "lessThan" sub-criteria.  If either date is omitted,
-// only the "greaterThan" (from date) or "lessThan" (to date) Criterion is returned.
+// only the "greaterThan" (from date) or "lessThan" (to date) Criterion is included.
 //
 // @return (Criterion)
 //
@@ -180,20 +179,24 @@ getCriterion : function (absolute) {
         result = null
     ;
 
-    if (hasFromValue && hasToValue) {
-        // return an AdvanvedCriteria with two subCriteria
-        result = { _constructor: "AdvancedCriteria", operator: "and",
-            criteria: [
-                { fieldName: this.fieldName || this.name, operator: "greaterThan", value: fromValue },
-                { fieldName: this.fieldName || this.name, operator: "lessThan", value: toValue }
-            ]
-        };
-    } else if (hasFromValue || hasToValue) {
-        result = { 
-            fieldName: this.fieldName || this.name, 
-            operator: (hasFromValue ? "greaterThan" : "lessThan"), 
-            value: (hasFromValue ? fromValue : toValue)
-        };
+    if (hasFromValue || hasToValue) {
+        // return an AdvanvedCriteria with one or two subCriteria
+        result = { _constructor: "AdvancedCriteria", operator: "and", criteria: [ ] };
+
+        if (hasFromValue) {
+            result.criteria.add({
+                fieldName: this.name, 
+                operator: "greaterThan", 
+                value: fromValue 
+            });
+        }
+        if (hasToValue) {
+            result.criteria.add({
+                fieldName: this.name, 
+                operator: "lessThan", 
+                value: toValue 
+            });
+        }
     }
 
     return result;    
@@ -277,7 +280,7 @@ setCriterion : function (criterion) {
         if (criterion.operator == "greaterThan") fromCrit = criterion;
         else if (criterion.operator == "lessThan") toCrit = criterion;
     }
-    
+
     // just call setValue on the relevant items.
     // If we're showing relative date items they should handle being passed an absolute
     // date value
@@ -292,6 +295,7 @@ setCriterion : function (criterion) {
 dateRangeFormDefaults: {
     _constructor: "DynamicForm",
     numCols: 2,
+    colWidths: [50, "*"],
     margin: 0,
     padding: 0,
     itemChanged : function (item, newValue) {
@@ -311,9 +315,9 @@ isc.DateRangeItem.addMethods({
         return true;
     },
 
-    _createEditor: function(){
+    _createEditor: function () {
         var ds;
-        var dynProps = {};
+        var dynProps = { _suppressColWidthWarnings: true };
 
         if (this.form.dataSource) { // Should be, otherwise how have we ended up with a complex field?
             ds = isc.DataSource.getDataSource(this.form.dataSource);
@@ -367,6 +371,9 @@ isc.DateRangeItem.addMethods({
         this.toField = this.canvas.getField("toField");
         this.fromField = this.canvas.getField("fromField");
 
+        this.fromField.canvas._nextTabWidget = this.toField.canvas;
+        this.toField.canvas._previousTabWidget = this.fromField.canvas;
+        
         if (this.defaultValue) {
             this.setValue(this.defaultValue);
         } else {
@@ -460,8 +467,8 @@ isModal: true,
 showModalMask: true,
 dismissOnEscape: true,
 autoCenter: true,
-width: 400,
-height: 160,
+width: 380,
+height: 140,
 vertical: "true",
 showMinimizeButton: false,
 headerIconProperties: {
@@ -545,16 +552,19 @@ isc.DateRangeDialog.addMethods({
         this.addAutoChild("mainLayout");
         this.addAutoChild("rangeForm",
             {
+                _suppressColWidthWarnings: true,
                 items: [
                     isc.addProperties({}, this.rangeItemDefaults, this.rangeItemProperties,
-                        { name: "rangeItem", fromDate: this.fromDate, toDate: this.toDate }
+                        { name: "rangeItem", fromDate: this.fromDate, toDate: this.toDate,
+                            dateDisplayFormat: this.dateDisplayFormat
+                        }
                     )
                 ]
             }
         );
 
         this.rangeItem = this.rangeForm.getField("rangeItem");
-        
+
         this.rangeItem.canvas.numCols = 1;
 
         this.addAutoChildren(this.buttonAutoChildren);
@@ -566,7 +576,8 @@ isc.DateRangeDialog.addMethods({
     },
 
     cancel : function () {
-        this.finished(null);
+        this.hide();
+        if (this.destroyOnClose) this.markForDestroy();
     },
     
     finished : function (value) {
@@ -591,6 +602,7 @@ clipValue: true,
 wrap: false,
 valign: "center",
 iconVAlign: "top",
+textBoxStyle: "textItem",
 
 //> @attr miniDateRangeItem.shouldSaveValue (boolean : true : IR)
 // Allow miniDateRangeItems' values to show up in the form's values array, or if 
@@ -611,6 +623,17 @@ rangeDialogDefaults: {
     destroyOnClose: false
 },
 
+//> @attr miniDateRangeItem.fromDateOnlyPrefix (string : "Since" : IR)
+// The text to prepend to the formatted date when only a +link{fromDate} is supplied.
+// @group i18nMessages
+//<
+fromDateOnlyPrefix: "Since",
+
+//> @attr miniDateRangeItem.toDateOnlyPrefix (string : "Before" : IR)
+// The text to prepend to the formatted date when only a +link{toDate} is supplied.
+// @group i18nMessages
+//<
+toDateOnlyPrefix: "Before",
 
 //> @attr miniDateRangeItem.pickerIconPrompt (String : "Show Date Chooser" : IR)
 // The prompt to show when the mouse is hovered over the +link{pickerIcon}.
@@ -628,6 +651,13 @@ pickerIconPrompt: "Show Date Chooser",
 pickerIconDefaults: {
     name: "showDateRange", 
     src: "[SKIN]/DynamicForm/DatePicker_icon.gif",
+    width: 20, height: 20,
+    neverDisable: true,
+    showDisabled: false,
+    showOver: false,
+    showFocused: false,
+    showFocusedWithItem: false,
+    hspace: 0,
     click : function (form, item, icon) {
         item.showRangeDialog();
     }
@@ -641,6 +671,18 @@ pickerIconDefaults: {
 // @visibility external
 //<
 allowRelativeDates: true
+
+//> @attr miniDateRangeItem.dateDisplayFormat (DateDisplayFormat : null : IR)
+// Format for displaying dates in to the user.  
+// Defaults to the system-wide default established by +link{Date.setDefaultDisplayFormat()}.
+// <P>
+// If this attribute is unset, the display value is formatted intellegently according to the
+// dates involved.  For example, if both dates appear in the same month, the value will be 
+// formatted as <code>Month date1 - date2, Year</code> and, if in different months of the same
+// year, <code>Month1 date1 - Month2 date2, Year</code>.
+// 
+// @visibility external
+//<
 
 //> @attr miniDateRangeItem.fromDate (Date or RelativeDateString or TimeUnit : today : IRW)
 // Initial value for the "from" date.
@@ -665,6 +707,7 @@ isc.MiniDateRangeItem.addMethods({
             {
                 fromDate: this.fromDate, 
                 toDate: this.toDate,
+                dateDisplayFormat: this.dateDisplayFormat,
                 callback: this.getID()+".rangeDialogCallback(value)"
             }
         );
@@ -676,7 +719,7 @@ isc.MiniDateRangeItem.addMethods({
         ];
 
         this.rangeItem = this.rangeDialog.rangeItem;
-        this.rangeItem.fieldName = this.name;
+        this.rangeItem.name = this.name;
     },
 
     showRangeDialog : function () {
@@ -686,9 +729,7 @@ isc.MiniDateRangeItem.addMethods({
     },
 
     rangeDialogCallback : function (value) {
-        if (value != null) {
-            this.setValue(value);
-        }
+        this.setValue(value);
     },
 
     //> @method miniDateRangeItem.hasAdvancedCriteria()
@@ -740,19 +781,30 @@ isc.MiniDateRangeItem.addMethods({
     // @visibility external
     //<
     setValue : function (value) {
-        if (value == null) return;
+        if (value != null) {
+            if (isc.DataSource.isAdvancedCriteria(value)) {
+                // value has come back as an AdvancedCriteria!
+                var newValue = {};
 
-        if (isc.DataSource.isAdvancedCriteria(value)) {
-            // value has come back as an AdvancedCriteria!
-            var newValue = {};
+                for (var i=0; i<value.criteria.length; i++) {
+                    var criterion = value.criteria[i];
+                    if (criterion.operator == "greaterThan")
+                        newValue.start = criterion.value;
+                    else if (criterion.operator == "lessThan")
+                        newValue.end = criterion.value;
+                }
+                value = newValue
+            }
 
-            newValue.start = value.criteria[0].value;
-            newValue.end = value.criteria[1].value;
-            value = newValue
+            this.fromDate = value.start;
+            this.toDate = value.end;
+        } else {
+            this.fromDate = null;
+            this.toDate = null;
         }
 
-        this.fromDate = value.start;
-        this.toDate = value.end;
+        this.rangeItem.setFromDate(this.fromDate);
+        this.rangeItem.setToDate(this.toDate);
 
         var displayValue = this.mapValueToDisplay(value);
         this.setElementValue(displayValue, value);
@@ -771,11 +823,15 @@ isc.MiniDateRangeItem.addMethods({
 
         var prompt;
         if (start || end) {
-            if (start) prompt = this.formatDate(start);
-            if (end) {
-                if (prompt) prompt += " - " + this.formatDate(end);
-                else prompt = this.formatDate(end);
-            }
+            if (this.dateDisplayFormat) {
+                if (start) prompt = this.formatDate(start);
+                if (end) {
+                    if (prompt) prompt += " - " + this.formatDate(end);
+                    else prompt = this.formatDate(end);
+                }
+            } else prompt = Date.getFormattedDateRangeString(start, end);
+            if (!start) prompt = this.toDateOnlyPrefix + " " + prompt;
+            else if (!end) prompt = this.fromDateOnlyPrefix + " " + prompt;
         }
         this.prompt = prompt || "";
         return this.prompt;

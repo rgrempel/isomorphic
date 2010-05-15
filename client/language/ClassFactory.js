@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -54,7 +54,7 @@ isc.addMethods(isc.isA, {
 	//	@return			(boolean)	true == <code>object</code> is an instance of some class
 	//	@visibility external
 	//<
-	Instance : function (object) {	return (object != null && object._prototype != null)},
+	Instance : function (object) {	return (object != null && object._scPrototype != null)},
 
 	//>	@classMethod	isA.ClassObject()
 	//
@@ -77,7 +77,7 @@ isc.addMethods(isc.isA, {
 	Interface : function (object) {	return (object != null && object._isInterface == true)},
 
     InstancePrototype : function (object) { 
-        return (isc.isAn.Instance(object) && object._prototype == object)
+        return (isc.isAn.Instance(object) && object._scPrototype == object)
     }
 });
 
@@ -137,7 +137,7 @@ isc.addMethods(isc.ClassFactory, {
 	//	 Class : [string classname]
 	//	 _instanceConstructor : [constructor function that creates instances]
 	//	 _classObject : [ClassObject for this class]
-	//	 _prototype : [the instance prototype (this same object)]
+	//	._scPrototype : [the instance prototype (this same object)]
 	//  }
 	defineClass : function (className, superClass, interfaces, suppressSimpleNames) {
 		return this._defineNonRootClass(className, superClass, interfaces, null, suppressSimpleNames);
@@ -334,7 +334,7 @@ isc.addMethods(isc.ClassFactory, {
 		// crosslink the instance prototype and class object
 		instancePrototype._classObject = classObject;
 		// this exists mostly so that instances can reference their prototype
-		instancePrototype._prototype = instancePrototype;
+		instancePrototype._scPrototype = instancePrototype;
 		
 		// copy the scClass information across too
 		instancePrototype.isFrameworkClass = classObject.isFrameworkClass;

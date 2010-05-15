@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -59,7 +59,8 @@ isc.Func.addClassMethods({
 
             // if we have a className but no function name, search the class (and instance
             // prototype) for the function
-            var name = func._name;
+            var name = func._name,
+                isClassMethod;
             if (name == null && func._className != null) {
                 var theProto;
                 var classObj = isc.ClassFactory.getClass(func._className);
@@ -85,6 +86,7 @@ isc.Func.addClassMethods({
                     for (var methodName in classObj) {
                         if (classObj[methodName] === func) {
                             name = methodName;
+                            isClassMethod = true;
                             break;
                         }
                     }
@@ -99,9 +101,11 @@ isc.Func.addClassMethods({
                     }
                 }
             }
+
             if (name != null) {
                 func._fullName = (func._instanceSpecific ?
                                   (func._isOverride ? "[o]" : "[a]") : isc._emptyString) +
+                                 (isClassMethod ? "[c]" : isc._emptyString) +
                                  (func._className ? func._className + isc.dot : isc._emptyString) +
                                   name;
             } else {
@@ -117,6 +121,7 @@ isc.Func.addClassMethods({
                     else func._fullName = "anonymous";
                 }
             }
+            //this.logWarn("function acquired _fullName: " + func._fullName);
         }
         
         return func._fullName; 

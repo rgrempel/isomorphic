@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1548,6 +1548,41 @@ isc.defineClass("DataSource");
 // mode is used.  This is enabled via +link{dataSource.serverType}:"hibernate".
 // </ul>
 // <P>
+// <b>Hibernate Configuration</b>
+// <P>
+// You can provide Hibernate configuration to the SmartClient server in three ways:
+// <ul>
+// <li>You can place a traditional <code>hibernate.cfg.xml</code> file somewhere on the 
+//     classpath</li>
+// <li>You can have SmartClient look up a Hibernate <code>Configuration</code> to use.  This 
+//     works in the same way as a +link{ServerObject}, and in fact makes use of the 
+//     ServerObject code.  To do this, add ServerObject-compliant properties to your 
+//     <code>server.properties</code> file, prefixed with <code>hibernate.config</code>.  For
+//     example: <pre>
+//        hibernate.config.lookupStyle: spring
+//        hibernate.config.bean: mySessionFactory
+// </pre></li>
+// <li>You can provide a Hibernate configuration at the level of individual DataSources, by 
+//     specifying a +link{DataSource.configBean,configBean} on the dataSource (this is only 
+//     applicable if you are using Spring; see below)</li>
+// </ul>
+// If you choose to have SmartClient lookup the Hibernate configuration, and you specify a 
+// +link{serverObject.lookupStyle,lookupStyle} of "spring", SmartClient will make use of a
+// Hibernate <code>SessionFactory</code> configured by Spring.  It is possible to set up multiple
+// Hibernate configurations in Spring, and to map individual DataSources to different 
+// configurations by making use of the <code>dataSource.configBean</code> property mentioned
+// above.  Please note the following caveats:
+// <ul>
+// <li>DataSource-level Hibernate configuration is intended for unusual cases, such as when the
+//     physical data store for one DataSource is actually a different database.  Hibernate 
+//     relations between entities with different configurations do not work</li>
+// <li>Whilst it is possible to have traditional mapped beans alongside SmartClient "beanless" 
+//     on-the-fly mappings, we cannot share the Hibernate configuration because on-the-fly 
+//     mapping requires the <code>SessionFactory</code> to be rebuilt for each new mapping.
+//     Spring will not allow this, so we fall back to a second Hibernate configuration, 
+//     specified via a .cfg.xml file as described above, for on-the-fly mappings.
+// </ul>
+// <P>
 // <b>Mapping DSRequest/DSResponse to Hibernate</b>
 // <P>
 // This integration strategy uses the server-side Java APIs described in
@@ -1836,6 +1871,18 @@ isc.DataSource.addClassProperties({
 	TABLE : "table",						// table type of datasource
 	VIEW : "view",							// view type of datasource (virtual datasource)
 
+    //> @classAttr DataSource.loaderURL (URL : DataSource.loaderURL : RW)
+    //
+    // The URL where the DataSourceLoader servlet has been installed.  Defaults to the
+    // +link{Page.setIsomorphicDir,isomorphicDir} plus "/DataSourceLoader".  Change via
+    // addClassProperties:
+    // <pre>
+    //    isc.DataSource.addClassProperties({ loaderURL: "newURL" });
+    // </pre>
+    //
+    // @visibility external
+    //<
+	loaderURL:"[ISOMORPHIC]/DataSourceLoader",	
 
 
     // chunks of SOAP messages
@@ -2401,7 +2448,7 @@ isc.DataSource.addClassMethods({
         }
 
         var dsList = loadThese.join(","),
-            url = isc.Page.getIsomorphicDir() + "DataSourceLoader?dataSource="+dsList,
+            url = isc.DataSource.loaderURL + "?dataSource="+dsList,
             _dsID = dsID;
         ;
 
@@ -2478,9 +2525,67 @@ isc.DataSource.addClassMethods({
         return specifierArray;
     },
 
-    isAdvancedCriteria : function (criteria) {
-        return (criteria && criteria._constructor == "AdvancedCriteria");
+    // class-level version of isAdvancedCriteria - accepts a DS as a param, passed in by calls
+    // from the instance-level method
+    isAdvancedCriteria : function (criteria, dataSource) {
+        if (!criteria) return false;
+
+        if (!dataSource) {
+            // Is it explcitily marked as AdvancedCiteria?
+            return (criteria && criteria._constructor == "AdvancedCriteria");
+        }
+
+        if (!isc.isA.DataSource(dataSource)) dataSource = this.get(dataSource);
+
+        // we have a dataSource
+        if (criteria._constructor == "AdvancedCriteria") return true;
+        
+        // Not explicitly marked, so we'll make a guess.  First, make sure that this DataSource
+        // doesn't have any fields that are actually called "fieldName" or "operator"
+        if (dataSource.getField("fieldName") || dataSource.getField("operator")) return false;
+        
+        // So we'll assume it's AdvancedCriteria if the fieldName property refers to a valid 
+        // field on this DS, and the operator property refers to a valid operator
+        if (dataSource.getField(criteria.fieldName) && dataSource.getSearchOperator(criteria.operator)) {
+            return true;
+        }
+
+        // We'll also assume it's an AdvancedCriteria if there is no fieldName property and
+        // the operator is either "and" or "or".
+        var undef;
+        if (criteria.operator != undef) {
+            var op = dataSource.getSearchOperator(criteria.operator);
+            if (op != null && (op.isAnd || op.isOr)) {
+                return true;
+            }
+        }
+
+        return false;
+    },
+
+    getCriteriaFields : function (criteria, dataSource) {
+        if (dataSource && !isc.isA.DataSource(dataSource)) dataSource = this.get(dataSource);
+        if (dataSource ? dataSource.isAdvancedCriteria(criteria) : 
+                this.isAdvancedCriteria(criteria)) 
+        {
+            var fieldNames = [];
+            this._getAdvancedCriteriaFields (criteria, fieldNames);
+            return fieldNames;
+        }
+        return isc.getKeys(criteria);
+    },
+
+    // Drill into advancedCriteria object extracting fields
+    _getAdvancedCriteriaFields : function (criterion, fieldNames) {
+        if (criterion.criteria) {
+            for (var i = 0; i < criterion.criteria.length; i++) {
+                isc.DS._getAdvancedCriteriaFields(criterion.criteria[i], fieldNames);
+            }
+        } else {
+            fieldNames.add(criterion.fieldName);
+        }
     }
+
 
 });
 
@@ -2670,7 +2775,7 @@ isc.DataSource.addProperties({
     // 
     // @group serverDataIntegration
     // @requiresModules SCServer
-    // @serverDS allowed
+    // @serverDS only
     // @visibility external
     //<
     
@@ -2716,7 +2821,7 @@ isc.DataSource.addProperties({
     // 
     // @group serverDataIntegration
     // @requiresModules SCServer
-    // @serverDS allowed
+    // @serverDS only
     // @visibility external
     //<
 
@@ -2728,7 +2833,22 @@ isc.DataSource.addProperties({
     // 
     // @group serverDataIntegration
     // @requiresModules SCServer
-    // @serverDS allowed
+    // @serverDS only
+    // @visibility external
+    //<
+
+    //> @attr dataSource.configBean (String : null : [IRA])
+    // For DataSources of +link{serverType,serverType} "hibernate", the name of a Spring 
+    // bean to query to obtain Hibernate Configuration for this particular DataSource.  Note
+    // that this is intended for DataSource-specific configuration overrides for unusual 
+    // circumstances, such as a DataSource whose physical data store is a completely 
+    // different database to that used by other DataSources.  See the 
+    // +link{group:hibernateIntegration,Integration with Hibernate} article for more 
+    // information
+    // 
+    // @group serverDataIntegration
+    // @requiresModules SCServer
+    // @serverDS only
     // @visibility external
     //<
 
@@ -2747,16 +2867,18 @@ isc.DataSource.addProperties({
     // <p>
     // <b>Note:</b> Only applicable to dataSources of +link{attr:serverType,serverType} "sql".
     //
+    // @serverDS only
     // @visibility external
     //<
     
     //> @attr dataSource.jsonPrefix (String : null : [IRA])
     // Allows you to specify an arbitrary prefix string to apply to all json format responses 
-    // sent from the server to this application.<br>
+    // sent from the server to this application.
+    // <P>
     // The inclusion of such a prefix ensures your code is not directly executable outside of
     // your application, as a preventative measure against
     // +externalLink{http://www.google.com/search?q=javascript+hijacking, javascript hijacking}.
-    // <br>
+    // <P>
     // Only applies to responses formatted as json objects. Does not apply to responses returned
     // via scriptInclude type transport.<br>
     // Note: If the prefix / suffix served by your backend is not a constant, you can use 
@@ -2771,11 +2893,12 @@ isc.DataSource.addProperties({
     
     //> @attr dataSource.jsonSuffix (String : null : [IRA])
     // Allows you to specify an arbitrary suffix string to apply to all json format responses 
-    // sent from the server to this application.<br>
+    // sent from the server to this application.
+    // <P>
     // The inclusion of such a suffix ensures your code is not directly executable outside of
     // your application, as a preventative measure against
     // +externalLink{http://www.google.com/search?q=javascript+hijacking, javascript hijacking}.
-    // <br>
+    // <P>
     // Only applies to responses formatted as json objects. Does not apply to responses returned
     // via scriptInclude type transport.
     //
@@ -3497,6 +3620,7 @@ supportsRequestQueuing : true,
     // @visibility external
     //<
     convertRelativeDates : function (criteria, timezoneOffset, firstDayOfWeek, baseDate) {
+        // just bail if passed null criteria
         if (!criteria) return null;
 
         if (!this.isAdvancedCriteria(criteria) && criteria.operator == null) {
@@ -3507,7 +3631,8 @@ supportsRequestQueuing : true,
 
         // get a copy of the criteria to alter and return
         var RD = isc.RelativeDate,
-            result = isc.addProperties({}, criteria);
+            // ok to use clone() here as we've already confirmed the param is criteria above
+            result = isc.clone(criteria);
 
         baseDate = baseDate || new Date();
 
@@ -3521,8 +3646,20 @@ supportsRequestQueuing : true,
                 var subItem = subCriteria[i];
 
                 if (subItem.criteria && isc.isAn.Array(subItem.criteria)) {
+                    if (this.logIsInfoEnabled("relativeDates")) {
+                        isc.logInfo("Calling convertRelativeDates from convertRelativeDates "+
+                            "- data is:\n\n"+isc.echoFull(subItem)+"\n\n"+
+                            "criteria is: \n\n"+isc.echoFull(criteria)
+                        );
+                    }
+
                     result.criteria[i] = this.convertRelativeDates(subItem, timezoneOffset,
                         firstDayOfWeek, baseDate);
+
+                    if (this.logIsInfoEnabled("relativeDates")) {
+                        this.logInfo("Called convertRelativeDates from convertRelativeDates "+
+                        "- data is\n\n" + isc.echoFull(result.criteria[i]));
+                    }
                 } else {
                     result.criteria[i] = this.mapRelativeDate(subItem, baseDate);
                 }
@@ -3530,6 +3667,13 @@ supportsRequestQueuing : true,
         } else {
             // simple criterion
             result = this.mapRelativeDate(result, baseDate);
+        }
+
+        if (this.logIsInfoEnabled("relativeDates")) {
+            this.logInfo("Returning from convertRelativeDates - result is:\n\n"+
+                isc.echoFull(result)+"\n\n"+
+                "original criteria is: \n\n"+isc.echoFull(criteria)
+            );
         }
 
         return result;
@@ -5188,9 +5332,9 @@ isc.DataSource.addMethods({
         // call transformRequest to allow the data to be changed before it is serialized to the
         // wire.  Hang onto the data in it's original format too
         dsRequest.originalData = dsRequest.data;
-        
+
         this._storeCustomRequest(dsRequest);
-       
+
         // If sendExtraFields is false, remove any non-ds fields from the record(s) in request.data
         // before calling transformRequest
                 
@@ -5216,7 +5360,17 @@ isc.DataSource.addMethods({
             if (this.autoConvertRelativeDates == true) {
                 // convert any relative dates in criteria into absolute dates so the server
                 // doesn't need to know how to handle relative dates
+                if (this.logIsInfoEnabled("relativeDates")) {
+                    this.logInfo("Calling convertRelativeDates from getServiceInputs "+
+                        "- data is\n\n"+isc.echoFull(transformedData));
+                }
+                
                 transformedData = this.convertRelativeDates(transformedData);
+                
+                if (this.logIsInfoEnabled("relativeDates")) {
+                    this.logInfo("Called convertRelativeDates from getServiceInputs "+
+                        "- data is\n\n"+isc.echoFull(transformedData));
+                }
                 dsRequest.data = transformedData;
             }
         }
@@ -7388,23 +7542,12 @@ isc.DataSource.addMethods({
     // Give a standard or advanced criteria object, return the complete set of
     // field names referenced.
     getCriteriaFields : function (criteria) {
-        if (this.isAdvancedCriteria(criteria)) {
-            var fieldNames = [];
-            this._getAdvancedCriteriaFields (criteria, fieldNames);
-            return fieldNames;
-        }
-        return isc.getKeys(criteria);
+        return isc.DS.getCriteriaFields(criteria, this);
     },
 
     // Drill into advancedCriteria object extracting fields
     _getAdvancedCriteriaFields : function (criterion, fieldNames) {
-        if (criterion.criteria) {
-            for (var i = 0; i < criterion.criteria.length; i++) {
-                this._getAdvancedCriteriaFields(criterion.criteria[i], fieldNames);
-            }
-        } else {
-            fieldNames.add(criterion.fieldName);
-        }
+        return isc.DS._getAdvancedCriteriaFields(criterion, fieldNames);
     },
 
     // DataSource operation methods
@@ -7966,7 +8109,18 @@ isc.DataSource.addMethods({
             if (this.autoConvertRelativeDates == true) {
                 // convert any relative dates in criteria into absolute dates so the server
                 // doesn't need to know how to handle relative dates
+                if (this.logIsInfoEnabled("relativeDates")) {
+                    this.logInfo("Calling convertRelativeDates from sendDSRequest "+
+                        "- data is\n\n"+isc.echoFull(data));
+                }
+                
                 data = this.convertRelativeDates(data);
+
+                if (this.logIsInfoEnabled("relativeDates")) {
+                    this.logInfo("Called convertRelativeDates from sendDSRequest "+
+                        "- data is\n\n"+isc.echoFull(data));
+                }
+
                 dsRequest.data = data;
             }
 
@@ -8286,8 +8440,8 @@ isc.DataSource.addMethods({
 //> @attr dsRequest.startRow (number : null : IR)
 // Starting row of requested results, used only with fetch operations.  If unset, 0 is assumed.
 // <p>
-// Note that startRow and endRow are zero-based, so startRow: 0, endRow: 1 is a request
-// for the first two records.
+// Note that startRow and endRow are zero-based, inclusive at the beginning and exclusive at
+// the end (like substring), so startRow: 0, endRow: 1 is a request for the first record.
 //
 // @group paging
 // @visibility external
@@ -8296,8 +8450,8 @@ isc.DataSource.addMethods({
 //> @attr dsRequest.endRow (number : null  : IR)
 // End row of requested results, used only with fetch operations.
 // <p>
-// Note that startRow and endRow are zero-based, so startRow: 0, endRow: 1 is a request
-// for the first two records.
+// Note that startRow and endRow are zero-based, inclusive at the beginning and exclusive at
+// the end (like substring), so startRow: 0, endRow: 1 is a request for the first record.
 //
 // @group paging
 // @visibility external
@@ -10411,6 +10565,7 @@ isc.DataSource.addMethods({
 // admin address, and a different message to every member of a user group.
 // 
 // @visibility external
+// @serverDS only
 // @group mail
 //<
 
@@ -10449,6 +10604,7 @@ isc.DataSource.addMethods({
 //
 // @treeLocation Client Reference/Data Binding/DataSource
 // @visibility external
+// @serverDS only
 // @group mail
 //<
 
@@ -10462,6 +10618,7 @@ isc.DataSource.addMethods({
 // clearly it makes no sense to specify them both.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -10484,6 +10641,7 @@ isc.DataSource.addMethods({
 // and this property will be ignored.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -10495,6 +10653,7 @@ isc.DataSource.addMethods({
 // and this property will be ignored.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -10506,6 +10665,7 @@ isc.DataSource.addMethods({
 // and this property will be ignored.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -10517,6 +10677,7 @@ isc.DataSource.addMethods({
 // and this property will be ignored.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -10526,6 +10687,7 @@ isc.DataSource.addMethods({
 // variables in this property.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -10537,6 +10699,7 @@ isc.DataSource.addMethods({
 // and this property will be ignored.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -10545,6 +10708,7 @@ isc.DataSource.addMethods({
 // Set this property to false to prevent this behavior.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -10562,6 +10726,7 @@ isc.DataSource.addMethods({
 // </pre>
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -12128,21 +12293,33 @@ isc.DataSource.addMethods({
 		var output = [];
 		if (!data || data.length == 0) return output;
 
+        var newCriteria = criteria;
+
         if (this.autoConvertRelativeDates == true) {
-            criteria = this.convertRelativeDates(criteria);
+            if (this.logIsInfoEnabled("relativeDates")) {
+                this.logInfo("Calling convertRelativeDates from applyFilter - data is\n\n"+
+                    isc.echoFull(newCriteria));
+            }
+            
+            newCriteria = this.convertRelativeDates(newCriteria);
+            
+            if (this.logIsInfoEnabled("relativeDates")) {
+                this.logInfo("Called convertRelativeDates from applyFilter - data is\n\n"+
+                    isc.echoFull(newCriteria));
+            }
         }
 
         // If our criteria object is of type AdvancedCriteria, go down the new
         // AdvancedFilter codepath
-        if (this.isAdvancedCriteria(criteria)) {
-            return this.recordsMatchingAdvancedFilter(data, criteria, requestProperties);
+        if (this.isAdvancedCriteria(newCriteria)) {
+            return this.recordsMatchingAdvancedFilter(data, newCriteria, requestProperties);
         }
 
         // go through the list of items and add any items that match the criteria to the
         // output
-        return this.recordsMatchingFilter(data, criteria, requestProperties);
+        return this.recordsMatchingFilter(data, newCriteria, requestProperties);
     },
-	
+
     // currently only applies to simple filtering, and not doc'd
     dropUnknownCriteria:true,
 
@@ -13201,7 +13378,7 @@ isc.DataSource.addClassMethods({
     
     getCriteriaOperator : function (value, textMatchStyle) {
         var operator;
-        if (isc.isA.Number(value) || isc.isA.Date(value)) {
+        if (isc.isA.Number(value) || isc.isA.Date(value) || isc.isA.Boolean(value)) {
             operator = "equals";
         } else if (textMatchStyle == "equals" || textMatchStyle == "exact") {
             operator = "iEquals";
@@ -13540,32 +13717,7 @@ isc.DataSource.addClassMethods({
 isc.DataSource.addMethods({
 
     isAdvancedCriteria : function (criteria) {
-        if (!criteria) return false;
-        
-        // Is it explcitily marked as AdvancedCiteria?
-        if (isc.DataSource.isAdvancedCriteria(criteria)) return true;
-        
-        // Not explicitly marked, so we'll make a guess.  First, make sure that this DataSource
-        // doesn't have any fields that are actually called "fieldName" or "operator"
-        if (this.getField("fieldName") || this.getField("operator")) return false;
-        
-        // So we'll assume it's AdvancedCriteria if the fieldName property refers to a valid 
-        // field on this DS, and the operator property refers to a valid operator
-        if (this.getField(criteria.fieldName) && this.getSearchOperator(criteria.operator)) {
-            return true;
-        }
-
-        // We'll also assume it's an AdvancedCriteria if there is no fieldName property and
-        // the operator is either "and" or "or".
-        var undef;
-        if (criteria.operator != undef) {
-            var op = this.getSearchOperator(criteria.operator);
-            if (op != null && (op.isAnd || op.isOr)) {
-                return true;
-            }
-        }
-        
-        return false;
+        return isc.DS.isAdvancedCriteria(criteria, this);
     },
 
     //> @method dataSource.addSearchOperator()

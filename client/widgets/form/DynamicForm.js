@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2753,8 +2753,9 @@ _getMappedCriteriaValues : function (advanced) {
         return isc.addProperties(values, simpleCriteria);
     } else {
         for (var fieldName in values) {
-            
             if (advancedCriteria.find("fieldName", fieldName)) continue;
+            // we don't want null values adding as criteria elements
+            if (values[fieldName] == null) continue;
             advancedCriteria.add({
                     operator:"equals",
                     fieldName:fieldName,
@@ -2763,7 +2764,7 @@ _getMappedCriteriaValues : function (advanced) {
         }
         return advancedCriteria;
     }
-    
+
 },    
 
 //>!BackCompat 2005.3.21
@@ -3801,6 +3802,8 @@ _$br:"<br>",
 _$tableFormClose:"</TABLE></FORM>",
 
 getInnerHTML : function () {
+    if (this.autoDupMethods) this.duplicateMethod("getInnerHTML");
+
 	// get a StringBuffer to hold the output
 	var output = isc.StringBuffer.create();
 
@@ -3937,11 +3940,15 @@ getInnerHTML : function () {
 	if (this.colWidths) {
 		colWidths = this.colWidths;
         if (colWidths.length > this.numCols) {
-            this.logWarn("colWidths Array longer than numCols, using only first " + 
-                         this.numCols + " column widths");
+            if (!this._suppressColWidthWarnings) {
+                this.logWarn("colWidths Array longer than numCols, using only first " + 
+                             this.numCols + " column widths");
+            }
             colWidths = colWidths.slice(0, this.numCols);
         } else if (colWidths.length < this.numCols) {
-            this.logWarn("colWidths Array shorter than numCols, remaining columns get '*' size");
+            if (!this._suppressColWidthWarnings) {
+                this.logWarn("colWidths Array shorter than numCols, remaining columns get '*' size");
+            }
             for (var i = colWidths.length; i < this.numCols; i++) colWidths[i] = isc.star; 
         }
 	} else {
@@ -5672,10 +5679,12 @@ _focusInNextTabElement : function (forward, mask, skipItems) {
     // we're moving forward, or the last item if we're moving backwards
     var items = this.items,
         item = this.getFocusItem();
+
     if (item == null) {
         this.focusAtEnd(forward);
         return;
     }
+
 
     // Allow the focus to be shifted WITHIN an item
     
@@ -5719,30 +5728,31 @@ _getNextFocusItem : function (item, forward) {
         nextItem, nextTabIndex,
         index = items.indexOf(item);
     for (var i = 0; i < items.length; i++) {
-        if (items[i] == item) continue;
-        var gti = items[i].getGlobalTabIndex();
+        var otherItem = items[i];
+        if (otherItem == item) continue;
+        var gti = otherItem.getGlobalTabIndex();
         if (gti < 0) {            
             continue;
         }
-        if (!this._canFocusInItem(items[i],true)) continue;
+        if (!this._canFocusInItem(otherItem,true)) continue;
         if (forward) {
             // special case -- matching global tab index should go in the order in which 
             // items are defined
             if (gti == currentTabIndex && i > index) {
-                nextItem = items[i];
+                nextItem = otherItem;
                 break;
             }
             if (gti > currentTabIndex &&
                 (nextTabIndex == null || nextTabIndex > gti))
             {                
-                nextItem = items[i];
+                nextItem = otherItem;
                 nextTabIndex = gti
             } 
         } else {
             if ((gti < currentTabIndex || (gti == currentTabIndex && index > i)) && 
                 (nextTabIndex == null || nextTabIndex <= gti))
             {
-                nextItem = items[i];
+                nextItem = otherItem;
                 nextTabIndex = gti;
             }
         }
@@ -5771,7 +5781,7 @@ focusAtEnd : function (start) {
             index = gti;
         }
     }
-    
+
     if (startItem && this._canFocusInItem(startItem, true)) this.focusInItem(startItem);
     // Handle the case where we have no focusable items - in this case just shift on to the
     // next focusable widget instead.
@@ -6076,12 +6086,19 @@ _getEventTargetItemInfo : function (event) {
 // for it.
 
 handleMouseStillDown : function (event, eventInfo) {
+    if (isc._traceMarkers) arguments.__this = this;
 
     var targetInfo = this._getEventTargetItemInfo(event),
         item = ((targetInfo.overTitle || targetInfo.inactiveContext) ? null : targetInfo.item);
-    
-    if (item != null && item.mouseStillDown) {
-        if (item.handleMouseStillDown(event) == false) return false;
+        
+    // avoid double delivery of events if there are nested DynamicForm elements all receiving
+    // this event via bubbling - only deliver to item if it's one of ours
+    if (item != null) {
+        if (item.form != this) return;
+
+        if (item.mouseStillDown) {
+            if (item.handleMouseStillDown(event) == false) return false;
+        }
     }
     
 },
@@ -6091,6 +6108,10 @@ handleMouseDown : function (event, eventInfo) {
     var targetInfo = this._getEventTargetItemInfo(event),
         item = (targetInfo.overTitle ? null : targetInfo.item);
     if (item != null) {
+        // avoid double delivery of events if there are nested DynamicForm elements all receiving
+        // this event via bubbling - only deliver to item if it's one of ours
+        if (item.form != this) return;
+
         item.handleMouseDown(event);
 
         
@@ -6554,9 +6575,10 @@ handleKeyPress : function (event, eventInfo) {
         }
     }
     if (this._formItemKeys[event.keyName] && event.keyTarget != this) {
-        return isc.EventHandler.STOP_BUBBLING;
+        var item = this.getItem(event.keyTarget.name);
+        if (!item) return isc.EventHandler.STOP_BUBBLING;
     }
-    
+
     return this.Super("handleKeyPress", arguments);
 },
  

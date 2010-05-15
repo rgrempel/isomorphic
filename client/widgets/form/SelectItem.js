@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -123,7 +123,7 @@ isc._SelectItemProperties = {
     //>	@attr	selectItem.multiple		(boolean : false : IRW)
 	// If true, multiple values may be selected.
     // <P>
-    // The SelectItem will either render as a drop-down allowing multiple options, or a
+    // The SelectItem will either render as a drop-down allowing multiple selections, or a
     // multi-row list of options similar to a small headerless +link{ListGrid}, based on the
     // +link{multipleAppearance} setting.
     // <P>
@@ -145,18 +145,17 @@ isc._SelectItemProperties = {
     //
     // @value "picklist" a drop-down picklist that allows multiple choices by
     //              clicking on a checkbox next to each item
-    // @value "grid" a grid that displays all items in-place. Multiple selection
+    // @value "grid" a grid that displays all items in-place. Multiple selection is 
     //              accomplished by ctrl-click or shift-click.
     // @visibility external
     //<
-    
+
     //> @attr SelectItem.multipleAppearance   (MultipleAppearance : "picklist" : IR)
     // How should items with +link{SelectItem.multiple} set to 'true' be displayed?
     // @visibility external
     //<
     multipleAppearance: "picklist",
-    
-    
+
     // ---------------------------
     // SelectOther is a behavior implemented on select items 
     // This is doc'd as a separate form item type, and can be specified by creating a 
@@ -632,12 +631,21 @@ isc.SelectItem.addMethods({
     },    
     
     
+
+    showPickList : function (waitForData, queueFetches) {
+        var interfaceShowPickList = isc.PickList.getPrototype().showPickList;
+        interfaceShowPickList.apply(this, arguments);
+        if (this.pickList) {
+            this.pickList.deselectAllRecords();
+            // if either a value was passed in or this.defaultToFirstOption: true, select now
+            if (this.getValue()) this.selectItemFromValue(this.getValue());
+        }
+    },
     
     // Override handleEditorExit() - when fired from a blur, if the pickList is visible we
     // don't want to fire the editorExit method, since focus is going to the pickList
     handleEditorExit : function () {
         
-isc.logWarn("handleEditorExit: _showingPickList=" + this._showingPickList);
         if (this._showingPickList) return;
         return this.Super("handleEditorExit", arguments);
     },

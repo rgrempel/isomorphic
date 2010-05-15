@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -471,7 +471,7 @@ isc.addPropertyList = function (destination, sourceList) {
 
                 if (destination.Class && isc.Log &&
                     (!isc.isAn.Instance(destination) || 
-                     destination._prototype === destination))
+                     destination._scPrototype === destination))
                 {
                     isc.Log.logWarn("needless override on class: " + destination.Class +
                                     ": " + propName + "->" + propValue);

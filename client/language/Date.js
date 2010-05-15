@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -157,7 +157,7 @@ setInputFormat : function (format) {
 },
 
 //> @classMethod Date.getInputFormat() 
-// Retrieves the the default format for strings being parsed into dates via 
+// Retrieves the default format for strings being parsed into dates via 
 // <code>Date.parseInput()</code>
 // @see Date.setInputFormat()
 // @visibility external
@@ -728,7 +728,7 @@ getShortDayNames : function (length) {
 
 //> @classAttr Date.weekendDays (Array of int : [0, 6] : IR)
 // Days that are considered "weekend" days.   Values should be the integers returned by the
-// JavaScript built-in Date.getDay(), eg, 0 in Sunday and 6 is Saturday.  Override to
+// JavaScript built-in Date.getDay(), eg, 0 is Sunday and 6 is Saturday.  Override to
 // accommodate different workweeks such as Saudi Arabia (Saturday -> Wednesday) or Israel 
 // (Sunday -> Thursday).
 //
@@ -737,7 +737,7 @@ getShortDayNames : function (length) {
 
 //>	@classMethod		Date.getWeekendDays()	
 // Return an array of days that are considered "weekend" days. Values will be the integers 
-// returned by the JavaScript built-in Date.getDay(), eg, 0 in Sunday and 6 is Saturday. 
+// returned by the JavaScript built-in Date.getDay(), eg, 0 is Sunday and 6 is Saturday. 
 // Override +link{date.weekendDays} to accommodate different workweeks such as Saudi Arabia 
 // (Saturday -> Wednesday) or  Israel (Sunday -> Thursday).
 //		@group	dateFormatting 
@@ -751,7 +751,46 @@ getWeekendDays : function () {
         daysArr = Date._derivedWeekendDays = [0, 6];    
     }
     return daysArr;
+},
+
+getFormattedDateRangeString : function (fromDate, toDate) {
+    var fromMonth = fromDate ? fromDate.getMonth() : null,
+        fromMonthName = fromDate ? fromDate.getShortMonthName() : null,
+        fromYear = fromDate ? fromDate.getFullYear() : null,
+        toMonth = toDate ? toDate.getMonth() : null,
+        toMonthName = toDate ? toDate.getShortMonthName() : null,
+        toYear = toDate ? toDate.getFullYear() : null,
+        result = ""
+    ;
+
+    if (fromDate && toDate) {
+        if (fromYear == toYear) {
+            // dates are in the same year - check the months 
+            if (fromMonth == toMonth) {
+                // dates are in the same month, use "month start - end, year"
+                result = fromMonthName + " " + fromDate.getDate() + " - " +
+                    toDate.getDate() + ", " + fromYear;
+            } else {
+                // dates are in different months, use "month start - month end, year"
+                result = fromMonthName + " " + fromDate.getDate() + " - " +
+                    toMonthName + " " + toDate.getDate() + ", " + fromYear;
+            }
+        } else {
+            // different years - use "month start year - month end year"
+                result = fromMonthName + " " + fromDate.getDate() + ", " + fromYear + " - " +
+                    toMonthName + " " + toDate.getDate() + ", " + toYear;
+        }
+    } else if (fromDate) {
+        // only a fromDate provided use "month start - end, year"
+        result = fromMonthName + " " + fromDate.getDate() + ", " + fromYear;
+    } else if (toDate) {
+        // only a toDate provided use "month start - end, year"
+        result = toMonthName + " " + toDate.getDate() + ", " + toYear;
+    }
+
+    return result;
 }
+
 });
 
 //

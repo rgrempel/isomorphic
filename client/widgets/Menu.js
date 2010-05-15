@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -130,8 +130,12 @@ isc.Menu.addProperties({
 	//<
     
     //> @attr menu.target (Canvas : null : IRW)
-    // Optional target canvas for this menu. Available as a parameter to dynamic menuItem configuration
+    // Optional target canvas for this menu.  Available as a parameter to dynamic menuItem configuration
     // methods such as +link{MenuItem.checkIf}.
+    // <P>
+    // Whenever a Menu is shown as a contextMenu by a widget due to +link{Canvas.contextMenu}
+    // being set, <code>menu.target</code> is automatically set to the widget that showed the
+    // contextMenu.
     // <P>
     // If this item has any +link{menuItem.submenu,submenus} the <code>target</code> will be propagated down
     // to these child menus.

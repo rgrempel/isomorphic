@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -108,7 +108,7 @@ _$fireTimeout:["isc.Timer._fireTimeout('", null, "')"],
 _timeoutCount:0,
 // - map of native timer event IDs to delayed actions stored on the timer object
 _tmrIDMap:{},
-setTimeout : function (action, delay, units) {
+setTimeout : function (action, delay, units, frequentTimer) {
 
     if (action == null) return;
     
@@ -130,6 +130,13 @@ setTimeout : function (action, delay, units) {
     var ID = "_timeout" + this._timeoutCount++;
     this._$fireTimeout[1] = ID;
     this[ID] = action;
+
+    if (this.logIsDebugEnabled("traceTimers")
+        
+       ) 
+    {
+        action.timerTrace = this.getStackTrace(null, 1, null, true);
+    }
 
     
     
@@ -154,7 +161,7 @@ _fireTimeout : function (ID) {
     // interrupt an otherwise synchronous thread. We don't expect this behavior and it can cause
     // some bizarre errors - we workaround this by setting a flag before our wrapper around
     // the native eval method gets called, and if present not allowing any timeouts to fire
-    if (isc._evalRunning != null) {        
+    if (isc._evalRunning != null) {
         if (this.logIsInfoEnabled()) {
             this.logInfo("timer ID:" + ID + " fired during eval. Delaying until this " +
                             "thread completes");
@@ -210,7 +217,7 @@ _fireTimeout : function (ID) {
 
     isc.EH._setThread(this._$TMR);
     
-    
+    arguments.timerTrace = action.timerTrace;
     // fireCallback() will handle action specified as function, string to eval and
     // object with 'target' and 'methodName' attributes.
     // Since this is a new thread, pass in the param to catch errors - allows us to see JS

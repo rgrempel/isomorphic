@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2153,11 +2153,13 @@ getInitialFetchContext : function () {
 // <P>
 // Relationships between DataSources are declared via +link{dataSourceField.foreignKey}.
 // <P>
-// For example, given a DataSource "orders" and another DataSource "orderItems", where
-// "orderItems" declared a field "orderId" pointing to the primary key field of the "orders"
-// DataSource, there is a set of records from the "orderItems" DataSource related to any given
-// record from the "order" DataSource.  If this component were bound to "orderItems" and a
-// record from the "orders".
+// For example, given two related DataSources "orders" and "orderItems", where we want to fetch
+// the "orderItems" that belong to a given "order".  "orderItems" should declare a field that
+// is a +link{dataSourceField.foreignKey,foreignKey} to the "orders" table (for example, it
+// might be named "orderId" with foreignKey="orders.id").  Then, to load the records related to
+// a given "order", call fetchRelatedData() on the component bound to "orderItems", pass the
+// "orders" DataSource as the "schema" and pass a record from the "orders" DataSource as the
+// "record" argument.
 //
 // @param record              (ListGridRecord) DataSource record
 // @param schema              (Canvas or DataSource or ID) schema of the DataSource record, or
@@ -3501,38 +3503,14 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget, call
                     isc.addProperties(record, this.getDropValues(record, sourceDS, 
                                             targetRecord, index, sourceWidget));
                     if (dataSource != sourceDS) {
-                        // Allow the recategorize-via-fk functionality to be switched on via 
-                        // the dragRecategorize flag (which is not currently exposed)
-                        if (this.dragRecategorize || sourceWidget.dragDataAction == isc.Canvas.MOVE) {
-                            
-                            // If there is a foreign key relationship from the target DS to the 
-                            // source DS, populate the foreignKey field on the record we're 
-                            // dropping with the contents of the field the foreignKey points to.
-                            var fks = dataSource.getForeignKeysByRelation(record, sourceDS);
-                            var cannotRecat = false;
-                            var pkFields = [];
-                            if (sourceDS) pkFields = sourceDS.getPrimaryKeyFields();
-                            
-                            // If the detected foreignKeyField is a Primary Key, we can't modify it.
-                            // Catch this case and log a warning
-                            
-                            var undef;
-                            for (var pk in pkFields) {
-                                if (fks[pk] !== undef) {
-                                    if (this.dragRecategorize) {
-                                        this.logWarn("ListGrid dragRecategorize: source has dataSource:" 
-                                                    + sourceDS.getID() + ". foreignKey relationship with " +
-                                                    "target dataSource " + dataSource.getID() + 
-                                                    " is based on primary key which cannot be modified.");
-                                    }
-                                    cannotRecat = true;
-                                }
-                            }
-                            
-                            if (!cannotRecat) {
-                                isc.addProperties(record, fks);
-                            }
-                        }    
+                        // If there is a foreign key relationship from the target DS to the 
+                        // source DS, populate the foreignKey field on the record we're 
+                        // dropping with the contents of the field the foreignKey points to.
+                        var fks = dataSource.getForeignKeysByRelation(record, sourceDS);
+                        var cannotRecat = false;
+                        var pkFields = [];
+                        if (sourceDS) pkFields = sourceDS.getPrimaryKeyFields();
+                        isc.addProperties(record, fks);
 
                         // If we have explicitly defined titleFields and the target one is not 
                         // going to be populated, populate it with the value in the source one

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -335,14 +335,7 @@ isc.ClassFactory.defineClass("Button", "StatefulCanvas").addProperties({
     
     //titleStyle:"buttonTitle",
 
-    canFocus:true,
-
-    
-    redrawOnResize:
-        (isc.Browser.isIE || 
-         (isc.Browser.isMoz && !isc.Browser.isStrict && isc.Canvas.getInstanceProperty("_useMozScrollbarsNone")) ? 
-          false : null)
-    
+    canFocus:true
 });
 
 // add instance methods
@@ -369,6 +362,16 @@ initWidget : function () {
         this._buttonBGColor = this.backgroundColor;
         this.backgroundColor = null;
     }
+
+    
+    var defaultSetting = isc.Button._defaultRedrawOnResize;
+    if (defaultSetting == null) {
+        defaultSetting = isc.Button._defaultRedrawOnResize = 
+            (isc.Browser.isIE ||  
+             (isc.Browser.isMoz && !isc.Browser.isStrict && isc.Canvas.getInstanceProperty("_useMozScrollbarsNone")) ? 
+              false : true);
+    }
+    this.redrawOnResize = defaultSetting;
 
     // Call super implementation directly rather than using Super() to avoid a string 
     // allocation.

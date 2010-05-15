@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-05-02/LGPL Development Only (2010-05-02)
+  Version SC_SNAPSHOT-2010-05-15/LGPL Development Only (2010-05-15)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -188,7 +188,7 @@ function serverLogViewerModulesLoaded(){isc.clearPrompt();window.serverLogViewer
 var theTabs=[{ID:"results",title:"Results"},{ID:"watchTab",title:"Watch"},{ID:"rpc",title:"RPC"},{ID:"serverLogs",title:"Server Logs",prompt:"Requires SmartClient Server",showPrompt:!isc.hasOptionalModule("SCServer"),disabled:window.location.protocol=="file:"||!isc.hasOptionalModule("SCServer")},{ID:"xmlTools",title:"XML",prompt:"Requires SmartClient Server",showPrompt:!isc.hasOptionalModule("SCServer"),disabled:window.location.protocol=="file:"||!isc.hasOptionalModule("SCServer")},{ID:"wsdl",title:"WSDL"},{ID:"sql",title:"SQL Browser",prompt:"Requires SmartClient Server",showPrompt:!isc.hasOptionalModule("SCServer"),disabled:window.location.protocol=="file:"||!isc.hasOptionalModule("SCServer")},{ID:"refDocs",width:100,title:"Reference Docs"}];isc.TabSet.create({ID:"mainTabset",height:"100%",width:"100%",paneContainerOverflow:"visible",paneContainerProperties:{customEdges:["T"]},tabBarProperties:{baseLineCapSize:0},tabs:theTabs,tabSelected:function(_1,_2,_3){if(_3=="watchTab"){initWatchPane()}else if(_3=="rpc"){initRPCPane()}else if(_3=="refDocs"){initDocsPane()}else if(_3=="xmlTools"){initXMLToolsPane()}else if(_3=="wsdl"){initWSDLPane()}else if(_3=="sql"){initSQLBrowserPane()}else if(_3=="support"){initSupportPane()}else if(_3=="performance"){initPerformancePane()}else if(_3=="serverLogs"){initServerLogViewerPane()}},targetWindowChanged:function(){}});isc.Canvas.create({ID:"markerCanvas",contents:"<A NAME=marker>&nbsp;</A>",height:1,top:mainTabset.getBottom()})
 isc.Page.setEvent('load','doOnload()');function doOnload(){initResultsTab();initializePage()}
 function initializePage(){targetWindow.isc.Log.logViewer._logWindowLoaded=true;setupMessageArea();if(mainTabset.getSelectedTab().ID=="watchTab"){refreshWatchList()}else{window.$49b=true}
-if(window.perfPane)window.perfPane.destroy();updateCommWatcher();staticForm.grabValues()}
+if(window.perfPane)window.perfPane.destroy();updateCommWatcher();staticForm.grabValues();if(targetWindow.SmartGWT!=null)mainTabset.disableTab("refDocs")}
 function reconnectInspector(){var _1=window.inspector;if(_1&&_1.isVisible()){addToLog("reconnecting inspector to: "+window.$49f);inspectDOM(window.$49f)}}
 isc.Page.setEvent('unload','unloadPage()');function unloadPage(){var _1=window.inspector;if(_1){window.$49f=(_1.isVisible()?_1.getRootElement().id:null);_1.setRootElement(null)}
 if(!validOpener())return;targetWindow.isc.Log.logViewer._logWindowLoaded=false}
@@ -199,7 +199,7 @@ isc._moduleEnd=isc._DeveloperConsole_end=(isc.timestamp?isc.timestamp():new Date
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-05-02/LGPL Development Only (2010-05-02)
+  Version SC_SNAPSHOT-2010-05-15/LGPL Development Only (2010-05-15)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

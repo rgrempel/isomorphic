@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1092,6 +1092,7 @@ isc.TextItem.addMethods({
     // 
     _maskValue : function (value) {
         if (value == null) value = "";
+        if (!isc.isA.String(value)) value = value.toString();
 
         // Clear buffer contents of entered characters. All that is left are
         // the literals and maskPromptChars.

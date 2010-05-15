@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2209,8 +2209,6 @@ add : function (node, parent, position) {
 	// call the dataChanged method
 	this.dataChanged();    
     
-    this._addToLevelCache(node, parent, position)
-    
     return node;
 },
 
@@ -2290,6 +2288,8 @@ _add : function (node, parent, position) {
     // current assumption whenever loading subtrees is that if any
     // children are returned for a node, it's the complete set, and the node is marked "loaded"
     this.setLoadState(parent, isc.Tree.LOADED);
+    
+    this._addToLevelCache(node, parent, position)
 
 	// if the node has children, recursively add them to the node - this ensures that their
     // parent link is set up correctly
@@ -2413,8 +2413,6 @@ addList : function (nodeList, parent, position) {
     this._clearNodeCache(true);
     this.dataChanged(); 
 
-    this._addToLevelCache(nodeList, parent, position);
-
     return nodeList;
 },
 
@@ -2516,12 +2514,28 @@ remove : function (node, noDataChanged) {
     		this.dataChanged();
         }
         
+        // Recursively remove the node's children from the node index.  We do this rather 
+        // than call remove() because we don't want to remove the children from the node
+        // itself, just from the tree's cache
+        this.removeChildrenFromNodeIndex(node);
+        
         this._removeFromLevelCache(node);
 
         return true;
 	}
 	
     return false;
+},
+
+removeChildrenFromNodeIndex : function (node) {
+    var children = this.getChildren(node);
+    if (!children) return;
+    for (var i = 0; i < children.length; i++) {
+        if (this.getChildren(children[i])) {
+            this.removeChildrenFromNodeIndex(children[i]);
+        }
+        delete this.nodeIndex[children[i][this.idField]];
+    }
 },
 
 //>	@method	tree.removeList()

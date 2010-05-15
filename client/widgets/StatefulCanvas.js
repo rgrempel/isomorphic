@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -718,7 +718,7 @@ removeFromRadioGroup : function (groupID) {
 //	to have an object redraw when it's enabled, set:
 //		.redrawOnDisable = true
 
-//>	@method	statefulCanvas.setDisabled()	(A)
+//>	@method	statefulCanvas.setDisabled()
 // Enable or disable this object
 //		@group enable, state
 //

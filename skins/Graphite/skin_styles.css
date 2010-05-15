@@ -89,7 +89,7 @@
 .gridHover,
 .formHover {
     font-family:Arial,Verdana,sans-serif; font-size:11px; color:black;
-    background-color:#fff4d5; border:1px solid #808080; padding:5px;
+    background-color:#fceeaf; border:1px solid #808080; padding:5px;
 }
 
 /* group label */
@@ -1198,8 +1198,8 @@ border-top:1px solid #abadb3;
 .groupNode {
 	font-family:Arial,Verdana,sans-serif; font-size:11px; text-overflow:ellipsis;
 	color:#333333;
-    border:1px solid;
-    border-color:#FFFFFF transparent #EFEFEF;    
+    border-bottom:1px solid;
+    border-bottom-color: #EDEDED;
 }
 
 .specialCol {
@@ -1221,7 +1221,7 @@ border-top:1px solid #abadb3;
 .cellDark,
 .recordSummaryCell,
 .recordSummaryCellDark {
-    background-color:#eff1f1;
+    background-color:#fafafa;
 }
 .gridSummaryCell,
 .gridSummaryCellDisabled {
@@ -1230,7 +1230,7 @@ border-top:1px solid #abadb3;
     background-color:#eff0f3;
 }
 .tallCellDark {
-	background-color:#eff1f1;
+	background-color:#fafafa;
 }
 .cellOver,
 .cellOverDark,
@@ -1249,22 +1249,22 @@ border-top:1px solid #abadb3;
 .specialColSelected,
 .recordSummaryCellSelected,
 .recordSummaryCellSelectedDark {
-    background:#fff4d5;
+    background:#fceeaf;
 }
 .tallCellSelected,
 .tallCellSelectedDark {
-    background:#fff4d5;
+    background:#fceeaf;
 }
 .cellSelectedOver,
 .cellSelectedOverDark,
 .specialColSelectedOver,
 .recordSummaryCellSelectedOver,
 .recordSummaryCellSelectedOverDark {
-    background:#fff4d5 url(images/ListGrid/row_Over.png) repeat-x bottom left scroll;
+    background:#fceeaf url(images/ListGrid/row_Over.png) repeat-x bottom left scroll;
 }
 .tallCellSelectedOver,
 .tallCellSelectedOverDark {
-	background-color:#fff4d5;
+	background-color:#fceeaf;
 }
 .gridSummaryCell,
 .gridSummaryCellDisabled {
@@ -1335,7 +1335,7 @@ border-top:1px solid #abadb3;
 
 .treeCellDark,
 .treeTallCellDark {
-	background-color:#eff1f1;
+	background-color:#fafafa;
 }
 .treeCellOver,
 .treeCellOverDark {
@@ -1347,20 +1347,20 @@ border-top:1px solid #abadb3;
 }
 .treeCellSelected,
 .treeCellSelectedDark {
-    background:#fff4d5;
+    background:#fceeaf;
 
 }
 .treeTallCellSelected,
 .treeTallCellSelectedDark {
-	background:#fff4d5;
+	background:#fceeaf;
 }
 .treeCellSelectedOver,
 .treeCellSelectedOverDark {
-    background:#fff4d5 url(images/ListGrid/row_Over.png) repeat-x bottom left scroll;
+    background:#fceeaf url(images/ListGrid/row_Over.png) repeat-x bottom left scroll;
 }
 .treeTallCellSelectedOver,
 .treeTallCellSelectedOverDark {
-	background-color:#fff4d5;
+	background-color:#fceeaf;
 }
 
 

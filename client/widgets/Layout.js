@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-02 (2010-05-02)
+ * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -720,7 +720,7 @@ initWidget : function () {
     else if (!isc.isA.Array(this.members)) this.members = [this.members];
 
     
-    if (this.members === this._prototype.members) {
+    if (this.members === this._scPrototype.members) {
         //this.logWarn("Detected members array as instance property")
         this.members = this.members.duplicate();
     }
