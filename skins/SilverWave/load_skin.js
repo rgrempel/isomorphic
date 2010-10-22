@@ -620,7 +620,7 @@ with (theWindow) {
         isc.DateItem.addProperties({
             pickerIconWidth:16,
             pickerIconHeight:16,
-            pickerIconSrc:"[SKIN]/controls/date_control.png"
+            pickerIconSrc:"[SKIN]/controls/date_control.gif"
         })
     }
     if (isc.SpinnerItem) {

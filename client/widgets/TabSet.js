@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -85,7 +85,22 @@ isc.TabSet.addProperties({
     // @see TabSet.setTabTitle
     // @visibility external 
     //<    
-    
+
+    //> @attr tab.canEditTitle (boolean : null : IRW)
+    //
+    // If specified, overrides the +link{TabSet.canEditTabTitles} setting, for this one tab
+    // only.
+    //
+    // @see TabSet.canEditTabTitles
+    // @visibility external 
+    //<    
+
+    //> @attr tab.prompt (string : null : IRW)
+    //
+    // Specifies the prompt to be displayed when the mouse hovers over the tab.
+    // @visibility external
+    //<
+
     //> @attr tab.pickerTitle   (HTML : null : IRW)
     // If +link{tabSet.showTabPicker} is true for this TabSet, if set this property will determine
     // the title of the picker menu item for this tab. If unset, +link{tab.title} will be used
@@ -278,6 +293,85 @@ isc.TabSet.addProperties({
     //<
     closeTabIconSize:16,
     
+    //> @attr tabSet.showMoreTab (boolean : null : IR)
+    // @include tabBar.showMoreTab
+    // @visibility external
+    //<
+
+    //> @attr tabSet.moreTabCount (number : 5 : IR)
+    // @include tabBar.moreTabCount
+    // @visibility external
+    //<
+    moreTabCount:5,
+
+    //> @attr tabSet.moreTabTitle (String : "More" : IR)
+    // Title for the "More" tab.
+    // @visibility external
+    //<
+    moreTabTitle:"More",
+
+    //> @attr tabSet.moreTabImage (SCImgURL : "[SKINIMG]/iOS/more.png" : IR)
+    // If +link{showMoreTab} is enabled this property determines the image to display on
+    // the "More" tab button.
+    // @visibility external
+    //<
+    moreTabImage:"[SKINIMG]/iOS/more.png",
+
+    //>	@attr tabSet.moreTab (AutoChild : null : R)
+    // +link{object:Tab} to be shown when +link{showMoreTab} is enabled
+    // more than +link{moreTabCount} tabs are provided.
+    // @visibility external
+    //<
+
+    //>	@attr tabSet.moreTabProperties (Tab Properties : null : IR)
+    // Properties to apply to the "more" tab created by this TabSet.
+    // @visibility external
+    //<
+    moreTabProperties:{},
+
+    //>	@attr tabSet.moreTabPane (AutoChild : null : R)
+    // Pane contents for the "more" tab based on a VLayout. Typically contains
+    // a +link{NavigationBar} and +link{TableView}.
+    // @visibility external
+    //<
+
+    //>	@attr tabSet.moreTabPaneProperties (Canvas Properties : null : IR)
+    // Properties to apply to the "more" tab's pane created by this TabSet.
+    // @visibility external
+    //<
+    moreTabPaneProperties:{},
+
+    //>	@attr tabSet.moreTabPaneDefaults (Canvas Properties : null : IR)
+    // Default properties for the "more" tab's pane.
+    // <p>
+    // Currently constructs a VLayout with a +link{NavigationBar} and +link{TableView}.
+    // @visibility external
+    //<
+    moreTabPaneDefaults:{
+        _constructor: "VLayout",
+        width: "100%",
+        height: "100%",
+        setData : function (newData) {
+            this.creator.moreTabPaneTable.setData(newData);
+        }
+    },
+
+    moreTabPaneNavBarDefaults:{
+        _constructor: "NavigationBar",
+        controls: ["titleLabel"],
+        autoParent: "moreTabPane"
+    },
+
+    moreTabPaneTableDefaults:{
+        _constructor: "TableView",
+        width: "100%",
+        height: "100%",
+        recordNavigationClick : function (record) {
+            this.creator._tabSelected(record.button);
+        },
+        autoParent: "moreTabPane"
+    },
+
     // -----------------------------------------------------------
     // Tab bar controls
 
@@ -649,7 +743,7 @@ isc.TabSet.addProperties({
     // +link{tabSet.topEdgeOffsets} et al.
     // @visibility external
     //<
-    symmetricEdges:true
+    symmetricEdges:true,
     
     //> @type EdgeSizes
     // Object used to specify custom edge sizes or offsets.
@@ -728,13 +822,112 @@ isc.TabSet.addProperties({
     // set to null not false by default so we pick up the value from paneContainerDefaults
     // for backCompat (pre 6.1) 
     
-    //>	@attr	tabSet.paneMargin	(number : 0 : IRW)
-	//  Space to leave around the panes in our paneContainer
+    //>	@attr tabSet.paneMargin (integer : 0 : IR)
+	// Space to leave around the panes in our paneContainer
+    // @visibility external
 	//<
     //paneMargin:0
+
+    //>	@attr tabSet.canEditTabTitles (boolean : false : IRW)
+	// If true, users can edit the titles of tabs in this TabSet when the 
+    // +link{titleEditEvent,titleEditEvent} fires.  You can override this behavior per tab 
+    // with the +link{Tab.canEditTitle} property.
+    // @visibility external
+	//<
+
+    //>	@attr tabSet.titleEditEvent (TabTitleEditEvent : "doubleClick" : IRW)
+	// The event that triggers title editing on this TabSet.
+    // @see canEditTabTitles
+    // @see Tab.canEditTitle
+    // @visibility external
+	//<
+    
+    //> @type TabTitleEditEvent
+    // An event that triggers title editing in a TabSet.
+    // @value "click"       Start editing when the user single-clicks a tab title
+    // @value "doubleClick" Start editing when the user double-clicks a tab title
+    // @visibility external
+    //<
+
+    //>	@attr tabSet.titleEditor (AutoChild : null : R)
+	// TextItem we use to edit tab titles in this TabSet.  You can override this property 
+    // using the normal +link{groupDef:AutoChild} facilities, but you must not override the 
+    // "name" property (which must be "title")
+    // @see canEditTabTitles
+    // @see Tab.canEditTitle
+    // @see TabSet.editTabTitle
+    // @visibility external
+	//<
+
+    //>	@attr tabSet.titleEditorLeftOffset (Integer : null : IRW)
+	// If set, offsets the tab title editor further in from the left-hand edge of the tab, by
+    // the number of pixels set in this property.  Note that the editor is always offset to
+    // avoid overlapping the endcaps of the tab; this property is applied on top of that 
+    // default offset.
+    // @see titleEditorRightOffset
+    // @see titleEditorTopOffset
+    // @visibility external
+	//<
+
+    //>	@attr tabSet.titleEditorRightOffset (Integer : null : IRW)
+	// If set, offsets the tab title editor further in from the right-hand edge of the tab, by
+    // the number of pixels set in this property.  Note that the editor is always offset to
+    // avoid overlapping the endcaps of the tab; this property is applied on top of that 
+    // default offset.
+    // @see titleEditorLeftOffset
+    // @see titleEditorTopOffset
+    // @visibility external
+	//<
+
+    //>	@attr tabSet.titleEditorTopOffset (Integer : null : IRW)
+	// If set, offsets the tab title editor further down from the top edge of the tab, by the
+    // number of pixels set in this property.  You can use this property, together with the 
+    // left and right offset properties, to fine tune positioning of the editor within or 
+    // around the tab button.<p>
+    // <b>Note:</b> The height of the editor is an attribute of the editor itself, and can be
+    // set by specifying a "height" property in +link{titleEditor,titleEditorDefaults}.
+    // @see titleEditorLeftOffset
+    // @see titleEditorRightOffset
+    // @visibility external
+	//<
+    
+    titleEditorDefaults: {
+        name: "title", type: "text", 
+        showTitle: false,
+        keyPress : function (item, form, keyName) {
+            if (keyName == "Escape") {
+                form.discardUpdate = true;
+                item.blurItem();
+            } else if (keyName == "Enter") {
+                item.blurItem();
+            }
+        }, 
+        blur : function (form, item) {
+            if (!form.discardUpdate) {
+                var oldValue = form.getOldValue("title"),
+                    newValue = form.getValue("title");
+                if (oldValue == newValue) return;
+                if (isc.isA.Function(form.targetTabSet.titleChanged)) {
+                    if (this.fireCallback(
+                        form.targetTabSet.titleChanged,
+                        "newTitle, oldTitle, tab", 
+                        [   newValue, oldValue, form.targetTab ]
+                    ) === false) 
+                    {
+                        return;
+                    }
+                }
+                form.targetTabSet.setTabTitle(form.targetTab, newValue);
+            }
+            form.hide();
+        }
+    }
 });
 
 isc.TabSet.addMethods({
+
+simpleTabButtonConstructor: isc.Button,
+
 //>	@method	tabSet.initWidget()	(A)
 // Initialize the TabSet object 
 //<
@@ -765,7 +958,7 @@ initWidget : function () {
     
     if (this.useSimpleTabs) {
         // also update the styling
-        this.tabBarDefaults.buttonConstructor = isc.Button;
+        this.tabBarDefaults.buttonConstructor = this.simpleTabButtonConstructor;
         // eg base + "Right" (derived from "right")
         this.tabProperties.baseStyle = this.simpleTabBaseStyle + 
                 pos.substring(0,1).toUpperCase() + pos.substring(1);
@@ -802,7 +995,7 @@ makeTabBar : function () {
             if (tabs[i][j] === undef) tabs[i][j] = this.tabProperties[j];
         }
     }    
-    
+
 	// assemble tabBar properties
 	var tabBarProperties = isc.addProperties({
         // selectTabOnContextClick: we suppress this behavior by default - this is an undocumented
@@ -825,29 +1018,31 @@ makeTabBar : function () {
         // This is a simple way for the developer to specify title / size / etc. for each tab
         // Note - we copy the tabs array rather than pointing at the same array.
         // the tabSet should manage the tabs and call the appropriate actions on the tabBar.
-		tabs:tabs,
+        tabs:tabs,
 
         align:this.tabBarAlign,
 				 
-		// tabBar is set vertical or not depending on the value of tabBarPosition.
-		vertical: tabBarIsVertical ? true : false,
+        // tabBar is set vertical or not depending on the value of tabBarPosition.
+        vertical: tabBarIsVertical ? true : false,
 				 
-		// the initially selectedTab is passed in.
-		selectedTab:this.selectedTab,
+        // the initially selectedTab is passed in.
+        selectedTab:this.selectedTab,
 
-        // Override buttonSelected() and buttonDeselected() to fire _tabSelected() and
-        // _tabDeselected() on this widget
-        // Note: these methods are only fired on actual selection change - repeated clicks on
+        // More tab settings
+        showMoreTab:this.showMoreTab,
+        moreTabCount:this.moreTabCount,
+        moreTab:this.createMoreTab(),
+        // When showing a "more" button, allow buttons to be re-selected.
+        allowButtonReselect: this.showMoreTab ? true : false,
+
+
+        // Override buttonSelected() to fire _tabSelected() on this widget
+        // Note: this method is only fired on actual selection change - repeated clicks on
         // the buttons should not fire these methods.
-        buttonDeselected : function (button) {
-            // Default implementation will remember which tab was selected, handle moving the
-            // deselected tab behind the baseline image, etc.
-            this.Super("buttonDeselected", arguments);
-            
-            if (this.parentElement != null)
-                this.parentElement._tabDeselected(button);
-        },
-        				 
+        // _tabSelected will handle firing the public tabSelected/tabDeselected handlers
+        // as well as hiding/showing panes.
+        // Note that standard TabBar buttonSelected/deselected already handles moving deselected
+        // tab behind the baseline image, etc.
 		buttonSelected : function (button) {
             
             this.Super("buttonSelected", arguments);
@@ -874,9 +1069,61 @@ makeTabBar : function () {
 	}, this.tabBarDefaults, this.tabBarProperties);
 	
 	// create tabBar and add as child.  NOTE: make available as this.tabBar as well since it's
-    // declared as an autoChild
+    // declared as an autoChild.  For the same reason, add a "creator" property
+    tabBarProperties.creator = this;
 	this.tabBar = this._tabBar = this.tabBarConstructor.create(tabBarProperties);
     this.addChild(this._tabBar);
+},
+
+createMoreTab : function () {
+    if (!this.showMoreTab) return null;
+
+    // Hold onto pane independently of the tab because the pane will change
+    // to show tab panes of the selected "more" tab.
+    this.moreTabPane = this.createAutoChild("moreTabPane", this.moreTabPaneProperties);
+    this.addAutoChild("moreTabPaneNavBar", {title: this.moreTabTitle});
+    this.moreTabPaneTable = this.addAutoChild("moreTabPaneTable");
+    
+    var moreTab = isc.addProperties({
+        title: this.moreTabTitle,
+        icon: this.moreTabImage,
+        pane: this.moreTabPane,
+        // Mark more tab so it can be recognized in the tabbar
+        moreTab: true
+    }, this.moreTabDefaults, this.moreTabProperties);
+
+    
+    var undef;
+    for (var j in this.tabProperties) {
+        if (moreTab[j] === undef) moreTab[j] = this.tabProperties[j];
+    }
+    this.moreTab = moreTab;
+    
+    return moreTab;
+},
+
+rebuildMorePane : function () {
+    this.moreTabPane.setData(this.getMorePaneRecords());
+},
+
+getMorePaneRecords : function () {
+    var tabSet = this,
+        records = []
+    ;
+    for (var i = 0; i < this.tabs.length; i++) {
+        var tabButton = this.getTab(this.tabs[i]);
+        if (tabButton.isVisible()) continue;
+        var tabObject = this.getTabObject(tabButton);
+
+        var icon = (tabObject.icon != null ? isc.Page.getImgURL(tabObject.icon) : null);
+        records[records.length] = {
+            icon: icon,
+            title: tabObject.title,
+            pane: tabObject.pane,
+            button: tabButton
+        };
+    }    
+    return records;
 },
 
 // override setAccessKey and setTabIndex to manage the accessKey / tabIndex of the 
@@ -959,7 +1206,6 @@ createPane : function (pane, tab) {
     // We still must do the addMember in updateTab() and _showTab() because tabSelected() may
     // be overridden to provide a new pane.
     this.paneContainer.addMember(pane);
-
     return pane;
 },
 
@@ -1197,7 +1443,7 @@ addTab : function (tab, position) {
 //<
 addTabs : function (newTabs, position) {
     if (!isc.isAn.Array(newTabs)) newTabs = [newTabs];
-    var oldSelectedTab = this.getTab(this.getSelectedTabNumber()),
+    var oldSelectedTab = this.getTabObject(this.getSelectedTabNumber()),
         forceSelection = (this.getSelectedTabNumber() == -1);
     
     if (position == null || position > this.tabs.length) position = this.tabs.length;
@@ -1308,12 +1554,20 @@ removeTabs : function (tabs, dontDestroy) {
             index = this.getTabNumber(tab),
             tabObject = this.tabs[index];
 
+        // if we remove the selected tab we want to just select another one near it
         if (tabObject == selectedTab) {
             removedSelected = true;
             // auto-select the next tab to the left if there is one, or the current 
             // index otherwise
             if (index > 0) autoSelectTab = index - 1;
             else if (index < this.tabs.length + 1) autoSelectTab = index;
+            
+        // otherwise we may need to update our internal 'selectedTab' index value
+        // to reflect the new position of the already selected tab
+        } else {
+            if (index < this.selectedTab) {
+                this.selectedTab -= 1;
+            }
         }
         
         this.tabs.removeAt(index);
@@ -1431,6 +1685,10 @@ tabIconClick : function (tab) {
 getTabObject : function (tab) {
     // passed the tab button - determine it's index (use this below)
     tab = this.getTabNumber(tab);
+    if (tab >= this.tabs.length) {
+        var button = this.tabBar.getButton(tab);
+        if (button && button.moreTab) return this.moreTab;
+    }
     return this.tabs[tab];
 },
 
@@ -1523,7 +1781,6 @@ getTabNumber : function (tab) {
 // @visibility external
 //<
 updateTab : function (tab, pane) {
-
     // if we were passed a tab init block, for a new tab, call addTabs instead
     if (isc.isAn.Object(tab) && !isc.isA.Canvas(tab) &&
         this.tabs.indexOf(tab) == -1) 
@@ -1534,7 +1791,6 @@ updateTab : function (tab, pane) {
 
     // get the index for the tab (whatever way the "tab" is passed)
     var tabIndex = this.getTabNumber(tab);
-
     // bad tab specification
     if (tabIndex == -1) {
         this.logWarn("no such tab: " + this.echo(tab));
@@ -1566,12 +1822,12 @@ updateTab : function (tab, pane) {
     // tabCanvas won't exist if we're not drawn yet
     if (tabCanvas != null) tabCanvas.pane = pane;
 
-    // if we're drawn and the currently visible tab is being updated, show the new pane
-    // (otherwise this happens automatically the next time the tab is selected).
-    if (!this.isDrawn()) return;
+    // if the currently visible tab is being updated, ensure the new pane is
+    // a member of the paneContainer with the appropriate visibility
+    // (If undrawn it'll show up when the tabSet as a whole gets drawn)
     if (this.getSelectedTabNumber() == tabIndex) {
         if (!this.paneContainer.hasMember(pane)) this.paneContainer.addMember(pane);
-        pane.show();
+        pane.setVisibility(isc.Canvas.INHERIT);
     }
 },
 
@@ -1648,6 +1904,8 @@ fixLayout : function () {
         // Required even if we were already showing the scroller - we may have resized
         if (vertical) tb.setHeight(this.getViewportHeight() - this.tabBarControlLayout.getHeight());
         else tb.setWidth(this.getViewportWidth() - this.tabBarControlLayout.getWidth());
+        
+        this.tabBarControlLayout.bringToFront();
     } else {
         tb.resizeTo(vertical ? null : "100%", vertical ? "100%" : null);
     }
@@ -1676,6 +1934,7 @@ fixLayout : function () {
 shouldShowControl : function (control) {
     // The standard controls only show if the tabs are clipped
     if ((control == "tabScroller") || (control == "tabPicker")) {
+        if (this.showMoreTab) return false;
         if (!this.showTabScroller && control == "tabScroller") return false;
         if (!this.showTabPicker && control == "tabPicker") return false;
         // If the member width exceeds the available space for the tab-bar we need to show
@@ -1835,7 +2094,7 @@ getControl : function (control) {
                 src:tabSrc,
                 height:(vertical ? tabPickerSize : (this.tabBarThickness - this._tabBar.baseLineThickness)),
                 width:(vertical ? (this.tabBarThickness - this._tabBar.baseLineThickness) : tabPickerSize),
-                click:"this.tabSet.showTabPickerMenu()"
+                click:function () { this.tabSet.showTabPickerMenu() }
             }, this.tabPickerProperties);
         }
             
@@ -2027,6 +2286,16 @@ _controlLayoutChildResized : function () {
     }
     
     this.placeControlLayout(controlSize);
+    var tb = this.tabBar;
+    if (tb) {
+        var vertical =  (this.tabBarPosition == isc.Canvas.LEFT || 
+                            this.tabBarPosition == isc.Canvas.RIGHT);
+        if (vertical) {
+            tb.setHeight(this.getViewportHeight() - this.tabBarControlLayout.getVisibleHeight());
+        } else {
+            tb.setWidth(this.getViewportWidth() - this.tabBarControlLayout.getVisibleWidth());
+        }
+    }
 },
 
 // Hide the controlLayout and special tabBarBaseLine that displayes underneath it.
@@ -2108,11 +2377,13 @@ _tabResized : function () {
 // NOTE: this is internal because it only shows a new tab, it does not hide the previous tab.
 // The external API is selectTab();
 _showTab : function (tab) {
-
     // Ensure we're working with a tab object rather than a tabButton instance
     // (We're keeping this.tabs up to date rather than working with the buttons directly)
     if (isc.isA.Canvas(tab)) tab = this.getTabObject(tab);
     
+    if (tab == this.moreTab) {
+        this.rebuildMorePane();
+    }
 	this.paneContainer.scrollTo(0,0);
 
 	if (tab && tab.pane) {
@@ -2136,25 +2407,113 @@ _showTab : function (tab) {
 //<
 
 _tabSelected : function (tab) {
+    
     // fire handler (fire it first so it has an opportunity to alter the tab, eg add a pane on
     // the fly)
-    // No need to check against our currently selected tabNum
-    // this method should only fire when the tab-bar button is actually 
-    // changing from deselected to selected state
-    var tabNum = this._tabBar.getButtonNumber(tab);
-    // Remember the selected tabNum - used by this.getSelectedTabNumber() etc.
-    this.selectedTab = tabNum;
-    // fire the notification functions
-    if (this.tabSelected) {
-        var tabObject = this.getTabObject(tabNum);
-        
-        this.tabSelected(tabNum, tabObject.pane, tabObject.ID, tabObject);
 
-        // If this tab is no longer marked as selected, tabSelected() may have shown a 
-        // different tab.  In this case don't call _showTab!
-        if (this.getSelectedTabNumber() != tabNum) return;
+    // Initially there was no need to check against our currently selected tabNum as
+    // this method should only fire when the tab-bar button is actually 
+    // changing from deselected to selected state. However, to support iPhone style
+    // tabs it is important to allow tab reselection. For example, on the "more" tab
+    // selecting it again causes any subtab showing to be closed and the subtab select
+    // list re-shown. This setting, however, causes all selections to be received
+    // twice due to the TabBar/Toolbar design - we drop the second call except for
+    // the "more" tab.
+    
+    var cancelSelection;
+    
+    var currentTabObject = this.getSelectedTab(),
+        currentTabNum = this.getSelectedTabNumber(),
+        tabNum = this._tabBar.getButtonNumber(tab),
+        tabObject = this.getTabObject(tabNum),
+        tabDeselected = (currentTabObject != null) && (tabObject != currentTabObject);
+
+    if (currentTabNum == tabNum &&
+        (!this.showMoreTab || !this.tabBar.isShowingMoreTab() || tabObject != this.moreTab))
+    {
+        // If the target tab is not yet drawn this is most likely the initial
+        // draw and tab selection. We don't want to abort that selection.
+        if (tab.pane && tab.pane.isDrawn()) return;
     }
 
+    if (tabDeselected && !this._suppressTabSelectedHandlers) {
+        // fire deselected and selected handlers.
+        // Note: If this is the first time the thing is drawn we'll have tabSelected being
+        // fired on the initially selected tab but the "currentTabObject" will also point to that
+        // tab -- in this case don't fire the deselected handler
+        // Also note: if a tab is removed programmatically it is deselected. In this case
+        // currentTabObject can be expected to be unset at this point.
+        if (currentTabObject.tabDeselected != null) {
+           
+            if (this.fireCallback(
+                    
+                    currentTabObject.tabDeselected, 
+                    "tabSet,tabNum, tabPane, ID, tab, newTab", 
+                    
+                    [   this,
+                        // deselected tab details
+                        this.selectedTab, currentTabObject.pane, currentTabObject.ID, 
+                        currentTabObject,
+                        // new tab
+                        tabObject
+                    ]
+                ) == false) 
+            {
+                cancelSelection = true;
+            }
+        }
+        
+        if (!cancelSelection && this.tabDeselected != null) {
+            
+            cancelSelection = (this.tabDeselected(this.selectedTab, 
+                                currentTabObject.pane, currentTabObject.ID, currentTabObject, 
+                                tabObject) == false)
+        }
+        
+        if (!cancelSelection && currentTabObject.pane) {
+            currentTabObject.pane.hide();
+        }
+    }
+    
+    // force the tab to go back to selected state but don't fire any handlers / show or hide
+    // tabs, etc.
+    if (cancelSelection) {
+        this._suppressTabSelectedHandlers = true;
+        this.selectTab(this.getSelectedTab());
+        delete this._suppressTabSelectedHandlers;
+        return;
+    }
+
+    // Remember the selected tabNum - used by this.getSelectedTabNumber() etc.
+    this.selectedTab = tabNum;
+    if (!this._suppressTabSelectedHandlers) {
+        var handlerChangedTab;
+        if (tabObject.tabSelected != null) {
+            this.fireCallback(
+                tabObject.tabSelected, 
+                "tabSet,tabNum,tabPane,ID,tab",
+                [this,tabNum,tabObject.pane,tabObject.ID,tabObject]
+            );
+            
+            // If this tab is no longer marked as selected, tabSelected() may have shown a 
+            // different tab.  In this case don't call _showTab!
+            if (this.getSelectedTabNumber() != tabNum) {
+                return;
+            }
+        }
+        
+        // fire the notification functions
+        if (this.tabSelected) {
+            
+            this.tabSelected(tabNum, tabObject.pane, tabObject.ID, tabObject);
+            
+            // Once againk, if this tab is no longer marked as selected, tabSelected() 
+            // may have shown a different tab.  In this case don't call _showTab!
+            if (this.getSelectedTabNumber() != tabNum) {
+                return;
+            }
+        }
+    }
     this._showTab(tab);
     
     // ensure the tab button is scrolled into view
@@ -2164,27 +2523,44 @@ _tabSelected : function (tab) {
     var tabSet = this;
     tb.scrollTabIntoView(tabNum, null, this.animateTabScrolling, 
         function() {
+            tabSet.placeTitleEditor(tab);
             if (isc.isA.Function(tabSet.tabScrolledIntoView)) tabSet.tabScrolledIntoView();
         });
 },
 
-//>	@method	tabSet._tabDeselected(tab)	(A)
-//			perform actions when a tab is deselected. 
-//			this method is "bound" to the tabBar's buttonSelected method, so that is will fire
-//			whenever the next button on the tabBar is seleced. it hides the pane associated with
-//			this tab
+
+//> @method tab.tabSelected()
+// Optional handler to fire when a tab is selected. As with +link{TabSet.tabSelected()} this
+// method only fires when the tabset is drawn.
 //
-//		@see this.tabBar.buttonSelected
-//		@param	tab	(tab) tab that has been deselected.
+// @param tabSet (TabSet) the tabSet containing the tab.
+// @param tabNum (integer) the index of the newly selected tab
+// @param tabPane (Canvas) the newly selected tab's pane if set
+// @param ID (String) the ID of the newly selected tab
+// @param tab (tab) pointer to the selected tab object
+//
+// @see tab.tabDeselected
+// @visibility external
 //<
 
-_tabDeselected : function (tab) {
-    var tabIndex = this._tabBar.getButtonNumber(tab),
-        tabObject = this.getTabObject(tabIndex);
-    // fire handler
-	if (this.tabDeselected) this.tabDeselected(tabIndex, tabObject.pane, tabObject.ID, tabObject);
-	if (tabObject && tabObject.pane) tabObject.pane.hide();
-},
+//> @method tab.tabDeselected()
+// Optional handler to fire when a tab is deselected. Returning false will cancel the
+// new selection, leaving this tab selected. As with +link{TabSet.tabSelected()} this
+// method only fires when the tabset is drawn.
+//
+// @param tabSet (TabSet) the tabSet containing the tab.
+// @param tabNum (integer) the index of the deslected tab
+// @param tabPane (Canvas) the deselected tab's pane if set
+// @param ID (String) the ID of the deselected tab
+// @param tab (tab) pointer to the tab being deselected
+// @param newTab (tab) pointer to the new tab being selected
+//
+// @return (boolean) return <code>false</code> to cancel the tab selection
+//
+// @see tab.tabSelected
+// @visibility external
+//<
+
 
 //>	@method	tabSet.getSelectedTab() ([A])
 // Returns the currently selected tab object.  This is the object literal used to configure the
@@ -2193,6 +2569,7 @@ _tabDeselected : function (tab) {
 // @visibility external
 //<
 getSelectedTab : function () {
+    if (this.selectedTab >= this.tabs.length) return this.moreTab;
     return this.tabs[this.selectedTab];
 },
 
@@ -2221,10 +2598,21 @@ selectTab : function (tab) {
     if (tabIndex != -1) {
         // calling 'selectTab()' on the tab bar will actually select the button.
         // this handles firing our tabSelected() notification functions
-        if (this._tabBar && this.isDrawn()) this._tabBar.selectTab(tabIndex);
-        // If we're not drawn, record the newly selected tab - we'll actaully select
-        // it in the tab-bar on draw
-        else this.selectedTab = tabIndex
+        if (this._tabBar) {
+            this._tabBar.selectTab(tabIndex);
+        }
+        
+        // TabBar (subclass of Toolbar) initializes its members (buttons) lazily on draw()
+        // We won't get any _tabSelected notifications until after this has happened.
+        // Therefore if the tab bar hasn't initialized yet, simply record this.selected tab
+        // so methods like this.getSelectedTabNum() / getselectedTabObject() work
+        //
+        // Note that we explicitly call tabBar.selectTab(this.selectedTab) on draw() to ensure
+        // the tab-bar stays in synch
+        if (this._tabBar == null || !this._tabBar._buttonsInitialized) {
+            this.selectedTab = tabIndex;
+        }
+        
     }
 },
 
@@ -2235,11 +2623,107 @@ selectTab : function (tab) {
 //<
 getTabBar : function () {
     return this._tabBar;
+},
+
+_editTabTitle : function (tab) {
+    tab = this.getTab(tab);
+    
+    var canEdit;
+    
+    if (this.canEditTabTitles) {
+        if (tab.canEditTitle !== false) {
+            canEdit = true;
+        }
+    } else {
+        if (tab.canEditTitle === true) {
+            canEdit = true;
+        }
+    }
+    
+    if (canEdit) this.editTabTitle(tab);
+},
+
+//>	@method	tabSet.editTabTitle()
+// Places an editor in the title of the parameter tab and allows the user to edit the title.
+// Note that this programmatic method will <b.always</b> allow editing of the specified tab's
+// title, regardless of the settings of +link{canEditTabTitles} or +link{Tab.canEditTitle}.
+// @param	tab      (Tab / ID / index)   The tab whose title should be edited
+// @see TabSet.canEditTabTitles
+// @see Tab.canEditTitle
+// @visibility external
+//<
+editTabTitle : function (tab) {
+    tab = this.getTab(tab);
+    
+    if (!isc.isA.DynamicForm(this.titleEditor)) {
+        this.titleEditor = isc.DynamicForm.create({
+            autoDraw: false,
+            margin: 0, padding: 0, cellPadding: 0,
+            fields: [
+                isc.addProperties({}, this.titleEditorDefaults, this.titleEditorProperties)
+            ]
+        });
+    }
+        
+    var editor = this.titleEditor;
+    editor.setProperties({targetTabSet: this, targetTab: tab});
+    editor.discardUpdate = false;
+        
+    var item = editor.getItem("title");
+    var title = tab.title;
+    item.setValue(title);
+
+    this.placeTitleEditor(tab);
+    
+    if (this.tabBar._runningAnimations == 0) {
+        this.showTitleEditor();
+    } else {
+        editor._hiddenPendingAnimation = true;
+    }
+    
+},
+
+placeTitleEditor : function(tab) {
+    var editor = this.titleEditor;
+    if (!editor) return;
+
+    var left = tab.getPageLeft() + tab.capSize,
+        width = tab.getVisibleWidth() - tab.capSize * 2;
+        
+    if (this.titleEditorLeftOffset) {
+        left += this.titleEditorLeftOffset;
+        width -= this.titleEditorLeftOffset;
+    }
+        
+    if (this.titleEditorRightOffset) {
+        width -= this.titleEditorRightOffset;
+    }
+    
+    var item = editor.getItem("title");
+    item.setWidth(width);
+    
+    var top = tab.getPageTop();
+    if (this.titleEditorTopOffset) {
+        top += this.titleEditorTopOffset;
+    }
+
+    editor.setTop(top);
+    editor.setLeft(left);
+    
+    if (editor._hiddenPendingAnimation) {
+        this.showTitleEditor();
+        editor._hiddenPendingAnimation = false;
+    }
+},
+
+showTitleEditor: function() {
+    var editor = this.titleEditor,
+        item = editor.getItem("title");
+    editor.show();
+    item.focusInItem();
+    item.delayCall("selectValue", [], 100);
 }
 
-
-// Edit Mode ----------------------------------------------------------------
-//
 });
 
 
@@ -2260,13 +2744,15 @@ isc.TabSet.registerStringMethods({
 
     //>	@method	tabSet.tabDeselected()
     //  Notification fired when a tab is deselected.        
-    // @param tabNum (number) number of the tab
-    // @param tabPane (Canvas) pane for this tab
-    // @param ID (id) id of the tab
-    // @param tab (tab) the tab object (not tab button instance)
+    // @param tabNum (number) number of the deselected tab
+    // @param tabPane (Canvas) pane for this deselected tab
+    // @param ID (id) id of the deselected tab
+    // @param tab (tab) the deselected tab object (not tab button instance)
+    // @param newTab (tab) the tab object being selected
+    // @return (boolean) return false to cancel the tab deselection
     // @visibility external
     //<
-	tabDeselected:"tabNum,tabPane,ID,tab",
+	tabDeselected:"tabNum,tabPane,ID,tab,newTab",
     
     
     // getPaneContainerEdges - documented by default implementation
@@ -2281,7 +2767,21 @@ isc.TabSet.registerStringMethods({
     // @visibility sgwt
     //<
     
-    onCloseClick : "tab"
+    onCloseClick : "tab",
+    
+    //> @method tabSet.titleChanged()
+    // This notification method fired when the user changes the title of a tab in this TabSet.
+    // This can happen either through user interaction with the UI if 
+    // +link{canEditTabTitles,canEditTabTitles} is set, or programmatically if application 
+    // code calls +link{editTabTitle,editTabTitle}.<p>
+    // Return false from this method to cancel the change.
+    // @param newTitle (String) the new title
+    // @param oldTitle (String) the old title
+    // @param tab      (Tab)    the tab whose title has changed
+    // @return (boolean) return false to suppress the title change
+    // @visibility external
+    //<
+    titleChanged : "newTitle,oldTitle,tab"
     
 });
 
@@ -2314,5 +2814,11 @@ isc.defineClass("PaneContainer", "VLayout").addMethods({
     }		        
 });
 
-
+// Register "tabs" as duplicate properties
+// This means if a tabset subclass is created with tabs explicitly set to a bunch of config
+// objects they'll be duplicated on instances rather than copied across directly.
+// Ditto if <childName>Defaults is used in the autoChild subsystem.
+// Also register the 'pane' sub property so if tab.pane is set it will be duplicated
+// rather than shared across tabs
+isc.TabSet.registerDupProperties("tabs", ["pane"]);
 

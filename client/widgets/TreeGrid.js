@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -167,6 +167,7 @@ isc.defineClass("TreeGridBody", isc.GridBody).addProperties({
     	// get the item that was clicked on -- bail if not found
         var rowNum = this.getEventRow(),
             node = this.grid.data.get(rowNum);
+            
         if (node != null && this.grid.clickInOpenArea(node)) {
             // if they clicked in the open area of the record, 
             //	just bail because we're supposed to open the folder instead
@@ -174,16 +175,17 @@ isc.defineClass("TreeGridBody", isc.GridBody).addProperties({
             
             return isc.EH.STOP_BUBBLING;
         } else if (this.grid.clickInCheckboxArea(node) && this.canSelectRecord(node)) {
-
+              
             // Toggle node selection state
             var selectionType = this.grid.selectionType;
             if (selectionType == isc.Selection.SINGLE) {
                 this.deselectAllRecords();
                 this.selectRecord(node);
-            } else if (selectionType == isc.Selection.SIMPLE) {
+            } else if (selectionType == isc.Selection.SIMPLE 
+                || selectionType == isc.Selection.MULTIPLE) {
                 if (this.selection.isSelected(node)) this.deselectRecord(node);
                 else this.selectRecord(node);
-            }
+            } 
 
             // Note: if you click in the checkbox area to select a node, no nodeClick or
             // folderClick events will be fired, since we've already taken action in
@@ -221,7 +223,7 @@ isc.defineClass("TreeGridBody", isc.GridBody).addProperties({
 isc.TreeGrid.addClassProperties({
 
 	//=	@const	TreeGrid.TREE_FIELD		default field to display a tree
-	TREE_FIELD : {name:"nodeTitle", width:"*", treeField:true,
+	TREE_FIELD : {name:"nodeTitle", treeField:true,
 
     			getCellValue : function (list,record,recordNum,coNum) {
                     if (!list.getNodeTitle) return;
@@ -310,6 +312,11 @@ isc.TreeGrid.addProperties({
     // @visibility external
     //<
     showPartialSelection:false,
+    
+    //> @attr treeGrid.selectionProperty (string : null : [IRA])
+    // @include listGrid.selectionProperty
+    // @visibility external
+    //<
 
     //> @attr treeGrid.treeRootValue (any : null : IRA)
     // For databound trees, use this attribute to supply a +link{DataSourceField.rootValue} for this
@@ -600,15 +607,18 @@ isc.TreeGrid.addProperties({
 	//<
 	showHiliteInCells:false,
 	
-	// Images: locations, sizes, and names
-	// --------------------------------------------------------------------------------------------
-    //>	@attr	treeGrid.indentSize		(number : 20 : [IRW])
-    //          The amount of indentation (in pixels) to add to a node's icon/title for each level
-    //          down in this tree's hierarchy.
-    //      @visibility external
-    //      @group  appearance
+    // Images: locations, sizes, and names
+    // --------------------------------------------------------------------------------------------
+    //> @attr treeGrid.indentSize (number : 20 : IRW)
+    // The amount of indentation (in pixels) to add to a node's icon/title for each level
+    // down in this tree's hierarchy.
+    // <p>
+    // This value is ignored when +link{treeGrid.showConnectors,showConnectors} is
+    // <code>true</code> because fixed-size images are used to render the connectors.
+    // @visibility external
+    // @group appearance
     //<
-	indentSize:20,
+    indentSize:20,
     
     //> @attr treeGrid.extraIconGap (integer : 2 : IR)
     // The amount of gap (in pixels) between the extraIcon (see +link{treeGrid.getExtraIcon()})
@@ -839,7 +849,7 @@ isc.TreeGrid.addProperties({
     
     //>	@attr	treeGrid.showFullConnectors (boolean : true : [IRW])
     // If +link{treeGrid.showConnectors} is true, this property determines whether we should show
-    // showing vertical continuation lines for each level of indenting within the tree. Setting to
+    // vertical continuation lines for each level of indenting within the tree. Setting to
     // false will show only the hierarchy lines are only shown for the most indented path ("sparse"
     // connectors).
     // @group treeIcons
@@ -849,7 +859,7 @@ isc.TreeGrid.addProperties({
     // connector lines out.
     // The logic to show full connectors involves iterating through the parents for each node
     // being written out. This is a potential performance hit. We could improve this performance
-    // by adding cacheing logic to the Tree when calculating where the continuation lines should
+    // by adding caching logic to the Tree when calculating where the continuation lines should
     // appear if this is a problem.
     showFullConnectors:true,
 
@@ -1073,8 +1083,16 @@ getEmptyMessage : function () {
     // can't just check for data != null because ListGrid initWidget sets data to [] if unset
     // and we must make sure we have a tree.
     if (isc.isA.Tree(this.data) && this.data.getLoadState(this.data.getRoot()) == isc.Tree.LOADING) 
-        return this.loadingDataMessage;
-    return this.emptyMessage;
+        return this.loadingDataMessage.evalDynamicString(this, {
+            loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
+                                       isc.Canvas.loadingImageSize, 
+                                       isc.Canvas.loadingImageSize)
+        });
+    return this.emptyMessage.evalDynamicString(this, {
+        loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
+                                   isc.Canvas.loadingImageSize, 
+                                   isc.Canvas.loadingImageSize)
+    });
 },
 
 isEmpty : function () {
@@ -1262,6 +1280,8 @@ setViewState : function (state) {
     if (!state) return;
     
     if (state.open) this.setOpenState(state.open);
+    // Re-apply selection so that nodes just opened can be found.
+    if (state.selected) this.setSelectedState(state.selected);
 },
 
 
@@ -1422,14 +1442,39 @@ canEditCell : function (rowNum, colNum) {
     return true;
 },
 
+//> @method treeGrid.startEditingNew()
+// This inherited +link{listGrid.startEditingNew,ListGrid API} is not supported by the TreeGrid
+// since adding a new tree node arbitrarily at the end of the tree is usually not useful.
+// Instead, to add a new tree node and begin editing it, use either of these two strategies:
+// <ol>
+// <li> add a new node to the client-side Tree model via +link{Tree.add()}, then use
+// +link{startEditing()} to begin editing this node.  Note that if using a DataSource, when the
+// node is saved, an "update" operation will be used since adding a node directly to the
+// client-side +link{ResultTree} effectively means a new node has been added server side.
+// <li> use +link{DataSource.addData()} to immediately save a new node.  Automatic cache sync
+// by the +link{ResultTree} will cause the node to be integrated into the tree.  When the
+// callback to addData() fires, locate the new node by matching primary key and call
+// +link{startEditing()} to begin editing it.
+// </ol>
+//
+// @group  editing
+//
+// @param  [newValues] (object)  Optional initial set of properties for the new record
+// @param  [suppressFocus] (boolean) Whether to suppress the default behavior of moving focus
+//                                   to the newly shown editor.
+// @visibility external
+//<
+
 // Override the method to determine the widths of the form items displayed while editing to
 // account for the tree-field indents
 getEditFormItemFieldWidths : function (record) {
 
     var level = this.data.getLevel(record);
     if (!this.showRoot) level--;
-    var indentSize = level * this.indentSize;
-    indentSize += this.iconSize + this.getOpenerIconSize(record);
+    var openerIconSize = this.getOpenerIconSize(record),
+        indentSize = level * (this.showConnectors ? openerIconSize : this.indentSize)
+    ;
+    indentSize += this.iconSize + openerIconSize;
     if (this._getCheckboxIcon(record)) {
         indentSize += (this._getCheckboxFieldImageWidth() + this.extraIconGap);
     } else if (this.getExtraIcon(record)) {
@@ -1530,7 +1575,34 @@ recordDoubleClick : function (viewer, record, recordNum, field, fieldNum, value,
 },
     
 dataChanged : function () {
+
     this.Super("dataChanged", arguments);
+
+    // For a load-on-demand TreeGrid push a full selection to newly loaded child nodes.
+    if (this.cascadeSelection && isc.ResultTree && isc.isA.ResultTree(this.data) &&
+        this.data.loadDataOnDemand)
+    {
+        var nodes = this.data.getNodeList();
+
+        for (var i = 0; i < nodes.length; i++) {
+            var node = nodes[i];
+            if (this.data.isFolder(node) &&
+                this.data.getLoadState(node) == isc.Tree.LOADED &&
+                this.selection.isSelected(node) &&
+                !this.selection.isPartiallySelected(node))
+            {
+                var children = this.data.getChildren(node);
+                for (var j = 0; j < children.length; j++) {
+                    var child = children[j];
+                    if (this.data.getLoadState(child) == isc.Tree.UNLOADED &&
+                        !this.selection.isSelected(child))
+                    {
+                        this.selection.setSelected(child, true);
+                    }
+                }
+            }
+        }
+    }
 
     
     var folder = this._pendingFolderAnim;
@@ -2741,8 +2813,10 @@ getTreeFieldNum : function () { return this._treeFieldNum; },
 //		@return	(number)	Return the width of the open area (relative to wherever the tree field is)
 //<
 getOpenAreaWidth : function (node) {
-	return ((this.data.getLevel(node)-(this.showRoot?0:1)) * this.indentSize) + 
-            this.getOpenerIconSize(node);
+    var openerIconSize = this.getOpenerIconSize(node),
+        indentSize = (this.showConnectors ? openerIconSize : this.indentSize)
+    ;
+    return ((this.data.getLevel(node)-(this.showRoot?0:1)) * indentSize) + openerIconSize;
 },
 
 getOpenerIconSize : function (node) {
@@ -2809,16 +2883,19 @@ clickInCheckboxArea : function (node) {
 	}
 },
 
-//>	@method	treeGrid.getIndentHTML()	(A)
-//			return the HTML to indent a record
-//		@param	level		(number)	indent level (0 == root, 1 == first child, etc)
-//  @param record (treeNode) record for which we're returning indent HTML
+//> @method treeGrid.getIndentHTML() (A)
+// Return the HTML to indent a record
+// @param level  (number)   indent level (0 == root, 1 == first child, etc)
+// @param record (treeNode) record for which we're returning indent HTML
 //
-//		@return	(HTML)		HTML to indent the child
+// @return (HTML) HTML to indent the child
 //<
 getIndentHTML : function (level, record) {
-    var drawLevel = level
-	if (!this.showRoot) drawLevel--;
+    var drawLevel = level;
+    if (!this.showRoot) drawLevel--;
+
+    var indentSize = (this.showConnectors ? this.getOpenerIconSize(record) : this.indentSize);
+
     // If showFullConnectors is true we need to write out vertical connector lines between 
     // ancestors who are siblings.
     
@@ -2837,7 +2914,7 @@ getIndentHTML : function (level, record) {
                                                         this.cellHeight);
                 this._ancestorConnectorHTML = connectorHTML;
             }
-            var singleIndent = this._indentHTML(this.indentSize),
+            var singleIndent = this._indentHTML(indentSize),
                 indent = isc.StringBuffer.create(isc.emptyString)
             ;
 
@@ -2852,7 +2929,7 @@ getIndentHTML : function (level, record) {
             return indent;
         }
     }    
-    return this._indentHTML(drawLevel * this.indentSize);
+    return this._indentHTML(drawLevel * indentSize);
 },
 
 
@@ -3310,7 +3387,7 @@ getExportFieldValue : function (record, fieldName, fieldIndex) {
     // Prepend tree depth indent string, ensuring that children of root are not indented
     if (fieldIndex == this.getTreeFieldNum() && this.exportIndentString) {
         var level = this.data.getLevel(record);
-        while (--level) val = this.exportIndentString + val;
+        while (--level > 0) val = this.exportIndentString + val;
     }
 
     return val;

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -31,7 +31,8 @@
 // @visibility external
 //<
 isc.getValueForKey = function (key, valueMap, defaultValue) {
-	if (valueMap && valueMap[key] != null) return valueMap[key];
+    
+	if (valueMap && valueMap[key] != null && !isc.isAn.Array(valueMap)) return valueMap[key];
 	return (arguments.length < 3 ? key : defaultValue);
 }
 

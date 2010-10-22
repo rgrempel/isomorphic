@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -63,6 +63,7 @@ var libs =
         //<SectionStack
 
 		"widgets/Scrollbar",			// horizontal and vertical scroll bars
+		"widgets/NativeScrollbar",      // horizontal and vertical scrollbars based on native CSS scrollbars
         
 		//"widgets/GridRenderer",			// high speed, flexible, feature-rich table
 		//"widgets/ListGrid",			// multi-column viewer for a list of objects
@@ -152,8 +153,13 @@ var libs =
         
 
         //>SimpleType
-        "language/SimpleType"          // loads map of built-in types and their validators, SimpleType
+        "language/SimpleType",          // loads map of built-in types and their validators, SimpleType
         //<SimpleType
+        
+        "widgets/NavigationBar",        // iPhone/iPad -like navigationBar
+        "widgets/SplitPane"             // manages a two-pane layout according to hardware type
+                                        // and orientation
+                                        
 	];
 
 //<STOP PARSING 

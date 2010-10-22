@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -44,6 +44,7 @@ isc.PickTreeItem.addClassProperties({
         }
         return this.Super("getTitle", arguments);
     },
+    
     
     // If this item's menu is databound, and loadDataOnDemand is false, this method will be
     // fired when the entire tree is loaded (happens around init time).
@@ -145,6 +146,13 @@ isc.PickTreeItem.addMethods({
     },
     
     buttonConstructor:"TreeMenuButton",
+    
+    // Override getDisplayValue so if a developer calls it it returns the current display
+    // value -- IE the title of the button
+    // *Remember - this method isn't used internally, it's simply an accessor for developers
+    getDisplayValue : function () {
+        return this.canvas.getTitle();
+    },
     
     // Override _createCanvas to set up a TreeMenuButton as this item's canvas
     _createCanvas : function () {

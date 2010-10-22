@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -459,6 +459,11 @@ dragRecategorize:false,
 //> @attr dataBoundComponent.duplicateDragMessage (String : "Duplicates not allowed" : IR)
 // Message to show when a user attempts to transfer duplicate records into this component, and
 // +link{preventDuplicates} is enabled.
+// <P>
+// If set to null, duplicates will not be reported and the dragged duplicates will not be
+// saved.
+//
+// @group i18nMessages
 // @visibility external
 //<
 duplicateDragMessage: "Duplicates not allowed",
@@ -602,7 +607,7 @@ fieldIdProperty:"name",
 // the dataPath of any fields it contains will be appended to that component level path when
 // accessing data. For example the following form:
 // <pre>
-//      isc.Dynamicform.create({
+//      isc.DynamicForm.create({
 //          dataPath:"contact",
 //          fields:[
 //              {dataPath:"address/email"}
@@ -948,7 +953,11 @@ registerWithDataView : function (dataView) {
 //   calls setFields() when finished
 //		@group	data
 //<
-bindToDataSource : function (fields) {
+// Extra parameter 'hideExtraDSFields' used by ListGrid for the case where
+// useAllDataSourceFields is false but we want to include fields picked up from the DataSource
+// but mark them as not visible in the grid. This is used to achieve the
+// +link{listGrid.canPickOmittedFields} behavior.
+bindToDataSource : function (fields, hideExtraDSFields) {
     //this.logWarn("bindToDataSource called with fields " + this.echoLeaf(fields));
     // call 'setDataPath' to ensure if we have a dataPath specified we bind to the correct
     // valuesManager
@@ -1025,11 +1034,35 @@ bindToDataSource : function (fields) {
 	// Case 3: dataSource and fields specified
     // fields provided to this instance act as an overlay on DataSource fields
     if (ds != null && !noSpecifiedFields) {
-        if (this.useAllDataSourceFields) {
+        if (this.useAllDataSourceFields || hideExtraDSFields) {
             var canvas = this;
             var bothFields = ds.combineFieldOrders(
                         dsFields, fields, 
                         function (field, ds) { return canvas.shouldUseField(field, ds) });
+            if (hideExtraDSFields) {
+                for (var i = 0; i < bothFields.length; i++) {
+                   
+                }
+            }
+            // Loop through the combined fields:
+            // - if hideExtraDSFields is true, hide any fields picked up from the
+            //   DS that weren't explicitly specified
+            // - handle any fields that should pick up defaults from another DS
+            //   (where field.includeFrom is set).
+            for (var i = 0; i < bothFields.length; i++) {
+                var field = bothFields[i];
+                if (!fields.containsProperty("name", field.name)) {
+                    if (hideExtraDSFields && field.showIf == null) {
+                        field.showIf = "return false";
+                    }
+                
+                } else {
+                    if (field.includeFrom != null && ds.getField(field.name) == null) {
+                        this._combineIncludeFromFieldData(field);
+                    }
+                }
+            }
+            
             this.addFieldValidators(bothFields);
             return bothFields;
         } else {
@@ -1038,7 +1071,6 @@ bindToDataSource : function (fields) {
             for (var i = 0; i < fields.length; i++) {
                 var field = fields[i];
                 if (!field) continue;
-                var fieldName = field[this.fieldIdProperty];
 
                 // this field isn't a datasource field - it's just intended to be passed through
                 // to the underlying widget (like a form spacer)
@@ -1073,8 +1105,33 @@ combineFieldData : function (field) {
         // specification - component fields override so that you can eg, retitle a field
         // within a summary
         return ds.combineFieldData(field);
+        
+    // specified 'includeFrom' field -- will pick up defaults from field in another dataSource
+    } else if (field.includeFrom != null) {
+        return this._combineIncludeFromFieldData(field);
     }
+        
     return field;
+},
+
+_combineIncludeFromFieldData : function (field) {
+
+    var split = field.includeFrom.split(".");
+    if (split == null || split.length != 2) {
+        this.logWarn("This component includes a field with includeFrom set to:"
+            + field.includeFrom + ". Format not understood.");
+    } else {
+        var relatedDS = isc.DataSource.get(split[0]),
+            fieldName = split[1];
+        if (relatedDS == null) {
+            this.logWarn("Field specifies includeFrom:" + field.includeFrom +
+                ". Unable to find dataSource with ID:" + split[0]);
+        } else {
+            // default the field name to the includeField's name if not explicitly set.
+            if (field.name == null) field.name = fieldName;
+            return relatedDS.combineFieldData(field, relatedDS.getField(fieldName));
+        }
+    }
 },
 
 // return whether this component wants to use the field when binding to a DataSource
@@ -1141,6 +1198,10 @@ addFieldValidators : function (fields) {
     }
 },
 
+// doc'd at ListGrid level
+getAllFields : function () {
+    return this.completeFields || this.fields;
+},
 
 //>	@method	dataBoundComponent.getField()	
 // Return a field by a field index or field name.
@@ -1287,6 +1348,8 @@ getStateForField : function (fieldName, includeTitle) {
 
     if (this.getSpecifiedFieldWidth) fieldState.width = this.getSpecifiedFieldWidth(field);
 
+    if (field.autoFitWidth) fieldState.autoFitWidth = true;
+    
     return fieldState;
 },
 
@@ -1331,6 +1394,7 @@ _setFieldState : function (fieldState, hideExtraDSFields) {
         // restore state for userFomula and userSummary
         if (state.userFormula != null) field.userFormula = state.userFormula;
         if (state.userSummary != null) field.userSummary = state.userSummary;
+        if (state.autoFitWidth) field.autoFitWidth = true;
         completeFields.add(field);
     }
     
@@ -1484,6 +1548,8 @@ getDataSource : function () {
     }
     return this.dataSource;
 },
+
+setData : function (data) { this.data = data },
 
 lookupSchema : function () {
     // see if we have a WebService instance with this serviceName / serviceNamespace
@@ -1659,10 +1725,12 @@ getSerializeableFields : function (removeFields, keepFields) {
 	return this.Super("getSerializeableFields", arguments);
 },
 
-addField : function (field, index) {
+
+addField : function (field, index, fields) {
     if (field == null) return;
 
-    var fields = (this.fields || this.items || isc._emptyArray).duplicate();
+    if (fields == null) fields = (this.fields || this.items || isc._emptyArray);
+    fields = fields.duplicate();
  
     // if this field already exists, replace it
     var existingField = this.getField(field.name);
@@ -1679,8 +1747,9 @@ addField : function (field, index) {
     this.setFields(fields);
 },
 
-removeField : function (fieldName) {
-    var fields = (this.fields || this.items || isc._emptyArray).duplicate();
+removeField : function (fieldName, fields) {
+    if (fields == null) fields = (this.fields || this.items || isc._emptyArray);
+    fields = fields.duplicate();
     
     // Cope with being passed an object rather than a name
     var name = fieldName.name ? fieldName.name : fieldName;
@@ -2032,7 +2101,10 @@ _canExportField : function (field) {
 //<
 exportData : function (requestProperties) {
     if (!requestProperties) requestProperties = {};
-    if (this.sortField) requestProperties.sortBy = (!this.sortDirection ? "-" : "") 
+
+    var sort = this.getSort();
+    if (sort) requestProperties.sortBy = isc.DS.getSortBy(sort);
+    else if (this.sortField) requestProperties.sortBy = (!this.sortDirection ? "-" : "") 
         + this.sortField;
 
     if (!requestProperties.textMatchStyle) {
@@ -2205,7 +2277,7 @@ clearCriteria : function (callback, requestProperties) {
 
 _filter : function (type, criteria, callback, requestProperties) {
     if (isc._traceMarkers) arguments.__this = this;
-
+    
     //>!BackCompat 2005.3.21 old signature: criteria, context
     
     if (requestProperties == null && isc.isAn.Object(callback) && 
@@ -2215,8 +2287,30 @@ _filter : function (type, criteria, callback, requestProperties) {
         requestProperties = callback;
         callback = null;
     } //<!BackCompat
-
+    
     requestProperties = this.buildRequest(requestProperties, type, callback);
+
+    // support for dataBoundComponentField.includeFrom:<dataSourceID>.<fieldName>
+    // for fields that are not in the dataSource but pick up their value from
+    // a related dataSource
+    // In this case simply update the outputs property of the request -- the
+    // server will be responsible for actually getting the value from the other 
+    // dataSource
+    var completeFields = this.getAllFields();
+    if (completeFields != null) {
+        for (var i = 0; i < completeFields.length; i++) {
+            if (completeFields[i].includeFrom != null && 
+                this.getDataSource().getField(completeFields[i].name) == null) 
+            {
+                if (requestProperties.additionalOutputs == null) requestProperties.additionalOutputs = "";
+                else requestProperties.additionalOutputs += ",";
+                requestProperties.additionalOutputs += [
+                        completeFields[i].name,
+                        completeFields[i].includeFrom].join(":")
+            
+            }
+        }
+    }
 
     // handle being passed a criteria object (map of keys to values), or a filter-component
     if (criteria == null) {
@@ -2289,10 +2383,29 @@ createDataModel : function (filterCriteria, operation, context) {
     }
 
     var resultSet = this.dataProperties || {};
-    if (this.dataFetchDelay) resultSet.fetchDelay = this.dataFetchDelay;
     
+    // if context is included as part of dataProperties, combine it with any passed context
+    // because we'll overwrite it on resultSet below
+    if (resultSet.context) context = isc.addProperties({}, resultSet.context, context);
+
+    if (this.dataFetchDelay) resultSet.fetchDelay = this.dataFetchDelay;
+
     isc.addProperties(resultSet, { operation:operation, filter:filterCriteria, context:context,
         componentId: this.ID});
+
+    if (this.getSort != null) {
+        // getSort will normalize specified sortField / initialSort to
+        // this._sortSpecifiers
+        // We run this as part of setData(), but by also doing this here we initialize the
+        // ResultSet with the appropriate sort, meaning it will already be sorted / won't
+        // need to re-fetch when setData() runs and sets up the sortSpecifiers on the ListGrid
+        var sortSpecifiers = this.getSort();
+        if (sortSpecifiers != null && sortSpecifiers.length > 0) {
+            resultSet._sortSpecifiers = sortSpecifiers;
+            resultSet._serverSortBy = isc.DS.getSortBy(resultSet._sortSpecifiers);
+        }
+    }
+
     return dataSource.getResultSet(resultSet);
 },
 
@@ -2749,6 +2862,7 @@ isPartiallySelected : function (record) {
 //<
 selectRecord : function (record, state, colNum) {
     this.selectRecords(record, state, colNum);
+    this.fireSelectionUpdated();
 },
 
 //> @method dataBoundComponent.selectSingleRecord()
@@ -2766,6 +2880,7 @@ selectRecord : function (record, state, colNum) {
 selectSingleRecord : function (record) {
     this.deselectAllRecords();
     this.selectRecord(record);
+    this.fireSelectionUpdated();
 },
 
 //> @method dataBoundComponent.deselectRecord()
@@ -2781,6 +2896,7 @@ selectSingleRecord : function (record) {
 //<
 deselectRecord : function (record, colNum) {
     this.selectRecord(record, false, colNum);
+    this.fireSelectionUpdated();
 },
 
 //> @method dataBoundComponent.selectRecords()
@@ -2814,7 +2930,10 @@ selectRecords : function (records, state, colNum) {
     }
     
     var selObj = this.getSelectionObject(colNum);
-    if (selObj) selObj.selectList(records, state, colNum);
+    if (selObj) {
+        selObj.selectList(records, state, colNum);
+        this.fireSelectionUpdated();
+    }
 },
 
 //> @method dataBoundComponent.deselectRecords()
@@ -2830,6 +2949,7 @@ selectRecords : function (records, state, colNum) {
 //<
 deselectRecords : function (records, colNum) {
     this.selectRecords(records, false);
+    this.fireSelectionUpdated();
 },
 
 //> @method dataBoundComponent.selectAllRecords()
@@ -2840,6 +2960,7 @@ deselectRecords : function (records, colNum) {
 //<
 selectAllRecords : function () {
     this.selection.selectAll();
+    this.fireSelectionUpdated();
 },
 
 //> @method dataBoundComponent.deselectAllRecords()
@@ -2851,6 +2972,7 @@ selectAllRecords : function () {
 //<
 deselectAllRecords : function () {
     this.selection.deselectAll();
+    this.fireSelectionUpdated();
 },
 
 //> @method dataBoundComponent.anySelected()
@@ -2865,6 +2987,15 @@ getRecord : function (index, column) {
     return null;
 },
 
+fireSelectionUpdated : function () {
+    if (this.selectionUpdated) {
+        var recordList = this.getSelection(),
+            record = (recordList && recordList.length > 0 ? recordList[0] : null)
+        ;
+        this.selectionUpdated(record, recordList);
+    }
+},
+
 // Hiliting
 // ---------------------------------------------------------------------------------------
 
@@ -2874,7 +3005,11 @@ getRecord : function (index, column) {
 // <P>
 // A +link{Hilite} definition contains styling information such as +link{hilite.cssText} and
 // +link{hilite.htmlBefore} that define what the hilite looks like, as well as properties
-// defining where the hilite is applied.
+// defining where the hilite is applied.  If you create hilites manually, they should ideally
+// specify +link{hilite.textColor, textColor} and/or 
+// +link{hilite.backgroundColor, backgroundColor} in order to be editable in a 
+// +link{class:HiliteEditor}.  If these are not provided, however, note that they will be 
+// manufactured automatically from the +link{hilite.cssText, cssText} attribute if it is present.
 // <P>
 // A hilite can be applied to data <b>either</b> by defining +link{hilite.criteria,criteria}
 // or by explicitly including markers on the data itself.  
@@ -2902,7 +3037,6 @@ getRecord : function (index, column) {
 // See +link{group:hiliting} for an overview.
 //
 // @treeLocation Client Reference/Grids
-// @requiresModules Analytics
 // @visibility external
 //< 
 
@@ -2925,7 +3059,7 @@ getRecord : function (index, column) {
 //< 
 
 //> @attr hilite.fieldName (identifier : null : IR)
-// Name of the field that hilite should be applied to.  
+// Name of the field, or array of fieldNames, this hilite should be applied to.  
 // <P>
 // If unset, hilite is applied to every field of the record.
 //
@@ -2969,7 +3103,7 @@ getRecord : function (index, column) {
 // @visibility external
 //<
 
-//> @attr hilite.title (String : false : IRW)
+//> @attr hilite.title (String : null : IRW)
 // User-visible title for this hilite.  Used for interfaces such as menus that can enable or
 // disable hilites.
 //
@@ -2977,6 +3111,23 @@ getRecord : function (index, column) {
 //<
 
 
+//> @attr hilite.textColor (String : null : IRW)
+// When edited via a +link{class:HiliteEditor}, the value for the foreground color of this 
+// hilite.  If this is omitted, it will be automatically derived from the <i>textColor</i>
+// attribute of +link{hilite.cssText}.  When a hilite is saved in a HiliteEditor, both 
+// attributes are set automatically.
+//
+// @visibility external
+//<
+
+//> @attr hilite.backgroundColor (String : null : IRW)
+// When edited via a +link{class:HiliteEditor}, the value for the background color of this 
+// hilite.  If this is omitted, it will be automatically derived from the <i>backgroundColor</i>
+// attribute of +link{hilite.cssText}.  When a hilite is saved in a HiliteEditor, both 
+// attributes are set automatically.
+//
+// @visibility external
+//<
 
  
 styleOpposite:"cellHiliteOpposite",
@@ -3014,6 +3165,15 @@ hiliteProperty:"_hilite",
 
 
 
+//>	@method dataBoundComponent.getHilites()
+// Return the set of hilite-objects currently applied to this DataBoundComponent.  These
+// can be serialized for storage and then restored to a component later via 
+// +link{dataBoundComponent.setHilites, setHilites()}.
+//
+// @visibility external
+// @return (Array) Array of hilite objects
+// @group  hiliting
+//<
 getHilites : function () {
     return this.hilites;
 },
@@ -3021,6 +3181,16 @@ getHilites : function () {
 // property used to store hilite state for generated hilites
 hiliteMarker:"_hmarker",
 _hiliteCount: 0,
+
+//>	@method dataBoundComponent.setHilites()
+// Accepts an array of hilite objects and applies them to this DataBoundComponent.  See also
+// +link{dataBoundComponent.getHilites, getHilites()} for a method of retrieving the hilite
+// array for storage, including hilites manually added by the user.
+//
+// @param hilites (Array of Hilite) Array of hilite objects
+// @group hiliting
+// @visibility external
+//<
 setHilites : function (hilites) {
     this.hilites = hilites;
 
@@ -3029,6 +3199,31 @@ setHilites : function (hilites) {
     this._setupHilites(this.hilites);
 
 }, 
+
+//>	@method dataBoundComponent.getHiliteState()
+// Get the current hilites encoded as a String, for saving.
+//
+// @return (String) hilites state encoded as a String
+// @visibility external
+//<
+getHiliteState : function () {
+    var hilites = this.getHilites();
+    if (hilites == null) return null;
+    return "(" + isc.JSON.encode(hilites, {dateFormat:"dateConstructor"}) + ")";
+},
+
+//>	@method dataBoundComponent.setHiliteState()
+// Set the current hilites based on a hiliteState String previously returned from
+// +link{getHilitesState()}.
+// @param hiliteState (String) hilites state encoded as a String
+// @visibility external
+//<
+setHiliteState : function (hilitesState) {
+    //!OBFUSCATEOK    
+    if (hilitesState == null) return;
+    var hilites = eval(hilitesState);
+    this.setHilites(hilites);
+},
 
 // factored so it can also get called lazily the first time getHilite() is called
 _setupHilites : function (hilites, dontApply) {
@@ -3058,6 +3253,25 @@ applyHilites : function () {
     if (isc.isA.ResultSet(data)) data = data.getAllLoadedRows();
     if (isc.isA.Tree(data)) data = data.getAllItems();
     data.setProperty(this.hiliteMarker, null);
+
+    var fields = this.getAllFields();
+    
+    for (var i=0; i<fields.length; i++) {
+        var field = fields[i],
+            fieldName = field[this.fieldIdProperty]
+        ;
+        if (field.userFormula || field.userSummary) {
+            if (field.userSummary && !field._generatedSummaryFunc)
+                this.getSummaryFunction(field);
+
+            for (var j=0; j<data.length; j++) {
+                if (field.userFormula) 
+                    data[j][fieldName] = this.getFormulaFieldValue(field, data[j]);
+                else  
+                    data[j][fieldName] = field._generatedSummaryFunc(data[j], fieldName, this);
+            }
+        }
+    }
 
     // apply each hilite in order
     for (var i = 0; i < hilites.length; i++) {
@@ -3158,6 +3372,9 @@ evaluateCriterion : function (record, criterion) {
 
 // TODO: make external version that checks params
 hiliteRecord : function (record, field, hilite) {
+
+	if (!field) return;
+
     var hiliteCount = record[this.hiliteMarker];
     if (hiliteCount == null) hiliteCount = record[this.hiliteMarker] = this._hiliteCount++;
 
@@ -3227,7 +3444,12 @@ addObjectHilites : function (object, cellCSSText, field) {
             // NOTE: "style" is backcompat
             hiliteCSSText = hilite.cssText || hilite.style;
             // make sure that hilites that spec a fieldName are respected
-            var matchesField = (!hilite.fieldName || !field || hilite.fieldName == field.name);
+
+            var fieldNames = [];
+            if (hilite)
+                fieldNames = isc.isAn.Array(hilite.fieldName) ? hilite.fieldName : [hilite.fieldName];
+
+            var matchesField = (!hilite.fieldName || !field || fieldNames.contains(field.name));
             if (hiliteCSSText != null && hiliteCSSText != isc.emptyString && matchesField) {
                 // we have a hilite style
                 if (cellCSSText == null) cellCSSText = hiliteCSSText;
@@ -3243,8 +3465,11 @@ getFieldHilites : function (record, field) {
     if (!record || !field) return null;
 
     if (record[this.hiliteProperty] != null) {
-        var hilite = this.getHilite(record[this.hiliteProperty]);
-        if (hilite && hilite.fieldName == field.name) return [hilite];
+        var hilite = this.getHilite(record[this.hiliteProperty]),
+            fieldNames;
+        if (hilite)
+            fieldNames = isc.isAn.Array(hilite.fieldName) ? hilite.fieldName : [hilite.fieldName];
+        if (fieldNames && fieldNames.contains(field.name)) return [hilite];
         else return null;
     }
     
@@ -3359,8 +3584,21 @@ redrawHilites : function () {
 },
 
 
+//>	@method dataBoundComponent.editHilites()
+// Shows a +link{class:HiliteEditor, HiliteEditor} interface allowing end-users to edit
+// the data-hilites currently in use by this DataBoundComponent.
+//
+// @visibility external
+// @group  hiliting
+//<
 editHilites : function () {
+    // needs to be dynamically re-created to account for formula fields
+    var ds = isc.DataSource.create({
+        fields : this.getAllFields()
+    });
+
     if (this.hiliteWindow) {
+        this.hiliteEditor.setDataSource(ds);
         this.hiliteEditor.clearHilites();
         this.hiliteEditor.setHilites(this.getHilites());
         this.hiliteWindow.show();
@@ -3369,7 +3607,7 @@ editHilites : function () {
     var grid = this,
 	    hiliteEditor = this.hiliteEditor = isc.HiliteEditor.create({
             autoDraw:false,
-            dataSource:this.getDataSource(),
+            dataSource:ds,
             hilites:this.getHilites(),
             callback:function (hilites) {
                 if (hilites != null) grid.setHilites(hilites);
@@ -3389,7 +3627,6 @@ editHilites : function () {
         });
     return theWindow;
 },
-
 
 //
 // Drag & Drop
@@ -3482,14 +3719,27 @@ transferRecords : function (dropRecords, targetRecord, index, sourceWidget, call
     		// select the stuff that's being dropped
     		// (note: if selectionType == SINGLE we only select the first record)
             
+           
             
-            if (this.selectionType == isc.Selection.MULTIPLE || 
-                this.selectionType == isc.Selection.SIMPLE) 
-            {
-                this.selection.deselectAll();
-                this.selection.selectList(dropRecords);
-            } else if (this.selectionType == isc.Selection.SINGLE) {
-                this.selection.selectSingle(dropRecords[0]);
+            var selectRecords = true;
+            // If we're dropping between 2 dataSources and the pkField doesn't exist
+            // on the source dataSource, don't attempt to select records immediately as
+            // they'll likely have no primary key yet meaning we can't perform
+            // a selection immediately (this is likely to occur for 
+            // primary keys generated by the server - for example 'sequence' type fields)
+            if (sourceDS != null && dataSource != null) {
+                var pkField = dataSource.getPrimaryKeyField();
+                selectRecords = pkField && (sourceDS.getField(pkField.name) != null);
+            }
+            if (selectRecords) {
+                if (this.selectionType == isc.Selection.MULTIPLE || 
+                    this.selectionType == isc.Selection.SIMPLE) 
+                {
+                    this.selection.deselectAll();
+                    this.selection.selectList(dropRecords);
+                } else if (this.selectionType == isc.Selection.SINGLE) {
+                    this.selection.selectSingle(dropRecords[0]);
+                }
             }
 
             
@@ -3816,7 +4066,7 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
     }        
  
     if (this._isDuplicateOnClient(record, sourceDS, foreignKeys)) {
-        isc.warn(this.duplicateDragMessage);
+        if (this.duplicateDragMessage != null) isc.warn(this.duplicateDragMessage);
         isc.Log.logDebug("Found client-side duplicate, adding '" + 
                          record[isc.firstKey(record)] + 
                          "' to exception list", "dragDrop");
@@ -3884,7 +4134,7 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
                 ds.fetchData(criteria, function (dsResponse, data, dsRequest) {
                     if (data && data.length > 0) {
 
-                        isc.warn(_listGrid.duplicateDragMessage);
+                        if (_listGrid.duplicateDragMessage != null) isc.warn(_listGrid.duplicateDragMessage);
                         isc.Log.logDebug("Found server-side duplicate, adding '" + 
                                      record[isc.firstKey(record)] + 
                                      "' to exception list", "dragDrop");
@@ -3981,7 +4231,7 @@ _isDuplicateOnClient : function (record, sourceDS, foreignKeys) {
 },
 
 getCleanRecordData : function (record) {
-    if (isc.ResultTree && isc.isA.ResultTree(this.data)) {
+    if (isc.Tree && isc.isA.Tree(this.data)) {
         return this.data.getCleanNodeData(record, false);
     }
     var clean = {};
@@ -4249,7 +4499,7 @@ cloneDragData : function () {
             delete record._embeddedComponents;
         }
         
-        if (isc.isA.ResultTree(this.data) || isc.isA.Tree(this.data)) {
+        if (isc.isA.Tree(this.data)) {
             selection = this.data.getCleanNodeData(selection);
         } else {
             if (isc.isAn.Array(selection)) {
@@ -4313,8 +4563,7 @@ transferSelectedData : function (source, index, callback) {
             
     // don't check willAcceptDrop() this is essentially a parallel mechanism, so the developer 
     // shouldn't have to set that property directly.
-    if (index == null) index = this.data.getLength()
-    else index = Math.min(index, this.data.getLength());
+    if (index != null) index = Math.min(index, this.data.getLength());
         
     // Call cloneDragData to pull the records out of our dataset
     
@@ -4322,7 +4571,8 @@ transferSelectedData : function (source, index, callback) {
     
 
     var dropRecords = source.cloneDragData();
-    var targetRecord = this.data.get(index);
+    var targetRecord;
+    if (index != null) targetRecord = this.data.get(index);
     
     this.transferRecords(dropRecords, targetRecord, index, source, callback);
 },
@@ -4358,9 +4608,9 @@ isValidTransferSource : function (source) {
 // @visibility external
 //<
 setDragTracker : function () {
-
     var EH = isc.EH, dragTrackerMode = this.dragTrackerMode;
-    if (dragTrackerMode == "none") {
+
+    if (dragTrackerMode == "none" || EH.dragOperation == EH.DRAG_SCROLL) {
         // we can't just not call setDragTracker(), or the dragTracker will be set to the
         // default canvas tracker image.
         EH.setDragTracker("");
@@ -4539,13 +4789,13 @@ addFormulaField : function () {
 //<
 editFormulaFieldText: "Edit formula...",
 
-//> @attr dataBoundComponent.removeFormulaFieldText (String: "Remove formula..." : IRW)
+//> @attr dataBoundComponent.removeFormulaFieldText (String: "Remove formula" : IRW)
 // Text for a menu item allowing users to remove a formula field
 //
 // @group i18nMessages
 // @visibility external
 //<
-removeFormulaFieldText: "Remove formula...",
+removeFormulaFieldText: "Remove formula",
 
 //> @method dataBoundComponent.editFormulaField
 // Method to display a +link{FormulaBuilder} to edit a formula Field.  If the function is called
@@ -4735,6 +4985,14 @@ userFieldCallback : function (builder) {
     }
 
     var field = builder.getUpdatedFieldObject();
+    
+    // Fire a notification method here - this will allow the developer to modify the
+    // added field 
+    if (this.userAddedField && this.userAddedField(field) == false) {
+        editorWindow.destroy();
+        return;
+    }
+    
     if (this.hideField && builder.shouldHideUsedFields()) {
         var usedFields = builder.getUsedFields();
         for (var i = 0; i < usedFields.length; i++) {
@@ -4760,6 +5018,7 @@ userFieldCallback : function (builder) {
 
     editorWindow.destroy();
 },
+
 
 getUniqueFieldName : function (namePrefix) {
     // assume return values in the format "fieldXXX" if namePrefix isn't passed
@@ -4829,6 +5088,61 @@ getRecordIndex : function (record) {
 getTitleFieldValue : function (record) {},
 
 
+
+//> @attr dataBoundComponent.titleField (string : null : IR)
+// Best field to use for a user-visible title for an individual record from this
+// component.
+// <P>
+// This attribute has the same function as +link{DataSource.iconField} but can be
+// set for a component with no dataSource, or can be used to override the dataSource setting.
+//
+// @visibility external
+//<
+
+//> @attr dataBoundComponent.iconField (string : null : IR)
+// Designates a field of +link{FieldType,type}:"image" as the field to use when rendering a
+// record as an image, for example, in a +link{TileGrid}. 
+// <P>
+// This attribute has the same function as +link{DataSource.iconField} but can be
+// set for a component with no dataSource, or can be used to override the dataSource setting.
+// 
+// @visibility external
+//<
+
+//> @attr dataBoundComponent.infoField (String : null : IR)
+// Name of the field that has the second most pertinent piece of textual information in the
+// record, for use when a +link{DataBoundComponent} needs to show a short summary of a record.
+// <P>
+// This attribute has the same function as +link{DataSource.infoField} but can be
+// set for a component with no dataSource, or can be used to override the dataSource setting.
+//
+// @visibility external
+//<
+
+
+//> @attr dataBoundComponent.dataField (String : null : IR)
+// Name of the field that has the most pertinent numeric, date, or enum value, for use when a
+// +link{DataBoundComponent} needs to show a short summary of a record.
+// <P>
+// This attribute has the same function as +link{DataSource.dataField} but can be
+// set for a component with no dataSource, or can be used to override the dataSource setting.
+//
+// @visibility external
+//<
+
+//> @attr dataBoundComponent.descriptionField (String : null : IR)
+// Name of the field that has a long description of the record, or has the primary text data
+// value for a record that represents an email message, SMS, log or similar.
+// <P>
+// This attribute has the same function as +link{DataSource.descriptionField} but can be
+// set for a component with no dataSource, or can be used to override the dataSource setting.
+//
+// @visibility external
+//<
+
+
+
+
 //> @method dataBoundComponent.getTitleField()
 // Method to return the fieldName which represents the "title" for records in this
 // Component.<br>
@@ -4871,16 +5185,6 @@ getTitleField : function () {
 // @visibility external
 //<
 getRecordHiliteCSSText : function (record, cssText, field) {
-    if (field != null && field.userSummary) {
-        var fieldDetails = isc.SummaryBuilder.getFieldDetailsFromValue(
-                field.userSummary.summaryVars, this.getAllFields(), this),
-            summaryFields = fieldDetails.usedFields
-        ;
-
-        for (var fieldIndex = 0; fieldIndex < summaryFields.length; fieldIndex++) {
-            cssText = this.getRecordHiliteCSSText(record, cssText, summaryFields[fieldIndex]);
-        }
-    }
     cssText = this.addObjectHilites(record, cssText, field);
     cssText = this.addHiliteCSSText(record, this.getFieldNum(field), cssText);
     return cssText;
@@ -4919,10 +5223,159 @@ convertCSSToProperties : function (css, allowedProperties) {
     return propertyList;
 },
 // Overridable method to return the exportable value of a record's field. 
-// By default, the display value is returned (via getSpecificFieldValue).
+// By default, the display value is returned (via getStandaloneFieldValue),
+// stripped of HTML tags.
 getExportFieldValue : function (record, fieldName, fieldIndex) {
-    return this.getSpecificFieldValue(record, fieldName, false);
+    return this.htmlUnescapeExportFieldValue(
+        this.getStandaloneFieldValue(record, fieldName, false));
 },
+
+// Overridable method to store the exportable value of a record's field, including
+// its style information, in exportObject[exportProp]. If the field is unstyled then
+// exportObject is not modified. The exportable value is in one of two formats, depending
+// on if the style information applies to the entire cell, or a part of the cell (eg
+// if cell used in a summary has hiliting applied to it):
+//
+// * Cell-wide style: { backgroundColor: "#f00000" }
+//
+// * Sub-cell style:
+//   [
+//     { value: "1",
+//       style: { backgroundColor: "#f00000" }
+//     },
+//     { value: " --- baz" }
+//   ]
+addDetailedExportFieldValue : function(exportObject, exportProp, record, exportField, 
+    exportFieldIndex, allowedProperties, alwaysExportExpandedStyles)
+{
+    var exportFieldName = exportField.name;
+    var exportFieldCSS = this.getRecordHiliteCSSText(record, null, exportField);
+    var simpleValue;
+    if (exportField.exportRawValues || (this.exportRawValues && exportField.exportRawValues != false))
+        simpleValue = record[exportField[this.fieldIdProperty]];
+    else
+        simpleValue = this.getExportFieldValue(record, exportField.name, exportFieldIndex);
+
+    if (!exportField.userSummary) {
+        if (exportFieldCSS) {
+            var props = this.convertCSSToProperties(exportFieldCSS, allowedProperties);
+            if (props) {
+                if (alwaysExportExpandedStyles)
+                    exportObject[exportProp] = [{value: simpleValue, style: props }];
+                else
+                    exportObject[exportProp] = props;
+            }
+        }
+        return;
+    }
+
+    if (!exportField.userSummary.text) this.logError("Summary field does not have text format");
+    
+    // Code below generally adapted from SummaryBuilder.getFieldDetailsFromValue, generateFunction
+    var missingFields = [], usedFields = {}, usedFieldsCSS = {};
+    var cssFound = (exportFieldCSS && exportFieldCSS != "");
+        
+    // compile lists of used and missing fields and save off used field CSS for later
+    for (var key in exportField.userSummary.summaryVars) {
+        var varFieldName = exportField.userSummary.summaryVars[key],
+            varField = this.getField(varFieldName);
+        if (!varField) missingFields.add(varFieldName);
+        else {
+            usedFields[key] = varField;
+            
+            var varCSS = this.getRecordHiliteCSSText(record, null, varField);
+            if (varCSS) {
+                usedFieldsCSS[key] = varCSS;
+                cssFound=true;
+            }
+        }
+    }
+    
+    // if there's no style info, there's no need for a $style entry.
+    if (!cssFound) return;
+    
+    // missing fields fail the method and probably ought to be styled
+    if (missingFields.length != 0 && exportFieldCSS) {
+        if (alwaysExportExpandedStyles) {
+            exportObject[exportProp] = {
+                style: this.convertCSSToProperties(exportFieldCSS, allowedProperties),
+                value: simpleValue
+            };
+        } else {
+        exportObject[exportProp] = this.convertCSSToProperties(
+            exportFieldCSS, allowedProperties);
+        }
+        return;
+    }
+    
+    // substrings of summary value are stored in currentFragment along with its associated
+    // CSS in currentCSS, before they are combined into a single object and appended to output
+    // array detailedValues. Consecutive fragments with equal css strings are merged.
+    var currentFragment = null, currentCSS = null, detailedValue = [];
+    
+    // addToOutput(): helper function for outputting value/css pairs. 
+    var _this=this;
+    var addToOutput = function (value, css) {
+        if (value) {
+            value = _this.htmlUnescapeExportFieldValue(value);
+            
+            if (currentFragment && currentCSS == css) {
+                currentFragment.value += value; // merge if styles are equal
+            } else {
+                // add current fragment to output array and create new fragment
+                if (currentFragment) detailedValue.push(currentFragment);
+
+                currentFragment = {value: value};
+                currentCSS = css;
+                if (css) currentFragment.style = _this.convertCSSToProperties(
+                    css, allowedProperties);
+            }
+        }
+    };
+
+    // Split summary format on formula alias prefix "#" and consider each substring a
+    // potential formula alias. The "#X" alias form is attempted first then "#{ABC}".
+    var splitFmt = exportField.userSummary.text.split("#"),
+        braceRegexp = /^\{([A-Z]+)\}/;
+    
+    // If format started with literal text, add it to output
+    if (splitFmt[0]) addToOutput(splitFmt[0], exportFieldCSS);
+    for (var i=1; i<splitFmt.length; i++) {
+        var fragment = splitFmt[i], braceRegexpMatch, matchField, matchKey, fieldValue, 
+            fieldCSS, textAfterField;
+            
+        matchKey = fragment.charAt(0);
+        matchField = usedFields[matchKey];
+        
+        if (matchField) textAfterField = fragment.substr(1); // #X
+        else if (braceRegexpMatch = fragment.match(braceRegexp)) {
+            textAfterField = fragment.substr(braceRegexpMatch[0].length); // #{XXX}
+            matchKey = braceRegexpMatch[1];
+            matchField = usedFields[matchKey];
+            
+            // always assume #{..} is meant to be an alias, so fail this out
+            if (matchField) textAfterField = this.missingSummaryFieldValue + textAfterField;
+        } else textAfterField = "#" + fragment; // possibly not an alias
+        
+        // If a field matched, get its value and style; merge style with summary-wide
+        // style as appropriate
+        if (matchField) {
+            fieldValue = this.getExportFieldValue(record, matchField.name, 
+                this.getFieldNum(matchField.name));
+            fieldCSS=null;
+            if (exportFieldCSS) fieldCSS = (fieldCSS||"") + exportFieldCSS;
+            if (usedFieldsCSS[matchKey]) fieldCSS = (fieldCSS||"") + usedFieldsCSS[matchKey];
+        }
+        // add possible fragments for formula alias and the literal text following it
+        addToOutput(fieldValue, fieldCSS);
+        addToOutput(textAfterField, exportFieldCSS);
+    }
+    // Above loop leaves last fragment not added to output: add it now
+    if (currentFragment) detailedValue.push(currentFragment);
+    
+    exportObject[exportProp] = detailedValue;
+},
+
 
 //> @method dataBoundComponent.getClientExportData()
 // Export visual description of component data into a JSON form suitable for export.
@@ -4932,6 +5385,7 @@ getExportFieldValue : function (record, fieldName, fieldIndex) {
 //             constraining the allowed properties to be returned
 //        includeCollapsedNodes (Boolean) - if true, when exporting a TreeGrid, include tree
 //             nodes underneath collapsed folders in the export output
+// @param callback (Callback) callback to fire when data is ready
 // @return exportData (Object) exported data
 //<
 // * Data is exported as an array of objects, with one object per record (visual row) 
@@ -4939,34 +5393,66 @@ getExportFieldValue : function (record, fieldName, fieldIndex) {
 // * The title of each visible field of the component is mapped to a property
 //   of a record's object. Correspondingly, the value of each visible field in a record is
 //   mapped to each value of a record's object.
-// * Additionally, if CSS hilighting styles are present on a record's field, the CSS text is
-//   converted into an object mapping CSS properties in camelCaps format to CSS values, and the
-//   object is stored in <property name>$style.
+// * If CSS hiliting styles are present on a field, style information is stored in property 
+//   "<property name>$style". This contains an array of objects. Each object has a
+//   'value' property containing a fragment or substring of the field value. If that
+//   value fragment is styled, the CSS text is converted into an object mapping CSS
+//   properties in camelCaps format to CSS values, and the object is stored in the 'style'
+//   property.
 // * Null record values are converted to empty strings.
 //
-// Example output:
-//  [
-//      { "Foo Fighter": "1",
-//        "Foo Figher$style": { backgroundColor: "#f00000" },
+// For instance, suppose a record has a field "Foo Fighter" equal to 1 with a
+// backgroundColor set through hiliting, a field "bar" set to "baz", a field
+// "xyzzy" set to null, and a summary field with the format "#A -- #B", with
+// #A referring to "Foo Fighter" and #B referring to "bar". The return value would be:
+//
+// [
+//     { 
+//         "Foo Fighter": "1",
+//         "Foo Fighter$style": 
+//         [
+//             { 
+//                 value: "1",
+//                 style: 
+//                 { 
+//                     backgroundColor: "#f00000" 
+//                 }
+//             }
+//         ],
 //         bar: "baz",
 //         xyzzy: "",
-//        "Summary Field": "1 --- baz",
-//        "Summary Field$style": { font-weight: "bold" },
-//      }, ...
-//  ]
-getClientExportData : function (settings) {
+//         "Summary Field": "1 --- baz",
+//         "Summary Field$style": 
+//         [
+//             {
+//                 value: "1",
+//                 style: 
+//                 { 
+//                     backgroundColor: "#f00000"
+//                 }
+//             },
+//             {
+//                 value: " --- baz"
+//             }
+//         ]
+//     }, /* other records... */
+// ]
+exportDataChunkSize: 50,
+getClientExportData : function (settings, callback) {
     var data = this.originalData || this.data,
         exportData = [],
         fields = this.getClientExportFields(settings),
         includeHiddenFields,
         allowedProperties,
-        includeCollapsedNodes
+        includeCollapsedNodes,
+        alwaysExportExpandedStyles
     ;
 
     if (isc.isA.Object(settings)) {
         includeHiddenFields = settings.includeHiddenFields;
         allowedProperties = settings.allowedProperties;
         includeCollapsedNodes = settings.includeCollapsedNodes;
+        alwaysExportExpandedStyles = settings.alwaysExportExpandedStyles;
         // support export fields as per server-side export
         if (settings && settings.exportFields) {
             // when exportFields is specified and unless includeHiddenFields is explicitly set to
@@ -4978,19 +5464,70 @@ getClientExportData : function (settings) {
 
     
     if (isc.isA.ResultSet(data)) data = data.getAllLoadedRows();
-    if (isc.isA.ResultTree(data)) {
+    if (isc.isA.Tree(data)) {
         if (includeCollapsedNodes) data = data.getAllNodes();
         else data = data.getOpenList();
     }
 
+    var context = {
+        settings: settings,
+        callback: callback,
+        chunkSize: this.exportDataChunkSize,
+        data: data,
+        exportData: exportData,
+        fields: fields,
+        includeHiddenFields: includeHiddenFields,
+        allowedProperties: allowedProperties,
+        includeCollapsedNodes: includeCollapsedNodes,
+        alwaysExportExpandedStyles: alwaysExportExpandedStyles,
+        totalRows: data.getLength(),
+        startRow: 0,
+        endRow: Math.min(this.exportDataChunkSize, data.getLength())
+    };
+
+    context.firstTimeStamp = context.thisTimeStamp = isc.timeStamp();
+
+    this.logWarn("starting export chunking process - "+context.firstTimeStamp);
+    this.getClientExportDataChunk(context);
+
+    return;
+},
+
+getClientExportDataChunk : function (context) {
+    var settings = context.settings,
+        data = context.data,
+        exportData = context.exportData,
+        fields = context.fields,
+        includeHiddenFields = context.includeHiddenFields,
+        allowedProperties = context.allowedProperties,
+        includeCollapsedNodes = context.includeCollapsedNodes,
+        alwaysExportExpandedStyles = context.alwaysExportExpandedStyles,
+        totalRows = context.totalRows,
+        startRow = context.startRow,
+        endRow = context.endRow
+    ;
+
     // Generate a separate object for each row of data
-    for (var dataRow = 0; dataRow < data.getLength(); dataRow++) {
+    for (var dataRow = startRow; dataRow < endRow; dataRow++) {
         var record = data[dataRow],
             exportObject = this.getRecordExportObject(record, fields, allowedProperties, 
-                includeHiddenFields, includeCollapsedNodes)
+                includeHiddenFields, includeCollapsedNodes, alwaysExportExpandedStyles)
         ;
 
         exportData.push(exportObject);
+    }
+
+    if (context.endRow < context.totalRows) {
+        context.lastTimeStamp = context.thisTimeStamp;
+        context.thisTimeStamp = isc.timeStamp();
+        if (this.logIsInfoEnabled("export")) {
+            this.logInfo("processed "+context.endRow+" rows - starting next chunk - "+
+                ((context.thisTimeStamp-context.lastTimeStamp)/1000));
+        }
+        // more rows remain - delayCall() this method again to process the next chunk
+        context.startRow = context.endRow;
+        context.endRow = Math.min(context.startRow + context.chunkSize, context.totalRows);
+        return this.delayCall("getClientExportDataChunk", [context], 0);
     }
 
     if (this.showGridSummary && this.summaryRow && this.exportIncludeSummaries) {
@@ -5001,15 +5538,23 @@ getClientExportData : function (settings) {
         for (var dataRow = 0; dataRow < data.getLength(); dataRow++) {
             var record = data[dataRow],
                 exportObject = this.getRecordExportObject(record, fields, allowedProperties, 
-                    includeHiddenFields, includeCollapsedNodes)
+                    includeHiddenFields, includeCollapsedNodes, alwaysExportExpandedStyles)
             ;
 
             exportData.push(exportObject);
         }
     }
 
-    return exportData;
+    if (context.callback) {
+        var data = context.exportData;
+        if (this.logIsInfoEnabled("export")) {
+            this.logInfo("finished processing "+context.endRow+" rows - about to export - "+isc.timestamp());
+        }
+        this.fireCallback(context.callback, "data,context", [data,context.settings]);
+    }
 },
+
+
 getClientExportFields : function (settings) {
     var fields = this.getAllFields();
 
@@ -5026,8 +5571,10 @@ getClientExportFields : function (settings) {
 
     return fields;
 },
-getRecordExportObject : function (record, fields, allowedProperties, includeHiddenFields, includeCollapsedNodes) {
-    var exportObject = {}
+getRecordExportObject : function (record, fields, allowedProperties, includeHiddenFields, 
+    includeCollapsedNodes, alwaysExportExpandedStyles)
+{
+    var exportObject = {};
 
     // Iterate through all fields
     for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
@@ -5036,28 +5583,23 @@ getRecordExportObject : function (record, fields, allowedProperties, includeHidd
         // Skip field if it's hidden
         if ((!this.fields.contains(field)) && !includeHiddenFields) continue;
         
-        // get [ field name, field value ] pair
-        var fieldName = field.title || field.name,
-            fieldValue = this.getExportFieldValue(record, field.name, fieldIndex);
+        var fieldNum = this.getFieldNum(field.name),
+            exportProp=this.htmlUnescapeExportFieldTitle(field.exportTitle || field.title || field.name),
+            styleProp=exportProp+"$style",
+            value;
             
-        
-        if (fieldValue == null || fieldValue == "&nbsp;") fieldValue = "";
+        if (field.exportRawValues || (this.exportRawValues && field.exportRawValues != false)) 
+            value = record[field[this.fieldIdProperty]];
+        else 
+            value = this.getExportFieldValue(record, field.name, fieldNum);
 
-        // undo the effects of formatters that apply HTML to a field.
-        fieldValue = this.htmlUnescapeExportFieldValue(fieldValue);
-        var escapedFieldName = this.htmlUnescapeExportFieldTitle(fieldName);
-
-        exportObject[escapedFieldName] = fieldValue;
+        //var value = this.getExportFieldValue(record, field.name, fieldNum);
         
-        // Get CSS and convert it to camelCaps
-        var cssText = this.getRecordHiliteCSSText(record, null, field),
-            cssProps = this.convertCSSToProperties(cssText, allowedProperties);
-        if (cssProps) {
-            isc.addProperties(cssProps, this.getFormattingProperties(field, record[field.name]));
-        } else { 
-            cssProps = this.getFormattingProperties(field, record[field.name]);
-        }
-        if (cssProps) exportObject[escapedFieldName + "$style"] = cssProps;
+        if (value == null || value == "&nbsp;") value = "";
+        exportObject[exportProp] = value;
+        
+        this.addDetailedExportFieldValue(exportObject, styleProp, record, field, fieldNum, 
+            allowedProperties, alwaysExportExpandedStyles);
     }
     return exportObject;
 },
@@ -5070,7 +5612,38 @@ htmlUnescapeExportFieldValue : function (value) {
     if (isc.isA.String(value)) return value.unescapeHTML().replace(/<.*?>/g, isc.emptyString);
     return value;
 },
+// Takes a formatted value and, if hilites apply to the value, adds hilite styling via adding
+// a surround <span> tag with a STYLE attribute.  Otherwise returns the value unchanged.
+addHiliteSpan : function(record, field, value) {
+    var fieldCss = this.getRecordHiliteCSSText(record, null, field);
+    if (fieldCss) return "<span style=\"" + fieldCss + "\">" + value + "</span>";
+    else return value;
+},
+getRawValue : function (record, fieldName) {
+	return this.getCellValue(record, this.getField(fieldName));
+},
+getFormattedValue : function (record, fieldName, value) {
+    return value;
+},
+fieldIsVisible : function (field) {
+    return true;
+},
+getStandaloneFieldValue : function (record, fieldName, unformatted) {
+    var field = this.getSpecifiedField(fieldName),
+        value;
 
+    if (!field) return;
+    
+    if      (field.userFormula) value = this.getFormulaFieldValue(field, record);
+    else if (field.userSummary) value = this.getSummaryFieldValue(field, record);
+    else {
+        value = this.getRawValue(record, fieldName);
+        if (!unformatted) value = this.getFormattedValue(record, fieldName, value);
+    }
+    
+    var ret = this.addHiliteSpan(record, field, value);
+    return ret;
+},
 getFormattingProperties : function (field, value) {
     if (field.type != "date" && field.type != "datetime") return;
     
@@ -5128,13 +5701,18 @@ getFormattingProperties : function (field, value) {
 // To export unformatted data from this component's dataSource, 
 // see +link{dataBoundComponent.exportData, exportData} which does not include client-side 
 // formatters, but relies on both the SmartClient server and server-side DataSources.
-// @param requestProperties (DSRequest Properties) Request properties for the export
+// @param [requestProperties] (DSRequest Properties) Request properties for the export
 // @see dataSource.exportClientData
 // @visibility external
 //<
 exportClientData : function (requestProperties) {
-    var data = this.getClientExportData(requestProperties),
-        props = requestProperties,
+    this.getClientExportData(requestProperties, 
+        this.getID()+".exportClientDataReply(data,context)");
+    return;
+},
+
+exportClientDataReply : function (data, context) {
+    var props = context,
         format = props && props.exportAs ? props.exportAs : "csv",
         fileName = props && props.exportFilename ? props.exportFilename : "export",
         exportDisplay = props && props.exportDisplay ? props.exportDisplay : "download"
@@ -5343,6 +5921,7 @@ getFieldDependencies : function (field) {
 //                  object will still exist but be null. This lets the caller know the
 //                  field was validated and it is valid.
 //<
+
 validateFieldAndDependencies : function (field, validators, newValue, record, options) {
 
     var errors = {},
@@ -5362,7 +5941,7 @@ validateFieldAndDependencies : function (field, validators, newValue, record, op
         result.valid = fieldResult.valid;
         result.stopOnError = fieldResult.stopOnError;
         if (fieldResult.errors != null) {
-            this.addValidationError (errors, field.name, fieldResult.errors);
+            this.addValidationError (errors, field.name||field.dataPath, fieldResult.errors);
         }
         if (fieldResult.resultingValue != null) {
             result.resultingValue = fieldResult.resultingValue;
@@ -5373,21 +5952,26 @@ validateFieldAndDependencies : function (field, validators, newValue, record, op
 
     // Validate other fields that are dependent on this one.
     
-    var fieldName = field.name,
+    var fieldName = field.name || field.dataPath,
         fields = this.getFields() || []
     ;
+
     for (var i = 0; i < fields.length; i++) {
+        
         var depField = fields[i];
-        if (depField.name != fieldName && this.isFieldDependentOnOtherField(depField, fieldName)) {
+        if (depField.name != fieldName  && depField.dataPath != fieldName &&
+            this.isFieldDependentOnOtherField(depField, fieldName)) 
+        {
             fieldResult = this.validateField (depField, depField.validators,
                                               record[depField.name], record, options);
             if (fieldResult != null ) {
                 if (fieldResult.errors != null) {
-                    this.addValidationError (errors, depField.name, fieldResult.errors);
+                    this.addValidationError (errors, depField.name || depField.dataPath,
+                                            fieldResult.errors);
                 } else {
                     // Record the field in the errors object even though there is no error.
                     // This lets the caller know the field was validated _and_ it is valid.
-                    this.addValidationError (errors, depField.name, null);
+                    this.addValidationError (errors, depField.name || depField.dataPath, null);
                 }
                 if (fieldResult.resultingValue != null) {
                     record[depField.name] = fieldResult.resultingValue;
@@ -5537,10 +6121,10 @@ validateField : function (field, validators, value, record, options) {
             showPrompt = (forceShowPrompt || field.synchronousValidation ||
                           this.synchronousValidation || false)
         ;
-        // Make sure any local conversion validator updates are sent
+        // Make sure if local validators have converted the value, the converted value is sent
         values[field.name] = value;
         // send validation request to server
-        this.fireServerValidation (field, values, validationMode, showPrompt);
+        this.fireServerValidation(field, values, validationMode, showPrompt, options.rowNum);
     }
 
     // If validation failed and focus should be retained in field, let caller know
@@ -5560,26 +6144,34 @@ _resolveStopOnError : function(stopOnError, fieldStopOnError, formStopOnError) {
     return (fieldStopOnError == null && formStopOnError) || fieldStopOnError || false;
 },
 
-fireServerValidation : function (field, record, validationMode, showPrompt) {
+fireServerValidation : function (field, record, validationMode, showPrompt, rowNum) {
     var ds = this.getDataSource();
-    if (ds != null) {
-        var requestProperties = {showPrompt: showPrompt, 
-                                 prompt: isc.RPCManager.validateDataPrompt,
-                                 validationMode: validationMode,
-                                 clientContext: {component: this,
-                                                 fieldName: field.name}
-                                };
+    if (ds == null) return;
 
-        // If processing asynchronously, we must keep a list of outstanding requests
-        // so that the DBC can check for dependencies before editing a field.
-        if (!showPrompt) {
-            var pendingFields = this._registerAsyncValidation(field);
-            requestProperties.clientContext.pendingFields = pendingFields;
+    var requestProperties = {showPrompt: showPrompt, 
+                             prompt: isc.RPCManager.validateDataPrompt,
+                             validationMode: validationMode,
+                             clientContext: {component: this,
+                                             fieldName: field.name,
+                                             rowNum: rowNum}
+                             };
+
+    // Drop null values if validating in "partial" mode
+    if (validationMode == this._$partial) {
+        for (var fieldName in record) {
+            if (record[fieldName] === null) delete record[fieldName];
         }
-        ds.validateData(record, 
-                        this._handleServerValidationReply,
-                        requestProperties);
     }
+
+    // If processing asynchronously, we must keep a list of outstanding requests
+    // so that the DBC can check for dependencies before editing a field.
+    if (!showPrompt) {
+        var pendingFields = this._registerAsyncValidation(field);
+        requestProperties.clientContext.pendingFields = pendingFields;
+    }
+    ds.validateData(record, 
+                    this._handleServerValidationReply,
+                    requestProperties);
 },
 
 _handleServerValidationReply : function (dsResponse, data, dsRequest) {
@@ -5604,10 +6196,10 @@ _handleServerValidationReply : function (dsResponse, data, dsRequest) {
                 if (!isc.isAn.Array(fieldErrors)) fieldErrors = [fieldErrors];
                 var stopOnError = null;
                 for (var i = 0; i < fieldErrors.length; i++) {
-                    component.addFieldErrors(fieldName, fieldErrors[i].errorMessage, false);
+                    component.addFieldErrors(fieldName, fieldErrors[i].errorMessage, false, context.rowNum);
                     if (fieldErrors[i].stopOnError) stopOnError = true;
                 }
-                field.redraw();
+                if (field.redraw) field.redraw();
 
                 stopOnError = component._resolveStopOnError(stopOnError, field.stopOnError,
                                                             component.stopOnError);
@@ -6316,5 +6908,43 @@ isc.MathFunction.registerFunction(
 // @group formulaFields
 // @visibility external
 //<
+
+isc.Canvas.registerStringMethods({
+    //> @method databoundComponent.userAddedField
+    // Notification method fired when a user-generated field is added to this component via
+    // +link{editFormulaField()} or +link{editSummaryField()}.
+    // <P>
+    // Returning false from this method will prevent the field being added at all. Note that
+    // this also provides an opportunity to modify the generated field object - any changes
+    // made to the field parameter will show up when the field is displayed in the ListGrid.
+    //
+    // @param	field	   (ListGridField)	User generated summary or formula field
+    // @return (boolean) Return false to cancel the addition of the field
+    // @group formulaFields
+    // @group summaryFields
+    // @visibility external
+    //<
+    
+    userAddedField:"field",
+
+    //> @method dataBoundComponent.selectionUpdated()
+    // Called when selection changes. Note this method fires exactly once for any given
+    // change unlike the +link{ListGrid.selectionChanged,selectionChanged} event.
+    // <P>
+    // This event is fired once after selection/deselection has completed. The result is
+    // one event per mouse-down event. For a drag selection there will be two events fired:
+    // one when the first record is selected and once when the range is completed.
+    // <P>
+    // This event is also fired when selection is updated by a direct call to one of the
+    // DataBoundComponent select/deselect methods. Calls on the +link{class:Selection} object
+    // <b>do not</b> trigger this event.
+    //
+    // @param record        (object)                 first selected record, if any
+    // @param recordList    (array of object)        List of records that are now selected
+    // @group selection
+    // @visibility external
+    //<    
+    selectionUpdated : "record,recordList"
+});
 
 

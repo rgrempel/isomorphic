@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -290,7 +290,7 @@ isc.MultiSortPanel.addProperties({
 
 //        alwaysShowEditors: true,
         fields: [
-            { name: "sortSequence", title: " ", showTitle: false, canEdit: false, width: 80, canHide: false,
+            { name: "sortSequence", title: "&nbsp;", showTitle: false, canEdit: false, width: 80, canHide: false,
                 showHeaderContextMenuButton: false,
                 formatCellValue : function (value, record, rowNum, colNum, grid) {
                     return rowNum == 0 ? grid.creator.firstSortLevelTitle : 
@@ -488,7 +488,7 @@ isc.MultiSortPanel.addMethods({
 
     // support setting the fields array after creation-time
     setFields : function (fields) {
-        if (isc.isA.DataSource(fields)) fields = isc.getValues(fields.getFields());
+        if (isc.DataSource && isc.isA.DataSource(fields)) fields = isc.getValues(fields.getFields());
         this.fields = fields;
         this.setSortFields();
         this.optionsGrid.refreshFields();
@@ -517,7 +517,7 @@ isc.MultiSortPanel.addMethods({
         for (var key in fieldMap) {
             // if there's no title, use DS.getAutoTitle() (!value seems to detect empty strings
             // too, but checking it seperately just to be safe)
-            if (!fieldMap[key] || isc.isAn.emptyString(fieldMap[key]))
+            if (isc.DataSource && (!fieldMap[key] || isc.isAn.emptyString(fieldMap[key])))
                 fieldMap[key] = isc.DataSource.getAutoTitle(key);
         }
 
@@ -654,7 +654,7 @@ isc.MultiSortDialog.addClassMethods({
     //<
     askForSort : function (fieldSource, initialSort, callback) {
         var fields = isc.isAn.Array(fieldSource) ? fieldSource :
-                isc.isA.DataSource(fieldSource) ? isc.getValues(fieldSource.getFields()) :
+                isc.DataSource && isc.isA.DataSource(fieldSource) ? isc.getValues(fieldSource.getFields()) :
                 isc.isA.DataBoundComponent(fieldSource) ? fieldSource.getFields() : null
         ;
         if (!fields) return;
@@ -673,7 +673,6 @@ isc.MultiSortDialog.addProperties({
     height: 250,
     vertical: true,
     autoCenter: true,
-    title: "Sort",
     showMinimizeButton: false,
 
     mainLayoutDefaults: {
@@ -690,17 +689,153 @@ isc.MultiSortDialog.addProperties({
         autoParent: "mainLayout"
     },
 
-
     // i18n text constants - passthrough to this.multiSortPanel
+    //> @attr multiSortDialog.title (String : "Sort" : IR)
+    // The title-text to appear in this Dialog's Header-bar.  
+    // 
+    // @visibility external
+    // @group i18nMessages
+    //<
+    title: "Sort",
+
     //> @attr multiSortDialog.addLevelButtonTitle (String : "Add Level" : IR)
-    // @include multiSortPanel.addLevelButtonTitle
+    // The title-text to appear on the addLevelButton.  
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    // 
+    // @visibility external
+    // @group i18nMessages
     //<
+    
     //> @attr multiSortDialog.deleteLevelButtonTitle (String : "Delete Level" : IR)
-    // @include multiSortPanel.deleteLevelButtonTitle
+    // The title-text to appear on the deleteLevelButton
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
     //<
+    
     //> @attr multiSortDialog.copyLevelButtonTitle (String : "Copy Level" : IR)
-    // @include multiSortPanel.copyLevelButtonTitle
+    // The title-text to appear on the copyLevelButton
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
     //<
+
+    //> @attr multiSortDialog.invalidListPrompt (String : "Columns may only be used once: '\${title}' is used multiple times." : IR)
+    // This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+    // when the message is displayed.
+    // <P>
+    // Default value returns <P>
+    // <code>
+    // <i>Columns may only be used once: <code>[some field's title]</code> is used multiple times</i>
+    // </code>
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
+    //<
+
+    //> @attr multiSortDialog.propertyFieldTitle (String : "Column" : IR)
+    // The title-text to appear in the header of the "property" field.
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
+    //<
+    
+    //> @attr multiSortDialog.directionFieldTitle (String : "Order" : IR)
+    // The title-text to appear in the header of the "direction" field.
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
+    //<
+
+    //> @attr multiSortDialog.ascendingTitle (String : "Ascending" : IR)
+    // The title-text to appear in the "direction" field's SelectItem for an "ascending" sort
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
+    //<
+    
+    //> @attr multiSortDialog.descendingTitle (String : "Descending" : IR)
+    // The title-text to appear in the "direction" field's SelectItem for a "descending" sort
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
+    //<
+
+    //> @attr multiSortDialog.firstSortLevelTitle (String : "Sort by" : IR)
+    // The title-text to appear in the first column for the first sort-level.
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
+    //<
+
+    //> @attr multiSortDialog.otherSortLevelTitle (String : "Then by" : IR)
+    // The title-text to appear in the first column for all sort-levels other than the first.
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.  You only need to
+    // consider the properties on the MultiSortPanel for i18n.
+    //
+    // @visibility external
+    // @group i18nMessages
+    //<
+
+    //> @attr multiSortDialog.initialSort (Array of SortSpecifier : null : IR)
+    // The initial sort configuration to show in the 
+    // +link{multiSortPanel.optionsGrid, optionsGrid}.
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.
+    //
+    // @visibility external
+    //< 
+
+    //> @attr multiSortDialog.maxLevels (number : null : IR)
+    // The maximum number of levels of sorting that can be applied.  Since each sort-property or
+    // field-name can be used only once in a given multi-sort operation, if no maxLevels value
+    // or a value larger than the total number of available properties is specified, it will 
+    // default to the total number of available properties.
+    // <P>
+    // Note, this is a passthrough property which, when set, is passed through to the 
+    // +link{class:MultiSortPanel, MultiSortPanel} contained in this dialog.
+    //
+    // @visibility external
+    //< 
+
 
     //> @attr multiSortDialog.applyButtonTitle (String : "Apply" : IR)
     // The title-text to appear on the applyButton
@@ -792,18 +927,6 @@ isc.MultiSortDialog.addProperties({
     //> @attr multiSortDialog.optionsGrid (AutoChild : null : IR)
     // @include multiSortPanel.optionsGrid
     //<
-    
-    //> @attr multiSortDialog.initialSort (Array of SortSpecifier : null : IR)
-    // @include multiSortPanel.initialSort
-    //< 
-
-    //> @attr multiSortDialog.maxLevels (number : null : IR)
-    // @include multiSortPanel.maxLevels
-    //< 
-
-    //> @attr multiSortDialog.invalidListPrompt (String : "Columns may only be used once: '\${title}' is used multiple times." : IR)
-    // @include multiSortPanel.invalidListPrompt
-    //< 
 
 });
 
@@ -822,32 +945,25 @@ isc.MultiSortDialog.addMethods({
         this.setButtonStates();
     },
 
+    _passthroughs: [ "fields", "initialSort", "maxLevels", "invalidListPrompt",
+        // autoChildren & i18nMessages
+        "addLevelButtonTitle", "addLevelButtonDefaults", "addLevelButtonProperties",
+        "deleteLevelButtonTitle", "deleteLevelButtonDefaults", "deleteLevelButtonProperties",
+        "copyLevelButtonTitle", "copyLevelButtonDefaults", "copyLevelButtonProperties",
+        // grid properties and titles
+        "optionsGridDefaults", "optionsGridProperties",
+        "firstSortLevelTitle", "propertyFieldTitle", "directionFieldTitle",
+        "descendingTitle", "ascendingTitle", "otherSortLevelTitle"
+    ],
+    
     getPassthroughProperties : function () {
-        var props = {};
+        var propNames = this._passthroughs,
+            props = {};
 
-        // properties
-        if (this.fields) props.fields = this.fields;
-        if (this.initialSort) props.initialSort = this.initialSort;
-        if (this.maxLevels) props.maxLevels = this.maxLevels;
-
-        // i18nMessages
-        if (this.addLevelButtonTitle) props.addLevelButtonTitle = this.addLevelButtonTitle;
-        if (this.deleteLevelButtonTitle) props.deleteLevelButtonTitle = this.deleteLevelButtonTitle;
-        if (this.copyLevelButtonTitle) props.copyLevelButtonTitle = this.copyLevelButtonTitle;
-        if (this.invalidListPrompt) props.invalidListPrompt = this.invalidListPrompt;
-
-        // autoChildren
-        if (this.addLevelButtonDefaults) props.addLevelButtonDefaults = this.addLevelButtonDefaults;
-        if (this.addLevelButtonProperties) props.addLevelButtonProperties = this.addLevelButtonProperties;
-
-        if (this.deleteLevelButtonDefaults) props.deleteLevelButtonDefaults = this.deleteLevelButtonDefaults;
-        if (this.deleteLevelButtonProperties) props.deleteLevelButtonProperties = this.deleteLevelButtonProperties;
-
-        if (this.copyLevelButtonDefaults) props.copyLevelButtonDefaults = this.copyLevelButtonDefaults;
-        if (this.copyLevelButtonProperties) props.copyLevelButtonProperties = this.copyLevelButtonProperties;
-
-        if (this.optionsGridDefaults) props.optionsGridDefaults = this.optionsGridDefaults;
-        if (this.optionsGridProperties) props.optionsGridProperties = this.optionsGridProperties;
+        for (var i = 0; i < propNames.length; i++) {
+            var name = propNames[i];
+            if (this[name] != null) props[name] = this[name];
+        }
 
         return props;
     },

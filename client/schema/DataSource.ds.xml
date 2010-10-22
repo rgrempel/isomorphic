@@ -242,6 +242,9 @@ isc.DataSource.create({
         },
         beanClassName:{
             type:"string"
+        },
+        autoJoinTransactions:{
+            type:"boolean"
         }
     }
 })

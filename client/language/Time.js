@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -97,8 +97,7 @@ isc.Time.addClassProperties({
         return (!negative ? "+" : "") +
                 H.stringify(2) + ":" + ((negative ? -1 : 1) * M).stringify(2);
     },
-    
-    
+        
     //>	@classAttr	isc.Time._timeExpressions (Array : [..] : IRA)
 	// List of regular expressions to parse a time string
 	//		@group	parsing
@@ -264,7 +263,7 @@ isc.Time.addClassMethods({
         
         var hour = date.getUTCHours(),
             minutes = date.getUTCMinutes();
-            
+
         // Add the display timezone offset to the hours / minutes so we display the
         // time in the appropriate timezone
         var hm = this._applyTimezoneOffset(hour, minutes,
@@ -273,6 +272,7 @@ isc.Time.addClassMethods({
         hour = hm[0];
         minutes = hm[1];
         
+   
         var seconds = showSeconds ? date.getUTCSeconds() : null,
             pm = show24 ? null : (hour >=12);
         
@@ -328,7 +328,7 @@ isc.Time.addClassMethods({
     // Also supports explicitly specified timezone offset specified by "+/-HH:MM" at the end.
     
     // Note: technically being passed "1:00" is ambiguous - could be AM or PM.
-    // We always interpret as 24 hour clock (so <12 = AM) unless am/pm is actually passed in.
+    // We always interpret as 24 hour clock (so <12 = AM) unless am/pm is  passed in.
     
     parseInput : function (string, validTime, UTCTime) {
         var hours = 0,
@@ -338,8 +338,8 @@ isc.Time.addClassMethods({
             // out for consistency across times created by this method.
             milliseconds = 0;
             
-        var hoursOffset = UTCTime ? 0 : this.UTCHoursDisplayOffset,
-            minutesOffset = UTCTime ? 0 : this.UTCMinutesDisplayOffset;
+        var hoursOffset, minutesOffset;
+        
         // if we're passed a date we'll return a new date with the same time (h/m/s/ms, not the same
         // date).
         if (isc.isA.Date(string)) {
@@ -392,6 +392,13 @@ isc.Time.addClassMethods({
         } else if (validTime) return null;
         var date = new Date();
         
+        if (hoursOffset == null) {
+            hoursOffset = this.getUTCHoursDisplayOffset(date);
+        }
+        if (minutesOffset == null) {
+            minutesOffset = this.getUTCMinutesDisplayOffset(date);
+        }
+
         // NOTE: we're creating UTC time -- any offset indicates the offset for the timezone
         // the inputted time is currently in [either browser local time or explicit offset
         // passed in as part of the time string], so we need to subtract this offset to get to

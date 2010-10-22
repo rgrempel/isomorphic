@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -412,6 +412,7 @@ isc.StretchImgButton.registerStringMethods({
     // If this button is showing an +link{StretchImgButton.icon, icon}, a separate click
     // handler for the icon may be defined as <code>this.iconClick</code>.
     // Returning false will suppress the standard button click handling code.
+    // @return (boolean) false to suppress the standard button click event
     // @group buttonIcon    
     // @visibility external
     //<

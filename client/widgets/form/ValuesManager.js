@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1498,7 +1498,8 @@ isc.ValuesManager.addMethods({
         if (memberDS != null && !fromDataPath && memberDS != this.getDataSource()) {
             this.logWarn("addMember(): mismatched DataSources; new member form " + member + 
                          " has dataSource: '" + memberDS.ID + 
-                         "', valuesManager has DataSource '" + this.getDataSource().ID + "'");
+                         "', valuesManager has DataSource " + 
+                         (this.getDataSource() != null ? "'"+this.getDataSource().ID+"'" : "[NONE]"));
         }
         
         // If any member forms are multipart, warn the developer - this implies that
@@ -1836,7 +1837,19 @@ isc.ValuesManager.registerStringMethods ({
     //                      of strings containing the error messages for the field.
     // @visibility external
     //<
-    handleHiddenValidationErrors:"errors"
+    handleHiddenValidationErrors:"errors",
+    
+    //>	@method valuesManager.submitValues()
+    // Optional +link{stringMethod} to fire when +link{valuesManager.submit()} is called
+    // on this valuesManager (or any form included in this valuesManager).
+    // 
+    // @param	values    (object)        the valuesManager values
+    // @param	valuesManager      (ValuesManager)   the valuesManager being submitted
+    // @group submitting
+    // @see method:valuesManager.submit()
+    // @visibility external
+	//<
+    submitValues : "values,valuesManager"
 });
 
 //!<Deferred

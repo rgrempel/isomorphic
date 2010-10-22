@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -58,6 +58,8 @@ isc.ColumnTree.addClassProperties({
 
 isc.ColumnTree.addProperties({
     orientation: "horizontal",
+
+    animateMemberEffect:{effect:"slide", startFrom:"L", endAt:"R"},
     
 	//>	@attr	columnTree.dataSource		(DataSource or ID : null : IRW)
     // @include dataBoundComponent.dataSource
@@ -204,6 +206,14 @@ isc.ColumnTree.addProperties({
     //<	
     customIconOpenProperty:"showOpenIcon",
 
+    //> @attr columnTree.showMultipleColumns   (boolean : null : [IRW])
+    // When set to false, only displays a single column at a time, showing a slide animation 
+    // when moving between columns.
+    // @group treeIcons
+    // @visibility external
+    //<	
+    //showMultipleColumns: true,
+
     //>	@attr   columnTree.loadDataOnDemand    (boolean : null : IR)
     // For databound columnTree instances, should the entire tree of data be loaded on initial 
     // fetch, or should each column be loaded as needed. If unset the default 
@@ -211,7 +221,7 @@ isc.ColumnTree.addProperties({
     // @group databinding
     // @visibility external
     //<
-	    
+
     //> @attr columnTree.column (AutoChild : null : IR)
     // Instance of ListGrid used to display each column of the tree.
     // @visibility external
@@ -221,7 +231,9 @@ isc.ColumnTree.addProperties({
     
     columnDefaults: {
         
-        
+        animateTime: 100,
+        animateEffect: "slide",
+       
         // disable canAddFormulaField / canAddSummaryField
         canAddFormulaFields:false,
         canAddSummaryFields:false,
@@ -300,7 +312,7 @@ isc.ColumnTree.addProperties({
     // fall back to displaying the field's name in the heading.
     // @visibility external
     //<
-    firstColumnTitle: " ",
+    firstColumnTitle: "&nbsp;",
     
     //> @attr columnTree.showNodeCount (boolean : false : IR)
     // If set, and +link{showHeaders} is also set, each column's header will show 
@@ -317,8 +329,35 @@ isc.ColumnTree.addProperties({
     iconPadding: 3,
 	
     
-    ignoreEmptyCriteria: false
+    ignoreEmptyCriteria: false,
     
+    //>	@attr columnTree.backButtonTitle (String : "Back" : [IRW])
+    // When using +link{columnTree.showMultipleColumns, single-column mode}, this i18n property
+    // dictates the title for the +link{columnTree.backButton, button} docked to the top left 
+    // which allows navigation back through the column tree.
+    // @group i18nMessages
+    // @visibility external
+    //<	
+    backButtonTitle: "Back",
+
+    //>	@attr columnTree.backButton (AutoChild : null : [IRW])
+    // When using +link{columnTree.showMultipleColumns, single-column mode}, this is the
+    // "Back" button that you see hovering above the column UI and that allows backward
+    // navigation.
+    // @visibility external
+    //<	
+    backButtonDefaults: {
+        _constructor: "IButton",
+        snapTo: "TR",
+        left: 5,
+        top: 5,
+        autoFit: true,
+        click : function () {
+            this.creator.navigateBack();
+        }
+    },
+    
+    overflow: "hidden"
     
 });
 
@@ -342,9 +381,13 @@ getDynamicDefaults : function(autoChildName) {
 
 initWidget : function () {
 	this.Super("initWidget", arguments);
-	
-    this.columns = [];
+
+    // default showMultipleColumns to false if it's unset and we're running on a handset
+    if (this.showMultipleColumns == null) 
+        this.showMultipleColumns = !isc.Browser.isHandset;
     
+    this.columns = [];
+
     // if no dataSource is specified, pick up the dataSource off the data model
     if (!this.dataSource && this.data != null && this.data.dataSource) {
         this.dataSource = this.data.dataSource;
@@ -354,13 +397,22 @@ initWidget : function () {
 	if (!this.fields || this.fields.length == 0) {
 		this.fields = [isc.ColumnTree.TREE_FIELD];
 	}
-	
-	// Show the first column (the direct children of root in the underlying tree)
+
+    if (this.showMultipleColumns == false && this.showHeaders && this.showBackButton != false) {
+        this.backButton = this.createAutoChild("backButton", { title: this.backButtonTitle, disabled: true });
+        this.addChild(this.backButton);
+        this.backButton.bringToFront();
+    }
+    
+    // Show the first column (the direct children of root in the underlying tree)
     this.columns[0] = this.createAutoChild("column", 
         this.getColumnProperties(this.data ? this.data.getRoot() : null, 0), null, false);
-    this.addMember(this.columns[0]);	        
-	if (this.data) this.populateFirstColumn();
-	    
+    this.addColumn(this.columns[0], 0);	        
+    
+    this.currentColumn = 0;
+    
+    if (this.data) this.populateFirstColumn();
+
 },
 
 populateFirstColumn : function () {
@@ -382,22 +434,128 @@ treeIsTied : function (column, node) {
     return false;
 },
 
+//> @method columnTree.getSelectedRecord()
+// Get the selected record, that is, the parent of the nodes in the rightmost visible column.
+// <P>
+// This is generally the most recently clicked node unless programmatic navigation has taken
+// place.
+// <P>
+// If only the first column is showing, the root node is returned (which can be deteted via
+// +link{Tree.isRoot()}).
+//
+// @return (Record) the selected record
+// @visibility external
+//<
+getSelectedRecord : function () {
+    if (this.currentColumn <= 0) return this.data.getRoot();
+    var column = this.getColumn(this.currentColumn-1);
+    return column.getSelectedRecord();
+},
+
+//> @method columnTree.navigateBack()
+// Navigate to the previous column.
+//
+// @visibility external
+//<
+navigateBack : function () {
+    if (this.currentColumn <= 0) return;
+
+    // nodeSelected takes the column that was clicked and the record that was clicked in that
+    // column.  Navigating backward is the same as if a record was just clicked *2* levels
+    // back.  In other words, if you are in column 1 (two levels showing), column 1 will go
+    // away, column 0 will be the only column visible, so it's as though the root node was just
+    // selected.
+    var column, record;
+    if (this.currentColumn >= 2 ) {
+        column = this.getColumn(this.currentColumn-2);
+        record = column.getSelectedRecord();
+    } else {
+        column = this.getColumn(0);
+        record = this.data.getRoot();
+    }
+
+    this.logInfo("navigating to column: " + (this.currentColumn-1) + 
+                 " to node: " + this.data.getTitle(record));
+
+    this.nodeSelected(column, record, true);
+},
+
+
+slideTransition : function (oldPane, newPane, container, right) {
+    if (!isc.Browser.isWebKit) {
+        if (right) {
+            newPane.deselectAllRecords();
+            newPane.animateShow();
+        } else {
+            oldPane.animateHide();
+            newPane.show();
+        }
+        newPane.bringToFront();
+        
+        return;
+    }
+
+    this.logInfo((right ? "right" : "left") + " slideTransition from: " + 
+                 oldPane + " to " + newPane + " within " + container);
+
+    // draw the new pane hidden
+    newPane.hide();
+    container.addChild(newPane);
+    if (!newPane.isDrawn()) newPane.draw();
+
+    var oldStyle = oldPane.getStyleHandle();
+    var newStyle = newPane.getStyleHandle();
+    
+    // place the new element offscreen right (instantly)
+    newStyle.setProperty("-webkit-transition", "none");
+    var translation = "translate3d(" + (right ? "-" : "") + container.getViewportWidth() + "px, 0%, 0%)";
+    newStyle.setProperty("-webkit-transform", translation);
+
+    var oldOverflow = container.overflow;
+    container.setOverflow("hidden");
+    // will be initially invisible since clipped
+    newPane.show();
+
+    
+    isc.Timer.setTimeout(function () {
+    
+        // set both to animate
+        oldStyle.setProperty("-webkit-transition", "-webkit-transform 0.3s ease-in-out");
+        newStyle.setProperty("-webkit-transition", "-webkit-transform 0.3s ease-in-out");
+
+        // move old offscreen
+        translation = "translate3d(" + (right ? "" : "-") + container.getViewportWidth() + "px, 0%, 0%)";
+        oldStyle.setProperty("-webkit-transform", translation);
+
+        // undo translation on new
+        newStyle.setProperty("-webkit-transform", "translate3d(0px, 0%, 0%)");
+
+        isc.Timer.setTimeout(function () { 
+            oldPane.hide(); 
+            container.setOverflow(oldOverflow);
+        }, 350);
+    
+    }, 0);
+},
+
 //> @method columnTree.nodeSelected() 
 // Called when a node is selected in any column.  Default behavior is to show the next level
 // of the tree in a column to the right of the current column.
 // <P>
 // The new column will be created if it is not already showing.  Any columns further to the
 // right, showing deeper levels of the tree, will be removed.
+// @param column [ListGrid] the column where a node was selected
 // @param node [TreeNode] the node that was selected
 // @return (boolean) override and return false to cancel the default action
 // @visibility external
 //<
-nodeSelected : function (column, node) {
+nodeSelected : function (column, node, backward) {
     // Give the 'onNodeSelected' handler an opportunity to suppress default handling if present
     
     if (this.onNodeSelected != null && (this.onNodeSelected(column,node) == false)) {
         return;
     }
+    
     var idx = this.getColumnIndex(node),
         isFolder = this.data.isFolder(node);
     
@@ -405,44 +563,90 @@ nodeSelected : function (column, node) {
     // The column immediately to the right of the one we clicked is going to be repopulated 
     // with the clicked node's children, and possibly a new heading; anything further to 
     // the right is no longer relevant.
-    var nextColumn = idx+1;
-    if (!isFolder) nextColumn -= 1;
+    var nextColumnIdx = idx + 1;
+    
+    if (!isFolder) nextColumnIdx -= 1;
+    var nextColumn = this.columns[nextColumnIdx];
     if (!this.treeIsTied(column, node)) {
-        this.hideColumnsToRight(nextColumn);
+        if (this.showMultipleColumns != false) this.hideColumnsToRight(nextColumnIdx);
 
         if (!isFolder) return;
 
         this.data.openFolder(node);
 
         // Create or re-use a list grid, as appropriate    
-        if (isc.isA.ListGrid(this.columns[nextColumn])) {
-            this.columns[nextColumn].setData(this.data.getChildren(node));
+        if (isc.isA.ListGrid(nextColumn)) {
+            
+            nextColumn.deselectAllRecords();
+            nextColumn.setData(this.data.getChildren(node));
+            this.addColumn(nextColumn, nextColumnIdx);
         } else {
-            this.columns[nextColumn] = this.createAutoChild("column", 
+            nextColumn = this.columns[nextColumnIdx] = this.createAutoChild("column", 
                 this.getColumnProperties(node, idx+1), null, false);
-            this.columns[nextColumn].setData(this.data.getChildren(node));
-            this.addMember(this.columns[nextColumn]);
+            nextColumn.setData(this.data.getChildren(node));
+            this.addColumn(nextColumn, nextColumnIdx);
         }
-        
+
         // Fix up column headings
-        if (this.shouldShowHeader(node, nextColumn)) {
-            this.columns[nextColumn].setShowHeader(true);
-            var newTitle = this.getColumnTitle(node, nextColumn);
-            this.columns[nextColumn].setFieldProperties(0, {title: newTitle});
+        if (this.shouldShowHeader(node, nextColumnIdx)) {
+            nextColumn.setShowHeader(true);
+            var newTitle = this.getColumnTitle(node, nextColumnIdx);
+            nextColumn.setFieldProperties(0, {title: newTitle});
         }
         
         // If the data is already locally cached, add the node count (if required)
         // This will be done asynchronously if we need a data fetch here
-        if ( this.columns[nextColumn].data.getLength() > 0) {  
-           this.updateHeadingNodeCount(node);
+        if (nextColumn.data.getLength() > 0) {  
+            this.updateHeadingNodeCount(node);
         }
-        this.columns[nextColumn].show();
+    }
+
+    //var columnToHide = (backward ? nextColumn : column);
+    //var columnToShow = (backward ? column : nextColumn);
+
+    var columnToHide = (backward ? this.columns[this.currentColumn] : column);
+    var columnToShow = nextColumn; //(backward ? column : nextColumn);
+    
+    if (this.showMultipleColumns == false) {
+        this.slideTransition(columnToHide, columnToShow, this, backward ? true : false); 
+    } else {
+        columnToShow.show();
+    }
+
+    this.currentColumn = (nextColumnIdx < 0 ? 0 : nextColumnIdx);
+
+    this.logInfo("currentColumn is now: " + this.currentColumn);
+    if (this.backButton) {
+        //this.columns[nextColumn].addChild(this.backButton);
+        this.backButton.bringToFront();
+        this.backButton.setDisabled(this.currentColumn <=0);
+    }
+    
+},
+
+
+
+addColumn : function (column, index) {
+    if (this.showMultipleColumns == false) {
+        column.resizeTo("100%", "100%");
+        this.addChild(column, index);
+    } else {
+        this.addMember(column, index);
     }
 },
 
 
+getCurrentTitle : function () {
+    return this.columns[this.currentColumn].getFieldTitle(0);
+},
+
+getPreviousTitle : function () {
+    if (this.currentColumn <= 0) return "";
+    return this.columns[this.currentColumn - 1].getFieldTitle(0);
+},
+
 updateHeadingNodeCount : function (parentNode) {
-    
+
     var idx = this.getColumnIndex(parentNode);
     if (!this.shouldShowHeader(parentNode, idx) || !this.showNodeCount) return;
     
@@ -461,7 +665,9 @@ getColumnIndex : function (treeNode) {
     if (this.data.showRoot) {
         return this.data.getLevel(treeNode);
     } else {
-        return this.data.getLevel(treeNode)-1;
+        var level = this.data.getLevel(treeNode);
+        //return level - (level==0 ? 0 : 1);
+        return level-1;
     }
 },
 
@@ -855,11 +1061,11 @@ updateDataModel : function (criteria, operation, context) {
 // @visibility external
 //<
 getColumn : function (col) {
-    if (isc.isA.TreeNode(col)) {
+    if (isc.isAn.Object(col)) { // assume a TreeNode
         var idx = this.getColumnIndex(col) + 1;
         if (this.columns[idx] && this.columns[idx].isVisible()) return this.columns[idx];
     } else {
-       if (this.columns[col] && this.columns[col].isVisible()) return this.columns[col];
+       if (this.columns[col] && col <= this.currentColumn) return this.columns[col];
     }
     return null;
 },
@@ -873,7 +1079,7 @@ getColumn : function (col) {
 // @return (ListGrid Properties) properties to be applied to the column
 // @visibility external
 //<
-getColumnProperties : function(node, colNum) {
+getColumnProperties : function (node, colNum) {
     
 },
 

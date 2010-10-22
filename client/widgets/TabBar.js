@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -25,39 +25,61 @@
 isc.ClassFactory.defineClass("TabBar", "Toolbar");
 
 isc.TabBar.addProperties({
-	//>	@attr	isc.TabBar.tabs		(Array of Tab Properties : null : IR)
-	// Tab for this TabBar.
+    //>	@attr	isc.TabBar.tabs		(Array of Tab Properties : null : IR)
+    // Tab for this TabBar.
     // @visibility external
-	//<
+    //<
 
     //>	@attr	isc.TabBar.breadth	(number : 21 : IRW)
-	// Breadth of the tabBar (including baseline breadth)
+    // Breadth of the tabBar (including baseline breadth)
     // @visibility external
-	//<
-	breadth: 21,
+    //<
+    breadth: 21,
 
     //>	@attr	isc.TabBar.buttonConstructor	(class: ImgTab : AIRW)
-	// SmartClient component used for the tabs of the tabBar. 
+    // SmartClient component used for the tabs of the tabBar. 
     // Must be Button or Button subclass.
     // @visibility external
-	//<
+    //<
     // Note - if this TabBar is part of a TabSet, this constructor can be overridden by setting 
     // 'useSimpleTabs' on the TabSet - will use buttons instead, styled via CSS to look like
     // tabs.
-	buttonConstructor:isc.ImgTab,
+    buttonConstructor:isc.ImgTab,
 
     // We want to have arrow keys, not tab-keypresses, move between tabs
     tabWithinToolbar:false,
 
     //>	@attr	isc.TabBar.skinImgDir		(URL : "images/Tab/" : AIRW)
-	//			base path for the tab images, if an image-based
-	//			tab is being used.
-	//		@group skins, files
-	//<
-	skinImgDir:"images/Tab/",			
+    //			base path for the tab images, if an image-based
+    //			tab is being used.
+    //		@group skins, files
+    //<
+    skinImgDir:"images/Tab/",			
 										
-	// Baseline
-	// --------------------------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
+    //> @attr tabBar.showMoreTab (boolean : null : IR)
+    // Should tabs exceeding +link{moreTabCount} be shown on a "more" tab?
+    // <p>
+    // This setting is used to emulate an iPhone-style tab bar "more" button.
+    // @visibility external
+    //<
+
+    //> @attr tabBar.moreTabCount (int : 5 : IR)
+    // This property defines the number tab buttons that should be shown before
+    // automatically adding a "more" button to handle the remaining tabs. This
+    // property is only used when +link{showMoreTab} is enabled.
+    // @visibility external
+    //<
+    moreTabCount:5,
+
+    //> @attr tabBar.moreTab (Tab : null : IR)
+    // Tab to show as the "more" tab when +link{showMoreTab} is enabled and the number
+    // of tabs to show exceeds +link{moreTabCount}.
+    // @visibility external
+    //<
+
+    // Baseline
+    // --------------------------------------------------------------------------------------------
     
     //> @groupDef baseLine
     // The baseLine is StretchImg that is placed along the edge of the TabBar that borders on
@@ -67,60 +89,61 @@ isc.TabBar.addProperties({
     //<
 
     //>	@attr isc.TabBar.baseLineThickness (number : 1 : IR)
-	// Thickness of the baseLine, in pixels.  This should be set to match the media specified
+    // Thickness of the baseLine, in pixels.  This should be set to match the media specified
     // by +link{baseLineSrc}.  The baseLineThickness also determines the degree of overlap with
     // the TabSet's paneContainer when using decorative edges - see +link{TabSet.paneContainer}
     // for details.
     // 
     // @group baseLine 
     // @visibility external
-	//<
-	baseLineThickness:1,
+    //<
+    baseLineThickness:1,
 
     //>	@attr isc.TabBar.baseLineSrc	(SCImgURL : "[SKIN]baseline.gif" : IR)
-	// Sets +link{stretchImg.src} for the +link{group:baseLine} StretchImg.
+    // Sets +link{stretchImg.src} for the +link{group:baseLine} StretchImg.
     // @group baseLine 
     // @visibility external
-	//<
-	baseLineSrc:"[SKIN]baseline.gif",
+    //<
+    baseLineSrc:"[SKIN]baseline.gif",
 
     //>	@attr isc.TabBar.baseLineCapSize	(number : 2 : IR)
-	// Set +link{stretchImg.capSize} for the +link{group:baseLine} stretchImg.
+    // Set +link{stretchImg.capSize} for the +link{group:baseLine} stretchImg.
     // @group baseLine
     // @visibility external
-	//<
-	baseLineCapSize:2,
+    //<
+    baseLineCapSize:2,
 
-	// Positioning and Alignment
-	// --------------------------------------------------------------------------------------------
+    // Positioning and Alignment
+    // --------------------------------------------------------------------------------------------
     //>	@attr	isc.TabBar.tabBarPosition	(Side : isc.Canvas.TOP : IRW)
-	// Position of the tabBar in relation to whatever it controls.
-	//<
+    // Position of the tabBar in relation to whatever it controls.
+    //<
     // Not doc'd, do via TabSet
-	tabBarPosition:isc.Canvas.TOP,
+    tabBarPosition:isc.Canvas.TOP,
 
-	// --------------------------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
     //>	@attr	isc.TabBar.selectedTab		(number : 0 : IR)
-	// Index of the initially selected tab.  Settable at initialization only, afterwards, call
+    // Index of the initially selected tab.  Settable at initialization only, afterwards, call
     // +link{selectTab}.
-	//<
+    //<
     // Not doc'd, do via TabSet
-	selectedTab:0,
+    selectedTab:0,
 
     //>	@attr	isc.TabBar.defaultTabSize		(number : 80 : IR)
-	// Default size (length) in pixels for tabs within this tabBar
+    // Default size (length) in pixels for tabs within this tabBar
     // @visibility external
-	//<    
+    //<    
     defaultTabSize:80
 										
-	//>	@attr	TabBar.tabDefaults		(Tab : 0 : AIR)
-	//			Defaults applied to tabs on init.
-	//			Note that these are overlaid over the superclass property
-	//			toolBar.buttonDefaults.
+    //>	@attr	TabBar.tabDefaults		(Tab : 0 : AIR)
+    //			Defaults applied to tabs on init.
+    //			Note that these are overlaid over the superclass property
+    //			toolBar.buttonDefaults.
     //<
     // Null by default - we will set this up in initWidget - this avoids multiple tabBars
     // pointing to the same tabDefaults object
-	//tabDefaults:{}
+    //tabDefaults:{}
+
 });
 
 
@@ -131,22 +154,27 @@ isc.TabBar.addMethods({
 // Setup special button properties and create the baseLine
 //<
 initWidget : function () {
-	// if the name of the pane property of a tab is specified as a string, check it
-	// now, and reassign.
-	for (var i = 0; i < this.tabs.length; i++) {
-		var pane = this.tabs[i].pane;
-		
-		if (isc.isA.String(pane) && isc.isA.Canvas(window[pane])) {
-			this.tabs[i].pane = window[pane];
-		}
+    // if the name of the pane property of a tab is specified as a string, check it
+    // now, and reassign.
+    for (var i = 0; i < this.tabs.length; i++) {
+        var pane = this.tabs[i].pane;
+    	
+        if (isc.isA.String(pane) && isc.isA.Canvas(window[pane])) {
+            this.tabs[i].pane = window[pane];
+        }
         
-	}
-	
-	// copy tabs over to the buttons array, which is what the superclass uses.
-	this.buttons = this.tabs;
+    }
     
+    // copy tabs over to the buttons array, which is what the superclass uses.
+    this.buttons = this.tabs;
+    
+    if (this.moreTab) {
+        this._moreTabIndex = this.buttons.length;
+        this.buttons[this._moreTabIndex] = this.moreTab;
+    }
+
     // Note that the order of the tabs can be reversed by setting the 'reverseOrder' property
-    // on this tabBar [can be done in tabBarDefaults] if this is required.
+    // on this tabBar [can be done in tabBarDefaults] if this is zrequired.
     
     // set up the skinImgDir for the baseline
     this.skinImgDir = this.skinImgDir + this.tabBarPosition + "/";
@@ -154,11 +182,11 @@ initWidget : function () {
     var tabDefaults = this.tabDefaults;
     if (tabDefaults == null) tabDefaults = this.tabDefaults = {};
     
-	// tabs are created as "buttons" by Toolbar superclass code; to have tabDefaults applied to
+    // tabs are created as "buttons" by Toolbar superclass code; to have tabDefaults applied to
     // each button, assign to buttonDefaults.
     // NOTE: if we add properties directly to the buttonDefaults object, we'll side effect all
     // Toolbars
-	tabDefaults = this.buttonDefaults = isc.addProperties({}, this.buttonDefaults, tabDefaults);
+    tabDefaults = this.buttonDefaults = isc.addProperties({}, this.buttonDefaults, tabDefaults);
 
     // tabs are mutually exclusive
     tabDefaults.actionType = isc.StatefulCanvas.RADIO;
@@ -176,21 +204,49 @@ initWidget : function () {
     // overridden by the user in tabProperties.
     tabDefaults.vertical =
         (this.tabBarPosition == isc.Canvas.LEFT || this.tabBarPosition == isc.Canvas.RIGHT);
+    
+    // skinImgDir: For image based tabs, we need to update the skin img dir to account for
+    // tab orientation.
+    // Note that we *don't* want per-side media for standard icons like the close icon.
+    // Therefore we don't want to modify the skinImgDir if we're using simple tabs.
+    // In ImgTabs we handle this by having a separate labelSkinImgDir
     var buttonClass = isc.ClassFactory.getClass(this.buttonConstructor);
-    tabDefaults.skinImgDir = buttonClass.getInstanceProperty("skinImgDir") +
-        this.tabBarPosition + "/";
+    if (buttonClass && buttonClass.isA("ImgTab")) {
+        tabDefaults.skinImgDir = buttonClass.getInstanceProperty("skinImgDir") +
+            this.tabBarPosition + "/";
+    }
     
     // have iconClick close the tabs if appropriate
     tabDefaults.iconClick = this._tabIconClickHandler;
+    
+    // Override the click or doubleClick handler as necessary to implement title editing
+    if (this.creator.titleEditEvent == "doubleClick") {
+        tabDefaults.doubleClick = this._tabClickHandler;
+    } else {
+        tabDefaults.click = this._tabClickHandler;
+    }
 
     tabDefaults._generated = true;
     
     var perSideStyleProperty = this.tabBarPosition + "StyleName";
     if (this[perSideStyleProperty]) this.setStyleName(this[perSideStyleProperty]);
 
-	this.Super(this._$initWidget);
+    this.Super(this._$initWidget);
 
-	if (this._baseLine == null) this.makeBaseLine();
+    if (this._baseLine == null) this.makeBaseLine();
+},
+
+isShowingMoreTab : function () {
+    return (this.showMoreTab &&
+        this.moreTab &&
+        this._moreTabIndex >= 0 &&
+        this.getMembers(this._moreTabIndex).isVisible &&
+        this.getMembers(this._moreTabIndex).isVisible()
+    );
+},
+
+_tabClickHandler : function () {
+    this.parentElement.parentElement._editTabTitle(this);
 },
 
 // _tabIconClickHandler - method applied directly to the tabs
@@ -203,6 +259,23 @@ tabIconClick : function (tab) {
     var ts = this.parentElement;
     return ts._tabIconClick(tab);
    
+},
+
+// Override to add "more" button and hide buttons that are now on "more" tab
+setButtons : function (newButtons) {
+
+    this.Super("setButtons", arguments);
+
+    // If "more" tab is enabled and needed, hide the tabs that will show on the "more" tab
+    if (this.showMoreTab && this.buttons.length-1 > this.moreTabCount) {
+        for (var i = this.moreTabCount-1; i < this.buttons.length; i++) {
+            this.getMember(i).hide();
+        }
+        // Make "more" tab visible. It will be hidden above
+        this.getMember(this._moreTabIndex).show();
+    } else if (this.showMoreTab && this.moreTab) {
+        this.getMember(this._moreTabIndex).hide();
+    }
 },
 
 // override makeButton to show the icon for the button
@@ -239,6 +312,17 @@ getCloseIconProperties : function(properties) {
 addTabs : function (tabs, position) {
     if (!position && this.tabBarPosition == isc.Canvas.LEFT) position = 0;
     this.addButtons(tabs, position);
+    // Hide any new buttons that belong on "more" tab and show "more" if needed
+    if (this.showMoreTab && this.moreTab) {
+        var buttons = this.getMembers();
+        if (buttons.length-1 > this.moreTabCount) {
+            for (var i = this.moreTabCount-1; i < buttons.length; i++) {
+                buttons[i].hide();
+            }
+            this._moreTabIndex = buttons.length - 1;
+            buttons[this._moreTabIndex].show();
+        }
+    }
     // ensure the tabs initially show up behind the baseline
     if (this._baseLine != null) {
         this._baseLine.bringToFront();        
@@ -257,6 +341,23 @@ removeTabs : function (tabs) {
     // remove the tabs
     this.removeButtons(tabs);
     
+    if (this.showMoreTab && this.moreTab && this._moreTabIndex > 0) {
+
+        var buttons = this.getMembers();
+        for (var i = 0; i < buttons.length; i++) {
+            if (i < this.moreTabCount) buttons[i].show();
+            else buttons[i].hide();
+        }
+        if (buttons.length-1 <= this.moreTabCount) {
+            // Don't need more tab anymore. Make sure all tabs are shown
+            // and more tab is hidden.
+            this._moreTabIndex = null;
+            buttons[buttons.length-1].hide();
+        } else {
+            this._moreTabIndex = buttons.length-1;
+        }
+    }
+
     // destroy each of the buttons we removed; it's appropriate/okay to do this because the buttons
     // were automatically created by this tabBar
     for (var i = 0; i < tabWidgets.length; i++) {
@@ -264,28 +365,28 @@ removeTabs : function (tabs) {
     }
 },
 
-//>	@method	tabBar.draw()	(A)
+//> @method tabBar.draw()	(A)
 // Extended to do layout and handle the selected tab.
-//		@group	drawing
+// @group drawing
 //<
 draw : function (a,b,c,d) {
     arguments.__this = this;
 
-	this.fixLayout();
+    this.fixLayout();
 
-	this.invokeSuper(isc.TabBar, "draw", a,b,c,d);
-	this.bringToFront();
+    this.invokeSuper(isc.TabBar, "draw", a,b,c,d);
+    this.bringToFront();
 
-	var selectedTab = this.getButton(this.selectedTab);  
-	// now that the buttons have all drawn, bring the baseline in front of them, then count on
+    var selectedTab = this.getButton(this.selectedTab);  
+    // now that the buttons have all drawn, bring the baseline in front of them, then count on
     // the setSelected() behavior to bring the selected tab in front of the baseLine
-	if (selectedTab) {
+    if (selectedTab) {
         
         selectedTab.setSelected(true);
     }
 },
 
-//>	@method	tabBar.makeBaseLine()	(A)
+//> @method tabBar.makeBaseLine()	(A)
 //  The baseline exists to create the appearance that one of the tabs is part of the pane whereas
 //  the other tabs are behind the pane.
 //
@@ -296,14 +397,14 @@ draw : function (a,b,c,d) {
 
 
 makeBaseLine : function () {
-	// create the baseline stretchImg and add as child.
-	this._baseLine = this.addAutoChild("baseLine", {
+    // create the baseline stretchImg and add as child.
+    this._baseLine = this.addAutoChild("baseLine", {
         ID:this.getID() + "_baseLine",
         vertical:(this.tabBarPosition == isc.Canvas.LEFT || 
                   this.tabBarPosition == isc.Canvas.RIGHT),
         skinImgDir:this.skinImgDir,
         src:this.baseLineSrc,
-		capSize:this.baseLineCapSize,
+        capSize:this.baseLineCapSize,
         imageType:isc.Img.STRETCH,
         addAsChild:true,
         autoDraw:false
@@ -318,43 +419,43 @@ scrollTo : function (x,y,a,b,c,d) {
 },
 
 
-//>	@method	tabBar.fixLayout()	(A)
+//> @method tabBar.fixLayout()	(A)
 //  Places the baseLine on the side of the TabBar adjacent to the tabbedPane, according to which
 //  side the tabs are on.
 //<
 fixLayout : function () {
-	var bl = this._baseLine;
+    var bl = this._baseLine;
 
     if (bl == null) return;
 	
-	
-	var ts = this.parentElement,
-	    //edge = ts ? ts._edgedCanvas : null,
+    
+    var ts = this.parentElement,
+        //edge = ts ? ts._edgedCanvas : null,
         edgeOffset = 0;
         
     
     
-	// Canvas.TOP
-	if (this.tabBarPosition == isc.Canvas.TOP) {
-		//edgeOffset = edge ? edge._rightMargin : 0; // HACK 040910
-		bl.setRect(this.getScrollLeft(), this.getHeight() - this.baseLineThickness, 
-    		   this.parentElement.getWidth()-edgeOffset, this.baseLineThickness);
+    // Canvas.TOP
+    if (this.tabBarPosition == isc.Canvas.TOP) {
+        //edgeOffset = edge ? edge._rightMargin : 0; // HACK 040910
+        bl.setRect(this.getScrollLeft(), this.getHeight() - this.baseLineThickness, 
+               this.parentElement.getWidth()-edgeOffset, this.baseLineThickness);
 	
-	// Canvas.BOTTOM
-	} else if (this.tabBarPosition == isc.Canvas.BOTTOM) {
-		//edgeOffset = edge ? edge._leftMargin : 0; // HACK 040910
-		bl.setRect(this.getScrollLeft(), 0, this.parentElement.getWidth()-edgeOffset, this.baseLineThickness);
+    // Canvas.BOTTOM
+    } else if (this.tabBarPosition == isc.Canvas.BOTTOM) {
+        //edgeOffset = edge ? edge._leftMargin : 0; // HACK 040910
+        bl.setRect(this.getScrollLeft(), 0, this.parentElement.getWidth()-edgeOffset, this.baseLineThickness);
 	
-	// Canvas.LEFT
-	} else if (this.tabBarPosition == isc.Canvas.LEFT) {
-		//edgeOffset = edge ? edge._bottomMargin : 0; // HACK 040910
-		bl.setRect(this.getWidth() - this.baseLineThickness, this.getScrollTop(), 
-				   this.baseLineThickness, this.parentElement.getHeight()-edgeOffset);
+    // Canvas.LEFT
+    } else if (this.tabBarPosition == isc.Canvas.LEFT) {
+        //edgeOffset = edge ? edge._bottomMargin : 0; // HACK 040910
+        bl.setRect(this.getWidth() - this.baseLineThickness, this.getScrollTop(), 
+                   this.baseLineThickness, this.parentElement.getHeight()-edgeOffset);
 
-	// Canvas.RIGHT
-	} else if (this.tabBarPosition == isc.Canvas.RIGHT) {
-		//edgeOffset = edge ? edge._bottomMargin : 0; // HACK 040910
-		bl.setRect(0, this.getScrollTop(), this.baseLineThickness, this.parentElement.getHeight()-edgeOffset);
+    // Canvas.RIGHT
+    } else if (this.tabBarPosition == isc.Canvas.RIGHT) {
+        //edgeOffset = edge ? edge._bottomMargin : 0; // HACK 040910
+        bl.setRect(0, this.getScrollTop(), this.baseLineThickness, this.parentElement.getHeight()-edgeOffset);
     }	
 }, 
 
@@ -364,26 +465,27 @@ layoutChildren : function (a,b,c,d) {
     this.fixLayout();
 },
 
-//>	@method	tabBar.buttonSelected()	(A)
-//		This method overrides the toolBar's buttonSelected method.
-//		Differences are as follows:
-//		 - assumes tab is of type "radio", as all tabBar tabs are set to be a radiogroup
-//		 - handles z-axis reorderings of tabs and baseLine
-//		 - overlaps tabs by expanding and contracting them
-//		
-//		Note: we assume here that buttonSelected is only fired when the button is initially
-// 			  set to "selected." Repeated clicks should not fire this method.
+//> @method tabBar.buttonSelected()	(A)
+// This method overrides the toolBar's buttonSelected method.
+// Differences are as follows:
+//   - assumes tab is of type "radio", as all tabBar tabs are set to be a radiogroup
+//   - handles z-axis reorderings of tabs and baseLine
+//   - overlaps tabs by expanding and contracting them
 //
-//		@param	tab		(tab)		tab that has been selected.
+// Note: we assume here that buttonSelected is only fired when the button is initially
+//       set to "selected." Repeated clicks should not fire this method.
+//       This assumption can be overridden by setting allowButtonReselect:true.
+//
+// @param tab (tab)  tab that has been selected.
 //<
 buttonSelected : function (tab) {    
     this.ignoreMemberZIndex(tab);
     
-	// bring tab and label to front.	
-	tab.bringToFront();
+    // bring tab and label to front.	
+    tab.bringToFront();
 
-	// store the currently selected tab as the lastSelectedButton.
-	this.lastSelectedButton = tab;
+    // store the currently selected tab as the lastSelectedButton.
+    this.lastSelectedButton = tab;
     
     // Make sure we never tab to an unselected button
     // Note that deselection of the other tabs is handled by built in Toolbar / Radiogroup
@@ -398,23 +500,23 @@ buttonDeselected : function (tab) {
     this.stopIgnoringMemberZIndex(tab);
 },
 
-//>	@method	tabBar.getSelectedTab()	(A)
-//			get the tab object currently selected.
-//		@return
-//			tab object
+//> @method tabBar.getSelectedTab()	(A)
+// Get the tab object currently selected.
+// @return
+//    tab object
 //<
 getSelectedTab : function () {
-	return this.getButtonNumber(this.getSelectedButton());
+    return this.getButtonNumber(this.getSelectedButton());
 },
 
-//>	@method	tabBar.selectTab()	
+//> @method tabBar.selectTab()	
 // Select a tab
 // @param  tabNum  (number)    index of tab to select
 // @visibility external
 //<
 selectTab : function (tabNum) {    
     this.selectedTab = tabNum;
-	this.selectButton(tabNum);
+    this.selectButton(tabNum);
 },
 
 // Override setupButtonFocusProperties to ensure that this.selectedTab is the initial
@@ -428,6 +530,7 @@ setupButtonFocusProperties : function () {
 },
 
 // override the internal _updateFocusButton method to always ensure the focused tab is selected
+
 _updateFocusButton : function (buttonNum) {
     
     
@@ -516,7 +619,7 @@ _completeScroll : function (scrolledToTab) {
     if (this._scrollingToTab == scrolledToTab) delete this._scrollingToTab;
 },
 
-//>@method  tabBar.scrollTabIntoView()  
+//> @method  tabBar.scrollTabIntoView()  
 // If a tab is not currently visible for this tab-bar, scroll it into view.
 // Can specify where you want the tab to appear.
 // edge it was clipped on.

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -152,10 +152,12 @@ setTitle : function (title) {
     this.title = title;
     // if the iframe hasn't been loaded we can bail - when we load it we'll include the
     // title in the HTML passed in.
-    if (!this.iframeLoaded) return;
+    if (!this.isDrawn() && !this.iframeLoaded) return;
     
     // In IE window.title is essentially read-only - we really need to rewrite the entire HTML of
     // the frame to update it
+    delete this.iframeLoaded;
+    if (this.isDrawn()) this.redraw();
 },
 
 // Note there's no call to 'draw()' in here so if called before draw this would have no
@@ -390,9 +392,12 @@ isc.PrintWindow.addProperties({
     _applyPreviewHTML : function (HTML, callback) {
         if (!this.previewPane) {
             this.previewPane = this.createPreviewPane();
+            this.previewPane.addProperties({title:this.title});
             this.addItem(this.previewPane);
+        } else {
+            this.previewPane.setTitle(this.title);
         }
-        this.previewPane.addProperties({title:this.title});
+
         // we have to draw the preview pane to set it's HTML
         this.setVisibility("hidden");
         if (!this.isDrawn()) this.draw();

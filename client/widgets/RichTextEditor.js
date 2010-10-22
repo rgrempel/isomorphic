@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -258,19 +258,19 @@ isc.RichTextEditor.addProperties({
     // call 'justifySelection(...)' passing in a parameter to specify the desired justification.
     alignLeftDefaults : { icon:"[SKIN]/RichTextEditor/text_align_left.png",
                           prompt:"Left align selection",
-                          click:"this.creator.fireAction('justifySelection', 'left');"  
+                          click:function () {this.creator.fireAction('justifySelection', 'left')}
     },
     alignCenterDefaults : { icon:"[SKIN]/RichTextEditor/text_align_center.png",
                             prompt:"Center selection",
-                            click:"this.creator.fireAction('justifySelection', 'center');"
+                            click:function () {this.creator.fireAction('justifySelection', 'center')}
     },
     alignRightDefaults : { icon:"[SKIN]/RichTextEditor/text_align_right.png",
                            prompt:"Right align selection",
-                           click:"this.creator.fireAction('justifySelection', 'right');"
+                           click:function () {this.creator.fireAction('justifySelection', 'right')}
     },
     justifyDefaults : { icon:"[SKIN]/RichTextEditor/text_align_justified.png",
                         prompt:"Full justify selection",
-                        click:"this.creator.fireAction('justifySelection', 'full');"
+                        click:function () {this.creator.fireAction('justifySelection', 'full')}
     },
 
     // Indent / Outdent - not included by default as not supported on Safari
@@ -365,8 +365,9 @@ isc.RichTextEditor.addProperties({
         
         this.autoChildDefaults.width = this.controlButtonWidth;
         this.autoChildDefaults.click = 
-            "if (this.isControl && isc.isA.StatefulCanvas(this)) this.creator.fireAction(this.controlName)";
-    
+            function () {
+                if (this.isControl && isc.isA.StatefulCanvas(this)) this.creator.fireAction(this.controlName)
+            }
         if (this.toolbarHeight > 0) this._createToolbar();
         
         this.addAutoChild("editArea", 

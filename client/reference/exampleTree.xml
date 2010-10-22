@@ -70,6 +70,11 @@ isc.ExampleTree.create({
                     },
                     {
                         icon:"[ISO_DOCS_SKIN]/images/silkicons/application_side_tree.png",
+                        ref:"userDefinedHilites",
+                        title:"User-Defined Hilites"
+                    },
+                    {
+                        icon:"[ISO_DOCS_SKIN]/images/silkicons/application_side_tree.png",
                         ref:"dynamicGrouping",
                         title:"Dynamic Grouping"
                     },
@@ -85,8 +90,8 @@ isc.ExampleTree.create({
                     },
                     {
                         icon:"[ISO_DOCS_SKIN]/images/silkicons/application_split.png",
-                        ref:"relatedRecords",
-                        title:"Related Records"
+                        ref:"expansionRelatedRecords",
+                        title:"Expanding Rows"
                     },
                     {
                         icon:"[ISO_DOCS_SKIN]/images/silkicons/application_view_columns.png",
@@ -636,6 +641,18 @@ isc.ExampleTree.create({
                                 description:"\n        Click and drag between the column headers to resize the columns. The grid resizes to\n        fit the new column widths.  The width setting on the grid as a whole acts as a minimum.\n        "
                             },
                             {
+                                id:"autofitColumnWidths",
+                                jsURL:"grids/autofit/autoFitColumnWidths.js",
+                                title:"Column Widths",
+                                tabs:[
+                                    {
+                                        title:"countryData",
+                                        url:"grids/data/countryData.js"
+                                    }
+                                ],
+                                description:"\n        ListGrid fields can be set to auto-fit to their titles and/or field values. In this\n        example the first two columns are set to auto-fit when the grid is drawn. The first\n        field's title exceeds the space used by its values, and the second field the reverse\n        is true. In both cases the column is correctly sized to fit its content.\n        Note that the user can also perform one time auto-fit of columns at runtime by\n        double-clicking on any header or using\n        the context-menu option.\n        "
+                            },
+                            {
                                 id:"autofitNewRecords",
                                 jsURL:"grids/autofit/autoFitNewRecords.js",
                                 title:"New Records",
@@ -1121,6 +1138,57 @@ isc.ExampleTree.create({
                                     }
                                 ],
                                 description:" \n        In this grid of Supply Categories, you can expand a row by clicking the special \n        <code>expansionField</code> to see a sub-grid containing the list of Supply Items \n        applicable to the selected Category.\n        "
+                            },
+                            {
+                                id:"expansionLimitedWithDetails",
+                                jsURL:"grids/expansion/expansionLimitedWithDetails.js",
+                                title:"Limited Data",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"supplyItemWithOps",
+                                        name:"supplyItem"
+                                    }
+                                ],
+                                description:" \n        This grid displays a limited number of fields from the supplyItem dataSource.  Only the\n        data values you can see have been returned from the server, via the \n        <i>operationBinding.outputs</i> feature.  When you click the special expansion field for\n        a row, the system goes to the server to retrieve the entire record, creates a \n        DetailViewer to display that data and expands the row to show the DetailViewer.  See \n        the code in the overridden getExpansionComponent() method.\n        <P>\n        Note also the use of the <i>maxExpandedRecords</i> attribute to limit the total number \n        of simultaneously expanded records.\n        "
+                            }
+                        ]
+                    },
+                    {
+                        isOpen:false,
+                        title:"Hover Components",
+                        description:"\n    Any SmartClient Canvas can display a <i>hover</i> label when a user pauses momentarily\n    above it.  This is a builtin behavior for showing arbitrary HTML text, configured by\n    returning a value from <i>Canvas.hoverHTML</i>.  In addition to this, the builtin Hover\n    Label can be replaced with any other Canvas-based component by overriding and returning\n    a component from <i>getHoverComponent()</i>.\n    <P>\n    This section covers some examples of this feature.\n    <P>\n    When <b>showHoverComponents</b> is true and the mouse hovers over a field, a builtin \n    component is created and used in place of the standard hover Label.\n    <br><br>\n    A variety of components are supported by default, according to the value grid.hoverMode,\n    and you can also override grid.getHoverComponent() to add your own hover behaviors.\n",
+                        children:[
+                            {
+                                id:"hoverRelatedRecords",
+                                jsURL:"grids/hover/hoverRelatedRecords.js",
+                                title:"Related Records",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"supplyCategory",
+                                        name:"supplyCategory"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"supplyItem",
+                                        name:"supplyItem"
+                                    }
+                                ],
+                                description:" \n        In this grid of Supply Categories, you can hover over a row to see a hovering grid \n        containing the list of Supply Items applicable to the Category under the mouse.\n        "
+                            },
+                            {
+                                id:"hoverDetails",
+                                jsURL:"grids/hover/hoverDetails.js",
+                                title:"Details",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"supplyItemWithOps",
+                                        name:"supplyItem"
+                                    }
+                                ],
+                                description:" \n        This grid displays a limited number of fields from the supplyItem dataSource.  Only the\n        data values you can see have been returned from the server, via the \n        <i>operationBinding.outputs</i> feature.  When you hover over a row, the system goes to \n        the server to retrieve the entire record, creates a DetailViewer to display that data \n        and shows it as the hoverComponent.  See \n        the code in the overridden getCellHoverComponent() method.\n        "
                             }
                         ]
                     },
@@ -1197,6 +1265,75 @@ isc.ExampleTree.create({
                         ],
                         descriptionHeight:"220",
                         description:"\n        <b>Formula and Summary fields</b> provide built-in wizards for end users to define \n        formula fields that can compute values using other fields, or summary fields that can \n        combine other fields with intervening / surrounding text. Available in all \n        DataBoundComponents and easy to persist as preferences.\n        <P>\n        The Formula and Summary Builders are accessible from the grid header context menu. They \n        can also be invoked programmatically as demonstrated by clicking the buttons in this \n        sample.\n        <P>\n        Launch the Formula Builder and enter the title of the new field, and the desired \n        formula. For example, enter <b>Population Density</b> for the field title and in the \n        formula field enter <b>A / B</b>. As indicated in the dialog, <b>A</b> represents the \n        Population field, and <b>B</b> represents the Area field. Notice that you can now sort on this \n        newly added <b>Population Density</b> field just like any other field. Click the help \n        icon to view the various supported inbuilt functions.\n        <P>\n        Next launch the Summary Builder and enter the title of the new field, and the Summary \n        formulation. For example, enter <b>County (Flag)</b> for the field name and enter \n        <b>#B (#A)</b> in the summary field.\n        <P>\n        Once some additional user-fields have been added, all you need to persist the column-layout\n        for later restoration to another grid, is the ability to save a string.  Click the \n        button below to store the grid's state by calling <i>getFieldState()</i>, destroy the \n        grid and restore it's state to another grid using <i>setFieldState()</i>. \n        \n    "
+                    },
+                    {
+                        isOpen:false,
+                        title:"Hiliting",
+                        description:"\n		The 'hiliting' system allows end users to visually define data highlighting rules, such \n		as using colors to pick out high values, or using multiple colors to indicate\n		ranges of values.\n		<P>\n		Because 'hilites' can be easily stored and re-applied, it's easy to build an interface \n        that allows users to store their own private data highlighting rules, or even build a\n		highlighted report to share with other users.		\n	",
+                        children:[
+                            {
+                                id:"userDefinedHilites",
+                                jsURL:"grids/hiliting/userDefinedHilites.js",
+                                title:"User Defined",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        title:"countryDS",
+                                        url:"grids/ds/countrySQLDS.ds.xml"
+                                    }
+                                ],
+                                descriptionHeight:"240",
+                                description:"\n		DataBoundComponents allow end-users to create 'hilites' with rules based on the values \n        of data.  There are two sorts of hilites: simple hilites, which allow a single \n        criterion based on a single field to affect a single target field (the same one), and \n        Advanced hilites, which allow very complex criteria, based on multiple fields, to \n        affect multiple target fields.\n		<P>\n		Click the \"Edit Hilites\" button below to show the HiliteEditor interface.  To set up a \n        simple hilite, click on the \"Area (km<sup>2</sup>)\" record in the list to the left.  \n        When the simple hilite rule appears on the right, select the \"greater than\" operation \n        from the drop-down box, type \"5000000\" into the value textBox, select a color from the \n        'Color' picker widget and click 'Save'.  You'll see that all \"Area (km<sup>2</sup>)\" \n        values in the grid that exceed 5000000 are now hilighted in your chosen color.\n        <P>\n		Now, add an Advanced criteria.  Again, click the \"Edit Hilites\" button and then click \n        the \"Add Advanced Rule\" button in the top left of the HiliteEditor - you'll now see the \n		AdvancedHiliteEditor window.  Add a new criterion that specifies <i>GDP ($M) greater \n        than 1000000</i>.  Click the green plus icon beneath the criterion and add a second one, \n        this time specifying <i>Area (km<sup>2</sup>) less than 500000</i>.  In the list below, \n        select both \"GDP ($M)\" and \"Area (km<sup>2</sup>)\" and select a background color.  \n        Clicking 'Save' now will update the grid, showing both GDP and Area data in your \n        selected background color, when GDP is higher than 1 million and Area is less than\n		500,000.\n		<P>\n        You can easily provide users with the ability to save and restore their hilite \n        information - all you need is the ability to save a string.  Click the \n        button below to see the grid's hilite state retrieved and serialized, by calling \n		<i>getHiliteState()</i>, the grid destroyed and it's hilite-state restored to another \n        grid via <i>setHiliteState()</i>. \n    "
+                            },
+                            {
+                                id:"preDefinedHilites",
+                                jsURL:"grids/hiliting/preDefinedHilites.js",
+                                title:"Pre-Defined",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        title:"countryDS",
+                                        url:"grids/ds/countrySQLDS.ds.xml"
+                                    }
+                                ],
+                                descriptionHeight:"130",
+                                description:"\n		This example demonstrates producing hilites in code.  The hilites applied to the grid \n        below match those suggested in the <i>User Defined</i> hilites example.  Additionaly, \n        the Advanced Hilite in this example also demonstrates using <i>Canvas.imgHTML()</i> \n        and the <i>htmlAfter</i> attribute of hilite-objects to append a warning icon to the \n        end of each field value, as part of the hilite.\n		<P>\n		Hilite-objects also support an <i>htmlBefore</i> attribute - you can use these before \n        and after properties to entend color-based hilites to format values, for instance, as \n        <b>bold</b> or <i>italic</i> text using HTML tags.\n    "
+                            },
+                            {
+                                id:"dataDrivenHilites",
+                                jsURL:"grids/hiliting/dataDrivenHilites.js",
+                                title:"Data-Driven",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        doEval:"true",
+                                        title:"countryDataHilites",
+                                        url:"grids/data/countryDataHilites.js"
+                                    },
+                                    {
+                                        canEdit:"true",
+                                        title:"countryHilitesDS",
+                                        url:"grids/ds/countryHilitesDS.ds.js"
+                                    }
+                                ],
+                                descriptionHeight:"80",
+                                description:"\n		This example demonstrates hiliting in a data-driven fashion, where hilites contain no\n        criteria, and instead the data itself is flagged by setting the \n        <i>DataBoundComponent.hiliteProperty</i> attribute on each record.  This method is \n        useful when some complex server-based calculation is used to decide which records to \n        hilite, and the client only needs to handle displaying them.\n    "
+                            },
+                            {
+                                id:"formulaHilites",
+                                jsURL:"grids/hiliting/formulaHilites.js",
+                                title:"Formula Hilites",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        title:"countryDS",
+                                        url:"grids/ds/countrySQLDS.ds.xml"
+                                    }
+                                ],
+                                descriptionHeight:"170",
+                                description:"\n        Hiliting can be applied to any field in a DataBoundComponent, including custom formula\n        and summary fields.\n        <P>\n        Launch the Formula Builder and enter the title of the new field, and the desired \n        formula. In this case, enter <b>Population Density</b> for the field title and in the \n        formula field enter <b>A / B</b>. As indicated in the dialog, <b>A</b> represents the \n        Population field, and <b>B</b> represents the Area field. Notice that you can now sort on this \n        newly added <b>Population Density</b> field just like any other field. Click the help \n        icon to view the various supported inbuilt functions.\n        <P>\n		Now, click the \"Edit Hilites\" button to show the HiliteEditor interface.  To set up a \n        simple hilite on the custom <b>Population Density</b> field, select it in the list to \n        the left.  When the simple hilite rule appears on the right, select the \"greater than\" \n        operation from the drop-down box, type \"300\" into the value textBox, select a color \n        from the 'Color' picker widget and click 'Save'.  You'll see that all the grid-values \n        in the <b>Population Density</b> field that exceed 300 are now hilighted in your \n        chosen color.\n    "
+                            }
+                        ]
                     },
                     {
                         isOpen:false,
@@ -2351,6 +2488,18 @@ isc.ExampleTree.create({
                                 description:"\n            Titles can be changed on the fly.  Type in your name to see the \"Preferences\" tab\n            change its title to include your name.  Note that the tab automatically sizes to\n            accommodate the longer title - automatic sizing also happens at initialization.\n            "
                             },
                             {
+                                id:"userEditableTitles",
+                                jsURL:"layout/tabs/userEditableTitles.js",
+                                title:"User-Editable Titles",
+                                description:"\n            Optionally, titles can be directly edited in place by your application's end users.\n            This TabSet specifies <code>canEditTabTitles</code> - double-click a tab title to \n            edit it.  Individual tabs can override the TabSet behavior; in this example, the \n            \"Can't change me\" tab has <code>canEditTitle</code> set to false.  Your code can\n            cancel the user changes - try editing the \"123-Yellow\" tab to a title that doesn't \n            begin with \"123-\"\n            "
+                            },
+                            {
+                                id:"selectionEvents",
+                                jsURL:"layout/tabs/selectionEvents.js",
+                                title:"Selection and Deselection Handling",
+                                description:"\n            Developers can apply custom event handler logic to fire when the user selects tabs.\n            The preferences pane in this example has a tabSelected handler which will create\n            its pane lazily the first time the tab is selected, and a tabDeselected handler\n            which returns false to stop the user changing tabs if the form item is unchecked.\n            "
+                            },
+                            {
                                 id:"viewLoading",
                                 jsURL:"advanced/viewLoading.js",
                                 needXHR:"true",
@@ -3240,6 +3389,10 @@ isc.ExampleTree.create({
                                 ],
                                 descriptionHeight:"210",
                                 description:"\n            This example shows the use of custom SQL clauses to build a fairly complex query, including\n            both standard and bespoke WHERE conditions and the use of aggregate functions and a \n            GROUP BY.  It is important to note that we can do this whilst still keeping the normal \n            benefits of SmartClient DataSources, such as automatic dataset paging and arbitrary\n            filtering and sorting.  Also note that this example, though it makes heavy use of custom\n            SQL clauses, doesn't make use of any database-specific syntax or functions, so it is \n            portable across different database products.<p>\n            \n            The list contains a summary of orders in a given date range, summarized by item - each\n            item appears just once in the list, alongside the total quantity of that item ordered \n            in the given date range.  Change the date range to be more restrictive (all the rows\n            in the sample database have dates in February 2009) and click \"Filter\", and you will see\n            the quantities change, and items disappear from the list.  You can also use the \n            filter editor at the top of the grid to arbitrarily filter the records, or click\n            the column headings to sort.<p>\n            \n            Scroll the grid quickly to the bottom, and you will see a brief notification as \n            SmartClient contacts the server - pagination is still working, despite the unusual\n            and complex query.\n            "
+                            },
+                            {
+                                ref:"autoTransactions",
+                                title:"Transactions"
                             }
                         ]
                     },
@@ -3452,6 +3605,17 @@ isc.ExampleTree.create({
                                     }
                                 ],
                                 description:"\n            Direct Method Invocation (DMI) allows you to map DataSource operations directly \n            to Java methods via XML configuration in a DataSource descriptor (.ds.xml file).\n            The arguments of your Java methods are automatically populated from the inbound \n            request.  See the sample implementation in SupplyItemDMI.java\n            "
+                            },
+                            {
+                                dataSource:"supplyItemHB",
+                                icon:"[ISO_DOCS_SKIN]/images/silkicons/database_gear.png",
+                                id:"autoTransactionsHB",
+                                jsURL:"serverExamples/hibernate/autoTransactions/autoTransactions.js",
+                                requiresModules:"SCServer, transactions",
+                                showSkinSwitcher:false,
+                                showSource:true,
+                                title:"Automatic Transaction Management (Hibernate)",
+                                description:"\n                SmartClient Hibernate DataSources participate fully in automatic transaction \n                management (Power and Enterprise Editions only).<p>\n                Drag multiple records from the left-hand grid to the right.  SmartClient will \n                send the updates to the server in a single queue; SmartClient Server will \n                automatically treat that queue as a single database transaction.  This is the\n                default behavior, and requires no code or config to enable it; if you require\n                it, however, very flexible, fine-grained control over transactions is possible,\n                through configuration, code or a combination of the two.\n                "
                             }
                         ]
                     },
@@ -3460,7 +3624,7 @@ isc.ExampleTree.create({
                         id:"transactionsFolder",
                         isOpen:false,
                         title:"Transactions",
-                        description:"\n            SmartClient provides robust support for transactional applications.\n            <P>\n            <b>Queuing</b> allows you to easily combine operations together into a single\n            transaction, for more efficient data loading and transactional saves.\n            <P>\n            <b>Transaction Chaining</b> allows you to declaratively handle data dependencies\n            between operations submitted together in a queue.\n     ",
+                        description:"\n            SmartClient provides robust support for transactional applications.\n            <P>\n            <b>Queuing</b> allows you to easily combine operations together into a single\n            transaction, for more efficient data loading and transactional saves.\n            <P>\n            <b>Automatic Transaction Management</b> support in the SmartClient Server, with \n            specific implementations for the built-in SQL and Hibernate DataSources, allows \n            for queued requests to be committed or rolled back as a single database transaction.\n            This feature is only available in Power and Enterprise editions.\n            <P>\n            <b>Transaction Chaining</b> allows you to declaratively handle data dependencies\n            between operations submitted together in a queue.  This feature is only available\n            in Power and Enterprise editions.\n     ",
                         children:[
                             {
                                 id:"queuing",
@@ -3495,6 +3659,17 @@ isc.ExampleTree.create({
                                 description:"\n            Queuing allows any set of DataSource operations to be combined into a single HTTP\n            request, without requiring any special code to be written to transport the combined\n            inputs and outputs.\n            <p>\n            Click the \"Find Orders\" button and the example will load both the selected user's\n            details and all the orders associated with that user, as a single request.\n            Queuing works transparently to the components involved, so for example, scrolling down\n            in the orders grid causes data paging to be activated, exactly as though the grid had\n            done a fetch that was not combined into a queue.  \n            <P>\n            Since queuing is transparent to components, a screen full of various components\n            which need to load data from different sources can participate in a queue without\n            any special component-specific code, and with no need to rework how data is\n            transferred if new components are added - each component can be treated as though\n            it were standalone.\n            <P>\n            Server-side, queuing allows you to focus on simple, secure, reusable data\n            operations and other services, which can then be accessed in arbitrary combinations\n            according to the data loading and saving requirements of particular screens, with\n            no need to write brittle, screen-specific server code.\n            <P>\n            Queuing works even when the operations are on different data providers (as in this \n            case, where the user details are coming from Hibernate and the order details are coming\n            from the SmartClient Server SQL provider).\n            "
                             },
                             {
+                                dataSource:"supplyItem",
+                                icon:"[ISO_DOCS_SKIN]/images/silkicons/database_gear.png",
+                                id:"autoTransactions",
+                                jsURL:"serverExamples/transactions/autoTransactions/autoTransactions.js",
+                                requiresModules:"SCServer, transactions",
+                                showSkinSwitcher:false,
+                                showSource:true,
+                                title:"Automatic Transaction Management",
+                                description:"\n            Drag multiple records from the left-hand grid to the right.  SmartClient will \n            send the updates to the server in a single queue; SmartClient Server will \n            automatically treat that queue as a single database transaction.  This is the\n            default behavior, and requires no code or config to enable it; if you require\n            it, however, very flexible, fine-grained control over transactions is possible,\n            through configuration, code or a combination of the two.\n            "
+                            },
+                            {
                                 icon:"[ISO_DOCS_SKIN]/images/silkicons/table_row_insert.png",
                                 id:"queuedAdd",
                                 jsURL:"serverExamples/sql/queuedAdd/queuedMasterDetailAdd.js",
@@ -3523,21 +3698,73 @@ isc.ExampleTree.create({
                                     }
                                 ],
                                 descriptionHeight:"150",
-                                description:"\n            This example makes use of the SmartClient server's support for setting DSRequest \n            properties dynamically at runtime, based on responses to requests earlier in the \n            same queue.<p>\n            Edit the order header details, then add one or more lines.  When you click \"Save \n            Order\", SmartClient will send multiple DataSource requests to the server - one to\n            save the order header, and one each for however many lines you enter - but it will combine\n            them into a single HTTP request, so that a transactional commit is possible.<p>\n            New orders are given an automatically generated sequence value as a primary\n            key, and the orderItems need this value in order to establish a relationship with\n            their order.<P>\n            As a result of the <code>&lt;values&gt;</code> tag in the <code>queuedAdd_orderItem</code>\n            DataSource definition, the server will set the \"orderID\" property on each order\n            item to the unique sequence value assigned to the order header when it was\n            saved.<P>\n            This entire interaction is accomplished by simply re-using the capability of the\n            DataSource to add new records, without the need to write any server-side\n            code.  SQL DataSources are shown, but this interaction works with any DataSource\n            that can support CRUD operations, include custom DataSources and even a mix of\n            DataSources that use different storage systems.<P>\n            The <code>&lt;values&gt;</code> tag (and the similar \n            property <code>&lt;criteria&gt;</code> tag) are specified using the Velocity\n            Template Language, so the support is very flexible.<P>\n            "
+                                description:"\n            This example makes use of the SmartClient server's support for setting DSRequest \n            properties dynamically at runtime, based on responses to requests earlier in the \n            same queue.<p>\n            Edit the order header details, then add one or more lines.  When you click \"Save \n            Order\", SmartClient will send multiple DataSource requests to the server - one to\n            save the order header, and one each for however many lines you enter - but it will combine\n            them into a single HTTP request, so that a transactional commit is possible. Since\n            this sample is backed by SmartClient HibernateDataSources, the queue is \n            automatically assembled into a single transaction (in Power Edition and above).<p>\n            New orders are given an automatically generated sequence value as a primary\n            key, and the orderItems need this value in order to establish a relationship with\n            their order.<P>\n            As a result of the <code>&lt;values&gt;</code> tag in the <code>queuedAdd_orderItem</code>\n            DataSource definition, the server will set the \"orderID\" property on each order\n            item to the unique sequence value assigned to the order header when it was\n            saved.<P>\n            This entire interaction is accomplished by simply re-using the capability of the\n            DataSource to add new records, without the need to write any server-side\n            code.  SQL DataSources are shown, but this interaction works with any DataSource\n            that can support CRUD operations, including custom DataSources and even a mix of\n            DataSources that use different storage systems.<P>\n            The <code>&lt;values&gt;</code> tag (and the similar \n            property <code>&lt;criteria&gt;</code> tag) are specified using the Velocity\n            Template Language, so the support is very flexible.<P>\n            "
                             },
                             {
                                 icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png",
                                 ref:"massUpdate",
                                 title:"Mass Update",
                                 descriptionHeight:"120",
-                                description:"\n        <b>Click</b> on any cell to start editing, then <b>Tab</b> or <b>Down Arrow</b> past the\n        last row in the grid to create a new row. Alternatively, click the <b>Edit New</b> button\n        to create a new data-entry row at the end of the grid.  When you click the \"Save\" button\n        all your changes - changed rows and new ones - are sent to the server in a queue, as a \n        single HTTP request.<p>\n        Because all your changes arrive on the server at once, committing \n        them as a single transaction becomes possible.  And because SmartClient's queuing support\n        is completely inobtrusive and requires no extra code on either client or server, as soon\n        as you have an operation that can update a single record, you automatically have an \n        operation that can participate in SmartClient queued updates and potentially transactional\n        commits.\n        "
+                                description:"\n        <b>Click</b> on any cell to start editing, then <b>Tab</b> or <b>Down Arrow</b> past the\n        last row in the grid to create a new row. Alternatively, click the <b>Edit New</b> button\n        to create a new data-entry row at the end of the grid.  When you click the \"Save\" button\n        all your changes - changed rows and new ones - are sent to the server in a queue, as a \n        single HTTP request.<p>\n        Because all your changes arrive on the server at once, committing them as a single \n        transaction becomes possible; if you are using the built-in SQL or Hibernate dataSources,\n        and have Power edition or above, automatic transactional commit is the default.  And \n        because SmartClient's queuing support is completely inobtrusive and requires no extra \n        code on either client or server, as soon as you have an operation that can update a \n        single record, you automatically have an operation that can participate in SmartClient\n        queued updates and automatic transactional commits.\n        "
                             },
                             {
-                                icon:"[ISO_DOCS_SKIN]/images/silkicons/database_link.png",
+                                icon:"[ISO_DOCS_SKIN]/images/silkicons/table_go.png",
                                 ref:"databoundDragCopy",
                                 title:"Multi-Row Drag & Save",
                                 descriptionHeight:"160",
-                                description:"\n        Drag employee records into the Project Team Members list.  SmartClient recognizes that the \n        two dataSources are linked by a foreign key relationship, and automatically uses that \n        relationship to populate values in the records that are added when you drop. SmartClient \n        also populates fields based on current criteria and maps explicit titleFields as necessary.<p>\n        Multi-row selection is enabled on the Employees grid, so you can select multiple employees \n        and drag them to the Teams grid in one go.  Because the grids are databound, this drag and \n        drop action will send data operations to the server automatically, using SmartClient \n        queuing to ensure all the updates arrive on the server together.<p>\n        All of this just works, there is no coding needed to enable it.\n         "
+                                description:"\n        Drag employee records into the Project Team Members list.  SmartClient recognizes that the \n        two dataSources are linked by a foreign key relationship, and automatically uses that \n        relationship to populate values in the records that are added when you drop. SmartClient \n        also populates fields based on current criteria and maps explicit titleFields as necessary.<p>\n        Multi-row selection is enabled on the Employees grid, so you can select multiple employees \n        and drag them to the Teams grid in one go.  Because the grids are databound, this drag and \n        drop action will send data operations to the server automatically, using SmartClient \n        queuing to ensure all the updates arrive on the server together and, since this example\n        is backed by a SmartClient SQLDataSource, are committed together in a single database \n        transaction (in Power edition and above).<p>\n        All of this just works, there is no coding needed to enable it.\n         "
+                            },
+                            {
+                                descriptionHeight:"140",
+                                icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_undo.png",
+                                id:"rollback",
+                                jsURL:"serverExamples/transactions/rollback/rollback.js",
+                                requiresModules:"SCServer, transactions",
+                                showSkinSwitcher:false,
+                                showSource:true,
+                                title:"Rollback",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"rbCountryTransactions",
+                                        name:"rbCountryTransactions"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"worldDS",
+                                        name:"worldDS"
+                                    }
+                                ],
+                                description:"\n            SmartClient Server detects when a DSRequest that is part of a transaction fails,\n            and automatically rolls the transaction back.<p>\n            Change several records in the grid, then click \"Save\".  The underlying DataSource \n            specifies a \"hasRelatedRecord\" validation on the country name, looking up against \n            all the countries of the world; if you change a country's name to something \n            non-existent, that validation will fail and the entire transaction will be rolled\n            back.  All of your changes will remain pending (the changed values will still be \n            shown in blue), and if you refresh the page you can verify that the data is \n            unchanged on the server.<p>\n            If you correct the validation error and click \"Save\" again, the transaction will \n            be committed and your changes will be persisted.\n            "
+                            },
+                            {
+                                descriptionHeight:"150",
+                                icon:"[ISO_DOCS_SKIN]/images/silkicons/user_go.png",
+                                id:"jdbcOperations",
+                                jsURL:"serverExamples/transactions/jdbcOperations/jdbcOperations.js",
+                                requiresModules:"SCServer, transactions",
+                                showSkinSwitcher:false,
+                                showSource:true,
+                                title:"Transactional User Operations",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"countryTransactions",
+                                        name:"countryTransactions"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"lastUpdated",
+                                        name:"lastUpdated"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        doEval:"false",
+                                        name:"JDBCOperations.java",
+                                        url:"serverExamples/transactions/jdbcOperations/JDBCOperations.java"
+                                    }
+                                ],
+                                description:"\n            User-written operations - in this example, hand-crafted JDBC updates - can be \n            included in SmartClient automatic transactions, and will be committed or rolled \n            back alongside the normal SmartClient operations.<p>\n            Edit rows in the grid, then click \"Good Save\".  Your changes will be \n            persisted to the database as part of a queue that also includes a user-written \n            JDBC update to a \"lastChanged\" table; the DMI method has been written to use \n            the SmartClient transaction (see the <code>JS</code> and \n            <code>JDBCOperations.java</code> tabs).  The example will then fetch the current \n            value from the lastUpdated table and display it in the blue label; you will see \n            that it has been updated.<p>\n            Now make further changes and click \"Bad Save\".  This causes a deliberately \n            broken version of the user-written JDBC update to be run, resulting in a SQL error\n            and a rolled-back transaction (and an error dialog referring to an unknown column).  \n            Note that your changes have not been saved (they\n            are still presented in blue, to show that they are pending) and the \"last updated\"\n            label has not changed; the entire transaction, both SmartClient requests and \n            user-written query, has been rolled back.  If you now click \"Good Save\", your pending\n            changes will be persisted and the \"last updated\" label will change to reflect this.\n            "
                             }
                         ]
                     },
@@ -3628,7 +3855,7 @@ isc.ExampleTree.create({
                                 title:"Excel Export"
                             },
                             {
-                                descriptionHeight:"150",
+                                descriptionHeight:"100",
                                 icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png",
                                 id:"formattedExport",
                                 jsURL:"grids/formattedExport.js",
@@ -3641,7 +3868,7 @@ isc.ExampleTree.create({
                                         url:"grids/ds/worldSQLDSExport.ds.xml"
                                     }
                                 ],
-                                description:"\n            You can export the client-side data from a DataBoundComponent.  That is, the data \n            as seen in a component, including the effects of client-side formatters.\n            <p>In the example below, choose an export format from the select-list, decide \n            whether to download the results or view them in a window using the checkbox and \n            click the Export button.  \n            <p>Data is exported according to the filters and sort-order on the grid and includes\n            the formatted values and field-titles as seen in the grid.\n            <p>If you target one of the supported native spreadsheet formats (Excel 97 or \n            Excel 2007), the resulting export file contains styling to match any Hilites that \n            are in force.  For example, this grid has a Hilite in place to show all countries\n            with a population in excess of 100 million in white-on-green; if you export direct \n            to one of the Excel formats, those rows will be styled as white-on-green in the \n            spreadsheet.\n        "
+                                description:"\n            You can export the client-side data from a DataBoundComponent.  That is, the data \n            as seen in a component, including the effects of client-side formatters.\n            <p>In the example below, choose an export format from the select-list, decide \n            whether to download the results or view them in a window using the checkbox and \n            click the Export button.  \n            <p>Data is exported according to the filters and sort-order on the grid and includes\n            the formatted values and field-titles as seen in the grid.\n        "
                             },
                             {
                                 icon:"[ISO_DOCS_SKIN]/images/silkicons/arrow_out.png",

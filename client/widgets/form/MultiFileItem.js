@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -55,6 +55,7 @@ if (isc.ListGrid) {
 // An example "detail" DataSource for storing files is shown below.  This "detail" DataSource
 // assumes a "master" DataSource with +link{DataSource.ID} "masterRecord" and with a primaryKey
 // field "id".
+// <pre>
 // <code>
 //   &lt;DataSource ID="uploadedFiles" serverType="sql"&gt;
 //     &lt;fields&gt;
@@ -64,6 +65,7 @@ if (isc.ListGrid) {
 //     &lt;/fields&gt;
 //   &lt;/DataSource&gt;
 // </code>
+// </pre>
 // <P>
 // Aside from a single "binary" field, the "detail" DataSource should generally have only
 // hidden fields, as shown above.  Additional internal fields (such as a "lastUpdated" field)
@@ -137,16 +139,9 @@ isc.MultiFileItem.addProperties({
     pickerConstructor: "MultiFilePicker",
 
     canvasDefaults : {
-       	//> @attr multiFileItem.displayShortName	(boolean : true : IR)
-        //
-        // If true, just the filename (without the path) is shown in the list of files.  If
-        // false, the full path including the filename is shown.
-        //
-        // @visibility enternal
-    	//<		
-        displayShortName: true,
+       
         showHeader:false,
-        emptyMessage:"Click icon to add...",
+      
         canHover: true,
         cellHoverHTML : function (record, rowNum, colNum) {
             if (this.canvasItem.form.saveOperationIsAdd())
@@ -161,6 +156,35 @@ isc.MultiFileItem.addProperties({
             return value;
         }
     },
+    
+    // Override getDynamicDefaults to pick up dynamic defaults for the ListGrid based on
+    // this item's direct settings
+    getDynamicDefaults : function (childName) {
+        if (childName == "canvas") {
+            var defaults = {};
+            if (this.emptyMessage != null) defaults.emptyMessage = this.emptyMessage;
+            if (this.displayShortName != null) defaults.displayShortName = this.displayShortName;
+            return defaults;
+        }
+        return this.Super("getDynamicDefaults", arguments);
+        
+    },
+    
+    //> @attr multiFileItem.emptyMessage (String : "Click icon to add..." : IR)
+    // Empty message to display when there are no files listed.
+    // @visibility external
+    // @group i18nMessage
+    //<
+    emptyMessage:"Click icon to add...",
+    
+    //> @attr multiFileItem.displayShortName	(boolean : true : IR)
+    //
+    // If true, just the filename (without the path) is shown in the list of files.  If
+    // false, the full path including the filename is shown.
+    //
+    // @visibility enternal
+    //<		
+    displayShortName: true,
 
     iconWidth:16,
     iconHeight:16,

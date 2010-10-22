@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1339,11 +1339,11 @@ shouldHiliteAccessKey : function () {
 getTitleHTML : function () {
 
     var title = this.getTitle();
+
     if (!this.shouldHiliteAccessKey() || !isc.isA.String(title) || this.accessKey == null) 
         return title;
-    
+
     return isc.Canvas.hiliteCharacter(title, this.accessKey);
-    
 },
 
 //>	@method	statefulCanvas.getTitle()	(A)

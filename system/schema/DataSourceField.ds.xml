@@ -2,7 +2,8 @@
 	<fields>
 	    <name type="string" title="Name" required="true" xmlAttribute="true" primaryKey="true" basic="true" />
 	    <type type="string" title="Type" xmlAttribute="true" basic="true" />
-        
+        <disabled type="boolean" title="Disabled"/>
+
         <!-- means that an identifier is allowed instead of a live instance -->
 	    <idAllowed type="boolean" title="ID Allowed" xmlAttribute="true" />
 

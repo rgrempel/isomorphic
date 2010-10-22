@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -525,7 +525,27 @@ isc.Canvas.addClassProperties({
     // height of the window, rounded down to a multiple of scrollWheelDelta. 
     // @group scrolling
     //<
-    scrollWheelDelta: 50
+    scrollWheelDelta: 50,
+    
+    //> @classAttr canvas.loadingImageSrc (SCImgURL : "[SKINIMG]loadingSmall.gif" : RWA)
+    // Image URL to be displayed while data is being loaded (if enabled for the widget
+    // waiting for data). Must be square; +link{loadingImageSize} specifies the width
+    // and height.
+    // @group animation
+    // @see listGrid.loadingDataMessage
+    // @see detailViewer.loadingMessage
+    // @see HTMLFlow.loadingMessage
+    // @see ViewLoader.loadingMessage
+    // @visibility external
+    //<
+    loadingImageSrc: "[SKINIMG]loadingSmall.gif",
+
+    //> @classAttr canvas.loadingImageSize (integer : 16 : RWA)
+    // Specifies the width and height of +link{loadingImageSrc}.
+    // @group animation
+    // @visibility external
+    //<
+    loadingImageSize: 16
 });
 
 
@@ -992,7 +1012,7 @@ isc.Canvas.addProperties({
     //<
 	visibility:isc.Canvas.INHERIT,
 
-    //>	@attr	canvas.canSelectText		(boolean : false : IRWA)
+    //>	@attr canvas.canSelectText		(boolean : false : IRWA)
 	// Whether native drag selection of contained text is allowed within this Canvas.
     // <P>
     // Note that setting this property to <code>false</code> will not avoid text selection
@@ -1003,7 +1023,7 @@ isc.Canvas.addProperties({
     // @visibility external
 	//<
 
-	//>	@type	CSSStyleName
+	//>	@type CSSStyleName
     // CSS class name to apply to some HTML element on this page. This is a string that should
     // match the css class defined for the page in an external stylesheet or in inline 
     // html &lt;STYLE&gt; tags.
@@ -1023,24 +1043,24 @@ isc.Canvas.addProperties({
     // caveat that the content should be tested on all supported browsers, just as content
     // outside of SmartClient must be.
     // 
-	//	@group	appearance
-	//	@visibility external
-    //  @example consistentSizing
+	// @group appearance
+	// @visibility external
+    // @example consistentSizing
     //<
     
-    //>	@attr	canvas.className		(CSSStyleName : "normal" : [IRW])
-    //      The CSS class applied to this widget as a whole.
-    //  @visibility external
-    //  @group appearance
+    //>	@attr canvas.className		(CSSStyleName : "normal" : [IRW])
+    // The CSS class applied to this widget as a whole.
+    // @group appearance
+    // @visibility external
     // @deprecated In favor or +link{canvas.styleName} as of SmartClient release 5.5
     //<
     
-    //>	@attr	canvas.styleName    (CSSStyleName : "normal" : [IRW])
-    //      The CSS class applied to this widget as a whole.
-    //  @group appearance
-    //  @setter canvas.setStyleName()
-    //  @visibility external
-    //  @example styles
+    //> @attr canvas.styleName    (CSSStyleName : "normal" : [IRW])
+    // The CSS class applied to this widget as a whole.
+    // @group appearance
+    // @setter canvas.setStyleName()
+    // @visibility external
+    // @example styles
     //<
 	styleName:"normal",
 
@@ -1590,7 +1610,7 @@ isc.Canvas.addProperties({
     
     
     _useFocusProxy:(isc.Browser.isMoz && isc.Browser.geckoVersion < 20051111)
-                   || isc.Browser.isSafari || isc.Browser.isOpera,
+                   || (isc.Browser.isSafari && !isc.Browser.isTouch) || isc.Browser.isOpera,
     
 
     //> @attr   canvas.accessKey (string : null : IRWA)
@@ -2417,6 +2437,7 @@ _$afterEnd: "afterEnd",
 // characters
 _$rightAngle : ">",
 _$singleQuote : "'",
+_$doubleQuote : '"',
 
 // Initialization
 // --------------------------------------------------------------------------------------------
@@ -2564,6 +2585,9 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
         //this.logWarn("Detected children array as instance property")
         //this.children = this.children.duplicate();
     //}
+    // We have a mechanism to avoid this - we could call 'registerDupProperty' to
+    // register children as a special property for duplication (IE shallow cloning) in this
+    // case - but we don't currently have a use case where this is required
     
     // If the deprecated 'enabled' property is set, set the disabled property to match it.
     
@@ -2713,19 +2737,21 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
     // explicitly request it - currently used in the ExampleViewer where we reparent components
     // as part of example loading.
 	if (this.autoDraw && !this.parentElement && !isc.noAutoDraw) {
-        // XXX probably temporary workaround
-        // in Safari, styling info isn't available until pageLoad, so we have a flag that
-        // allows all autoDrawing to happen after page load, which works so long as no
-        // application code has draw-dependent behaviors (eg checking sizes, or expecting
-        // children to exist that are created at draw() time)
-        if (isc.Browser.isSafari && isc.deferAutoDraw && !isc.Page.isLoaded() &&
+        
+        if (isc.Browser.isSafari && !isc.Browser.isChrome &&
+            isc.deferAutoDraw && !isc.Page.isLoaded() &&
             this.position != "relative") 
         {
-            isc.Page.setEvent("load", this.getID()+".draw()");
+            isc.Page.setEvent("load", "if(window." + this.getID() + ")" + this.getID() + "._deferredAutoDraw()");
         } else {
             this.draw();
         }
     }
+},
+
+_deferredAutoDraw : function () {
+    if (this.destroyed || this.isDrawn()) return;
+    this.draw();
 },
 
 //>	@method	canvas.initWidget()
@@ -3006,8 +3032,8 @@ readyToDraw : function () {
     // refuse to draw if we have zero or negative area
     if (this.getHeight() <= 0 || this.getWidth() <= 0) {
         
-        if (this._pendingPageResizeForModalDialog) {
-            this.drawDeferred();
+        if (this._pendingPageResizeForZeroSize) {
+            this._deferDrawForPageSize();
             return false;        
         }
     
@@ -3082,6 +3108,35 @@ readyToDraw : function () {
     
     // Otherwise it's ok to draw.
     return true;
+
+},
+
+
+// Both IE and Chrome can hit a case where on initial page render the
+// page size isn't yet reported.
+// In this case we delay draw of top level %-sized canvases using this method
+
+_deferDrawForPageSize : function () {
+    // If the page is already marked as loaded, draw on next idle loop
+    if (isc.Page.isLoaded()) this.drawDeferred();
+    else {
+        // draw on, or after page load
+        isc.Page.setEvent("load", this.getID() + "._fireDeferredDrawForPageResize()");
+        
+    }
+},
+_fireDeferredDrawForPageResize : function () {
+    if (this.destroyed) return;
+
+    // In Chrome we've seen the page size still be zero during the page.onload event handlers
+    // In this case delay draw further
+    
+    if (isc.Page.getWidth() == 0 || isc.Page.getHeight() == 0) {
+        this.delayCall("draw", null, 100);
+    }
+    else {
+        this.draw();
+    }
 
 },
 
@@ -4391,7 +4446,12 @@ readyToRedraw : function (reason, askedToRedraw) {
     // batch of its own.
     
     var EH = this.ns.EH;
-    if ((EH._handlingMouseUp || EH._handlingMouseDown) && EH.lastTarget == this) {
+    if (EH.lastTarget == this && 
+        (EH._handlingMouseUp || EH._handlingMouseDown || 
+         (isc.Browser.isMobileWebkit && EH.dragOperation == EH.DRAG_SCROLL)
+        )
+       ) 
+    {
         if (askedToRedraw) {
             // if actually asked to redraw, schedule for later
             this._logRedraw(reason, true);
@@ -4862,16 +4922,20 @@ _refreshReply : function (frame) {
 // --------------------------------------------------------------------------------------------
 
 //>	@method	canvas.clear() [A]
-// Remove all visual representation of a Canvas.
+// Remove all visual representation of a Canvas, including all child or member Canvases, or
+// managed top-level components such as the ListGrid drop location indicator.
 // <P>
-// This is far more expensive than hide(), because in order to become visible again, the Canvas must
-// be draw()n again.  Generally, application code has no reason to call clear(); if you want to
-// temporarily hide a Canvas, use hide() and show(), and if you want to permanently destroy a
-// Canvas, use destroy().
+// This is more expensive than hide(), because in order to become visible again, the Canvas must
+// be draw()n again.  Generally, application code has no reason to call clear() unless it is
+// attempting to do advanced memory management.  If you want to temporarily hide a Canvas, use
+// hide() and show(), and if you want to permanently destroy a Canvas, use +link{destroy()}.
 // <P>
-// Note: a clear() will happen as part of moving a Canvas to a different parent.  See addChild().
-//
-// @see addChild()
+// You would only use clear() if you were managing a very large pool of components and you
+// wanted to reclaim some of the memory used by components that had not been used in a while,
+// while still being able to just draw() them to make them active and visible again.
+// <P>
+// Note: a clear() will happen as part of moving a Canvas to a different parent.  See
+// +link{addChild()}.
 //
 // @visibility external
 //<
@@ -4969,27 +5033,28 @@ clear : function (dontReport) {
 
 
 //>	@method	canvas.destroy()	(A)
-//  Permanently destroy a Canvas.<br><br>
-//  
-//  This does everything that clear() does, but unlike clear(), the Canvas cannot be draw()'n again,
-//  cannot be referenced by it's global ID, and is eligible for garbage collection (assuming that
-//  application code is not holding a reference to the Canvas).<br><br>
-//
-//  Any attempt to call a method on a destroyed Canvas will generally result in an error.  If your
-//  application is forced to hold onto Canvas's that might be destroy()d without warning, you can
-//  avoid errors by checking for the +link{canvas.destroyed} property.  If you override certain Canvas
-//  methods, your code may be called while a Canvas is being destroy()d; in this case you can avoid
-//  extra work (and possibly errors) by checking for the +link{canvas.destroying} property.
-//  <P>
-//  Note that <code>destroy()</code> should not be called directly in event handling code for this
-//  canvas. For this reason, wherever possible we recommend using +link{canvas.markForDestroy()}
-//  instead of calling this method directly. 
+// Permanently destroy a Canvas and all of it's children / members, recursively.
+// <P>
+// Like +link{clear()}, calling <code>destroy()</code> removes all HTML for the component;
+// unlike clear(), a destroyed Canvas is permanently unusable: it cannot be draw()'n again,
+// cannot be referenced by its global ID, and is eligible for garbage collection (assuming
+// that application code is not holding a reference to the Canvas).
+// <P>
+// Any attempt to call a method on a destroyed Canvas will generally result in an error.  If your
+// application is forced to hold onto Canvas's that might be destroy()d without warning, you can
+// avoid errors by checking for the +link{canvas.destroyed} property.  If you override certain Canvas
+// methods, your code may be called while a Canvas is being destroy()d; in this case you can avoid
+// extra work (and possibly errors) by checking for the +link{canvas.destroying} property.
+// <P>
+// Note that <code>destroy()</code> should not be called directly in event handling code for this
+// canvas. For this reason, wherever possible we recommend using +link{canvas.markForDestroy()}
+// instead of calling this method directly. 
 // 
 // @see canvas.markForDestroy()
 // @visibility external
 //<
 
-//> @attr   canvas.destroyed    (boolean : null : RA)
+//> @attr canvas.destroyed (boolean : null : RA)
 // If this property is set to <code>true</code>, the +link{canvas.destroy(), destroy()} method
 // has been called on this canvas. This implies the canvas is no longer valid. Its ID has been
 // removed from global scope, and calling standard canvas APIs on it is likely to result in 
@@ -4998,7 +5063,7 @@ clear : function (dontReport) {
 // @visibility external
 //<
 
-//>@attr    canvas.destroying   (boolean : null : RA)
+//> @attr canvas.destroying (boolean : null : RA)
 // This property is set to true when the +link{Canvas.destroy()} method is called on a widget.
 // If this property is true, but +link{Canvas.destroyed} is not, this indicates the canvas is
 // in the process of being destroyed.
@@ -5430,6 +5495,10 @@ _getClipDivDOMID : function () {
     return this._getDOMID(this._$canvasClipDiv);
 },
 
+getTransformCSS : function () {
+    if (this.rotation != null) return ";" + isc.Element.getRotationCSS(this.rotation, this.transformOrigin);
+    return null;
+},
 
 //>	@method	canvas.getTagStart()	(A)
 //			return the start tag for this canvas
@@ -5704,7 +5773,13 @@ getTagStart : function (dontConcat) {
                 
                 (isMoz && nativeTabIndex && !this.showFocusOutline
                     ? ";-moz-outline-style:none" : null),
-                    
+                this.getTransformCSS(),
+                // Touch browsers: set -webkit-user-select:none to disable user selection
+                // for copy (touch and hold/wait for blue rectangle).
+                (isc.Browser.isTouch
+                    ? (!this.canSelectText ? ";-webkit-user-select:none" : ";-webkit-user-select:text")
+                    : null),
+                
                 ";OVERFLOW:",
                 handleOverflow,
                 
@@ -5777,7 +5852,7 @@ getTagStart : function (dontConcat) {
             // [55] border
             // [56] opacity
             // [57] flash filter
-            // [58] unused
+            // [58] CSS transforms
             // NOTE: in IE, DIV scroll events can't be captured at the window level.  
             divHTML[59] = "' ONSCROLL='return ";
             // [60] eventProxy
@@ -5872,6 +5947,7 @@ getTagStart : function (dontConcat) {
                 divHTML[56] = null;
             }
         }
+        divHTML[58] = this.getTransformCSS();
         divHTML[60] = eventProxy;
 
         var lastSlot = 64;
@@ -6118,14 +6194,12 @@ _adjustHandleSize : function (width, height) {
             // border-box (either DIV structure): nothing
         } else if (this.useClipDiv) {
             // double DIV content-box, eg, Safari, Opera
-            // if padding is explicitly specified, it gets placed on the content div, so deduct
-            // border only.  If padding is from the style, it's applied to the clip div, so
-            // deduct it as well.
-            if (this.padding != null) {
-                width -= this.getHBorderSize();
-            } else {
-                width -= this.getHBorderPad();
-            }
+            // If padding is explicitly specified, it gets placed on the content div.
+            // If padding is specified in the css style definition, we explicitly zero out
+            // padding on the clip div (no style-doubling css), so it's still applied to
+            // the content div only.
+            // Therefore always adjust for border size only.
+            width -= this.getHBorderSize();
         } else {
             // single DIV content-box, eg, IE strict
             width -= this.getHBorderPad();
@@ -6142,11 +6216,7 @@ _adjustHandleSize : function (width, height) {
 
         if (this.isBorderBox) {
         } else if (this.useClipDiv) {
-            if (this.padding != null) {
-                height -= this.getVBorderSize();
-            } else {
-                height -= this.getVBorderPad();
-            }
+            height -= this.getVBorderSize();
         } else {
             height -= this.getVBorderPad();
         }
@@ -10052,7 +10122,7 @@ setClip : function (top, right, bottom, left) {
 //  @see    scrollbarSize
 //<
 getScrollbarSize : function () {
-    if (this.showCustomScrollbars) return this.scrollbarSize;
+    if (this.showCustomScrollbars) return this.getCustomScrollbarSize();
     return isc.Element.getNativeScrollbarSize();
 },
 
@@ -10638,6 +10708,15 @@ getDelta : function (name, newValue, currentValue) {
                        );
         }
         
+        
+        
+        
+        // In IE and Chrome we can hit a case where page size is initially reported as
+        // zero px. In this case we want to re-calculate top-level widget
+        // percentage sizes after page load completes (When page size *is* available)
+        
+        
+        
         //>IE
         if (isc.Browser.isIE && !isc.Page.isLoaded() && 
             ((isc.Page.getWidth() == 0) || (isc.Page.getHeight() == 0))) 
@@ -10645,9 +10724,24 @@ getDelta : function (name, newValue, currentValue) {
             isc.Page.setEvent("load", this.ID + ".pageResize()", isc.Page.FIRE_ONCE);
             // set a flag to indicate this special case so we avoid attempting to draw() before
             // we've resized correctly
-            this._pendingPageResizeForModalDialog = true;
+            this._pendingPageResizeForZeroSize = true;
         } //<IE
         
+        
+        if (isc.Browser.isChrome && (!isc.Page.isLoaded() || isc.EH._handlingEvent == "load") &&
+            (isc.Page.getWidth() == 0 || isc.Page.getHeight() == 0))
+        {
+            if (isc.Page.isLoaded()) {
+                isc.Page.setEvent("idle",
+                    "if(window." + this.ID + ")" + this.ID + ".pageResize()", 
+                    isc.Page.FIRE_ONCE);
+            } else {
+                isc.Page.setEvent("load",
+                    "if(window." + this.ID + ")" + this.ID + ".delayCall('pageResize',null,100)",
+                    isc.Page.FIRE_ONCE);
+            }
+            this._pendingPageResizeForZeroSize = true;
+        }
         // compute the coord as a percent of that 
         
         newValue = Math.round((parseInt(newValue, 10) / 100) * fullSize);
@@ -10745,7 +10839,7 @@ pageResize : function () {
     //             [Page.getWidth(), Page.getHeight()] + this.getStackTrace());
     this._resizeID = null;
     // clear out the flag set up for handling the 'showModalDialog' case in IE
-    this._pendingPageResizeForModalDialog = null;
+    this._pendingPageResizeForZeroSize = null;
     this._resolvePercentageSize();
 },
 
@@ -11626,17 +11720,34 @@ _resolvePercentageSize : function (positionOnly) {
     
 prepareForDragging : function () {
     var EH = this.ns.EH;
+
     // this would indicate that a child has set itself as the dragTarget, and then
     // prepareForDragging bubbled to this Canvas.  By default, we leave this alone.  
     if (EH.dragTarget) return;
-    
+
     // NOTE: interesting case:
     // - a parent that wants to be drag resizable may have children which are flush with the
     //   parent's edges.  If those children are themselves resizable they will have set
     //   themselves as the dragTarget.  The parent may want to override this.
 
+    var dragOperation = this.dragOperation;
+
+    //>Touch
+    if (isc.Browser.isTouch && this.touchDragOperation && 
+        EH.lastEvent.originalType == EH.TOUCH_START) 
+    {
+        // touch-specific drag operation overrides for touch interfaces
+        dragOperation = this.touchDragOperation;
+    }
+    //<Touch
+
+    // use explicit drag operation setting
+    if (dragOperation) {
+		EH.dragTarget = this;
+		EH.dragOperation = dragOperation;
+
 	// if the target can be resized by dragging, 
-	if (this.canDragResize) {
+	} else if (this.canDragResize) {
 		// see if the cursor is over an edge where this Canvas can be resized
 		EH.resizeEdge = this.getEventEdge();
 
@@ -11662,16 +11773,40 @@ prepareForDragging : function () {
 			EH.dragOperation = EH.DRAG_REPOSITION;
 			EH.dragMoveAction = EH._moveDragMoveTarget;
 		
+        //>Touch In touch interfaces, default scrollable regions to drag scrolling if no
+        // specific drag flags have been set.  This means that eg a ListGrid will scroll by
+        // default, and will need to show drag handles on records or a similar UI to
+        // offer normal drag modes.
+        } else if (isc.Browser.isTouch && (this.hscrollOn || this.vscrollOn) && 
+                   !this.dragOperation) 
+        {
+            // built-in drag scrolling
+            // - target will receive dragScrollStart et al, which are implemented on Canvas
+            EH.dragTarget = this;
+			EH.dragOperation = EH.DRAG_SCROLL;
+			EH.dragAppearance = EH.NONE;
+        //<Touch
+   
 		} else if (this.canDrag) {
 			// generic drag interaction:
             // - EventHandler will show a move animation according to this.dragAppearance
             // - this Canvas will receive dragStart/Move/Stop events, which bubble to parents
 			EH.dragTarget = this;
 			EH.dragOperation = EH.DRAG;
+		
+        // allow drag-scroll with text selection
+        // If some other canDrag property is set check that first - that will take
+        // precedence over drag-text-selection behavior
+        } else if (this.canSelectText && this.overflow != "visible") {
+            EH.dragTarget = this;
+			EH.dragOperation = EH.DRAG_SELECT;
+			this.dragAppearance = "none";
 		}
+			
 	}
 
-    // not draggable (all 3 flags false: canDrag, canDragResize, canDragReposition), so don't
+    // not draggable (all 3 flags false: canDrag, canDragResize, canDragReposition, and
+    // not selecting text), so don't
     // set a dragTarget.  NOTE: allow this event to bubble, so parents can override our drag
     // settings.
 },
@@ -11689,8 +11824,229 @@ prepareForDragging : function () {
 // @example dragTracker
 //<
 
-// ------------------
-// No Drop indicator
+// Drag Scrolling
+// ---------------------------------------------------------------------------------------
+// While the mouse is actually down, the region being scrolled moves 1 to 1 with the movement
+// of the mouse.  When the mouse is lifted, "momentum" is calculated and an animation is
+// kicked off to continue scrolling.
+dragScrollStart : function () {
+    // allow a settable target for scrolling, since in eg ListGrid, the ListGrid gets the
+    // events but the body is what scrolls
+    var dragScrollTarget = this.dragScrollTarget || this;
+
+    // start coordinate of mouse
+    this._touchStartX = isc.EH.getX();
+    this._touchStartY = isc.EH.getY();
+    // start scroll position
+    this._scrollStartLeft = dragScrollTarget.scrollLeft || 0;
+    this._scrollStartTop = dragScrollTarget.scrollTop || 0;
+
+    // init variables we'll use to detect speed
+    this._scrollPriorX = this._scrollLastX = isc.EH.getX();
+    this._scrollPriorY = this._scrollLastY = isc.EH.getY();
+    this._scrollPriorTS = this._scrollLastTS = isc.timestamp();
+},
+
+dragScrollMove : function () {
+    var dragScrollTarget = this.dragScrollTarget || this;
+
+    // note: we're "grabbing" the content.  Moving the mouse downward scrolls up. 
+    var leftDelta = this._touchStartX - isc.EH.getX(),
+        topDelta = this._touchStartY - isc.EH.getY();
+
+    //isc.logWarn("scrollStart: " + [this.scrollStartLeft, this.scrollStartTop] + 
+    //            ", scroll delta: " + [leftDelta, topDelta]);
+
+    // note scrollTo automatically clamps to max
+    dragScrollTarget.scrollTo(this._scrollStartLeft + leftDelta, this._scrollStartTop + topDelta);
+    if (window.event) window.event.preventDefault();
+
+    
+    this._scrollPriorX = this._scrollLastX;
+    this._scrollPriorY = this._scrollLastY;
+    this._scrollPriorTS = this._scrollLastTS;
+    this._scrollLastX = isc.EH.getX();
+    this._scrollLastY = isc.EH.getY();
+    this._scrollLastTS = isc.timestamp();
+},
+
+momentumScrolling: true,
+// time to stop scrolling in milliseconds. 
+
+momentumScrollTime: 1500, 
+// meaning in this case: slows slowly, then quickly comes to a stop
+momentumScrollAcceleration: "smoothStart", 
+
+dragScrollStop : function () {
+    if (!this.momentumScrolling) return;
+
+    
+    var elapsed = (this._scrollLastTS - this._scrollPriorTS);
+
+    // we went directly from scrollStart to scrollStop with no scrollMove.  No momentum.
+    if (elapsed == 0) return;
+
+    // no move events in the last 100ms, implying motion stopped.  No momentum
+    if (isc.timestamp() - this._scrollLastTS > 100) return;
+
+        // speeds in pixels / ms
+    var speedX = (this._scrollLastX - this._scrollPriorX) / elapsed,
+        speedY = (this._scrollLastY - this._scrollPriorY) / elapsed,
+        target = this,
+        dragScrollTarget = this.dragScrollTarget || this;
+
+    if (!dragScrollTarget.hscrollOn) speedX = 0;
+    if (!dragScrollTarget.vscrollOn) speedY = 0;
+
+    if (this.logIsDebugEnabled("dragScroll")) {
+        this.logDebug("dragScroll: x/y: " + [this._scrollLastX, this._scrollLastY] + 
+                     ", last: " + [this._scrollPriorX, this._scrollPriorY] + 
+                     ", elapsed: " + elapsed + ", speed: " + [speedX, speedY], "dragScroll");
+    }
+
+    // if there's no speed in any direction in which scrolling is allowed, exit
+    if (speedX == 0 && speedY == 0) return;
+    
+    // record the animation id since a new mouseDown should instantly stop scrolling
+    var animationId = this._momentumScrollId = this.registerAnimation(function (ratio) {
+        var now = isc.timestamp(),
+            elapsed = now - target._scrollLastTS;
+        target._scrollLastTS = now;
+
+        var frameSpeedX = speedX * (1 - ratio),
+            frameSpeedY = speedY * (1 - ratio);
+        
+        var distanceX = Math.round(frameSpeedX * elapsed),
+            distanceY = Math.round(frameSpeedY * elapsed);
+
+        if (this.logIsDebugEnabled("dragScroll")) {
+            this.logDebug("animating: elapsed: " + elapsed + 
+                          ", frame speed: " + [frameSpeedX, frameSpeedY] +
+                          ", distance: " + [distanceX, distanceY], "dragScroll");
+        }
+
+        if (distanceX == 0 && distanceY == 0) target.cancelAnimation(animationId);
+
+        var oldScrollLeft = dragScrollTarget.getScrollLeft(),
+            oldScrollTop = dragScrollTarget.getScrollTop();
+
+        dragScrollTarget.scrollTo(dragScrollTarget.getScrollLeft() - distanceX,
+                                  dragScrollTarget.getScrollTop() - distanceY);
+
+        // cancel if we're out of scrollable content
+        if (oldScrollLeft == dragScrollTarget.getScrollLeft() &&
+            oldScrollTop == dragScrollTarget.getScrollTop()) 
+        {
+            target.cancelAnimation(animationId);
+        }
+
+
+    },
+    this.momentumScrollTime,
+    this.momentumScrollAcceleration);
+
+},
+
+// Hoop Selection
+// ---------------------------------------------------------------------------------------
+hoopSelectorDefaults : {
+    _constructor:"Canvas",
+    keepInParentRect: true,
+    redrawOnResize:false,
+    overflow: "hidden",
+    border: "1px solid blue",
+    opacity:10,
+    backgroundColor:"blue"
+},
+
+// "both", "vertical" or "horizontal".  The hoop fills all vertical space if only horizontal
+// hoopSelection is desired, and vice-versa
+hoopSelectAxis:"both",
+
+hoopSelectStart : function () {
+    if (!this.hoopSelector) this.hoopSelector = this.createAutoChild("hoopSelector");
+    
+    //this.logWarn("hoop rect: " + this.echoAll(this.hoopSelectorRect));
+
+    // allows the hoop to be confined to a particular rect
+    if (this.hoopSelectorRect) this.hoopSelector.keepInParentRect = this.hoopSelectorRect;
+
+    // always confine to the parent rect or a more specific rect
+    var parentRect = this._hoopParentRect = this.hoopSelectorRect || 
+            [this.getPageLeft() + this.getLeftBorderSize(),
+             this.getPageTop() + this.getTopBorderSize(),
+             this.getViewportWidth(), 
+             this.getViewportHeight()];
+
+    // these are used as flags as well as carrying the full height/width of the selection area
+    this._hoopFullHeight = this.hoopSelectAxis == "horizontal" ? parentRect[3] : null; 
+    this._hoopFullWidth = this.hoopSelectAxis == "vertical" ? parentRect[2] : null;
+
+    //this.logWarn("parentRect: " + this.echoAll(parentRect) + 
+    //             ", full height, width: " + [ this._hoopFullHeight, this._hoopFullWidth ]);
+
+    this._hoopStartX = this.getOffsetX();
+    this._hoopStartY = this.getOffsetY();
+    this.resizeHoopSelector();
+
+    this.hoopSelector.show();
+    return isc.EH.STOP_BUBBLING; // prevent the parent also doing this drag
+},
+hoopSelectMove : function () {
+    this.resizeHoopSelector();
+},
+hoopSelectStop : function () {
+    if (this.hoopSelector) this.hoopSelector.hide();
+},
+
+// resize selector to current mouse coordinates
+resizeHoopSelector : function () {
+    if (!this.hoopSelector) return;
+
+    var x = this.getOffsetX(),
+        y = this.getOffsetY();
+
+    if (this.hoopSelector.keepInParentRect) {
+        if (x < 0) x = 0;
+        var parentHeight = this._hoopParentRect[3];
+        if (y > parentHeight) y = parentHeight;
+    }
+    
+    // resize to the distances from the start coordinates
+    var height = Math.max(1, this._hoopFullHeight ? this._hoopFullHeight :
+                             Math.abs(y-this._hoopStartY));
+    var width = Math.max(1, this._hoopFullWidth ? this._hoopFullWidth :
+                            Math.abs(x-this._hoopStartX));
+
+    this.hoopSelector.resizeTo(width, height);
+
+    // if we are above/left of the origin set top/left to current mouse coordinates,
+    // otherwise to start coordinates.
+    if (!this._hoopFullWidth) {
+        if (x < this._hoopStartX) this.hoopSelector.setLeft(x);
+        else this.hoopSelector.setLeft(this._hoopStartX);
+    } else {
+        this.hoopSelector.setLeft(this._hoopParentRect[0]);
+    }
+
+    if (!this._hoopFullHeight) {
+        if (y < this._hoopStartY) this.hoopSelector.setTop(y);
+        else this.hoopSelector.setTop(this._hoopStartY);
+    } else {
+        this.hoopSelector.setTop(this._hoopParentRect[1]);
+    }
+
+    // figure out which components are now in the selector hoop
+    this.updateHoopSelection();
+},
+
+// stub to be implemented by classes that enable this drag operation
+updateHoopSelection : function () {
+},
+    
+    
+// Drop Indicator
+// ---------------------------------------------------------------------------------------
 // If a widget expressly disallows drop in some cases, we want to indicate this with a
 // no-drop cursor.
 // Example use case: Disallowing drop in certain tree-grid nodes.
@@ -11864,7 +12220,7 @@ getVDragScrollThreshold : function () {
 // setupDragScroll
 // - If the user is drag-hovering close to the ends of the widget, setup a timer event to start
 //   scrolling in the appropriate direction.
-_setupDragScroll : function (direction) {
+_setupDragScroll : function (direction, isDragSelect) {
 
     // If we're already waiting to scroll no-op
     if (this._dragScrollTimer != null) return;
@@ -11876,7 +12232,9 @@ _setupDragScroll : function (direction) {
         
     this._dragScrollTimer =
         isc.Timer.setTimeout({target:this, methodName:"_performDragScroll",
-                              args:[horizontal,vertical,true, direction]}, this.dragScrollDelay);
+                              args:[horizontal,vertical,true, direction,isDragSelect]}, 
+                              this.dragScrollDelay
+                            );
 },
 
 // performDragScroll
@@ -11892,12 +12250,17 @@ _setupDragScroll : function (direction) {
 // or:
 // - _performDragScroll() will setup a timer to call itself, in order to continuously scroll
 //  as long as the user hovers over a scroll threshold on the widget.
-_performDragScroll : function (horizontal, vertical, firstScroll, direction) {
-
+//
+// isDragSelect parameter - passed if a widget is canSelectText:true and the user is 
+// dragging the mouse outside the drag target widget.
+// In this case we want to scroll as long as the mouse is down, and *outside* the widget
+_performDragScroll : function (horizontal, vertical, firstScroll, direction, isDragSelect) {
     this._dragScrollTimer = null;
 
     var hScrollIncrement = 0, vScrollIncrement = 0;
-    if (this.ns.EH.dragging && this.containsEvent()) {
+    var containsEvent = this.containsEvent();
+    
+    if (this.ns.EH.dragging && (isDragSelect || containsEvent)) {
         
         var offsetX = this.getOffsetX() - this.getScrollLeft(),
             offsetY = this.getOffsetY() - this.getScrollTop(),
@@ -11967,19 +12330,23 @@ _performDragScroll : function (horizontal, vertical, firstScroll, direction) {
             horizontal = hDSDir;
             vertical = vDSDir;
         }
-                
-        hScrollIncrement = this.getScrollIncrement(horizontal,
-                                                        offsetX,
-                                                        viewportWidth,
-                                                        this.getHDragScrollThreshold(), 
-                                                        this._maxHInc, 
-                                                        this._minHInc);
-        vScrollIncrement = this.getScrollIncrement(vertical, 
-                                                        offsetY, 
-                                                        viewportHeight, 
-                                                        this.getVDragScrollThreshold(),
-                                                        this._maxVInc, 
-                                                        this._minVInc);
+        if (containsEvent) {
+            hScrollIncrement = this.getScrollIncrement(horizontal,
+                                                            offsetX,
+                                                            viewportWidth,
+                                                            this.getHDragScrollThreshold(), 
+                                                            this._maxHInc, 
+                                                            this._minHInc);
+            vScrollIncrement = this.getScrollIncrement(vertical, 
+                                                            offsetY, 
+                                                            viewportHeight, 
+                                                            this.getVDragScrollThreshold(),
+                                                            this._maxVInc, 
+                                                            this._minVInc);
+        } else {
+            hScrollIncrement = horizontal * this._maxHInc;
+            vScrollIncrement = vertical * this._maxVInc;
+        }
 
         // Don't bother scrolling / setting up repeating scrolls if we're already at the end
         if ((hScrollIncrement > 0 && (this.getScrollLeft() >= this.getScrollRight())) ||
@@ -11995,7 +12362,7 @@ _performDragScroll : function (horizontal, vertical, firstScroll, direction) {
         this._dragScrollTimer = isc.Timer.setTimeout(
                                     {target:this, 
                                      methodName:"_performDragScroll", 
-                                     args:[null,null,null,direction]}, 50
+                                     args:[null,null,null,direction,isDragSelect]}, 50
                                 );
         
     // The mouse has moved out of the scrollable area since we last started the timer, or
@@ -12942,11 +13309,11 @@ _setHorizontalScrollbar : function () {
     if (!this.hscrollOn) return; 
     
     scrollbar.setRect(this.getOffsetLeft() + this.getLeftMargin() +
-                        (this.vscrollOn && this.isRTL() ? this.scrollbarSize : 0),
+                        (this.vscrollOn && this.isRTL() ? this.getCustomScrollbarSize() : 0),
                       this.getOffsetTop() + this.getHeight() - 
-                              (this.getBottomMargin() + this.scrollbarSize),
+                              (this.getBottomMargin() + this.getCustomScrollbarSize()),
                       this.getOuterViewportWidth(),
-                      this.scrollbarSize);
+                      this.getCustomScrollbarSize());
 
     if (!scrollbar.masterElement) {
         // if we haven't added it as a peer yet, add it (which will draw it)
@@ -12955,6 +13322,20 @@ _setHorizontalScrollbar : function () {
 		// otherwise show it
 		if (this.visibility != isc.Canvas.HIDDEN) scrollbar.show();
 	}
+},
+
+
+// when we're creating a custom scrollbar - this method returns a size for the sb.
+// Usually governed by this.scrollbarSize - however if we're using the special "NativeScrollbar"
+// class we need to ask that to give us the size the scrollbar will render at -- we can't
+// control this.
+getCustomScrollbarSize : function () {
+    var scrollbarClass = this.scrollbarConstructor;
+    if (isc.isA.String(scrollbarClass)) scrollbarClass = isc[scrollbarClass];
+    
+    if (isc.NativeScrollbar != null && 
+        scrollbarClass == isc.NativeScrollbar) return isc.NativeScrollbar.getScrollbarSize();
+    return this.scrollbarSize;
 },
 
 //>	@method	canvas._makeVerticalScrollbar()	(A)
@@ -15737,16 +16118,6 @@ setPrompt : function (prompt) {
     this.updateHover();
 },
 
-//>	@method	canvas.hilite()
-//	@group	debug
-//
-//  Show a flashing border around this Canvas.  Intended for debugging purposes, this is what the
-//  Log window uses to indicate the selected Canvas.
-//<
-hilite : function () {
-    isc.Log.hiliteCanvas(this.ID);
-},
-
 // Cursor handling
 // --------------------------------------------------------------------------------------------
 
@@ -15936,10 +16307,18 @@ getCanHover : function () {
 handleHover : function () {
     if (this.hover && this.hover() == false) return;
     if (this.showHover) {
-        var HTML = this.getHoverHTML();
-        if (HTML != null && !isc.isAn.emptyString(HTML)) {
+        var component = this.getHoverComponent ? this.getHoverComponent() : null;
+        if (component != null && isc.isA.Canvas(component)) {
+            // getHoverComponent() returned a Canvas - we'll show that now instead of the 
+            // hoverHTML in a Label but using the same positioning/sizing logic
             var hoverProperties = this._getHoverProperties();
-            isc.Hover.show(HTML, hoverProperties, null, this);
+            isc.Hover.show(component, hoverProperties, null, this);
+        } else {
+            var HTML = this.getHoverHTML();
+            if (HTML != null && !isc.isAn.emptyString(HTML)) {
+                var hoverProperties = this._getHoverProperties();
+                isc.Hover.show(HTML, hoverProperties, null, this);
+            }
         }
     }
 },
@@ -15983,6 +16362,7 @@ _getHoverProperties : function () {
 // be fired when the user hovers over this canvas. If this method returns false, it will
 // suppress the default behavior of showing a hover canvas if <code>this.showHover</code> 
 // is true.
+//  @return (boolean) false to cancel the hover event.
 //  @group hovers
 //  @see canvas.canHover
 //  @visibility external
@@ -16366,6 +16746,12 @@ handleMouseOut : function (event, eventInfo) {
 // Implement handle mouseDown, mouseUp, click and doubleClick to fire partwise events if
 // appropriate
 handleMouseDown : function (event, eventInfo) {
+    // cancel any momentum scrolling from drag scrolling
+    var animationId = this._momentumScrollId;
+    if (animationId != null) {
+        this.cancelAnimation(animationId);
+    }
+
     if (event.target == this && this.useEventParts) this.firePartEvent(event, isc.EH.MOUSE_DOWN);
     if (this.mouseDown) return this.mouseDown(event, eventInfo);
 },
@@ -16373,7 +16759,6 @@ handleMouseDown : function (event, eventInfo) {
 handleMouseUp : function (event, eventInfo) {
     if (event.target == this && this.useEventParts) this.firePartEvent(event, isc.EH.MOUSE_UP);
     if (this.mouseUp) return this.mouseUp(event, eventInfo);
-
 },
 
 handleClick : function (event, eventInfo) {
@@ -16384,6 +16769,13 @@ handleClick : function (event, eventInfo) {
 handleDoubleClick : function (event, eventInfo) {
     if (event.target == this && this.useEventParts) this.firePartEvent(event, isc.EH.DOUBLE_CLICK);
     if (this.doubleClick) return this.doubleClick(event, eventInfo);
+},
+
+// "longTouch" event - fired by touch browsers when the user holds their finger over a
+// widget.
+// By default this is wired into the context click event system
+handleLongTouch : function (event, eventInfo) {
+    return this.handleShowContextMenu(event, eventInfo);
 },
 
 _$eventPart:"eventpart",
@@ -16468,7 +16860,6 @@ getPartEventHandler : function (partName, event) {
     
    return isc.Canvas._partHandlers[partName][event];
 },
-
 
 
 // Drag and Drop
@@ -18319,7 +18710,7 @@ imgHTML : function (src, width, height, name, extraStuff, imgDir, activeAreaHTML
     // [12] "' name="
     // [13] canvas ID
     // [14] name
-    // [15] "' usemap=" + mapName
+    // [15] "' usemap='" + mapName
     // [16] "' "
     // [17] extraStuff
     // [18] endString
@@ -18363,7 +18754,7 @@ imgHTML : function (src, width, height, name, extraStuff, imgDir, activeAreaHTML
     var mapName;
     if (activeAreaHTML) {
         mapName = "ISC_IMGMAP_" + this._imgMapId++;
-        template[15] = "' usemap=#" + mapName;
+        template[15] = "' usemap='#" + mapName;
     }
     template[16] = this._closeQuote;
 
@@ -18671,6 +19062,34 @@ spacerHTML : function (width, height, contents) {
         }
         return this.blankImgHTML(width,height);
     }
+    
+    // in IE8 non-strict mode a limit has been hit whereby spans exceeding ~140,000px in height
+    // start misreporting their heights.
+    // Simply stacking them one after another using <br> tags to break them up resolves this
+    // (tested up to 14,000,000px)
+    var vThreshold = 1300000;
+    if (height > vThreshold) {
+        var spacerStrings = [];
+        var cumulativeHeight = 0;
+        while (cumulativeHeight < height) {
+            
+            var lastRow, blockHeight;
+            if (cumulativeHeight + 1400 >= height) {
+                lastRow = true;
+                blockHeight = height-cumulativeHeight;
+            } else {
+                blockHeight = 1400;
+                lastRow = false;
+            }
+            spacerStrings[spacerStrings.length] = this.spacerHTML(width,blockHeight);
+            spacerStrings[spacerStrings.length] = "<br>";
+            
+            cumulativeHeight += blockHeight;
+            
+        }
+        return spacerStrings.join(isc._emptyString);
+    }
+    
         
     // return HTML that the browser recognizes as taking up space.  
     var spacerHTML = this._spacerHTMLTemplate;
@@ -19753,6 +20172,7 @@ isc.setAutoDraw = function (enable) {
         autoDraw:enable
     });
 };
+
 
 
 isc.allowDuplicateStyles = true;

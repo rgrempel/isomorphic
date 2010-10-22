@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -417,8 +417,8 @@ isc.SchemaSet.getPrototype().toString = function () {
 };
 
 //> @class WSRequest
-// A WSRequest (or "web service request") is an extended RPCRequest will additional properties
-// application to WSDL/SOAP web services.
+// A WSRequest (or "web service request") is an extended RPCRequest with additional properties
+// applicable to WSDL/SOAP web services.
 // <P>
 // All properties which are legal on +link{class:RPCRequest} are legal on a WSRequest, in
 // addition to the properties listed here.
@@ -842,13 +842,16 @@ isc.defineClass("WebService").addMethods({
             serviceName : this.name,
             wsOperation : operationName
         }, requestProperties);
-        wsRequest.headerData = requestProperties.headerData || this.getHeaderData(wsRequest);
 
-        wsRequest.httpHeaders = isc.addProperties({}, requestProperties.httpHeaders, 
-                                                { SOAPAction : operation.soapAction || '""' });
+        wsRequest.httpHeaders = isc.addProperties({}, 
+                                                  { SOAPAction : operation.soapAction || '""' },
+                                                  requestProperties.httpHeaders); 
+
+        wsRequest.headerData = requestProperties.headerData || this.getHeaderData(wsRequest);
 
         // create the SOAP message based on the WSRequest
         wsRequest.data = this.getSoapMessage(wsRequest);
+
 
         wsRequest.clientContext = {
             _callOperationCallback : callback,

@@ -532,20 +532,39 @@
 }
 /* comboBoxItem */
 
-.comboBoxItem,
-.comboBoxItemFocused,
-.comboBoxItemError,
-.comboBoxItemDisabled  {
+.comboBoxItemControl,
+.comboBoxItemControlFocused,
+.comboBoxItemControlError,
+.comboBoxItemControlDisabled  {
     background:#FFFFFF url(./images/controls/text_input.gif) repeat-x scroll;
-    padding:2px;
+    padding:1px;
     border-left:1px solid #7F9DB9;
     border-top:1px solid #7F9DB9;
-    border-right:0px;
+    border-right:1px solid #7F9DB9;
     border-bottom:1px solid #7F9DB9;
 }
-.comboBoxItemDisabled   {
+.comboBoxItemControlDisabled   {
     color:#ACA899; 
 }
+
+
+.comboBoxItemText,
+.comboBoxItemTextFocused,
+.comboBoxItemTextError,
+.comboBoxItemTextHint,
+.comboBoxItemTextDisabled {
+    border:0px;
+}
+.comboBoxItemTextFocused {
+   
+    background-color:#316AC5; color:white;
+}
+
+.comboBoxItemTextDisabled {
+    font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
+    color:#ACA899; 
+}
+
 
 .pickListMenuBody {
     border:1px solid #808080;

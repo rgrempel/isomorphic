@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -100,6 +100,9 @@ isc.Page.addClassProperties({
     // automatically adjust percent sized widgets if external code causes the browser window to
     // be resized.
     //<
+    // Polling for changes in page size will also catch orientation changes. We use this
+    // in MobileWebKit browsers
+    
 
 	//>	@type	Page.TextDirection
 	// Specifies RTL or LTR direction for text -- IE5+ and FF1.5+ only
@@ -155,6 +158,7 @@ finishedLoading : function () {
     
     // If we're polling for page size changes, kick this off now.
     if (isc.Page.pollPageSize) isc.EH._pageResize();
+    
 },
 
 //>	@classMethod	Page.isLoaded()
@@ -860,6 +864,8 @@ scrollTo : function (top, left) {
 //>	@classMethod	Page.getWidth()
 // Get the width of the visible portion of the window, not including browser chrome or the
 // scrollbar area.
+// <P>
+// See also +link{Page.getOrientation()}.
 //		@group	sizing
 //
 //		@param	[wd]		(object)	the window object
@@ -955,6 +961,8 @@ getWidth : (isc.Browser.isNS ?
 //>	@classMethod	Page.getHeight()
 // Get the height of the visible portion of the window, not including browser chrome or the
 // scrollbar area.
+// <P>
+// See also +link{Page.getOrientation()}.
 //		@group	sizing
 //
 //		@param	[wd]		(object)	the window object
@@ -1009,6 +1017,110 @@ getHeight : (isc.Browser.isNS ?
 		}
 	}
 ),
+
+//> @type PageOrientation
+// Is this page being viewed in landscape or portrait orientation? Typically used with
+// mobile devices.
+//
+// @value "landscape" Landscape orientation: page is wider than it is tall.
+// @value "portrait" Portrait orientation: page is taller than it is wide.
+// @visibility external
+//<
+
+
+//> @classMethod Page.getOrientation()
+// Is the current page wider than it is tall ("landscape" orientation) or the reverse 
+// ("portrait" orientation). Note that the +link{pageEvent,orientationChange page event}
+// will be fired whenever the page orientation changes.
+// <P>
+// This method is typically useful for apps developed for display on mobile devices,
+// though it will also return a valid value when running against a desktop browser.
+// See also +link{group:mobileDevelopment,this discussion} on building applications
+// for mobile devices
+// @return (PageOrientation) current page orientation
+// @group mobileDevelopment
+// @visibility external
+//<
+getOrientation : function () {
+    if (window.orientation != null) {
+        return window.orientation == 0 || window.orientation == 180 ? "portrait" : "landscape"
+    }
+    return this.getWidth() > this.getHeight() ? "landscape" : "portrait";
+},
+
+//> @classMethod Page.updateViewport()
+// This method only applies to browsers who support the special viewport meta html tag
+// such as Safari running on the iPhone.
+// <P>
+// This method will dynamically change the viewport configuration, allowing you to set an
+// initial size or scale level and enable / disable user-scaling. Typically this method will
+// be called with a value for scale, width or height rather than passing in values for all
+// three properties.<br>
+// See the apple documentation about configuring the viewport for more information:
+// @externalLink{http://developer.apple.com/safari/library/documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html}
+// <P>
+// <i>Note:</i> Modifying the width/height or initial scale of the viewport has 2 user-visible
+// effects:
+// <ul>
+// <li>HTML elements may reflow to fit the specified size (or the implied size calculated
+//     from the specified scale level and the native device size).</li>
+// <li>If the user has not scaled the application explicitly, and no other scaling or sizing
+//     attributes were specified via a viewport meta tag for this page, the application will
+//     zoom to specified scale level(or the scale level required to fit the specified viewport
+//     size to the device's screen).</li>
+// </ul>
+// @param [scale] (float) Desired scale level where 1 indicates no scaling (each css pixel 
+//   will be displayed using 1px on the physical device). Pass in null to avoid setting
+//   this property.
+// @param [width] (integer) Desired viewport width in pixels. This indicates how many pixels
+//   should fit within the device screen. Pass in null to avoid setting this property.
+// @param [height] (integer) Desired viewport height in pixels. This indicates how many pixels
+//   should fit within the device screen. Pass in null to avoid setting this property.
+// @param [scalable] (boolean) Should the user be able to scale the application (using
+//   pinch gestures, double tapping, rotating the device, etc.)?
+// 
+// @group mobileDevelopment
+// @visibility external
+//<
+
+updateViewport : function (scale, width, height, scalable) {
+    var content = [];
+    if (scale != null) {
+        if (isc.isA.Number(scale)) scale = scale.toFixed(2);
+        content[content.length] = ("initial-scale=" + scale);
+    }
+    if (width != null) content[content.length] = ("width=" + width);
+    if (height != null) content[content.length] = ("height=" + height);
+    if (scalable != null) {
+        content[content.length] = ("user-scalable=" + (scalable == false ? "no" : "yes"));
+        // setting user-scalable to 'no' seems to reliably disable pinch zooming
+        // However on pivot the iPhone zooms by default and this seems to still occur
+        // with user-scalable set to 'no'. If a desired 'scale' was specified,
+        // setting the min/max scale to it appears to really disable scale on pivot
+        if (scalable == false && scale != null) {
+            content[content.length] = "minimum-scale=" + scale + ", maximum-scale=" + scale;
+        }
+    }
+    
+    content = content.join(", ");
+    var metaTags = document.getElementsByTagName("meta"),
+        vpTag;
+    for (var i = metaTags.length-1; i >= 0; i--) {
+        if (metaTags[i].name == "viewport") {
+            vpTag = metaTags[i];
+            vpTag.parentNode.removeChild(vpTag);
+            vpTag = null;
+        }
+    }
+    if (vpTag != null) {
+        vpTag.content = content;
+    } else {
+        vpTag = document.createElement('meta');
+        vpTag.name = 'viewport';
+        vpTag.content = content;
+        document.getElementsByTagName('head')[0].appendChild(vpTag);
+    }
+},
 
 //>	@classMethod	Page.getScrollWidth()
 //		Get the width of the window contents as they have been drawn.

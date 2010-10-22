@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -62,13 +62,14 @@ isc.ClassFactory.defineClass("ViewLoader", isc.Label);
 
 isc.ViewLoader.addProperties({
 
-//> @attr viewLoader.loadingMessage  (HTML : "Loading View..." : IR)
-// Message to show while the view is loading
+//> @attr viewLoader.loadingMessage  (HTML : "Loading View...&amp;nbsp;\${loadingImage}" : IR)
+// Message to show while the view is loading.
+// Use <code>"\${loadingImage}"</code> to include +link{Canvas.loadingImageSrc,a loading image}.
 //
 // @group viewLoading
 // @visibility external
 //<
-loadingMessage:"Loading View...",
+loadingMessage:"Loading View...&nbsp;${loadingImage}",
 align:isc.Canvas.CENTER,
 allowContentAndChildren:true,
 
@@ -126,7 +127,7 @@ initWidget : function () {
     // if we've been given a placeholder widget, add it
     if (this.placeholder) this.addChild(this.placeholder);
     // otherwise show the loading message
-    else this.contents = this.loadingMessage;
+    else this.contents = this.getLoadingMessage();
 },
 
 draw : function () {
@@ -203,7 +204,7 @@ setViewURL : function (url, params, rpcProperties) {
     // change contents back to loading message on reload
     if (this.view != null) {
         this.view.hide();
-        this.setContents(this.loadingMessage);
+        this.setContents(this.getLoadingMessage());
     }
 
     var baseParams = {},
@@ -431,6 +432,13 @@ getView : function () {
 //<
 viewLoaded : function (view) { 
     // observable/overrideable
-}
+},
 
+getLoadingMessage : function () {
+    return this.loadingMessage.evalDynamicString(this, {
+        loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
+                                   isc.Canvas.loadingImageSize, 
+                                   isc.Canvas.loadingImageSize)
+        });
+}
 });

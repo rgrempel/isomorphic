@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -14,24 +14,30 @@
 
 
 //> @class DMI
+// Static singleton class with APIs for +link{group:dmiOverview,Direct Method Invocation} of
+// server side methods when running the SmartClient java server.
+//
+// @treeLocation Client Reference/RPC
+// @visibility external
+//<
+
+//> @groupDef dmiOverview
 // 
 // Direct Method Invocation (DMI) allows background HTTP requests to directly
-// invoke methods on server-side objects via XML configuration.
-// <P>
-// DMI is an alternative to the +link{RPCManager.actionURL} approach where your server code
-// receives a generalized +link{RPCRequest,request object} which you route to appropriate
-// methods yourself.  Which interface (DMI or RPCManager) you choose is largely a matter of
-// preference - they provide equivalent functionality.  Note that there are also several
-// approaches for +link{group:nonJavaBackend,non-Java backends} and/or Java backends not
+// invoke methods on server-side objects via XML configuration. This feature requires the
+// +link{iscServer,SmartClient Server}.<br>
+// Note that SmartClient also supports several approaches for interacting with
+// +link{group:nonJavaBackend,non-Java backends} and/or Java backends not
 // running the ISC server.
 // <p>
 // When using DMI, inbound request data is translated to Java objects and passed as method
 // parameters to the designated method, with available request data matched to each declared
-// parameter by Java type.  The return value of your method is automatically wrapped as a valid
+// parameter by Java type. The return value of your method is automatically wrapped as a valid
 // response and delivered to the browser.
 // <P>
 // <u><b>DataSource DMI</b></u>
 // <br>
+// See also +link{serverDataIntegration,Server DataSource Integration} overview.<br>
 // To enable DMI for a given DataSource, simply include a <code>&lt;serverObject&gt;</code>
 // configuration block in that DataSource's configuration either at
 // +link{DataSource.serverObject} or on a particular operationBinding via
@@ -99,11 +105,22 @@
 // <u><b>RPC DMI</b></u>
 // <br>
 // RPC DMI makes a set of methods from a server-side class available as client-side methods for
-// direct invocation.  RPC DMI also uses a +link{ServerObject} configuration block to specify
+// direct invocation (via +link{DMI.call()}). This provides a way to perform arbitrary
+// client/server interactions outside of the DataSource subsystem.
+// <P>
+// RPC DMI is an alternative approach to using the +link{RPCManager} class directly to send
+// requests to some <code>actionURL</code> where your server code would receive a generalized
+// +link{RPCRequest,request object}, to be routed to appropriate
+// methods yourself.  Which interface (DMI or RPCManager) you choose is largely a matter of
+// preference - they provide equivalent functionality.
+// <P>
+// RPC DMI also uses a +link{ServerObject} configuration block to specify
 // the server-side DMI end-point, but in the case of RPCs, the +link{ServerObject} definition
-// goes into an <code>rpcBindings</code> section of an <code>Application</code> definition in a
-// .app.xml file.  For an example, see the <code>example.app.xml</code> file in the /shared/app
-// directory of the SmartClient SDK.  The only difference between the RPC DMI
+// goes into an <code>rpcBindings</code> section of an
+// +link{applicationDeclaration,Application definition} in a <code>*.app.xml</code> file. 
+// <var class="smartclient">For an example, see the <code>example.app.xml</code> file 
+// in the /shared/app directory of the SmartClient SDK.</var>
+// The only difference between the RPC DMI
 // ServerObject definition and the DataSource DMI version is the addition of the
 // +link{ServerObject.visibleMethods} block that specifies which methods are callable on this
 // ServerObject.  This section is not consulted for DataSource DMIs because the
@@ -154,23 +171,54 @@
 // for an example of DataSource DMI.
 // <p>
 // <p>
-// RPC DMIs work slighly differently.  Unlike DataSource DMIs, RPC DMIs can have an arbitrary
+// RPC DMIs work slightly differently.  Unlike DataSource DMIs, RPC DMIs can have an arbitrary
 // number of required arguments, and also some optional context arguments.  For example, let's
-// say you call a method from the client like so (note that there's a cleaner way to invoke
-// DMIs if you use the +link{group:loadDMIStubsTag} JSP tag):
-// <pre>
-// DMI.call("myApp", "com.foo.MyClass", "doSomething",
+// say you call a method from the client like so 
+// <var class="smartclient">(note that there's a cleaner way to invoke
+// DMIs if you use the +link{group:loadDMIStubsTag} JSP tag)</var>:
+// <br>
+// <var class="smartclient"><pre>
+// DMI.call("myApp", "com.sample.MyClass", "doSomething",
 //          1, "zoo", [1, 2, 3], "clientCallback()");
 // </pre>
-// The server-side implementation of method <code>doSomething</code> must take a least three
-// arguments of the type used above - specifically a Number, String, and List.  SmartClient
-// will try to adapt arguments where possible - so for example the first argument can be a Long
-// or an Integer instead and the invocation will still work.  Also, an object literal passed
-// from the client becomes a Map on the server and will be automatically applied to a bean if
-// the method argument takes a Bean in that position.  See +link{RPCRequest.data} for a table
-// of type conversions.  You can use native types in the server-side signature for things like
-// Integer, Long, etc - so e.g. you can specify your method taking an int or long. In addition
-// to the required arguments, you can pass the following optional arguments:
+// </var>
+// <var class="smartgwt"><pre>
+//		List someList = new ArrayList();
+//		someList.add(1);
+//		someList.add(2);
+//		DMI.call("myApp", "com.sample.MyClass", "doSomething", new RPCCallback() {
+//			
+//			&#64;Override
+//			public void execute(RPCResponse response, Object rawData, RPCRequest request) {
+//				
+//				SC.say("raw data from server method:" + rawData.toString());
+//				
+//				
+//			}
+//		}, new Object[] {1, "zoo", someList});
+// </pre>
+// </var>
+// The server-side implementation of the method invoked must have a signature that
+// will accept the arguments passed in from the client. In the example above 
+// <code>com.sample.MyClass.doSomething</code> should accept a Number, String, 
+// and a List as arguments.  SmartClient will try to adapt arguments where possible - 
+// so for example the first argument can be a Long or an Integer, or a native type 
+// (<code>long</code> or <code>int</code>) instead and the
+// invocation will still work. 
+// <var class="smartclient">
+// JavaScript objects passed from the client becomes a Map on the server and will
+// be automatically applied to a bean if the method argument takes a Bean in that position.
+// </var>
+// <var class="smartgwt">
+// If a Map is passed from the client to the server it will
+// be automatically applied to a bean if the method argument takes a Bean in that position.
+// </var>
+// See +link{RPCRequest.data} for a table of type conversions.
+// <P>
+// In addition to the parameters explicitly passed from the client, your method signature
+// can include some additional arguments to pick up information about the request passed in.
+// If your server side method is declared with arguments of the following type they will
+// be passed to your DMI method.
 // <ul>
 // <li>HttpServletRequest
 // <li>HttpServletResponse
@@ -178,10 +226,21 @@
 // <li>RPCManager
 // <li>RPCRequest
 // </ul>
+// <P>
+// Your server side method can return a <code>RPCResponse</code> object giving you full
+// control over the response sent to the server. If your method does not return a response,
+// one will be created automatically and the return value from the server method will become the
+// <code>data</code> value on the response. <br>
+// See +link{RPCRequest.data} for an overview of how server side java data types are mapped 
+// to client side values.
+// <var class="smartclient">
+// <p>
 // See
 // +externalLink{/examples/server_integration/#genericRPCIntegrationDMI,the getTimeStampDMI example}
 // for an example of RPC DMI.
+// </var>
 //
+// @see group:applicationDeclaration
 // @see group:loadDMIStubsTag
 // @see ServerObject    
 // @see DataSource.serverObject
@@ -189,18 +248,63 @@
 //
 // @see group:clientServerIntegration
 //
+// @title Direct Method Invocation
 // @treeLocation Client Reference/RPC
 // @requiresModules SCServer
 // @visibility external
 //<
+
+
+//> @groupDef applicationDeclaration
+// When using the SmartClient server, server side methods written in java can be directly 
+// invoked from client side code via the +link{DMI.call()} API.
+// <P>
+// In order to support this an application configuration file needs to be present on your
+// server. This file lists out what server side methods are exposed for direct invocation.
+// The application configuration file should be named <code><i>appID</i>.app.xml</code> (where 
+// <i>"appID"</i> is some arbitrary id for your application) and must be present at the
+// location specified by the <code>project.apps</code> setting in 
+// the <code>server.properties</code> file.
+// <P>
+// The application declaration should be written in xml, and should contain a
+// <code>rpcBindings</code> block, which holds +link{serverObject} definitions for each
+// exposed method. Here's an example demonstrating the specified format:
+// <pre>
+//    &lt;Application&gt;
+//        &lt;rpcBindings&gt;
+//            &lt;ServerObject ID="MathUtil" className="com.example.package.MathUtil"&gt;
+//                &lt;visibleMethods&gt;
+//                    &lt;method name="addIntegers"/&gt;
+//                &lt;/visibleMethods&gt;
+//            &lt;/ServerObject&gt;
+//        &lt;/rpcBindings&gt;
+//    &lt;/Application&gt;
+// </pre>
+//
+// In this example we're exposing a method <i>"addIntegers"</i> on the server side java
+// class <code>com.example.package.MathUtil</code>. A developer could then call DMI.call(...)
+// on the client side code to invoke this method on the server, and get at the returned value
+// in the +link{RPCResponse} passed to the +link{RPCCallback}. Note that the application
+// config file does not explicitly list out a method signature - the appropriate method to
+// call is detected automatically based on the parameters passed to DMI.call on the client side.
+// <P>
+// See the +link{dmiOverview,DMI overview} for further information on Direct Method Invocation
+// in SmartClient.
+//
+// @title Application Declaration Files
+// @treeLocation Client Reference/RPC
+// @visibility external
+//<
+
 isc.defineClass("DMI").addClassProperties({
 
 actionURL: isc.RPCManager.actionURL,
 
 //> @classMethod DMI.call()
 //
-// Calls a server-side DMI method.  At a minimum, you need to specify the appID (.app.xml
-// file), +link{serverObject.className} or +link{serverObject.ID} and methodName to call.
+// Calls a server-side DMI method.  At a minimum, you need to specify the appID 
+// (+link{applicationDeclaration,.app.xml file}), +link{serverObject.className}
+// or +link{serverObject.ID} and methodName to call.
 // Arguments and callback are optional.  There are two ways to invoke this method:
 // <pre>
 // DMI.call(appID, className, methodName, 

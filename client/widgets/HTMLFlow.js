@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -338,9 +338,10 @@ cursor:"auto",
 // NOTE: to load content before draw, or refresh contents from the server after draw
 // setContentsURL() can be called manually.
 
-//> @attr htmlFlow.loadingMessage      (HTML : null : IRW)
+//> @attr htmlFlow.loadingMessage      (HTML : "&amp;nbsp;\${loadingImage}" : IRW)
 // HTML to show while content is being fetched, active only if the <code>contentsURL</code>
 // property has been set.
+// Use <code>"\${loadingImage}"</code> to include +link{Canvas.loadingImageSrc,a loading image}.
 // <P>
 // The loading message will show both during the initial load of content, and during reload if
 // the contents are reloaded or the contentsURL changed.  For a first-time only loading
@@ -352,7 +353,7 @@ cursor:"auto",
 // @visibility external
 //<
 // NOTE: no setter, intended usage is to setLoadingMessage then call setContentsURL()
-//loadingMessage: null,
+loadingMessage: "&nbsp;${loadingImage}",
 
 //> @attr htmlFlow.contentsURLParams   (Object : null : IRW)
 // Parameters to be sent to the contentsURL when fetching content.
@@ -502,7 +503,13 @@ setContentsURL : function (url, params, rpcProperties) {
     if (url != null) this.contentsURL = url; 
 
     // during the reload, re-show the loading message
-    if (this.loadingMessage) this.setContents(this.loadingMessage);
+    if (this.loadingMessage) {
+        var processedLoadingMsg = this.loadingMessage.evalDynamicString(this, {
+            loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
+                                       isc.Canvas.loadingImageSize, 
+                                       isc.Canvas.loadingImageSize)});
+        this.setContents(processedLoadingMsg);
+    }
 
     var allParams = isc.addProperties({}, this.contentsURLParams, params),
         useSimpleHttp = this.useSimpleHttp,

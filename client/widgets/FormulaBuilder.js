@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -98,7 +98,7 @@ formulaFieldDefaults: {
 // @visibility external
 //<
 showTitleField: true,
-titleFieldDefaults: {title: "Title", 
+titleFieldDefaults: {
     type: "text", 
     width: "*"
 },
@@ -147,10 +147,10 @@ showAutoHideCheckBox: true,
 autoHideCheckBoxDefaults: { type: "boolean"
 },
 
-//> @attr formulaBuilder.builderTypeText (String : "formula" : IR)
+//> @attr formulaBuilder.builderTypeText (String : "Formula" : IR)
 // Indicates whether to use "formula" or some other keyword in various captions and text
 //
-// @group formulaFields
+// @group i18nMessages
 // @visibility external
 //<
 builderTypeText: "Formula",
@@ -201,17 +201,24 @@ fieldKeyDefaults: {_constructor: "ListGrid",
     // non-interactive, so don't show rollover / selection
     showRollOver:false, selectionType:"none", 
     fields: [
-        {name: "mappingKey", title: "Key", width: 40},
-        {name: "title", title: "Source Field"},
+        {name: "mappingKey", title: this.keyColumnTitle, width: 40},
+        {name: "title", title: this.sourceFieldColumnTitle },
         {name: "name", showIf: "false"},
         {name: "type", showIf: "false"},
         {name: "length", showIf: "false"}
     ]
 },
 
-//> @attr formulaBuilder.instructionsTextStart (String : "The following fields are available for use in this ": IRW)
+//> @attr formulaBuilder.instructionsTextStart (String : "The following fields are available for use in this \${builderType}": IRWA)
+// This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed.
+// <P>
 // Text label for the start of the instruction text that appears in the instructions label.
-//
+// <P>
+// Default value returns <P>
+// <code>
+// <i>The following fields are available for use in this [BuilderType]</i>
+// </code>
 // @group i18nMessages
 // @visibility external
 //<
@@ -239,7 +246,6 @@ hideFieldsFormDefaults: { _constructor: "DynamicForm", extraSpace: 20
 
 sampleHeaderDefaults : { _constructor: "Label",
     height: 15,
-    contents: "Sample:",
     extraSpace: 5
 },
 sampleLabelDefaults : { _constructor: "Canvas",
@@ -277,7 +283,6 @@ buttonLayoutDefaults: { _constructor: "HLayout",
 //<
 cancelButtonDefaults: {_constructor: "IButton",
     autoParent: "buttonLayout",
-    title: "Cancel",
     width: 70,
     extraSpace: 10,
     click: function () {
@@ -317,8 +322,138 @@ saveButtonDefaults: {_constructor: "IButton",
     }
 },
 
+fieldType:"float", 
 // when true, allow #A syntax as well as A
-allowEscapedKeys: false
+allowEscapedKeys: false,
+
+//> @attr formulaBuilder.invalidBuilderPrompt (string : "Invalid \${builderType}: \${errorText}" : IRWA)
+// This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed.
+// <P>
+// Default value returns <P>
+// <code>
+// <i>Invalid [BuilderType]: + the value of the error detected </i>
+// </code>
+// @group i18nMessages
+// @visibility external
+//<
+invalidBuilderPrompt: "Invalid \${builderType}: \${errorText}",
+
+//> @attr formulaBuilder.invalidBlankPrompt (string : "Invalid blank \${builderType}" : IRWA)
+// This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed.
+// <P>
+// Default value returns <P>
+// <code>
+// <i>Invalid blank [BuilderType] </i>
+// </code>
+// @group i18nMessages
+// @visibility external
+//<
+invalidBlankPrompt: "Invalid blank \${builderType}",
+
+//> @attr formulaBuilder.validBuilderPrompt (string : "Valid \${builderType}" : IRWA)
+// This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed.
+// <P>
+// Default value returns <P>
+// <code>
+// <i>Valid [BuilderType] </i>
+// </code>
+// @group i18nMessages
+// @visibility external
+//<
+validBuilderPrompt: "Valid \${builderType}",
+
+//> @attr formulaBuilder.helpWindowTitle (string : "\${builderType} Help" : IRWA)
+// This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed.
+// <P>
+// Default value returns <P>
+// <code>
+// <i>[BuilderType] Help</i>
+// </code>
+// @group i18nMessages
+// @visibility external
+//<
+helpWindowTitle: "\${builderType} Help",
+
+//> @attr formulaBuilder.titleFieldTitle (string : "Title" : IRWA)
+// The text to display next to the "Title" field.
+// @group i18nMessages
+// @visibility external
+//<
+titleFieldTitle: "Title",
+
+//> @attr formulaBuilder.defaultNewFieldTitle (string : "New Field" : IRWA)
+// The default value for new Formula and Summary fields.
+// @group i18nMessages
+// @visibility external
+//<
+defaultNewFieldTitle: "New Field",
+
+//> @attr formulaBuilder.keyColumnTitle (string : "Key" : IRWA)
+// The default title for the "Key" column in the +link{fieldList}.
+// @group i18nMessages
+// @visibility external
+//<
+keyColumnTitle: "Key",
+
+//> @attr formulaBuilder.sourceFieldColumnTitle (string : "Source Field" : IRWA)
+// The default title for the "Source Field" column in the +link{fieldList}.
+// @group i18nMessages
+// @visibility external
+//<
+sourceFieldColumnTitle: "Source Field",
+
+//> @attr formulaBuilder.cancelButtonTitle (string : "Cancel" : IRWA)
+// The default title for the "Cancel" button.
+// @group i18nMessages
+// @visibility external
+//<
+cancelButtonTitle: "Cancel",
+
+//> @attr formulaBuilder.saveButtonTitle (string : "Save" : IRWA)
+// The default title for the "Save" button.
+// @group i18nMessages
+// @visibility external
+//<
+saveButtonTitle: "Save",
+
+//> @attr formulaBuilder.saveConfirmationPrompt (string : "Save changes to this \${builderType}?" : IRWA)
+// This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed.
+// <P>
+// Default value returns <P>
+// <code>
+// <i>Save changes to this [BuilderType]?</i>
+// </code>
+// @group i18nMessages
+// @visibility external
+//<
+saveConfirmationPrompt: "Save changes to this \${builderType}?",
+
+//> @attr formulaBuilder.invalidGeneratedFunctionPrompt (string : "The generated function is invalid - Check your \${builderType} and retry." : IRWA)
+// This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed.
+// <P>
+// The text displayed in a modal window when the generated function is invalid.
+// <P>
+// Default value returns <P>
+// <code>
+// <i>The generated function is invalid - Check your [BuilderType] and retry.</i>
+// </code>
+// @group i18nMessages
+// @visibility external
+//<
+invalidGeneratedFunctionPrompt: "The generated function is invalid - Check your \${builderType} and retry.",
+
+//> @attr formulaBuilder.sampleHeaderTitle (string : "Sample:" : IRWA)
+// The default title for the "Sample" panel, which displays a sample result for the formula.
+// @group i18nMessages
+// @visibility external
+//<
+sampleHeaderTitle: "Sample:"
 
 });
 
@@ -406,7 +541,8 @@ initWidget : function () {
     if (!this.field) {
         this.field = {
             name: this.getUniqueFieldName(),
-            title: "New Field",
+            title: this.defaultNewFieldTitle,
+            type: this.fieldType,
             width: "50",
             canFilter: false,
             canSortClientOnly: true
@@ -417,7 +553,7 @@ initWidget : function () {
 
     // add the fieldKey that displays the list of available fields
     this.instructions = this.createAutoChild("instructions", {
-        contents: this.instructionsTextStart + this.builderTypeText
+        contents: this.instructionsTextStart.evalDynamicString(this, { builderType: this.builderTypeText })
     });
     this.addMember(this.instructions);        
 
@@ -428,13 +564,15 @@ initWidget : function () {
         clientOnly: true,
         testData: availableFields,
         fields: [
-            {name: "mappingKey", title: "Key", width: 40},
-            {name: "title", title: "Source Field"},
+            {name: "mappingKey", title: this.keyColumnTitle, width: 40},
+            {name: "title", title: this.sourceFieldColumnTitle},
             {name: "name", showIf: "false", primaryKey: true},
             {name: "type", showIf: "false"},
             {name: "length", showIf: "false"}                
         ]
     });
+
+    alert(this.keyColumnTitle + " - " + this.sourceFieldColumnTitle);
 
     this.fieldKey = this.createAutoChild("fieldKey", { 
         dataSource: this.fieldKeyDS
@@ -452,11 +590,11 @@ initWidget : function () {
             fields: [isc.addProperties(
                 this.titleFieldDefaults, 
                 this.titleFieldProperties,
-                { name: "titleField" }
+                { title: this.titleFieldTitle, name: "titleField" }
             )]
         });
         this.titleField = this.titleForm.getField("titleField");
-        this.setTitle(this.field.title);
+        this.setTitle(this.field.title || isc.DataSource.getAutoTitle(this.field.name));
     }
 
     // add the formulaField TextItem - maybe override visibility of this because FormulaBuilder
@@ -481,7 +619,7 @@ initWidget : function () {
     // display the test status or error here following a call to testFunction()
     this.addAutoChild("messageLabel");
     // display the test-case here following a call to testFunction()
-    this.addAutoChild("sampleHeader");
+    this.addAutoChild("sampleHeader", { contents: this.sampleHeaderTitle });
     this.addAutoChild("sampleLabel");
 
     // add the checkbox that allows hiding of fields used in the formula
@@ -498,9 +636,9 @@ initWidget : function () {
 
     // show the buttons in a layout
     this.addAutoChild("buttonLayout");
-    this.addAutoChild("cancelButton");
+    this.addAutoChild("cancelButton", { title: this.cancelButtonTitle});
     if (!this.autoTest) this.addAutoChild("testButton");
-    this.addAutoChild("saveButton");
+    this.addAutoChild("saveButton", { title: this.saveButtonTitle });
 
     if (this.showTitleField) this.titleForm.focusInItem(this.titleField);
     else this.formulaForm.focusInItem(this.formulaField);
@@ -547,7 +685,9 @@ setInitialValue : function () {
         if (this.field.userFormula.allowEscapedKeys)
             this.allowEscapedKeys = this.field.userFormula.allowEscapedKeys;
     }
+
     this.initialValue = this.initialValue || "";
+
     this.setValue(this.initialValue);
 },
 
@@ -571,7 +711,7 @@ showHelpWindow : function () {
 
         this.helpWindow = isc.Window.create({
             autoDraw:true,
-            title: this.builderTypeText + " Help",
+            title: this.helpWindowTitle.evalDynamicString(this, { builderType: this.builderTypeText }),
             showMinimizeButton: false,
             showMaximizeButton: false,
             showCloseButton: false,
@@ -618,17 +758,18 @@ getHoverText : function () {
 },
 
 getAvailableFields : function () {
-    return this.getClass().getAvailableFields(this.getFields());
+    return this.getClass().getAvailableFields(this.getFields(), this.field);
 },
 
 getUsedFields : function () {
-    return this.getClass().getUsedFields(this.getValue(), this.getAvailableFields());
+    return this.getClass().getUsedFields(this.getValue(), this.getAvailableFields(), this.field);
 },
 
 getCompleteValueObject : function () {
     var usedFields = this.getUsedFields(),
         func = this.generateFunction(),
         properties = { sortNormalizer: func, _generatedFormulaFunc: func,
+            type: this.fieldType,
             userFormula : { text: this.getValue(), formulaVars: {} }
         },
 	    fieldIdProperty = this.getFieldIdProperty();
@@ -685,13 +826,25 @@ testFunction : function () {
         this.component, 
         this.getFields()
     );
+    
+    var testMessage = "";
+
     if (result.failedGeneration || result.failedExecution) {
-        this.setTestMessage("Invalid " + this.builderTypeText + ": " + result.errorText);
+        testMessage = this.invalidBuilderPrompt.evalDynamicString(this, { 
+                        builderType: this.builderTypeText,
+                        errorText: result.errorText
+                    });
     } else if (result.emptyTestValue) {
-        this.setTestMessage("Invalid blank " + this.builderTypeText);
+        testMessage = this.invalidBlankPrompt.evalDynamicString(this, { 
+                        builderType: this.builderTypeText
+                    });
     } else {
-        this.setTestMessage("Valid " + this.builderTypeText);
+        testMessage = this.validBuilderPrompt.evalDynamicString(this, { 
+                        builderType: this.builderTypeText
+                    });
     }
+    
+    this.setTestMessage(testMessage);
     this.setSamplePrompt(this.getSamplePrompt(result));
 
     return result;
@@ -737,34 +890,37 @@ save : function () {
     var result = this.testFunction();
 
     if (result.emptyTestValue) {
-        isc.warn("Invalid blank "+this.builderTypeText+".");
+        isc.warn(this.invalidBlankPrompt.evalDynamicString(this, { builderType: this.builderTypeText }));
         return;
     } else if (result.failedGeneration || result.failedExecution) {
-        isc.warn("The generated function is invalid - Check your "+this.builderTypeText+
-            " and retry.");
+        isc.warn(this.invalidGeneratedFunctionPrompt.evalDynamicString(this, { builderType: this.builderTypeText }));
         return;
     }
 
-    if (this.editMode) {
-        if (this.getValue() != this.initialValue) {
-            var _this = this;
-            isc.confirm("Save changes to this " + this.builderTypeText + "?", 
-                function (shouldSave) {
-                    if (shouldSave) {
-                        _this.completeEditing(false);
-                    }
-                }
-            );
-        } else {
-            this.completeEditing(false);
-        }
-    } else this.completeEditing(false);
-
+    this.completeEditing(false);
 },
 
 // call this to finish working with the builder
-completeEditing : function (cancelled) {
-    if (cancelled) this.cancelled = true;
+completeEditing : function (cancelled, ignoreSaveCheck) {
+    this.cancelled = cancelled;
+    if (cancelled) {
+        if (this.editMode && !ignoreSaveCheck) {
+            if (this.getValue() != this.initialValue) {
+                var _this = this;
+                var message = this.saveConfirmationPrompt.evalDynamicForm(this, { builderType: this.builderTypeText });
+                isc.confirm(message, 
+                    function (shouldSave) {
+                        if (shouldSave) {
+                            _this.save();
+                        } else {
+                            _this.completeEditing(true, true);
+                        }
+                    }
+                );
+                return;
+            }
+        }
+    }
     if (this.helpWindow) this.hideHelpWindow();
     this.fireOnClose();
 },
@@ -838,8 +994,11 @@ samplePrompt : "<nobr>For Record: ${title}</nobr><br><nobr>Output: ${output}</no
 // @visibility external
 //<
 getSamplePrompt : function (result) {
-    var titleField = this.dataSource.getTitleField(),
-        output = result.result != null ? result.result : "Invalid " + this.builderTypeText,
+    // if there's no DS, we can't use getTitleField() - instead, just get the first key from
+    // the record object and use the value of record[firstKey]
+    var titleField = this.dataSource ? this.dataSource.getTitleField() : isc.firstKey(result.record),
+        output = result.result != null ? result.result : 
+            this.invalidBuilderPrompt.evalDynamicString(this, { builderType: this.builderTypeText }),
         title = result.record[titleField];
 
     return this.samplePrompt.evalDynamicString(this, { title: title, output: output });
@@ -866,7 +1025,7 @@ getFieldIdProperty : function (component) {
 
 // Get an array of those fields available for use in the formula (based on visibility and 
 // numeric type)
-getAvailableFields : function (fields) {
+getAvailableFields : function (fields, currentField) {
     var availableFields = [],
         j=0;
 
@@ -876,20 +1035,41 @@ getAvailableFields : function (fields) {
         var item = fields.get(i),
             type = item.type;
 
+        if (item.name == currentField.name) continue;
+            
         if (item.userFormula ||
             isc.SimpleType.inheritsFrom(type, "integer") || 
             isc.SimpleType.inheritsFrom(type, "float"))
         {
             item.mappingKey = isc.FormulaBuilder.mappingKeyForIndex(j++);
+            if (!item.title) item.title = isc.DataSource.getAutoTitle(item.name);
             availableFields.add(item);
         }
     }
+    
+    // now, move field mappingKeys around according to those keys already used in the formula
+    var vars = currentField && currentField.userFormula ? 
+                currentField.userFormula.formulaVars : {}
+    ;
+    
+    for (var key in vars) {
+        var mappedField = availableFields.find("mappingKey", key),
+            actualField = availableFields.find("name", vars[key]),
+            actualFieldKey = actualField.mappingKey
+        ;
+        
+        actualField.mappingKey = mappedField.mappingKey;
+        mappedField.mappingKey = actualFieldKey;
+    }
+
+    availableFields = availableFields.sortByProperty("mappingKey", true);
+
     return availableFields;
 },
 
 // Get an array of used-fields from those fields available for use in the formula
-getUsedFields : function (formula, fields) {
-    var availableFields = this.getAvailableFields(fields), 
+getUsedFields : function (formula, fields, currentField) {
+    var availableFields = this.getAvailableFields(fields, currentField), 
         usedFields = [];
 
     if (!availableFields || !formula) return usedFields;
@@ -1021,7 +1201,7 @@ generateFunction : function (userFormula, fields, component) {
                 if (i > 0) output.append("        ");
                 output.append(item.mappingKey, "= (record['", item[fieldIdProperty], "'] ? ",
                     "record['", item[fieldIdProperty], "'] : component ? ", 
-                    "component.getSpecificFieldValue(record, '",
+                    "component.getStandaloneFieldValue(record, '",
                     item[fieldIdProperty], "', true) : 0)");
                 output.append(i == usedFields.length - 1 ? ";" : ",", "\n");
                 if (userFormula.allowEscapedKeys) {
@@ -1089,7 +1269,16 @@ isc.ClassFactory.defineClass("SummaryBuilder", "FormulaBuilder");
 
 isc.SummaryBuilder.addProperties({
 // attributes
+
+//> @attr summaryBuilder.builderTypeText (String : "Summary" : IR)
+// Indicates whether to use "summary" or some other keyword in various captions and text
+//
+// @group i18nMessages
+// @visibility external
+//<
 builderTypeText: "Summary",
+
+fieldType:"text", 
 
 //> @attr summaryBuilder.dataSource (DataSource or ID : null : IRW)
 // @include formulaBuilder.dataSource
@@ -1234,10 +1423,10 @@ getHoverText : function () {
             fieldIdProperty = this.getFieldIdProperty(),
             fieldA = this.getFieldFromMappingKey("A"),
             fieldAName = fieldA[fieldIdProperty],
-            fieldATitle = fieldA.title,
+            fieldATitle = fieldA ? fieldA.title || fieldA.name : null,
             fieldB = this.getFieldFromMappingKey("B"),
             fieldBName = fieldB ? fieldB[fieldIdProperty] : null,
-            fieldBTitle = fieldB ? fieldB.title : null
+            fieldBTitle = fieldB ? fieldB.title || fieldB.name : null
         ;
 
     output.append("<b>", this.helpTextIntro, "</b> <P>");
@@ -1266,12 +1455,12 @@ getHoverText : function () {
 },
 
 getAvailableFields : function () {
-    return this.getClass().getAvailableFields(this.getFields());
+    return this.getClass().getAvailableFields(this.getFields(), this.field);
 },
 
 getUsedFields : function () {
     return this.getClass().getUsedFields(this.getValue(), this.getAvailableFields(), 
-        this.allowBasicMultiCharKeys);
+        this.allowBasicMultiCharKeys, this.field);
 },
 
 // return the complete set of properties for the builder-type, including functions
@@ -1280,6 +1469,7 @@ getCompleteValueObject : function () {
         func = this.generateFunction(),
         fieldIdProperty = this.getFieldIdProperty(),
         properties = { sortNormalizer: func, _generatedSummaryFunc: func,
+            type: this.fieldType,
             userSummary : { text: this.getValue()
             }
         };
@@ -1341,24 +1531,46 @@ initWidget: function(){
 isc.SummaryBuilder.addClassMethods({
 
 // Get an array of those fields available for use in the summary based on visibility.
-getAvailableFields : function (fields) {
+getAvailableFields : function (fields, currentField) {
     var availableFields = [];
 
     if (!fields) return availableFields;
 
     for (var i = 0, j = 0; i < fields.getLength(); i++) {
         var item = fields.get(i);
+        
+        if (item.name == currentField.name) continue;
+        
         if (!item.userSummary) {
             item.mappingKey = isc.FormulaBuilder.mappingKeyForIndex(j++);
+            if (!item.title) item.title = isc.DataSource.getAutoTitle(item.name);
             availableFields.add(item);
         }
     }
+
+    // now, move field mappingKeys around according to those keys already used in the formula
+    var vars = currentField && currentField.userSummary ? 
+                currentField.userSummary.summaryVars : {}
+    ;
+
+    for (var key in vars) {
+        var mappedField = availableFields.find("mappingKey", key),
+            actualField = availableFields.find("name", vars[key]),
+            actualFieldKey = actualField.mappingKey
+        ;
+
+        actualField.mappingKey = mappedField.mappingKey;
+        mappedField.mappingKey = actualFieldKey;
+    }
+
+    availableFields = availableFields.sortByProperty("mappingKey", true);
+
     return availableFields;
 },
 
 // Get an array of used-fields from those fields available for use in the Summary
-getUsedFields : function (formula, fields, allowBasicMultiCharKeys) {
-    var availableFields = this.getAvailableFields(fields), 
+getUsedFields : function (formula, fields, allowBasicMultiCharKeys, currentField) {
+    var availableFields = this.getAvailableFields(fields, currentField), 
         usedFields = [];
 
     if (!availableFields || !formula) return usedFields;
@@ -1419,7 +1631,7 @@ generateFunction : function (userSummary, fields, component) {
         for (var i = 0; i < usedFields.length; i++) {
             var item = usedFields.get(i);
             if (i > 0) output.append("        ");
-            output.append(item.mappingKey, "=(component ? component.getSpecificFieldValue(record,'",
+            output.append(item.mappingKey, "=(component ? component.getStandaloneFieldValue(record,'",
                 item[fieldIdProperty], "') : record['", item[fieldIdProperty],
                 "']");
             output.append(i == usedFields.length - 1 ? ");" : "),", "\n");

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -22,8 +22,6 @@
 // @treeLocation Client Reference/Control
 // @visibility external
 //<
-//	In IE, uses CSS styles to draw the border
-//	In Nav, draws the border manually with images and a table
 
 //> @groupDef buttonIcon
 // Control over optional icons shown in Buttons, Labels and other contexts
@@ -151,6 +149,9 @@ isc.ClassFactory.defineClass("Button", "StatefulCanvas").addProperties({
     // @include statefulCanvas.setAutoFit
     // @visibility external
     //<
+    
+    // only autoFit horizontally by default
+    autoFitDirection:"horizontal",
 
     // baseStyle
     //----------
@@ -389,7 +390,7 @@ getInnerHTML : function () {
 
         var button = isc.Button;
         if (!button._buttonHTML) {
-            
+                        
             button._100Size = " width='100%' height='100%";
             button._100Width = " width='100%";
             button._widthEquals = "width='";
@@ -492,6 +493,15 @@ getInnerHTML : function () {
         }
         this.fillInCell(buttonHTML, 15)
         return buttonHTML.join(isc.emptyString);
+},
+
+// force a redraw on setOverflow()
+// This is required since we write out clipping HTML for our title table if our overflow
+// is hidden (otherwise we don't), so we need to regenerate this.
+setOverflow : function () {
+    var isDirty = this.isDirty();
+    this.Super("setOverflow", arguments);
+    if (!isDirty) this.redraw();
 },
 
 
@@ -1041,6 +1051,7 @@ isc.Button.registerStringMethods({
     // If this button is showing an +link{Button.icon, icon}, a separate click handler for the
     // icon may be defined as <code>this.iconClick</code>.
     // Returning false will suppress the standard button click handling code.
+    // @return (boolean) false to suppress the standard button click event
     // @group buttonIcon    
     // @visibility external
     //<

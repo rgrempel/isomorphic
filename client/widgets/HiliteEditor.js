@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -28,7 +28,7 @@
 //
 // @visibility hiliteEditor
 //<
-isc.defineClass("HiliteRule", "HStack");
+isc.defineClass("HiliteRule", "HLayout");
 
 isc.HiliteRule.addProperties({
     height: 1,
@@ -40,6 +40,14 @@ isc.HiliteRule.addProperties({
     // @visibility hiliteEditor
     //<
     clauseConstructor: "FilterClause",
+	
+	clauseProperties: {
+		width: "50%",
+		fieldPickerWidth: "*",
+		operatorPickerWidth: 140,
+		valueFieldWisth: 100,
+        excludeNonFilterableFields: false
+	},
 
     //> @attr hiliteRule.hiliteForm (AutoChild : null : IR)
     // AutoChild +link{class:DynamicForm} displaying the +{class:FormItem, formItems} used to 
@@ -50,17 +58,19 @@ isc.HiliteRule.addProperties({
     hiliteFormDefaults: {
         _constructor: "DynamicForm",
         numCols: 3,
+		colWidths: ["*", 40, "45%"],
+		width: "*",
         items: [
             { name: "colorType", type: "SelectItem", showTitle: false, valign: "center", 
                 valueMap: { foreground: "Foreground", background: "Background" },
-                defaultValue: "foreground", width: 100
+                defaultValue: "foreground", width: "*"
             },
-            { name: "color", title: "Color", type: "ColorItem", width: 80 }
+            { name: "color", title: "Color", type: "ColorItem", width: "*" }
         ]
     },
 
-    advancedClauseLayout: {
-        _constructor: "HStack",
+    advancedClauseLayoutDefaults: {
+        _constructor: "HLayout",
         height: 1,
         width: "100%"
     },
@@ -73,8 +83,8 @@ isc.HiliteRule.addProperties({
     //<
     advancedClauseLabelDefaults: {
         _constructor: "Label",
-        width: 645,
-        maxWidth: 800,
+		autoParent: "advancedClauseLayout",
+        width: "*",
         overflow: "hidden",
         height: 18,
         valign: "center",
@@ -90,6 +100,7 @@ isc.HiliteRule.addProperties({
     //<
     advancedClauseEditButtonDefaults: {
         _constructor: "ImgButton",
+		autoParent: "advancedClauseLayout",
         width: 18, height: 18, layoutAlign: "center",
         src: "[SKINIMG]/actions/edit.png", 
         showRollOver:false, showDown:false, showDisabled:false, 
@@ -121,6 +132,7 @@ isc.HiliteRule.addProperties({
         width:18, height:18, layoutAlign:"center",
         src:"[SKIN]/actions/remove.png",
         showRollOver:false, showDown:false, showDisabled:false, 
+        hoverWidth:80,
         click: function () { this.creator.remove(); }
     }
 
@@ -130,27 +142,36 @@ isc.HiliteRule.addMethods({
 
     initWidget: function () {
     
-        if (!this.isAdvanced && this.criterion) {
-            var criteria = this.criterion.criteria;
-            if (criteria.criteria && isc.isAn.Array(criteria.criteria))
+        if (!this.isAdvanced && this.hilite) {
+            var criteria = this.hilite.criteria;
+            if (criteria && criteria.criteria && isc.isAn.Array(criteria.criteria))
                 // the criterion we were passed is really an advancedCriteria - switch on 
                 // this.isAdvanced so we show an appropriate UI
                 this.isAdvanced = true;
         }
 
         if (isc.isA.String(this.dataSource)) this.dataSource = isc.DS.getDataSource(this.dataSource);
-        
+
+        // make sure cssText and textColor/backgroundColor attributes are in sync
+        if (this.hilite) this.checkHiliteProperties(this.hilite);
+
         if (this.isAdvanced) {
             // need to show a removeButton, label and editButton here instead of an isc.FilterClause
             var description = isc.FilterBuilder.getFilterDescription(
-                this.criterion.criteria, 
+                this.hilite.criteria, 
                 this.dataSource
             );
 
             var missingField = (description.indexOf(isc.FilterBuilder.missingFieldPrompt) >= 0);
 
             this.membersMargin = 2;
-            this.addAutoChild("removeButton", { disabled: missingField ? true : false });
+			this.addAutoChild("advancedClauseLayout");
+            this.addAutoChild("removeButton", 
+                { 
+                    disabled: missingField ? true : false, 
+                    autoParent: "advancedClauseLayout" 
+                }
+            );
             this.addAutoChild("advancedClauseLabel", 
                 {
                     contents: description,
@@ -159,17 +180,15 @@ isc.HiliteRule.addMethods({
                 }
             );
             this.addAutoChild("advancedClauseEditButton", { disabled: missingField ? true : false }); 
-            this.addMembers([
-                this.removeButton, this.advancedClauseLabel, this.advancedClauseEditButton
-            ]);
         } else {
             var missingField = (this.dataSource.getField(this.fieldName) == null);
 
             this.addAutoChild("clause", 
                 { 
                     dataSource: this.dataSource,
+                    field: this.dataSource.getField(this.fieldName),
                     fieldName: this.fieldName,
-                    criterion: this.criterion ? this.criterion.criteria : null,
+                    criterion: this.hilite ? this.hilite.criteria : null,
                     showRemoveButton: this.showRemoveButton,
                     disabled: missingField ? true : false,
                     remove : function () {
@@ -179,15 +198,45 @@ isc.HiliteRule.addMethods({
             );
             this.addMember(this.clause);
             this.addAutoChild("hiliteForm", { disabled: missingField ? true : false });
-            if (this.criterion) {
+            if (this.hilite) {
                 this.hiliteForm.setValues(
                     { 
-                        colorType: (this.criterion.textColor ? "foreground" : "background"),
-                        color: (this.criterion.textColor ? this.criterion.textColor : this.criterion.backgroundColor)
+                        colorType: (this.hilite.textColor ? "foreground" : "background"),
+                        color: (this.hilite.textColor ? this.hilite.textColor : this.hilite.backgroundColor)
                     }
                 );
             }
             this.addMember(this.hiliteForm);
+        }
+    },
+
+    checkHiliteProperties : function (hilite) {
+        if (!hilite) return;
+        
+        if (hilite.cssText) {
+            // the hilite has cssText - ensure it coincides with the direct textColor and
+            //  backgroundColor attributes
+            var cssElements = hilite.cssText.split(";");
+
+            for (var i=0; i<cssElements.length; i++) {
+                var item = cssElements[i],
+                    parts = item.split(":")
+                ;
+
+                if (parts[0] == "textColor" && !hilite.textColor)
+                    hilite.textColor = parts[1];
+                else if (parts[0] == "backgroundColor" && !hilite.backgroundColor)
+                    hilite.backgroundColor = parts[1];
+            }
+        } else if (hilite.textColor || hilite.backgroundColor) {
+            // no cssText but color attributes are set - build cssText now
+            hilite.cssText = "";
+            if (hilite.textColor) 
+                hilite.cssText += "color:" + hilite.textColor + ";";
+            if (hilite.backgroundColor) 
+                hilite.cssText += "background-color:" + hilite.backgroundColor + ";";
+            
+            alert(hilite.cssText);
         }
     },
     
@@ -200,35 +249,37 @@ isc.HiliteRule.addMethods({
         this.markForDestroy();
     },
 
-//> @method hiliteRule.getHiliteRule()
-// Return the definition of this HiliteRule, including criteria and hilite properties.
+//> @method hiliteRule.getHilite()
+// Return the hilite definition being edited, including criteria and hilite properties.
 //
+// @return (Hilite) the hilite 
 // @visibility external
 //<
-    getHiliteRule : function () {
-        var result = isc.addProperties(this.criterion, { fieldName: this.fieldName });
+    getHilite : function () {
 
         if (this.isAdvanced) {
-            result = this.criterion;
-        } else {
-            var colorTypeValue = this.hiliteForm.getValue("colorType"),
-                colorValue = this.hiliteForm.getValue("color"),
-                criterion = this.clause.getCriterion();
-
-            result.criteria = criterion;
-
-            if (colorTypeValue == "foreground") {
-                result.textColor = colorValue;
-                result.cssText = "color:" + colorValue + ";";
-            } else {
-                result.backgroundColor = colorValue;
-                result.cssText = "background-color:" + colorValue + ";";
-            }
-            
-            if (this.criterion && this.criterion.id) result.id = this.criterion.id;
+            // externally edited in advanced editor
+            return this.hilite;
         }
+        var hilite = this.hilite = 
+                isc.addProperties(this.hilite || {}, { fieldName: this.fieldName }),
+            colorTypeValue = this.hiliteForm.getValue("colorType"),
+            colorValue = this.hiliteForm.getValue("color"),
+            criterion = this.clause.getCriterion();
 
-        return result;
+        hilite.criteria = criterion;
+
+        if (colorTypeValue == "foreground") {
+            hilite.textColor = colorValue;
+            hilite.cssText = "color:" + colorValue + ";";
+        } else {
+            hilite.backgroundColor = colorValue;
+            hilite.cssText = "background-color:" + colorValue + ";";
+        }
+            
+        if (this.hilite && this.hilite.id) hilite.id = this.hilite.id;
+
+        return hilite;
     },
 
 //> @method hiliteRule.editAdvancedRule()
@@ -237,11 +288,11 @@ isc.HiliteRule.addMethods({
 // @visibility external
 //<
     editAdvancedRule : function () {
-        var callback = this.getID()+".editAdvancedRuleReply(criteria)";
+        var callback = this.getID()+".editAdvancedRuleReply(hilite)";
 
         this.advancedHiliteDialog = isc.Window.create({
             title: "Advanced Hilite Editor",
-            width: isc.Page.getWidth()/2,
+            width: Math.round(isc.Page.getWidth()/2),
             height: 1,
             isModal: true,
             showModalMask: true,
@@ -253,7 +304,7 @@ isc.HiliteRule.addMethods({
                     width: "100%", height: "100%",
                     dataSource: this.fieldDataSource ? null : this.dataSource,
                     fieldDataSource: this.fieldDataSource,
-                    criteria: this.criterion,
+                    hilite: this.hilite,
                     callback: callback
                 })
             ]
@@ -262,16 +313,16 @@ isc.HiliteRule.addMethods({
         this.advancedHiliteDialog.show();
     },
 
-    editAdvancedRuleReply : function (criteria) {
+    editAdvancedRuleReply : function (hilite) {
         this.advancedHiliteDialog.hide();
         this.advancedHiliteDialog.markForDestroy();
         
-        if (criteria) {
+        if (hilite) {
 
-            this.criterion = criteria;
+            this.hilite = hilite;
 
             var description = isc.FilterBuilder.getFilterDescription(
-                this.criterion.criteria, 
+                this.hilite.criteria, 
                 this.dataSource
             );
 
@@ -354,7 +405,7 @@ isc.HiliteEditor.addProperties({
         top: 22,
         membersMargin: 1,
         padding: 1,
-        overflow: "auto",
+        overflow: "hidden",
         autoParent: "mainLayout",
         border: "1px solid grey",
         width: "100%",
@@ -372,6 +423,7 @@ isc.HiliteEditor.addProperties({
 
     hiliteButtonsDefaults : {
         _constructor:"HLayout", 
+		layoutMargin: 5,
         membersMargin:8, height:1
     },
 
@@ -426,44 +478,56 @@ isc.HiliteEditor.addMethods({
             "hiliteButtons", "saveButton", "cancelButton"
         ]);
 
-        if (this.fieldDataSource) {
-            this.setupFieldList();
-        } else {
-            this.dataSource = this.getDataSource();
-            
-            if (this.dataSource) {            
-                this.getClientOnlyFieldDS();
-            } else {
-                this.logWarn("No DataSource present.");
-            }
-        }
-        this.fieldList.markForRedraw();
+        this.setDataSource(this.dataSource);
 
         this.setHilites(this.hilites);
+    },
+
+    setDataSource : function (ds) {
+        this.dataSource = ds;
+        if (this.fieldDataSource && !this.fieldDataSource._autoDerived) {
+            this.setupFieldList();
+        } else if (this.dataSource) {
+            this.getClientOnlyFieldDS();
+        } else {
+            this.logWarn("No DataSource present, can't edit hilites");
+        }
+        this.fieldList.markForRedraw();
+    },
+
+    setFieldDataSource : function (ds) {
+        this.fieldDataSource = ds;
+        this.setupFieldList();
     },
 
     // override point - if showFieldList is false, override this method to set up data for 
     // whatever replacement list is provided
     setupFieldList : function () {
         this.fieldList.showFilterEditor = true;
-        this.fieldList.autoFetchData = true;
         this.fieldList.setDataSource(this.fieldDataSource);
         this.fieldList.setFields([
             { name: "name", showIf: "false" },
             { name: "title", title: "Available Fields" },
             { name: "type", showIf: "false" }
         ]);
+        this.fieldList.fetchData();
     },
 
     getClientOnlyFieldDS : function () {
+        var sourceFields = isc.getValues(this.dataSource.getFields());
+        var fields = [];
+        for (var i = 0; i < sourceFields.length; i++) {
+            var field = sourceFields[i];
+            if (!field.hidden) fields.add(field);
+        }
         this.fieldDataSource = isc.DataSource.create({
-            ID: "localFieldDS",
+            _autoDerived:true,
             fields: [
                 { name: "name", showIf: "false" },
                 { name: "title", title: "Available Fields" },
                 { name: "type", showIf: "false" }
             ],
-            testData: isc.getValues(this.dataSource.getFields()),
+            cacheData: fields,
             clientOnly: true
         });
 
@@ -504,11 +568,11 @@ isc.HiliteEditor.addMethods({
     // @visibility hiliteEditor
     //<
     addAdvancedHilite : function () {
-        var callback = this.getID()+".addAdvancedHiliteReply(criteria)";
+        var callback = this.getID()+".addAdvancedHiliteReply(hilite)";
 
         this.advancedHiliteDialog = isc.Window.create({
             title: "Advanced Hilite Editor",
-            width: isc.Page.getWidth()/2,
+            width: Math.round(isc.Page.getWidth()/2),
             height: 1,
             isModal: true,
             showModalMask: true,
@@ -529,20 +593,19 @@ isc.HiliteEditor.addMethods({
         this.advancedHiliteDialog.show();
     },
 
-    addAdvancedHiliteReply : function (criteria) {
+    addAdvancedHiliteReply : function (hilite) {
         this.advancedHiliteDialog.hide();
         this.advancedHiliteDialog.markForDestroy();
 
-        if (!criteria) return;
+        if (!hilite) return;
 
         var newRule = this.createAutoChild("hiliteRule", {
             width: "100%",
             isAdvanced: true,
             dataSource: this.dataSource,
             fieldDataSource: this.fieldDataSource,
-            fieldName: criteria.fieldName,
-            criteria: criteria,
-            criterion: criteria
+            fieldName: hilite.fieldName,
+            hilite : hilite
         });
 
         this.showNewHilite(newRule);
@@ -554,7 +617,7 @@ isc.HiliteEditor.addMethods({
     // @visibility hiliteEditor
     //<
     clearHilites : function () {
-        for (var i=this.ruleLayout.members.length-1; i>=0; i--)
+        for (var i = this.ruleLayout.members.length-1; i >= 0; i--)
             this.removeHilite(this.ruleLayout.getMember(i));
     },
     
@@ -572,7 +635,7 @@ isc.HiliteEditor.addMethods({
                 newRule = this.createAutoChild("hiliteRule", 
                     {
                         fieldName: hilite.fieldName,
-                        criterion: hilite,
+                        hilite: hilite,
                         dataSource: this.dataSource
                     }
                 )
@@ -592,18 +655,18 @@ isc.HiliteEditor.addMethods({
             hilites = []
         ;
 
-        for (var i=0; i<rules.length; i++) {
+        for (var i = 0; i < rules.length; i++) {
             var rule = rules[i],
-                result = rule.getHiliteRule();
+                hilite = rule.getHilite();
 
-            hilites.add(result);
+            hilites.add(hilite);
         }
 
         this.completeEditing(hilites);
     },
     
     completeEditing : function (hilites) {
-        isc.logWarn("returning hilites: " + isc.echoFull(hilites));
+        if (this.logIsInfoEnabled()) this.logInfo("returning hilites: " + isc.echoFull(hilites));
         if (this.callback) this.fireCallback(this.callback, "hilites", [hilites]);
     }    
 });
@@ -653,7 +716,9 @@ isc.AdvancedHiliteEditor.addProperties({
         groupTitle:"Appearance",
         extraSpace:4,
         padding:8,
-        numCols: 6
+        width:"100%",
+        numCols: 6,
+        colWidths:[200,150,100,150,100,150]
     },
 
     hiliteButtonsDefaults : {
@@ -695,13 +760,13 @@ isc.AdvancedHiliteEditor.addProperties({
     visibilityMode:"multiple",
 
 
-    //> @attr advancedHiliteEditor.invalidCriteriaPrompt (string : "Either enter valid criteria or hit 'Cancel' to abandon changes." : IR) 
+    //> @attr advancedHiliteEditor.invalidHilitePrompt (string : "Enter at least one rule, a color and a target field, or press 'Cancel' to abandon changes." : IR) 
     // The message to show when the user clicks "Save" without entering any criteria. 
     //
     // @group i18nMessages 
     // @visibility hiliteEditor
     //<
-    invalidCriteriaPrompt: "Either enter valid criteria or hit 'Cancel' to abandon changes."
+    invalidHilitePrompt: "Enter at least one rule, a color and a target field, or press 'Cancel' to abandon changes."
 
     //> @attr advancedHiliteEditor.callback (Callback : null : IR)
     // The callback to fire when the +link{advancedHiliteEditor.saveButton} is clicked.
@@ -715,15 +780,21 @@ isc.AdvancedHiliteEditor.addMethods({
     initWidget : function () {
         this.Super("initWidget", arguments);
 
-        var ds = this.getDataSource();
+        var ds = this.getDataSource(),
+            _this = this;
 
         this.addAutoChild("filterBuilder", 
-            { dataSource: ds, fieldDataSource: this.fieldDataSource }
+            { dataSource: ds, fieldDataSource: this.fieldDataSource,
+              fieldNameChanged : function (filterClause) {
+                  this.Super("fieldNameChanged", arguments);
+                  _this.fieldChosen(filterClause.getFieldName());
+              }
+             }
         );
 
         var items = [
             {title:"Target Field(s)", name:"fieldName", multiple:true, allowMultiSelect: true,
-                type:"select"
+             type:"select"
             },
             {title:"Text", name:"textColor", type:"color" },
             {title:"Background", name:"backgroundColor", type:"color" }
@@ -740,7 +811,6 @@ isc.AdvancedHiliteEditor.addMethods({
             delete items[0].defaultDynamicValue;
             this.hiliteForm.addItems(items);
         } else {
-            this.hiliteForm.addItems(items);
             var fieldNames = this.fieldNames || ds.getFieldNames(),
                 fieldMap = this.fieldMap = {};
             for (var i = 0; i < fieldNames.length; i++) {
@@ -752,19 +822,28 @@ isc.AdvancedHiliteEditor.addMethods({
                 fieldMap[fieldName] = fieldTitle;
             }
             this.fieldMap = fieldMap;
-            this.hiliteForm.setValueMap("fieldName", fieldMap);
+            items[0].valueMap = fieldMap;
+            this.hiliteForm.addItems(items);
         }
 
         this.addAutoChildren(["hiliteButtons", "saveButton", "cancelButton"]);
 
         this.addMembers([this.filterBuilder, this.hiliteForm, this.hiliteButtons]);
 
-        if (this.criteria != null) {
+        if (this.hilite != null) {
             // we're editing an existing hilite
-            this.filterBuilder.setCriteria(this.criteria.criteria);
-            this.hiliteForm.editRecord(this.criteria);
+            this.filterBuilder.setCriteria(this.hilite.criteria);
+            this.hiliteForm.editRecord(this.hilite);
         }
 
+    },
+
+    // the first time a field is chosen when defining criteria, default the target field to
+    // that field.
+    fieldChosen : function (fieldName) {
+        if (fieldName && this.hiliteForm.getValue("fieldName") == null) {
+            this.hiliteForm.setValue("fieldName", fieldName);
+        }
     },
 
     //> @method advancedHiliteEditor.saveHilite()
@@ -776,8 +855,10 @@ isc.AdvancedHiliteEditor.addMethods({
         this.hiliteForm.setValue("criteria", this.filterBuilder.getCriteria());
         var hilite = this.hiliteForm.getValues();
 
-        if (hilite.criteria.criteria == null || hilite.criteria.criteria.length == 0) {
-            isc.say(this.invalidCriteriaPrompt);
+        if (hilite.criteria.criteria == null || hilite.criteria.criteria.length == 0 ||
+            (!hilite.textColor && !hilite.backgroundColor) || hilite.fieldName == null) 
+        {
+            isc.say(this.invalidHilitePrompt);
             return;
         }
 
@@ -791,7 +872,7 @@ isc.AdvancedHiliteEditor.addMethods({
         }
 
         hilite.cssText = cssText;
-        if (this.criteria && this.criteria.id) hilite.id = this.criteria.id;
+        if (this.hilite && this.hilite.id) hilite.id = this.hilite.id;
         
         this.completeEditing(hilite);
     },
@@ -806,7 +887,7 @@ isc.AdvancedHiliteEditor.addMethods({
     },
 
     completeEditing : function (result) {
-        if (this.callback) this.fireCallback(this.callback, ["criteria"], [result]);
+        if (this.callback) this.fireCallback(this.callback, ["hilite"], [result]);
     }    
 });
 

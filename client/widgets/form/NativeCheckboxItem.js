@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -324,8 +324,14 @@ isc.NativeCheckboxItem.addMethods({
 		
 		// have the form call the elementChanged method of the item
 		this.form.elementChanged(this.getItemID());
-	}      
+	},
 
+    // force redraw on setDisabled -- we don't currently have a method to selectively update
+    // the state of the label (title) for the native checkbox
+    updateDisabled : function () {
+        if (this.isDrawn()) this.redraw();
+    }
+    
 });
 
 

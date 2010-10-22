@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -23,7 +23,6 @@
 var libs = 
 	[
 		"language/XMLSerialize",		// serialize an object as an xml string
-		"language/Clone",				// make a isc.clone (duplicate) of an object
 
         "language/XMLTools",
 
@@ -38,6 +37,8 @@ var libs =
         "application/DataView",         // Self-contained application element, capable of loading 
                                         // its own config, components and data from webservices
         "application/ServiceOperation", // A webservice operation
+        
+        "application/Offline",          // Offline support
 
         
         
@@ -79,9 +80,7 @@ var libs =
         
         "widgets/ScreenReader",
         
-        "widgets/DataSourceEditor",
-        
-        "application/MultiSortDialog"
+        "widgets/DataSourceEditor"
         
 	];
 

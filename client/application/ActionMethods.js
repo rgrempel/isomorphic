@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -418,8 +418,10 @@ isc.EditorActionMethods.addInterfaceMethods({
     // form is clicked, or, if +link{dynamicForm.saveOnEnter,saveOnEnter} is set, when the
     // "Enter" key is pressed in a text input.  Submit can also be manually called.
     // <P>
-    // If +link{dynamicForm.submitValues(),form.submitValues()} exists, it will be called, then
-    // immediately return.
+    // If this form is part of a +link{valuesManager}, this method will simply fall through to
+    // the submit method on the valuesManager. If not, and
+    // +link{dynamicForm.submitValues(),form.submitValues()} exists, it will be called, and
+    // no further action will be taken.
     // <P>
     // Otherwise, default behavior varies based on +link{dynamicForm.canSubmit,form.canSubmit}: if
     // <code>canSubmit</code> is false, +link{method:dynamicForm.saveData()} will be called to
@@ -442,6 +444,9 @@ isc.EditorActionMethods.addInterfaceMethods({
     // @visibility external
     //<
     submit : function (callback, requestProps) {
+        if (this.valuesManager != null) {
+            return this.valuesManager.submit(callback, requestProps);
+        }
         if (this.submitValues != null) {
             return this.submitValues(this.getValues(), this);
         }
@@ -532,9 +537,17 @@ isc.EditorActionMethods.addInterfaceMethods({
 
         if (requestProperties == null) requestProperties = {};
 
+        var operationType = this.getSaveOperationType(requestProperties);
+
         // send oldValues to allow long transactions
+        // this._oldValues is set up on dynamicForms in rememberValues(), so represents
+        // the data when editRecord() or setValues() was called.
+        // Assume this is the underlying record object we're editing unless this is
+        // an "add" type operation (in which case it was probably passed in as part of
+        // editNewRecord(...))
+        
         if (!requestProperties.oldValues) {
-            requestProperties.oldValues = this._oldValues;
+            requestProperties.oldValues = operationType != "add" ? this._oldValues : {};
         }
 
         // do server validation if validationURL is specified
@@ -570,9 +583,7 @@ isc.EditorActionMethods.addInterfaceMethods({
             if (!this.validate()) return false;
             return fileItemForm.saveData(callback, requestProperties, noValidation);
         }
-
-        var operationType = this.getSaveOperationType(requestProperties);
-
+   
         // hold on to end user callback, and pass our own to the RPC layer.  We do this to
         // provide the formSaved() mechanism that fires before the end user callback.
         this._userCallback = callback;
@@ -601,7 +612,8 @@ isc.EditorActionMethods.addInterfaceMethods({
         }
         
         if (!this.validate()) return false
-        var values = this.getValues();        
+        var values = this.getValues();       
+        
 
         // perform a direct submit if the form is multipart-encoded
         
@@ -807,7 +819,10 @@ isc.EditorActionMethods.addInterfaceMethods({
                         operationType = "add";
                         break;
                     }
-                    
+                    // checking _oldValues will catch the case where setValues() or 
+                    // editRecord() [ultimately rememberValues]
+                    // was called and passed a value for a field which has subsequently
+                    // been modified
                     if (this._oldValues[key] !== undef && this._oldValues[key] != value) {
                         //this.logWarn("saveData(): primary key field:" + key + " has been modified" +
                         //             " assuming this is an add operation");
@@ -1015,6 +1030,9 @@ isc._EditorFlowOverrides = {
         }
         if (this._fetchDataCallbackArr == null) this._fetchDataCallbackArr = [];
         this._fetchDataCallbackArr.add(callback); 
+        
+        requestProperties = this.buildRequest(requestProperties, "fetch", callback);
+        
         ds.fetchData(criteria, {target:this, methodName:"fetchDataReply"}, requestProperties);
     },
     
@@ -1117,6 +1135,29 @@ if (isc.ValuesManager) {
 //<
 
 //>	@method valuesManager.submit()
+// <code>submit()</code> is automatically called when a +link{SubmitItem} in a member form
+// is clicked, or if +link{dynamicForm.saveOnEnter,saveOnEnter} is set for some member form,
+// when the
+// "Enter" key is pressed in a text input.  Submit can also be manually called.
+// <P>
+// If +link{valuesManager.submitValues(),valuesManager.submitValues()} exists, it
+// will be called, and no further action will be taken.
+// <P>
+// Otherwise, +link{method:valuesManager.saveData()} will be called to
+// handle saving via SmartClient databinding.  
+// <P>
+// The parameters to <code>submit()</code> apply only if <code>submit()</code> will be
+// calling +link{saveData()}.  If you override <code>submit()</code>, you can safely
+// ignore the parameters as SmartClient framework code does not pass them.
+// 
+// @param [callback]          (DSCallback)  callback to invoke on completion.
+// @param [requestProperties] (DSRequest)   additional properties to set on the DSRequest
+//                                          that will be issued 
+// @group dataBoundComponentMethods
+// @see method:valuesManager.submitValues()
+// @visibility external
+//<
+    
 // @include dynamicForm.submit()
 //<
 

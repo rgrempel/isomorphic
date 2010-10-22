@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -141,11 +141,22 @@ isc.Hover.addClassMethods({
 // @param [targetCanvas] (Canvas) Passed in by canvas.showHover() - allows us to track which canvas
 //     showed the hover and handle cases such as that canvas being destroyed etc. 
 show : function (contents, properties, rect, targetCanvas) {
+    if (isc.isA.Canvas(contents)) {
+        // we've been passed a Canvas as content for the hover - this will now become the 
+        // hoverCanvas, rather than being the content for a newly created hoverCanvas
+        this.showingHoverComponent = true;
+        this.hoverCanvas = contents;
+        this.hoverCanvas.hide = function () {
+            this.Super("hide", arguments);
+            isc.Hover.hoverCanvasHidden();
+        };
+    }
+
 	// position and show hoverCanvas with contents & properties
 	if (!this.hoverCanvas) this._makeHoverCanvas();
 	
 	var hoverCanvas = this.hoverCanvas;
-	
+
 	// check parameters
 	if (contents == null || contents == "") {
         hoverCanvas.hide();
@@ -157,17 +168,17 @@ show : function (contents, properties, rect, targetCanvas) {
     this.lastHoverCanvas = targetCanvas;
     
     // set the hover to display the new contents
-    hoverCanvas.setContents(contents);
+    if (!this.showingHoverComponent) hoverCanvas.setContents(contents);
 	if (properties == null) properties = {};
 	
     // Apply the properties to the hoverCanvas (except for positioning props)
     
     var defaults = this.hoverCanvasDefaults;
-    hoverCanvas.setAlign(properties.align || defaults.align);
-    hoverCanvas.setVAlign(properties.valign || defaults.valign);
-    hoverCanvas.setBaseStyle(properties.baseStyle || defaults.baseStyle);
-    hoverCanvas.setOpacity(properties.opacity || defaults.opacity);
-    hoverCanvas.setWrap(properties.wrap != null ? properties.wrap : defaults.wrap);
+    if (hoverCanvas.setAlign) hoverCanvas.setAlign(properties.align || defaults.align);
+    if (hoverCanvas.setVAlign) hoverCanvas.setVAlign(properties.valign || defaults.valign);
+    if (hoverCanvas.setBaseStyle) hoverCanvas.setBaseStyle(properties.baseStyle || defaults.baseStyle);
+    if (hoverCanvas.setOpacity) hoverCanvas.setOpacity(properties.opacity || defaults.opacity);
+    if (hoverCanvas.setWrap) hoverCanvas.setWrap(properties.wrap != null ? properties.wrap : defaults.wrap);
     
     // Should we move the hover canvas around with the mouse
     if (properties.moveWithMouse != null) this._shouldMoveWithMouse = properties.moveWithMouse
@@ -184,8 +195,8 @@ show : function (contents, properties, rect, targetCanvas) {
         left = properties.left,
         top = properties.top,
         // NOTE: boolean check OK because width and height can't validly be zero
-		width = properties.width || defaults.defaultWidth,
-		height = properties.height || defaults.defaultHeight;
+		width = properties.width || (this.showingHoverComponent ? hoverCanvas.width : defaults.defaultWidth),
+		height = properties.height || (this.showingHoverComponent ? hoverCanvas.height : defaults.defaultHeight);
 
     // If either left or top is specified in the arguments to Hover.show(), respect them and don't
     // use Canvas._placeRect to adjust the position of the hover
@@ -257,11 +268,21 @@ hide : function () {
 
 		// hide the hoverCanvas
 		hoverCanvas.hide();
-		
-		// move the hover offscreen to prevent page-level scrollbars if the hover extends out
-        // of the page.
-        var defaults = this.hoverCanvasDefaults;
-		hoverCanvas.setRect(0, -1000);
+	
+        if (this.showingHoverComponent) {
+            if (!hoverCanvas) return;
+            //isc.logWarn("destroy()ing old component: "+hoverCanvas.getID());
+            this.hoverCanvas.markForDestroy();
+            this.hoverCanvas = null;
+            delete this.hoverCanvas;
+            this.showingHoverComponent = false;
+        } else {
+
+            // move the hover offscreen to prevent page-level scrollbars if the hover extends out
+            // of the page.
+            var defaults = this.hoverCanvasDefaults;
+            hoverCanvas.setRect(0, -1000);
+        }
 	}
 },
 
@@ -274,8 +295,9 @@ _makeHoverCanvas : function () {
             isc.Hover.hoverCanvasHidden();
         }
     }, this.hoverCanvasDefaults);
-    
-	this.hoverCanvas = isc.Label.create(defaults);
+
+    this.hoverCanvas = isc.Label.create(defaults);
+
 },
 
 _moveWithMouse : function () {    

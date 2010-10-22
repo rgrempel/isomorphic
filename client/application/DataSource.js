@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -786,6 +786,7 @@ isc.defineClass("DataSource");
 //<
 
 
+
 //> @groupDef sgwtEESetup
 //
 // <h3>Creating a new project from scratch</h3>
@@ -834,7 +835,7 @@ isc.defineClass("DataSource");
 //    &lt;/script&gt;
 //    </pre>
 //    This should appear before the &lt;script src=&gt; tag that loads *.nocache.js.
-// <li> Copy war/WEB-INF/classes/log4j.config.xml across to the "src" dir of your project (it's
+// <li> Copy war/WEB-INF/classes/log4j.isc.config.xml across to the "src" dir of your project (it's
 //      placed in the "src" dir as a means of getting it into the CLASSPATH).  This enables default
 //      log4 categories for server-side logs appropriate for development.
 // <li> Copy war/WEB-INF/classes/server.properties across to the "src" dir of your project.
@@ -918,7 +919,7 @@ isc.defineClass("DataSource");
 // <li>Init servlet- <b>required:</b> initializes the SmartClient server componentry from config files
 // at container startup time.  Notice that this servlet has no mapping - it's purely an
 // initialization servlet.
-// <li>IDACall servlet - <b>required</b> for +link{DMI}, built-in RPC operations and built-in DataSource
+// <li>IDACall servlet - <b>required</b> for +link{dmiOverview,DMI}, built-in RPC operations and built-in DataSource
 // operations to work.  All databound examples in the SDK use this servlet.  If you're planning on
 // using a custom actionURL for all your RPC requests, then you don't need this servlet.
 // <li>FileDownload servlet - required for serving the Isomorphic framework code compressed and with
@@ -933,6 +934,16 @@ isc.defineClass("DataSource");
 // <p>
 // <i>Optional Functionality</i>
 // <ul>
+// <li>RESTHandler servlet - handles SmartClient Server DataSource operations issued by 
+// REST clients: it's like IDACall, but for the REST protocol.  Typically,  the clients
+// of this servlet would not be ordinary SmartClient/SmartGWT applications (though they 
+// could be), but other client technologies that need to access SmartClient DataSource 
+// operations as reusable services.  If you do not plan to connect to the server using the
+// REST protocol, then you don't need this servlet.
+// <li>AxisServlet - exposes all DataSource operations via a WSDL service described by 
+// SmartClientOperations.wsdl.  This is effectively the same as the RESTHandler servlet, but 
+// for SOAP clients.  If you do not plan to connect to the server using webservice protocols,
+// then you don't need this servlet.
 // <li>HttpProxy - used by the RPCManager when sending AJAX RPCs to a server other than the
 // server that serves the main application page.  You need to install this servlet if, for
 // example, your application will be querying web services exposed by servers other than the
@@ -1041,7 +1052,7 @@ isc.defineClass("DataSource");
 // &nbsp;&nbsp;&nbsp;&nbsp;isomorphic_core_rpc<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;All JARs under WEB-INF/embeddedTomcat/lib<br>
 // </li>
-// <li><b>isomorphic_spring</b>: Required for +link{DMI} dispatches to Spring beans (via
+// <li><b>isomorphic_spring</b>: Required for +link{dmiOverview,DMI} dispatches to Spring beans (via
 // +link{serverObject.lookupStyle} : "spring").<br>
 // &nbsp;&nbsp;<u>Requires</u>:<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;isomorphic_core_rpc<br>
@@ -1333,7 +1344,7 @@ isc.defineClass("DataSource");
 // <P>
 // Once a SmartClient JSF page has loaded, SmartClient components will request data via background
 // HTTP requests that load only data, not a complete page.  The 
-// +link{class:DMI,Direct Method Invocation} system can be used to declaratively map SmartClient's
+// +link{dmiOverview,Direct Method Invocation} system can be used to declaratively map SmartClient's
 // background data requests directly to Java Methods. The SmartClient server automatically
 // translates inbound request data into Java Objects that are passed to the method you specify,
 // and the Java method return value is automatically translated into data for SmartClient
@@ -1587,7 +1598,7 @@ isc.defineClass("DataSource");
 // <P>
 // This integration strategy uses the server-side Java APIs described in
 // +link{group:serverDataIntegration}.  Two complete examples of Hibernate integration are
-// provided in the SDK, one using +link{DMI} and one using +link{RPCManager} dispatch.  Both
+// provided in the SDK, one using +link{dmiOverview,DMI} and one using +link{RPCManager} dispatch.  Both
 // are accessible from the SDK Explorer as Examples->Server Integration, and both include
 // sample Hibernate configuration as well as a sample UI capable of loading and saving data.
 // <ul>
@@ -1597,7 +1608,7 @@ isc.defineClass("DataSource");
 // request +link{dsRequest.operationType}s via Hibernate for a sample bean.
 // <li>
 // +externalLink{/examples/server_integration/index.html#springDSHiberateDMI,"Spring DataSource Integration using DMI to Hibernate"}
-// shows how to use SmartClient Direct Method Invocation (+link{DMI}) to implement all four
+// shows how to use SmartClient Direct Method Invocation (+link{dmiOverview,DMI}) to implement all four
 // DataSource operations with Hibernate.  This particular example uses
 // +link{group:springIntegration,Spring}-based lookup of the target for DMI, however, the same
 // approach will work without Spring - see other DMI examples on the same page for non-Spring
@@ -1618,6 +1629,270 @@ isc.defineClass("DataSource");
 // @see attr:dataSource.beanClassName
 // @treeLocation Concepts
 // @title Integration with Hibernate
+// @visibility external
+//<
+
+
+//> @groupDef jpaIntegration
+//
+// JPA 1.0 annotated entities can be used as SmartClient data source. Data source
+// implementation class <code>com.isomorphic.jpa.JPADataSource</code> supports only simple
+// search +link{type:Criteria}. +link{AdvancedCriteria} is <b>not supported</b>.
+// <p/>
+// <b>JPA configuration</b>
+// <p/>
+// JPA configuration should be specified in file <code>persistence.xml</code> file and placed
+// in <code>/WEB-INF/classes/META-INF</code> directory.<br/>
+// To use JPA annotated entity you have to
+// +link{group:dataSourceDeclaration,create a DataSource} with these properties<ul>
+// <li><b><code>+link{attr:dataSource.serverConstructor,serverConstructor}</code></b> - JPA
+//      DataSource implementation: <code>com.isomorphic.jpa.JPADataSource</code></li>
+// <li><b><code>+link{attr:dataSource.beanClassName,beanClassName}</code></b> - fully qualified
+//      class name of JPA entity</li></ul>
+// For example:<pre>
+// &lt;DataSource
+//     ID="countryDS"
+//     serverConstructor="com.isomorphic.jpa.JPADataSource"
+//     beanClassName="com.smartgwt.sample.showcase.server.jpa.Country"
+// &gt;
+//     &lt;fields&gt;
+// &lt;!-- ... Fields definition ... --&gt;
+//     &lt;/fields&gt;
+// &lt;/DataSource&gt;
+// </pre>
+// <b>JPA transactions</b>
+// <p/>
+// JPA provides two mechanisms for transactions: for JEE applications JPA provides integration
+// with JTA (Container Managed Transactions); for JSE applications JPA has own
+// <code>EntityTransaction</code> implementation (Locally Managed Transactions).
+// Transaction mechanism should be configured in <code>server.properties</code> file by setting
+// property <b><code>jpa.emfProvider</code></b> to fully qualified class name of provider
+// (implementation of <code>com.isomorphic.jpa.EMFProviderInterface</code>). SmartClient comes
+// with three implementations:<ul>
+// <li><b><code>com.isomorphic.jpa.EMFProviderLMT</code></b> - for Locally Managed Transactions.
+//      Every fetch or DML operation starts new transaction and commits after successful
+//      execution.<br/>
+//      From <code>server.properties</code> file this implementation reads property
+//      <b><code>jpa.persistenceUnitName</code></b> containing name of persistence unit
+//      configured in <code>persistence.xml</code> file. For example:<pre>
+// jpa.persistenceUnitName: PERSISTENCE_UNIT_NAME
+//      </pre></li>
+// <li><b><code>com.isomorphic.jpa.EMFProviderCMT</code></b> - for Container Managed Transactions.
+//      Every fetch or DML operation acquires transaction object from JEE container.
+//      After successful method execution container commits transaction. In case of execution
+//      failure <code>tx.setRollbackOnly()</code> is used to notify container to rollback
+//      transaction.<br/>
+//      This implementation reads two properties from <code>server.properties</code> file:
+//      <b><code>jpa.cmt.entityManager</code></b> and <b><code>jpa.cmt.transaction</code></b>
+//      containing appropriate resource name references configured in
+//      <code>/WEB-INF/web.xml</code>. Configuration example:<pre>
+// &lt;!-- EntityManager resource reference name declaration --&gt;
+// &lt;persistence-context-ref&gt;
+//    &lt;persistence-context-ref-name&gt;persistence/em&lt;/persistence-context-ref-name&gt;
+//    &lt;persistence-unit-name&gt;PERSISTENCE_UNIT_NAME&lt;/persistence-unit-name&gt;
+// &lt;/persistence-context-ref&gt;
+//
+// &lt;!-- Transaction resource reference name declaration --&gt;
+// &lt;resource-env-ref&gt;
+//     &lt;resource-env-ref-name&gt;persistence/tx&lt;/resource-env-ref-name&gt;
+//     &lt;resource-env-ref-type&gt;javax.transaction.UserTransaction&lt;/resource-env-ref-type&gt;
+// &lt;/resource-env-ref&gt;
+//
+// #Property values for sample references:
+// jpa.cmt.entityManager: persistence/em
+// jpa.cmt.transaction: persistence/tx
+//      </pre></li>
+// <li><b><code>com.isomorphic.jpa.EMFProviderNoTransactions</code></b> - transactions are
+//      not used.<br/>
+//      From <code>server.properties</code> file this implementation reads property
+//      <b><code>jpa.persistenceUnitName</code></b> containing name of persistence unit
+//      configured in <code>persistence.xml</code> file. For example:<pre>
+// jpa.persistenceUnitName: PERSISTENCE_UNIT_NAME
+//      </pre></li>
+// </ul>
+// You can provide your own implementation of
+// <code>com.isomorphic.jpa.EMFProviderInterface</code> in case of specific requirements for
+// transaction handling.
+//
+// @see attr:dataSource.beanClassName
+// @see attr:dataSource.serverConstructor
+// @treeLocation Concepts
+// @title Integration with JPA
+// @visibility external
+//<
+
+
+//> @groupDef gaeIntegration
+// +externalLink{http://code.google.com/appengine/,GAE} supports
+// +externalLink{http://code.google.com/appengine/docs/java/overview.html,Java applications}.
+// Google provides great infrastructure for web applications. It takes care of many web
+// application developer's headaches: hardware, operating system support, backups, scaling,
+// security, mail etc. To run under GAE your application has to comply to GAE rules.
+// Biggest difference is GAE datastore - it is not relational database - it is
+// +externalLink{http://en.wikipedia.org/wiki/BigTable,BigTable}. To simplify development
+// Google has adopted
+// +externalLink{http://www.datanucleus.org/products/accessplatform/,DataNucleus Access Platform}
+// to provide
+// +externalLink{http://code.google.com/appengine/docs/java/datastore/usingjpa.html,JPA 1.0 support}.
+// Because GAE datastore is not relational database
+// +externalLink{http://code.google.com/appengine/docs/java/datastore/usingjpa.html#Unsupported_Features_of_JPA,some JPA features}
+// are not supported by this JPA implementation.
+// <p/>
+// <b>Setting up SmartClient application for GAE</b>
+// <p/>
+// Under <code>/WEB-INF</code> directory you have to create file
+// +externalLink{http://code.google.com/appengine/docs/java/config/appconfig.html,<code>appengine-web.xml</code>}
+// which will hold Google's specific settings.<br/>
+// Important thing to note: static and dynamic contents will be served from different servers.
+// There are
+// +externalLink{http://code.google.com/appengine/docs/java/config/appconfig.html#Static_Files_and_Resource_Files, special sections}
+// in
+// +externalLink{http://code.google.com/appengine/docs/java/config/appconfig.html,<code>appengine-web.xml</code>}
+// specifying static and dynamic resources. All resources are duplicated if not specified.
+// Single GAE application is limited to 3000 files. SmartClient application consists of many
+// resources and it exceeds limit when they are duplicated (even with single theme).
+// To run SmartClient application we have to differ resources. Here is an example configuration:<pre>
+// &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+// &lt;appengine-web-app xmlns="http://appengine.google.com/ns/1.0"&gt;
+//     &lt;application&gt;GAE_APPLICATION_NAME&lt;/application&gt;
+//     &lt;version&gt;1&lt;/version&gt;
+//     &lt;static-files&gt;
+//         &lt;include path="/index.jsp"/&gt;
+//         &lt;include path="/[MODULE_NAME]/**"/&gt;
+//         &lt;exclude path="/[MODULE_NAME]/**.xml"/&gt;
+//         &lt;exclude path="/[MODULE_NAME]/**.xsl"/&gt;
+//         &lt;exclude path="/[MODULE_NAME]/**.wsdl"/&gt;
+//     &lt;/static-files&gt;
+//     &lt;resource-files&gt;
+//         &lt;include path="/[PATH_TO_DATA_SOURCE_FILES]/**"/&gt;
+//         &lt;include path="/[MODULE_NAME]/**.xml"/&gt;
+//         &lt;include path="/[MODULE_NAME]/**.xsl"/&gt;
+//         &lt;include path="/[MODULE_NAME]/**.wsdl"/&gt;
+//     &lt;/resource-files&gt;
+// &lt;/appengine-web-app&gt;
+// </pre>
+// To interact with DataSources additional servlet mapping has to be added to
+// <code>web.xml</code>:<pre>
+// &lt;servlet-mapping&gt;
+//     &lt;servlet-name&gt;IDACall&lt;/servlet-name&gt;
+//     &lt;url-pattern&gt;/[MODULE_NAME]/sc/IDACall&lt;/url-pattern&gt;
+// &lt;/servlet-mapping&gt;
+// </pre>
+// <p/>
+// <b>Setting up DataSources</b>
+// <p/>
+// GAE supports only four types as primary keys:<ul>
+// <li><code>java.lang.Long</code></li>
+// <li><code>java.lang.String</code></li>
+// <li><code>java.lang.String</code> with additional annotations</li>
+// <li><code>com.google.appengine.api.datastore.Key</code> <b>not supported by SmartClient</b></li>
+// </ul>
+// Primary key can not be altered after entity is saved.<br/>
+// Entities with primary keys <code>Long</code> or <code>String</code> can not participate in
+// transactions and can not be used in relations.
+// Here is an example how to declare primary key of type <code>String</code> with additional
+// annotations:<pre>
+// import java.io.Serializable;
+// import javax.persistence.Entity;
+// import javax.persistence.GeneratedValue;
+// import javax.persistence.GenerationType;
+// import javax.persistence.Id;
+// import org.datanucleus.jpa.annotations.Extension;
+//
+// &#64;Entity
+// public class Bar
+//     implements Serializable
+// {
+//    &#64;Id
+//    &#64;GeneratedValue (strategy = GenerationType.IDENTITY)
+//    &#64;Extension (vendorName = "datanucleus", key = "gae.encoded-pk", value = "true")
+//    private String id;
+// }
+// </pre>
+// DataSource creation is similar to +link{group:jpaIntegration,standard JPA} with single
+// difference: property <b><code>+link{attr:dataSource.serverConstructor,serverConstructor}</code></b>
+// should be set to <b><code>com.isomorphic.jpa.GAEJPADataSource</code></b>.<br/>
+// Because of
+// +externalLink{http://code.google.com/intl/en/appengine/docs/java/datastore/queriesandindexes.html#Restrictions_on_Queries, GAE queries limitations}
+// this DataSource implementation supports only single inequality criteria in filter.
+// Only <code>TextMatchStyle.STARTS_WITH</code> filtering mode supported for text fields.<br/>
+// <b><code>com.isomorphic.jpa.EMFProviderLMT</code></b> or
+// <b><code>com.isomorphic.jpa.EMFProviderNoTransactions</code></b> should be used as
+// transaction providers (depending whether you use transactions or not).<br/>
+// To participate in single transaction entities have
+// to belong to the
+// +externalLink{http://code.google.com/intl/en/appengine/docs/java/datastore/transactions.html,same group}.<br/>
+// Note: entities of different type can not participate in single transaction even if these
+// entities have GAE specific primary key (you can not even fetch (SELECT) entities belonging
+// to different groups).
+// <p/>
+// <b>+externalLink{http://code.google.com/intl/en/appengine/docs/java/datastore/relationships.html,Relationships}</b>
+// <p/>
+// Entities are grouped by establishing owned relationships (where dependent entities are
+// instantiated automatically by JPA provider) between them. Entities in groups can form kind
+// of chain:<pre>
+// ClassA has reference to ClassB,
+// ClassB has reference to ClassC
+// </pre>
+// But it is impossible to have entity referencing two other entities:<pre>
+// ClassD has reference to ClassE,
+// ClassD has reference to ClassF
+// </pre>
+// There is no foreign keys - actual reference is encoded into primary key of child entity.<br/>
+// GAE datastore does not support many-to-many relationship.<br/>
+// Unidirectional one-to-many relationship works only if parent has declaration of
+// <code>List&lt;ChildEntityClass&gt;</code>.<br/>
+// Unidirectional relationship does not work if only child entity has reference to parent.<br/>
+// Bidirectional relationship example:<pre>
+// &#64;Entity
+// public class Country
+//     implements Serializable
+// {
+//     &#64;Id
+//     &#64;Column (nullable = false)
+//     &#64;GeneratedValue (strategy = GenerationType.IDENTITY)
+//     &#64;Extension (vendorName = "datanucleus", key = "gae.encoded-pk", value = "true")
+//     private String countryId;
+//
+//     &#64;OneToMany
+//     private List<City> cities;
+// //....
+// }
+//
+// &#64;Entity
+// public class City
+//     implements Serializable
+// {
+//     &#64;Id
+//     &#64;Column (nullable = false)
+//     &#64;GeneratedValue (strategy = GenerationType.IDENTITY)
+//     &#64;Extension (vendorName = "datanucleus", key = "gae.encoded-pk", value = "true")
+//     private String cityId;
+//
+//     // This is fake column - it is calculated by provider and is not saved.
+//     // Actual reference to parent entity is encoded in primary key.
+//     &#64;Column (nullable = false)
+//     &#64;Extension (vendorName = "datanucleus", key = "gae.parent-pk", value = "true")
+//     private String countryId;
+//
+//     &#64;ManyToOne (fetch=FetchType.LAZY)
+//     private Country country;
+// //....
+// }
+// </pre>
+// Note: GAE does not support <code>FetchType.EAGER</code>.
+// <p/> With
+// <b>+externalLink{http://code.google.com/intl/en/appengine/docs/java/datastore/relationships.html#Unowned_Relationships,Unowned Relationships}</b>
+// (when you save parent's primary key as simple child's property) you can model unsupported
+// relationships. But this approach has drawbacks:<ul>
+// <li>related entities are not instantiated automatically</li>
+// <li>transactions can not be used</li>
+// <li>you have to manually keep track of changes in case of bidirectional relationship</li>
+// </ul>
+//
+// @see group:jpaIntegration
+// @treeLocation Concepts
+// @title Google Application Engine (GAE)
 // @visibility external
 //<
 
@@ -1691,9 +1966,6 @@ isc.defineClass("DataSource");
 // The common default servlet engine port 8080 is used in the URL given above. Adjust your URL
 // as necessary if you are using a different port and replace localhost with the machine name
 // running the servlet engine if you are accessing it from a remote machine.
-// <p>
-// Note that the Admin Console interface is also available in the Developer Console as the
-// "DataBases" tab.
 // <P>
 // <b>Test Data</b>
 // <p>
@@ -1778,6 +2050,81 @@ isc.defineClass("DataSource");
 // 
 // Notice that all records must define values for the itemName primary key field and for the
 // parentID field that establishes the tree relationship.
+// <P>
+// <br>
+// <b>Manually specifying database connection settings</b>
+// <p>
+// The Admin Console maintains settings in the <code>server.properties</code> file, found in 
+// your application's <code>WEB-INF/classes</code> directory.  If you prefer, you can maintain
+// these settings by directly editing that file.  You should restart your servlet engine 
+// after changing this file.
+// <p>
+// For example, the following settings are the defaults in a new SmartClient installation for 
+// a MySQL server; they are approximately correct for a MySQL server running on the same 
+// machine as the servlet engine and listening on the default MySQL port:<pre>
+//   sql.Mysql.database.type: mysql
+//   sql.Mysql.database.ansiMode: false
+//   sql.Mysql.interface.type: dataSource
+//   sql.Mysql.driver: com.mysql.jdbc.jdbc2.optional.MysqlDataSource
+//   # name of the database to use
+//   sql.Mysql.driver.databaseName: isomorphic
+//   # hostname and port where the database server is installed
+//   sql.Mysql.driver.serverName: localhost
+//   sql.Mysql.driver.portNumber: 3306
+//   # username and password that can create and modify tables in that database
+//   # this user must have the following privileges for the system to function
+//   # properly: create/alter/drop table; insert/update/replace/delete rows.
+//   sql.Mysql.driver.user: root
+//   sql.Mysql.driver.password: 
+// </pre>
+// Note the distinction here between database <em>type</em> and database <em>name</em>.  Database
+// type refers to the actual product - Oracle, DB2 or whatever.  In the above example, database 
+// type is "mysql" (all lowercase) - the value of property <code>sql.Mysql.database.type</code>.
+// Database type is very important.  The type of a given database connection dictates whether
+// features like SQL paging and transactions are supported; it even dictates the syntax of the 
+// SQL we generate.
+// <p>
+// Database name is just an arbitrary name for a particular database connection, and it is
+// embedded in the property names immediately after the <code>sql</code> prefix. In this example
+// it happens to be very similar to the database type - "Mysql" as opposed to "mysql" - but in 
+// fact the name has no significance and could be any string.  When referring to specific 
+// database connections in your +link{class:DataSource,DataSources} with the 
+// +link{DataSource.dbName,dbName} property, it is the database <em>name</em> you use.
+// <p>
+// NOTE: It is common for DataSources to not specify <code>dbName</code>.  In this case, the 
+// default database is used.  To specify the default database manually in 
+// <code>server.properties</code>, set <code>sql.defaultDatabase</code>, using database 
+// name.  So, to set our example connection from above as the default:<pre>
+//   sql.defaultDatabase: Mysql
+// </pre>
+// <P>
+// <b>Manually specifying JNDI settings</b>
+// <p>
+// Instead of specifying database connection parameters directly in <code>server.properties</code>,
+// it is possible to connect to a database that is configured as a JNDI resource in your 
+// application server.  Assume you have an Oracle JNDI resource with the name "jndiTest", 
+// configured similar to this in Tomcat:
+// <pre>
+//   &lt;Resource name="jdbc/jndiTest"
+//                    auth="Container"
+//                    type="javax.sql.DataSource"
+//                    driverClassName="oracle.jdbc.driver.OracleDriver"
+//                    url="jdbc:oracle:thin:@192.168.132.152:1521:xe"
+//                    username="system"
+//                    password="manager"
+//                    initialSize="5"                 
+//                    maxActive="50" /&gt;
+// </pre>
+// The minimal set of properties required to create a SmartClient database connection that 
+// attaches to this resource is as follows (Note that the <code>java:comp/env/</code> prelude
+// in the first line is optional - the server will automatically look there if it can't find 
+// the resource in the absolute location)
+// <pre>
+//   sql.myOracleConnection.driver.name: java:comp/env/jdbc/jndiTest
+//   sql.myOracleConnection.database.type: oracle
+//   sql.myOracleConnection.interface.type: jndi
+// </pre>
+//
 //
 // @treeLocation Client Reference/Data Binding/DataSource
 // @title Admin Console
@@ -2543,10 +2890,18 @@ isc.DataSource.addClassMethods({
         // Not explicitly marked, so we'll make a guess.  First, make sure that this DataSource
         // doesn't have any fields that are actually called "fieldName" or "operator"
         if (dataSource.getField("fieldName") || dataSource.getField("operator")) return false;
-        
+
         // So we'll assume it's AdvancedCriteria if the fieldName property refers to a valid 
         // field on this DS, and the operator property refers to a valid operator
         if (dataSource.getField(criteria.fieldName) && dataSource.getSearchOperator(criteria.operator)) {
+            return true;
+        }
+
+        // if the criteria has fieldName, value and operator attribues *AND* the operator is 
+        // valid, assume we have advancedCriteria - this caters for criteria against calculated 
+        // fields, which do not appear as DS-fields
+        if (criteria.fieldName && criteria.value && 
+                (criteria.operator && dataSource.getSearchOperator(criteria.operator))) {
             return true;
         }
 
@@ -2584,7 +2939,39 @@ isc.DataSource.addClassMethods({
         } else {
             fieldNames.add(criterion.fieldName);
         }
-    }
+    },
+    
+    // ---------- LOCAL RESPONSE CACHING ----------
+    _responseCache: [],
+    maxResponsesToCache: 100,
+    cacheResponse : function (dsRequest, dsResponse) {
+        if (isc.Offline) {
+            var requestKey = isc.Offline.serialize(isc.Offline.trimRequest(dsRequest));
+            var index = this._responseCache.findIndex("requestKey", requestKey);
+            if (index != -1) {
+                this._responseCache.set(index, dsResponse);
+            } else {
+                if (this._responseCache.length >= this.maxResponsesToCache) {
+                    this._responseCache.removeAt(0);
+                }
+                this._responseCache.add({
+                    requestKey: requestKey,
+                    dsResponse: dsResponse
+                });
+            }
+        }
+    },
+    
+    getCachedResponse : function (dsRequest) {
+        if (isc.Offline) {
+            var requestKey = isc.Offline.serialize(isc.Offline.trimRequest(dsRequest));
+            return this._responseCache.find("requestKey", requestKey);
+        }
+        return null;
+    },
+    
+    
+    offlineMessage: "This data not available while offline"
 
 
 });
@@ -2828,7 +3215,7 @@ isc.DataSource.addProperties({
     //> @attr dataSource.dbName (String : null : [IR])
     // For DataSources using the +link{group:sqlDataSource,SmartClient SQL engine} for
     // persistence, which database configuration to use.  Database configurations can be
-    // created using the "Databases" tab in the Developer Console.  If unset, the default
+    // created using the +link{group:adminConsole, Admin Console}.  If unset, the default
     // database configuration is used (which is also settable using the "Databases" tab).
     // 
     // @group serverDataIntegration
@@ -2852,7 +3239,7 @@ isc.DataSource.addProperties({
     // @visibility external
     //<
 
-    //> @attr dataSource.quoteColumnNames (boolean : true : [IR])
+    //> @attr dataSource.quoteColumnNames (boolean : null : [IR])
     // If set, tells the SQL engine to quote column names in all generated DML and DDL 
     // statements for this dataSource.  This will ensure that queries generated against
     // tables that do not follow the database product's natural column-naming conventions 
@@ -2863,7 +3250,9 @@ isc.DataSource.addProperties({
     // <code>CREATE TABLE</code> statement); if you do this, you will not need to worry about 
     // quoting column names when querying.  However, if you are dealing with pre-existing 
     // tables, or do not have control over the database naming conventions used, this property
-    // may become necessary.
+    // may become necessary.  This property may also be necessary if you are using field/column
+    // names that clash with reserved words in the underlying database (these vary by database,
+    // but a field called "date" or "timestamp" would have problems with most database products)
     // <p>
     // <b>Note:</b> Only applicable to dataSources of +link{attr:serverType,serverType} "sql".
     //
@@ -3005,7 +3394,7 @@ isc.DataSource.addProperties({
     // <P>
     // By default, for DMI DSResponses, DSResponse.data is filtered on the server to just
     // the set of fields defined on the DataSource.  This type of filtering can also be enabled
-    // for non-DMI DSResponses (see the overview in +link{DMI}).  Setting this property to
+    // for non-DMI DSResponses (see the overview in +link{dmiOverview,DMI}).  Setting this property to
     // <code>false</code> disables this filtering for this DataSource only.  This setting
     // overrides the configuration in <code>server.properties</code>.  This setting can
     // be overridden by +link{ServerObject.dropExtraFields}.
@@ -3028,16 +3417,48 @@ isc.DataSource.addProperties({
     sendExtraFields:true,
     
     //> @attr dataSource.autoDeriveSchema (boolean : null : IR)
-    // For a DataSource with serverType: "sql" or serverType: "hibernate", automatically derive
-    // the dataSource's schema (field definitions) from the SQL table specified in 
-    // +link{dataSource.tableName}.  This causes SmartClient to create a "super" DataSource, which
-    // this dataSource then automatically +link{inheritsFrom,inheritsFrom}.  This allows you to 
-    // override auto-derived schema as required.
-    // <p>
-    // This property is only applicable if you are using the SmartClient server.
+    // This property allows you to specify that your DataSource's schema (field definitions) should
+    // be automatically derived from some kind of metadata.  This causes SmartClient to create 
+    // a special super-DataSource, which is used purely as a source of default schema for this 
+    // DataSource; this is arranged by causing the autoDerived DataSource to automatically 
+    // +link{inheritsFrom,inherit from} the special super-DataSource.  This allows you to 
+    // auto-derive schema from existing metadata, whilst still being able to override any or all
+    // of it as required.<p>
+    // This property has a different implementation depending upon the type of DataSource:<ul>
+    // <li>For a DataSource with serverType: "sql", automatically derive the dataSource's schema 
+    // from the SQL table specified in +link{tableName,tableName}.</li>  
+    // <li>For a DataSource with serverType: "hibernate", automatically derive the dataSource's
+    // schema from the Hibernate mapping named in the +link{schemaBean,schemaBean} property.
+    // If this property is not specified, or the mapping does not exist, derive the dataSource's
+    // schema from the SQL table specified in +link{tableName,tableName}.</li>
+    // <li>For other DataSource types, attempt to find a Spring bean with the name specified in
+    // the +link{schemaBean,schemaBean} property.  If no such bean is found (or Spring is not 
+    // present), attempt to instantiate an object whose fully-qualified class name is the value
+    // in the <code>schemaBean</code> property.  If one of these approaches succeeds, we derive
+    // the schema from the discovered object (by treating it as a Javabean and assuming that 
+    // each one of its getters corresponds to a like-named field in the DataSource).</li>
+    // </ul>
+    // <b>NOTE:</b> The underlying super-DataSource is cached in server memory, so that it does 
+    // not have to be derived and created each time you need it.  However, the cache manager 
+    // will automatically refresh the cached copy if it detects that the deriving DataSource 
+    // has changed.  Thus, if you change the metadata your DataSource is deriving (if, for 
+    // example, you add a column to a table), all you need to do is touch the 
+    // <code>.ds.xml</code> file (ie, update its last changed timestamp - you don't actually
+    // have to change it) and the cached copy will be refreshed next time it is needed.
     //
     // @group fields
-    // @serverDS allowed
+    // @serverDS only
+    // @visibility external
+    //<
+
+    //> @attr dataSource.schemaBean (string : null : IR)
+    // For DataSources that specify +link{autoDeriveSchema}, this property indicates the name
+    // of the Spring bean, Hibernate mapping or fully-qualified Java class to use as parent 
+    // schema.
+    //
+    // @see autoDeriveSchema
+    // @group fields
+    // @serverDS only
     // @visibility external
     //<
 
@@ -3317,6 +3738,104 @@ supportsRequestQueuing : true,
     // @visibility external
     //<
     canMultiSort: true,
+    
+    //> @attr dataSource.sparseUpdates (boolean : false : IR)
+    // When true, indicates that any updates for this DataSource include only those fields 
+    // that have actually changed (and primaryKey fields); when false (the default), all 
+    // field values are included in updates, whether they have changed or not
+    // @serverDS only
+    // @visibility external
+    //<
+    
+    //> @attr dataSource.noNullUpdates (boolean : false : IR)
+    // When true, indicates that fields in this DataSource will never be positively updated
+    // to the null value; they may arrive at null values by being omitted, but we will 
+    // not send actual null values in update requests.  When false (the default), null is 
+    // not treated in any special way.
+    // <p>
+    // Setting this value causes null-assigned fields to be replaced with the field's
+    // +link{DataSourceField.nullReplacementValue,nullReplacementValue}, if one is declared.
+    // If no <code>nullReplacementValue</code> is declared for the field, the null assignment
+    // is replaced with the DataSource's +link{nullStringValue,nullStringValue}, 
+    // +link{nullIntegerValue,nullIntegerValue}, +link{nullFloatValue,nullFloatValue} 
+    // or +link{nullDateValue,nullDateValue}, depending on the field type.
+    // <p>
+    // For "add" operations, setting +link{omitNullDefaultsOnAdd,omitNullDefaultsOnAdd} causes
+    // null-valued fields to be removed from the request entirely, rather than replaced with
+    // default values as described above.
+    // @serverDS only
+    // @visibility external
+    //<
+    
+    //> @attr dataSource.omitNullDefaultsOnAdd (boolean : false : IR)
+    // When true, and +link{noNullUpdates,noNullUpdates} is also true, indicates that "add" 
+    // requests on this DataSource will have null-valued fields removed from the request 
+    // entirely before it is sent to the server, as opposed to the default behavior of 
+    // replacing such null values with defaults.
+    // @see noNullUpdates,noNullUpdates
+    // @serverDS only
+    // @visibility external
+    //<
+    
+    //> @attr dataSource.nullStringValue (String : "" : IR)
+    // If +link{noNullUpdates} is set, the value to use for any text field that has a null
+    // value assigned on an update operation, and does not specify an explicit
+    // +link{DataSourceField.nullReplacementValue,nullReplacementValue}.
+    // @see noNullUpdates,noNullUpdates
+    // @see DataSourceField.nullReplacementValue
+    // @serverDS only
+    // @visibility external
+    //<
+    nullStringValue: "",
+    
+    //> @attr dataSource.nullIntegerValue (integer : 0 : IR)
+    // If +link{noNullUpdates} is set, the value to use for any integer field that has a null
+    // value assigned on an update operation, and does not specify an explicit
+    // +link{DataSourceField.nullReplacementValue,nullReplacementValue}.
+    // @see noNullUpdates,noNullUpdates
+    // @see DataSourceField.nullReplacementValue
+    // @serverDS only
+    // @visibility external
+    //<
+    nullIntegerValue: 0,
+    
+    //> @attr dataSource.nullFloatValue (float : 0.0 : IR)
+    // If +link{noNullUpdates} is set, the value to use for any float field that has a null
+    // value assigned on an update operation, and does not specify an explicit
+    // +link{DataSourceField.nullReplacementValue,nullReplacementValue}.
+    // @see noNullUpdates,noNullUpdates
+    // @see DataSourceField.nullReplacementValue
+    // @serverDS only
+    // @visibility external
+    //<
+    nullFloatValue: 0.0,
+    
+    //> @attr dataSource.nullBooleanValue (boolean : false : IR)
+    // If +link{noNullUpdates} is set, the value to use for any boolean field that has a null
+    // value assigned on an update operation, and does not specify an explicit
+    // +link{DataSourceField.nullReplacementValue,nullReplacementValue}.
+    // @see noNullUpdates,noNullUpdates
+    // @see DataSourceField.nullReplacementValue
+    // @serverDS only
+    // @visibility external
+    //<
+    nullBooleanValue: false,
+    
+    //> @attr dataSource.nullDateValue (Date : See below : IR)
+    // If +link{noNullUpdates} is set, the value to use for any date or time field that has a
+    // null value assigned on an update operation, and does not specify an explicit
+    // +link{DataSourceField.nullReplacementValue,nullReplacementValue}.
+    // <p>
+    // Unlike strings and numbers, there is no "natural" choice for a null replacement value 
+    // for dates.  The default value we have chosen is midnight on January 1st 1970, simply 
+    // because this is "the epoch" - the value that is returned by calling "new Date(0)"
+    // @see noNullUpdates,noNullUpdates
+    // @see DataSourceField.nullReplacementValue
+    // @serverDS only
+    // @visibility external
+    //<
+    nullDateValue: new Date(0),
+    
 
     // Role-based security
     // ----------------------------------------------------------------------------------------
@@ -3378,7 +3897,127 @@ supportsRequestQueuing : true,
     // @visibility external
     //<
 
-// cacheAllData implementation
+
+    // Transactions
+    // ----------------------------------------------------------------------------------------
+
+    //> @attr dataSource.autoJoinTransactions (boolean : null : IR)
+    // If true, causes all add, update and remove operations on this DataSource to automatically 
+    // start or join a transaction; this means that multiple operations sent to the server in a 
+    // +link{RPCManager.startQueue(),request queue} will be committed in a single transaction.  
+    // If false, causes all operations on this DataSource to be committed individually.  In 
+    // either case, you can override the setting for individual operations - see 
+    // +link{OperationBinding.autoJoinTransactions}.
+    // <P>
+    // If this property if null or not defined, we fall back to the default setting for this
+    // type of DataSource.  These are defined in <code>server.properties</code> as follows:
+    // <ul>
+    // <li><b>Hibernate:</b><code> hibernate.autoJoinTransactions</code></li>
+    // <li><b>SQL:</b> There is one setting per configured database connection (+link{dbName,dbName}).
+    // For example, the setting for the default MySQL connection is 
+    // <code> sql.mysql.autoJoinTransactions</code></li>
+    // </ul>
+    // If the setting is not defined at the DataSource-type level, we use the system global 
+    // default, which is defined in <code>server.properties</code> as 
+    // <code>autoJoinTransactions</code>.
+    // <P>
+    // At the dbName and global system levels, you can set the autoJoinTransactions attribute 
+    // to a valid Transaction Policy, rather than a simple true or false (although these 
+    // values work too - true is the same as ALL, false is the same as NONE).  For valid 
+    // TransactionPolicy values and their meanings, see the server-side Javadoc for 
+    // <code>RPCManager.setTransactionPolicy()</code>
+    // <P>
+    // Note that the configuration settings discussed here can be overridden for a particular 
+    // queue of requests by setting the server-side RPCManager's transaction policy.  Look in
+    // the server-side Javadoc for <code>RPCManager.getTransactionPolicy()</code>.
+    // <P>
+    // NOTE: Setting this property to true does not cause a transactional persistence 
+    // mechanism to automatically appear - you have to ensure that your DataSource supports 
+    // transactions.  The SmartClient SQL and Hibernate DataSources support transactions, but
+    // note that they do so <b>at the provider level</b>.  This means that you can combine 
+    // updates to, say, an Oracle database and a MySQL database in the same queue, but they
+    // will be committed in <em>two</em> transactions - one per database.  The SmartClient 
+    // server will commit or rollback these two transactions as if they were one, so a 
+    // failure in some Oracle update would cause all the updates to both databases to be 
+    // rolled back.  However, this is not a true atomic transaction; it is possible for one
+    // transaction to be committed whilst the other is not - in the case of hardware failure,
+    // for example.
+    // <p>
+    // NOTE: Not all the supported SQL databases are supported for transactions.  Databases 
+    // supported in this release are:
+    // <ul>
+    // <li>DB2</li>
+    // <li>HSQLDB</li>
+    // <li>Microsoft SQL Server</li>
+    // <li>MySQL (you must use InnoDB tables; the default MyISAM storage engine does not
+    // support transactions)</li>
+    // <li>Oracle</li>
+    // </ul>
+    //
+    // @serverDS only
+    // @see OperationBinding.autoJoinTransactions
+    // @visibility transactions
+    //<
+	
+	// SQL Paging Strategy
+	// ----------------------------------------------------------------------------------------
+    //> @type SQLPagingStrategy
+    // The technique SmartClient Server's SQL DataSource should use to select a "page" of data 
+	// from a table.  
+    //
+    // @value "sqlLimit"
+    //   Specify the paging directly in the SQL query we generate.  The way this is done varies 
+	// considerably from database to database: with some it is a straightforward built-in 
+	// facility while others require arcane tricks or simply don't support the idea.  This is 
+	// the most efficient method, where available.  Note that this strategy is not supported 
+	// for operations that make use of a +link{operationBinding.customSQL,customSQL} clause, 
+	// because it depends upon being able to determine the size of the whole dataset without
+	// actually retrieving the whole dataset.  Ordinary operations do this by means of an 
+	// automatically-generated "row count query", but we cannot generate such a query for a 
+	// <code>customSQL</code> operation.
+    //
+    // @value "jdbcScroll"
+    //   Implement the paging behavior by use of the <code>absolute()</code> method of the
+	// JDBC <code>ResultSet</code>.  
+    //
+    // @value "dropAtServer"
+    //   Implement the paging behavior by fetching the entire resultset from the database and
+	// dropping any unnecessary rows on the server before returning the data to the client.
+	// This approach is extremely inefficient, but also extremely straightforward; it is 
+	// intended as a fallback option, for situations where the more sophisticated approaches
+	// cause problems (a JDBC driver that throws vague exceptions when <code>absolute()</code>
+	// is called, for example)
+    //
+    // @value "none"
+    //   No paging behavior: we always return the entire resultset to the client.
+    //
+    // @see dataSource.sqlPaging
+    // @see operationBinding.sqlPaging
+    // @serverDS only
+    // @visibility sqlPaging
+    //<
+	
+    //> @attr dataSource.sqlPaging (SQLPagingStrategy : null : IRW)
+    // The paging strategy to use for this DataSource.  If this property is not set, the 
+    // default paging strategy, specified with the <code>server.properties</code> setting
+	// <code>sql.defaultPaging</code>, is used.  
+	// <p>
+	// This setting can be overridden with the +link{OperationBinding.sqlPaging} property.
+	// <P>
+	// <b>NOTE:</b> Operations that involve a +link{operationBinding.customSQL,customSQL} 
+	// clause ignore this property, because customSQL operations usually need to be treated
+	// as special cases.  For these operations, the paging strategy comes from the 
+	// <code>server.properties</code> setting <code>sql.defaultCustomSQLPaging</code>, unless
+	// it is overridden by a <code>sqlPaging</code> setting on the OperationBinding.
+    //
+    // @see operationBinding.sqlPaging
+    // @serverDS only
+    // @visibility sqlPaging
+    //<
+
+
+    // cacheAllData implementation
+    // ----------------------------------------------------------------------------------------
 
     //> @attr dataSource.cacheAllData (Boolean : null : IRW)
     // Set this property to true to have a DataSource fetch all of it's data client-side on the 
@@ -3458,7 +4097,7 @@ supportsRequestQueuing : true,
         return result;
     },
 
-    //> @attr dataSource.cacheData (Array of Record : null : IR)
+    //> @attr dataSource.cacheData (Array of Record : null : IRW)
     // For a +link{cacheAllData} or client-only DataSource, a set of records to use as a dataset, 
     // specified as an Array of JavaScript Objects representing records.
     // @setter setCacheData
@@ -3636,32 +4275,39 @@ supportsRequestQueuing : true,
 
         baseDate = baseDate || new Date();
 
-        if (firstDayOfWeek == null) firstDayOfWeek = isc.DateChooser.firstDayOfWeek;
+        if (firstDayOfWeek == null) firstDayOfWeek = isc.DateChooser ? isc.DateChooser.firstDayOfWeek : 0;
 
         if (result.criteria && isc.isAn.Array(result.criteria)) {
             // complex sub-criteria, call this method again with that criteria
             var subCriteria = result.criteria;
 
-            for (var i = 0; i<subCriteria.length; i++) {
+            for (var i = subCriteria.length-1; i>=0; i--) {
                 var subItem = subCriteria[i];
 
-                if (subItem.criteria && isc.isAn.Array(subItem.criteria)) {
+                if (!subItem) {
                     if (this.logIsInfoEnabled("relativeDates")) {
-                        isc.logInfo("Calling convertRelativeDates from convertRelativeDates "+
-                            "- data is:\n\n"+isc.echoFull(subItem)+"\n\n"+
-                            "criteria is: \n\n"+isc.echoFull(criteria)
-                        );
+                        this.logInfo("Removing NULL subcriteria...");
                     }
-
-                    result.criteria[i] = this.convertRelativeDates(subItem, timezoneOffset,
-                        firstDayOfWeek, baseDate);
-
-                    if (this.logIsInfoEnabled("relativeDates")) {
-                        this.logInfo("Called convertRelativeDates from convertRelativeDates "+
-                        "- data is\n\n" + isc.echoFull(result.criteria[i]));
-                    }
+                    result.criteria.removeAt(i);
                 } else {
-                    result.criteria[i] = this.mapRelativeDate(subItem, baseDate);
+                    if (subItem.criteria && isc.isAn.Array(subItem.criteria)) {
+                        if (this.logIsInfoEnabled("relativeDates")) {
+                            this.logInfo("Calling convertRelativeDates from convertRelativeDates "+
+                                "- data is:\n\n"+isc.echoFull(subItem)+"\n\n"+
+                                "criteria is: \n\n"+isc.echoFull(criteria)
+                            );
+                        }
+
+                        result.criteria[i] = this.convertRelativeDates(subItem, timezoneOffset,
+                            firstDayOfWeek, baseDate);
+
+                        if (this.logIsInfoEnabled("relativeDates")) {
+                            this.logInfo("Called convertRelativeDates from convertRelativeDates "+
+                            "- data is\n\n" + isc.echoFull(result.criteria[i]));
+                        }
+                    } else {
+                        result.criteria[i] = this.mapRelativeDate(subItem, baseDate);
+                    }
                 }
             }
         } else {
@@ -3723,7 +4369,6 @@ supportsRequestQueuing : true,
     // @visibility external
     //<
     autoConvertRelativeDates: true
-
 });
 
 //> @type ValueMap
@@ -4021,7 +4666,10 @@ supportsRequestQueuing : true,
 
 //> @attr dataSourceField.displayFormat        (DateDisplayFormat : null : [IR])
 // The default date formatter to use for displaying this field.  Only applicable to fields of 
-// type "date" and "datetime"
+// type "date" and "datetime".  Note that this property is honored when exporting directly to 
+// Excel spreadsheets (ie, when using XLS or XLSX/OOXML form, <b>not</b> CSV); "date" and
+// "datetime" fields with this property set will deliver real dates and formatting information
+// to Excel, rather than formatted strings or unformatted dates.
 // 
 // @serverDS allowed
 // @visibility external
@@ -4203,6 +4851,24 @@ supportsRequestQueuing : true,
 // @visibility external
 //<
 
+//> @attr dataSourceField.includeFrom (String : null : IR)
+// Indicates this field should be fetched from another, related DataSource.
+// <P>
+// A foreignKey declaration must exist between the two DataSources, establishing either a 1-to-1
+// relationship or a many-to-1 relationship from this DataSource to the related DataSource.
+// <P>
+// +link{DataSourceField.name} will default to the name of the included field, or you can
+// specify a different name.
+// <P>
+// If both DataSources are SQLDataSources (or a subclass), the related data will be retrieved via
+// a SQL join.  Otherwise, the related data will be retrieved via performing a DSRequest against
+// the related DataSource once the data from the primary DataSource has been retrieved.
+// <P>
+// An included field is +link{dataSourceField.canEdit,canEdit:false} by default.
+// 
+// @serverDS allowed
+// @visibility crossDS
+//<
 
 
 // Summary functions
@@ -4333,7 +4999,7 @@ supportsRequestQueuing : true,
 // contained in a DSRequest, <code>javaClass</code> specifies the fully qualified Java
 // className to be created and passed to the setter for the Java Bean Property with the same
 // name as this field.   <code>javaClass</code> is used both when manually calling
-// DataSource.setProperties() and when auto-populating POJO arguments of a +link{DMI} method.
+// DataSource.setProperties() and when auto-populating POJO arguments of a +link{dmiOverview,DMI} method.
 // <P>
 // The Java class to create does not normally have to be specified: SmartClient will
 // use Java reflection to inspect the type of argument expected by a setter method and will
@@ -4441,66 +5107,284 @@ supportsRequestQueuing : true,
 // --------------------------------------------------------------------------------------------
 
 //> @attr dataSourceField.customSQL (boolean : null : IR)
-// If set, this property indicates that this dataSourceField is only intended for use as context in
-// a +link{OperationBinding.customSQL,customSQL} or +link{OperationBinding.customHQL,customHQL}
-// operationBinding, and should not be considered by the server when generating SQL or 
-// Hibernate queries to fetch or update data.  A common reason for needing to set this flag
-// is where you have a value that you want to send to the server for use in selection criteria,
-// but that value actually comes from another table.
-// <p>
-// Note that this property only applies to users of the SmartClient server using dataSources of
-// type "sql" or "hibernate".
+// For a DataSource with +link{dataSource.serverType,serverType} "sql" or "hibernate",
+// indicates that this field should be omitted by default from all SQL or Hibernate operations,
+// and will only be used with +link{group:customQueries,custom queries}.
+// <P>
+// Having marked a field as <code>customSQL</code> you can refer to it via
+// $criteria.<i>fieldName</i> or $values.<i>fieldName</i> in customized queries.
+// <P>
+// The following are situations where you would <b>not</b> use <code>customSQL</code>:
+// <ul>
+// <li>simple joins where you want to enable users to see and search on a field from another
+// table; consider +link{dataSourceField.tableName} instead
+// <li>fields where you want to calculate or transform values in SQL on load or save, but
+// always perform the same calculation for each operationType; consider instead
+// +link{sqlStorageStrategy} for some common cases, or 
+// +link{customSelectExpression}, +link{customUpdateExpression} and
+// +link{customInsertExpression} for full customization
+// <li>a special fetch is needed where the field needs to be excluded from the
+// $defaultWhereClause so that it can be used in a custom &lt;whereClause&gt; - consider
+// +link{operationBinding.excludeCriteriaFields} instead
+// </ul>
+// <P>
+// Use customSQL in situations like:
+// <ul>
+// <li>there are multiple variations of the "fetch" operation with different
+// +link{operationBinding.operationId,operationIds}, and the field is only used in some of them;
+// in that case, consider using +link{operationBinding.customFields} to selectively re-introduce
+// SQL generation for the field only in operations where it's used.
+// <li>the field represents hidden criteria on a field in another table where the field is
+// never shown to the user
+// <li>the field is a write-only value only saved in some operations
+// <li>more than one data access strategy is in use (eg direct SQL for fetch and bean-based
+// persistence accessed via DMI for saves) and certain fields are not available in SQL
+// </ul>
 //
 // @serverDS allowed
 // @visibility customSQL
 //<
 
 
+//>
+// NOTE: This used to be customSQLExpression; we renamed it to customSelectExpression when we
+// introduced customUpdateExpression and customInsertExpression, to avoid ambiguity.  The 
+// system still supports customSQLExpression, for backompat
+//<
 
-
-//> @attr dataSourceField.customSQLExpression (string : null : IR)
-// This property indicates that this field does not represent a column in a table, but a custom 
-// expression that should be embedded in the generated SQL instead of a reference to this 
-// field.  For example, if you have a field <code>partialName</code> where this value is set 
-// to <code>SUBSTR(surname, 2)</code>, the generated SQL would look similar to this:
+//> @attr dataSourceField.customSelectExpression (string : null : IR)
+// This property indicates that this field represents a custom expression that should be 
+// embedded in the generated SQL instead of a reference to this field.  For example, if 
+// you have a field <code>partialName</code> where this value is set to 
+// <code>SUBSTR(surname, 2)</code>, the generated SQL would look similar to this:
 // <pre>
 //   SELECT ... SUBSTR(surname, 2) AS partialName ...
 // </pre>
 // 
 // Fields with this property set can be used for sorting and filtering in the normal way, but 
-// they are only applicable to "fetch" operations; they are ignored for any kind of update
-// because they are not real columns in a table.
-// <p>
-// <b>WARNING:</b> Using this property often involves writing database-specific SQL.  In the
-// above example, we use the <code>SUBSTR</code> function.  This function will work in many
-// database products, including Oracle and MySQL, but it will not work in Microsoft SQL Server
-// or Sybase. The equivalent ANSI SQL function <code>SUBSTRING</code> will also work in many 
-// database products, including Microsoft SQL Server and MySQL, but it will not work in Oracle
-// or DB2.  The more database-specific SQL you write, the harder it will be if you ever want 
-// to move your application to a different database product.
+// they are only applicable to update-type operations if you also provide a corresponding
+// +link{customUpdateExpression,customUpdateExpression} and/or 
+// +link{customInsertExpression,customInsertExpression}.  See the documentation 
+// for those methods for the rules of how they are applied.
 // <p>
 // Note that this property only applies to users of the SmartClient server using dataSources of
 // type "sql".
 //
-// @serverDS allowed
-// @visibility internal
+// @see customUpdateExpression
+// @see customInsertExpression
+// @serverDS only
+// @visibility customSQL
+//<
+
+//> @attr dataSourceField.customUpdateExpression (string : null : IR)
+// This property specifies the value to use to update this column on "update" operations.
+// The value of this property will be passed through Velocity evaluation and then embedded
+// directly in the SQL generated to perform the update.  It can be used in conjunction with
+// +link{customSelectExpression,customSelectExpression} to provide bi-directional mapping 
+// between application data formats and persisted data formats.  Or, it can be used 
+// unilaterally as a means of silently enforcing data rules - for example, ensuring that all 
+// values for a given field are in upper case.
+// <P>
+// The value must be a string that will end up as a valid SQL snippet after Velocity
+// evaluation.  The following examples are valid:
+// <ul>
+// <li><code>"'$values.someTextField.toUpperCase()'"</code></li>
+// <li><code>"SUBSTR(ANOTHER_COLUMN, 1, 10)"</code></li>
+// <li><code>"$values.someNumberField * 1000"</code></li>
+// <li><code>"$values.someDateField.getMonth() + 1"</code></li>
+// </ul>
+// Note that the first example results in a literal - the value obtained by calling 
+// someTextField's toUpperCase() method - and so it must be enclosed in quotes to render valid
+// SQL.  The second example is an actual SQL snippet and does not need to be enclosed in 
+// quotes (indeed, would fail if it were).  The remaining two examples both yield literals, 
+// but as they are numeric literals, there is no need for quotes.
+// <P>
+// When an "update" operation runs, any fields that specify 
+// +link{customSelectExpression,customSelectExpression} but do <b>not</b> specify 
+// customUpdateExpression will be ignored.  When an "add" operation runs, this property acts 
+// as a default for any fields that do not specify a 
+// +link{customInsertExpression,customInsertExpression}; similar to update, any fields that 
+// specify a customSelectExpression but do not specify either a customUpdateExpression or 
+// customInsertExpression, will be ignored when "add" operations run.
+// <p>
+// Note that this property only applies to users of the SmartClient server using dataSources of
+// type "sql".
+//
+// @see customSelectExpression
+// @see customInsertExpression
+// @serverDS only
+// @visibility customSQL
+//<
+
+//> @attr dataSourceField.customInsertExpression (string : null : IR)
+// This property is similar to +link{customUpdateExpression,customUpdateExpression}; its value
+// is used during "add" operations.  If you do not specify this property, but do specify a 
+// customUpdateExpression, the customUpdateExpression is used instead.
+// <P>
+// Everything that applies to customUpdateExpression also applies to this property, including
+// the observation that fields which specify a +link{customSelectExpression,customSelectExpression}
+// but no corresponding customUpdateExpression or customInsertExpression, will be ignored when 
+// adding new records.
+// <p>
+// Note that this property only applies to users of the SmartClient server using dataSources of
+// type "sql".
+//
+// @see customUpdateExpression
+// @see customSelectExpression
+// @serverDS only
+// @visibility customSQL
+//<
+
+//> @attr dataSourceField.nativeName (string : null : IR)
+// Only applicable to "sql" dataSources.  If set, this property indicates that the field is 
+// bound to the column named in the property.  It is used to bind a DataSourceField to a 
+// database column with a different name.
+// <p>
+// <code>nativeName</code> is useful for disambiguating in cases where you have customized 
+// SQL.  For example, assume you are joining two tables - call them <code>product</code> and
+// <code>supplier</code> - that both contain a column called "name".  Only one field in the 
+// DataSource can be called "name"; to disambiguate, we need to specify both 
+// +link{dataSourceField.tableName,tableName} and <code>nativeName</code>.  A field declaration 
+// like this would be needed:<br>
+// <pre>    &lt;field name="supplierName" type="text" tableName="supplier" nativeName="name" /></pre>
+// <p>
+// You may also wish to use this property to map legacy column names to more meaningful field
+// names in the DataSource.  For example:<br>
+// <pre>    &lt;field name="productName" type="text" nativeName="PRDNM" /></pre>
+//
+// @see tableName
+// @serverDS only
+// @visibility customSQL
 //<
 
 
 //> @attr dataSourceField.tableName (String : null : IR)
-// The table name to use when qualifying the column name for this field during server-side SQL
-// query generation.  Only applicable to "sql" dataSources, and only has an effect when 
-// +link{DataSource.qualifyColumnNames} or +link{OperationBinding.qualifyColumnNames} is in
-// force.
+// Only applicable to "sql" dataSources, setting <code>tableName</code> indicates that this
+// field will be coming from another table by way of a 
+// +link{group:customQuerying,customized SQL query}.
+// <P>
+// By default, the SQL generator will <b>not</b> include this field in generated SQL for "add"
+// or "update" operations.  It will include the field in the SELECT clause and WHERE clause of
+// customized "fetch" operations, where it is expected that you will make the table available
+// via a custom &lt;tableClause&gt; as shown in +explorerExample{largeValueMapSQL,this sample}.
+// <P>
+// The table name will also be used to qualifying the column name unless
+// +link{DataSource.qualifyColumnNames} or +link{OperationBinding.qualifyColumnNames} has been
+// disabled.
 // <p>
-// <b>Note:</b> This property is not normally required; the SmartClient server will ordinarily 
-// qualify all column names correctly without assistance. This property is useful when 
-// qualification can't be done automatically - for example, when you have a custom 
-// +link{OperationBinding.tableClause,tableClause} that renames tables in the query using aliases.
+// <b>Note:</b> This property is only required when including fields from tables other than the
+// default table specified by +link{DataSource.tableName}.
 //
-// @serverDS allowed
+// @see nativeName
+// @serverDS only
 // @visibility customSQL
+// @example largeValueMapSQL
 //<
+
+
+//> @attr dataSourceField.sqlStorageStrategy (String : null : IR)
+// For certain field types, indicates the strategy to be used to store values to the underlying
+// SQL column.
+// <P>
+// <b>Fields of type "boolean"</b><br>
+// The default strategy for boolean fields is to assume the underlying type of the field is 
+// text and store boolean true and false values as the character strings "true" and "false".  
+// The following additional strategies are available:
+// <ul>
+// <li>"number" or "integer": store true as 1, false as 0
+// <li>"singleChar10": store true as "1", false as "0"
+// <li>"singleCharYN": store true as "Y", false as "N"
+// <li>"singleCharTF": store true as "T", false as "F"
+// <li>"singleChar": store as a single character, using the values defined by 
+// +link{dataSourceField.sqlTrueValue,sqlTrueValue} and 
+// +link{dataSourceField.sqlTrueValue,sqlFalseValue}
+// </ul>
+// <P>
+// <b>Fields of type "date" and "datetime"</b><br>
+// The default strategy for both these types is to use a native type that supports date and 
+// time values to the nearest second; the actual type used varies by database.  The following
+// additional strategies are available:
+// <ul>
+// <li>"nativeDate": Use a native SQL DATE type</li>
+// <li>"number": Store the value as a plain numeric value</li>
+// <li>"text": Store the value as a plain text value</li>
+// </ul>
+// The "number" and "text" strategies for date/datetime fields are provided to allow transparent
+// two-way mapping of legacy date values; you would not ordinarily use them in the absence of a
+// legacy database.  In both cases, the actual format of the number or text string is determined
+// by specifying a +link{dataSourceField.sqlDateFormat,sqlDateFormat} on the field; if no 
+// format is specified, the framework defaults to "yyyyMMdd".
+// <P>
+// Note that this property only applies to users of the SmartClient server using dataSources of
+// type "sql".
+//
+// @serverDS only
+// @visibility customSQL
+//< 
+
+//> @attr dataSourceField.sqlDateFormat (String : null : IR)
+// For fields of type "date" and "datetime" that specify a 
+// +link{dataSourceField.sqlStorageStrategy,sqlStorageStrategy} of "number" or "text", this
+// property allows you to specify the format SmartClient should use to map to/from the 
+// underlying value stored in the database.  The string provided must be a valid 
+// <a href=http://java.sun.com/j2se/1.4.2/docs/api/java/text/SimpleDateFormat.html>
+// SimpleDateFormat pattern string</a>.
+// <P>
+// This property and the "number" and "text" strategies for date/datetime fields are provided
+// to allow transparent two-way mapping of legacy date values; you would not ordinarily use them
+// in the absence of a legacy database.
+// <P>
+// Note that this property only applies to users of the SmartClient server using dataSources of
+// type "sql".
+//
+// @serverDS only
+// @visibility customSQL
+//< 
+
+//> @attr dataSourceField.sqlTrueValue (String : null : IR)
+// For fields of type "boolean" that specify a 
+// +link{dataSourceField.sqlStorageStrategy,sqlStorageStrategy} of "singleChar", this is the
+// value to persist for true values.  Note that the common use cases of storing booleans as 
+// T/F, Y/N and 1/0 are already catered for without the need for this property.
+//
+// @see dataSourceField.sqlStorageStrategy
+// @see dataSourceField.sqlFalseValue
+// @serverDS only
+// @visibility customSQL
+//< 
+
+//> @attr dataSourceField.sqlFalseValue (String : null : IR)
+// For fields of type "boolean" that specify a 
+// +link{dataSourceField.sqlStorageStrategy,sqlStorageStrategy} of "singleChar", this is the
+// value to persist for false values.  Note that the common use cases of storing booleans as 
+// T/F, Y/N and 1/0 are already catered for without the need for this property.
+//
+// @see dataSourceField.sqlStorageStrategy
+// @see dataSourceField.sqlTrueValue
+// @serverDS only
+// @visibility customSQL
+//< 
+    
+    
+//> @attr dataSourceField.nullReplacementValue (Any : null : IR)
+// If +link{DataSource.noNullUpdates} is set, the value to use for this field when a null
+// value is assigned to it on an update operation.  This property overrides the DataSource-level
+// properties +link{DataSource.nullStringValue,nullStringValue}, 
+// +link{DataSource.nullIntegerValue,nullIntegerValue}, 
+// +link{DataSource.nullFloatValue,nullFloatValue} and 
+// +link{DataSource.nullDateValue,nullDateValue}, for this field only.
+// <p>
+// NOTE: If you use this property, you are responsible for ensuring that the replacement value
+// is appropriate and valid.
+// @see DataSource.noNullUpdates
+// @see DataSource.nullStringValue
+// @see DataSource.nullIntegerValue
+// @see DataSource.nullFloatValue
+// @see DataSource.nullDateValue
+// @serverDS allowed
+// @visibility external
+//<
+
 
 // ---------------------------------------------------------------------------------------
 // client-side only sorting (canSortClientOnly)
@@ -4536,7 +5420,7 @@ supportsRequestQueuing : true,
 // (currently "binary" and "imageFile", see +link{type:FieldType}), this sets the maximum 
 // file size allowed, in bytes.
 //
-// @serverDS allowed
+// @serverDS only
 // @visibility external
 //<
     
@@ -4611,6 +5495,11 @@ supportsRequestQueuing : true,
 // SmartClient to download the file.</i>
 //
 // @value "imageFile" Binary data comprising an image.
+// @value "any"       Fields of this type can contain any data value and have no default 
+//                    formatting or validation behavior. This is useful as the 
+//                    +link{SimpleType.inheritsFrom,parent type} for SimpleTypes
+//                    where you do not want any of the standard validation or formatting logic
+//                    to be inherited from the standard built-in types.
 // @value "modifier"  Fields of this type are automatically populated by the SmartClient Server 
 //                    with the current authenticated userId as part of "add" and "update" 
 //                    operations.  By default, fields of this type are hidden and not editable;
@@ -4627,6 +5516,7 @@ supportsRequestQueuing : true,
 //                    Server with the current date and time as part of "add" and "update" 
 //                    operations.  By default, fields of this type are hidden and not editable;
 //                    the server ignores any value that the client sends in a field of this type.
+
 //
 // @see type:ListGridFieldType
 // @see type:FormItemType
@@ -4660,6 +5550,46 @@ supportsRequestQueuing : true,
 // @visibility external
 //<
 
+//> @groupDef dsSpecialFields
+// A DataSource allows you to declare that certain fields are the most important fields to 
+// show to a user in situations where space is limited, and only one or a few fields can be
+// reasonably shown.
+// <P>
+// In the table below these special fields are summarized, along with their meaning, and
+// examples of which field would be most appropriate from several example DataSources.
+// <P>
+// <table cellPadding=2 class="normal" border=1>
+// <tr style="font-weight:bold;">
+//  <td rowSpan="2">Attribute</td>
+//  <td colSpan="3">Example DataSource field</td>
+//  <td rowSpan="2">Meaning</td>
+// </tr><tr style="font-style:italic;">
+//  <td>employee</td><td>emailMessage</td><td>stockItem</td>
+// </tr><tr>
+//  <td>titleField</td><td>name</td><td>subject</td><td>itemName</td>
+//      <td>primary label for the record as a while</td>
+// </tr><tr>
+//  <td>infoField</td><td>job</td><td>sender</td><td>category</td>
+//      <td>second most pertinent piece of textual information</td>
+// </tr><tr>
+//  <td>dataField</td><td>salary</td><td>date</td><td>price</td>
+//      <td>most pertinent numeric, date or enum (eg status) field</td>
+// </tr><tr>
+//  <td>descriptionField</td><td>bio</td><td>messageBody</td><td>description</td>
+//      <td>descriptive long text field</td>
+// </tr><tr>
+//  <td>iconField</td><td>photo</td><td>statusIcon</td><td>thumbnail</td>
+//      <td> an image or icon to accompany the title field</td>
+// </tr></table>
+// <P>
+// Examples of the use of these fields include the +link{TileGrid}'s default choice of fields,
+// and the +link{EventHandler.setDragTracker(),drag tracker} that follows the mouse cursor when
+// data is being dragged between grids.
+//
+// @visibility external
+//<
+
+
 //> @attr dataSource.titleField (string : see below : IR)
 // Best field to use for a user-visible title for an individual record from this dataSource.
 // <p>
@@ -4670,7 +5600,7 @@ supportsRequestQueuing : true,
 // in that order.  If a field exists with one of those names, it becomes the titleField.  If not,
 // then the first field is designated as the titleField.
 //
-// @group titles
+// @group titles, dsSpecialFields
 // @serverDS allowed
 // @visibility external
 //<
@@ -4688,10 +5618,54 @@ supportsRequestQueuing : true,
 // <P>
 // To avoid any field being used as the iconField, set iconField to <code>null</code>.
 // 
+// @group dsSpecialFields
 // @serverDS allowed
 // @visibility external
 //<
 
+//> @attr dataSource.infoField (String : null : IR)
+// Name of the field that has the second most pertinent piece of textual information in the
+// record, for use when a +link{DataBoundComponent} needs to show a short summary of a record.
+// <p>
+// For example, for a DataSource of employees, a "job title" field would probably be the second
+// most pertinent text field aside from the employee's "full name".
+// <p>
+// Unlike +link{titleField}, infoField is not automatically determined in the absence of an
+// explicit setting.
+// @group dsSpecialFields
+// @serverDS allowed
+// @visibility external
+//<
+
+
+//> @attr dataSource.dataField (String : null : IR)
+// Name of the field that has the most pertinent numeric, date, or enum value, for use when a
+// +link{DataBoundComponent} needs to show a short summary of a record.
+// <P>
+// For example, for a DataSource of employees, good choices might be the "salary" field, "hire
+// date" or "status" (active, vacation, on leave, etc).
+// <p>
+// Unlike +link{titleField}, dataField is not automatically determined in the absence of an
+// explicit setting.
+// @group dsSpecialFields
+// @serverDS allowed
+// @visibility external
+//<
+
+//> @attr dataSource.descriptionField (String : null : IR)
+// Name of the field that has a long description of the record, or has the primary text data
+// value for a record that represents an email message, SMS, log or similar.
+// <p>
+// For example, for a DataSource representing employees, a field containing the employee's
+// "bio" might be a good choice, or for an email message, the message body.
+// <p>
+// If descriptionField is unset, it defaults to any field named "description" or "desc" in the
+// record, or the first long text field (greater than 255 characters) in the record, or null if
+// no such field exists.
+// @group dsSpecialFields
+// @serverDS allowed
+// @visibility external
+//<
 
 //> @attr dataSource.childrenField (string : null : [IR])
 // fieldName for a field in the dataSource expected to contain an explicit array of child nodes.
@@ -4724,9 +5698,14 @@ supportsRequestQueuing : true,
 
 //> @attr dataSource.serverConstructor (String : null : IR)
 //
-// Specifies the fully-qualified name of the DataSource subclass that should be instantiated
-// server-side for this dataSource. This property allows you to write and use custom DataSource 
-// subclasses on the server.
+// This property allows you to write and use custom DataSource subclasses on the server, by 
+// specifying either <ul>
+// <li>the fully-qualified name of the DataSource subclass that should be instantiated
+// server-side for this dataSource, or</li>
+// <li>the token "spring:" followed by a valid Spring bean ID, if you wish to instantiate 
+// your custom dataSource object using Spring dependency injection.  For example, 
+// <code>"spring:MyDataSourceBean"</code></li>
+// </ul>
 // <p>
 // One reason you might wish to do this would be to override the validate() method to provide 
 // some arbitrary custom validation (such as complex database lookups, validation embedded in 
@@ -4735,13 +5714,14 @@ supportsRequestQueuing : true,
 // a completely customized DataSource implementation.
 // <p>
 // <b>Note:</b> If you use this property, you are responsible for making sure that it refers to
-// a valid server-side class that extends <code>com.isomorphic.datasource.BasicDataSource</code>.
+// a valid server-side class that extends <code>com.isomorphic.datasource.BasicDataSource</code>,
+// or to a Spring bean of the same description.
 // If your implementation relies on methods or state only present in certain specialized 
 // subclasses of DataSource (for example, you want the normal behavior and features of a 
 // HibernateDataSource, but with a specialized validate() method), then you should extend the 
 // subclass rather than the base class.
 //
-// @serverDS allowed
+// @serverDS only
 // @visibility external
 //<
 
@@ -4794,7 +5774,7 @@ supportsRequestQueuing : true,
 // client.  Your implementation of getRevenueProjection() could apply some kind of formula to
 // other values loaded from the database.</dd>
 // <dt>Call business logic on retrieved beans via DMI</dt>
-// <dd>By adding a +link{DMI} method that calls DSRequest.execute() to retrieve a DSResponse,
+// <dd>By adding a +link{dmiOverview,DMI} method that calls DSRequest.execute() to retrieve a DSResponse,
 // you have an opportunity to call business logic methods on the beans representing each
 // row affected by the DSRequest.  For example, notify a related BPEL process of changes to
 // certain fields.</dd>
@@ -4814,15 +5794,18 @@ supportsRequestQueuing : true,
 // </ul>
 // <P>
 // Note that setting <code>beanClassName</code> has no effect on the DSRequest.  However,
-// +link{DMI} has a built-in facility for populating a bean with the inbound
+// +link{dmiOverview,DMI} has a built-in facility for populating a bean with the inbound
 // +link{DSRequest.data} - just declare the bean as a method argument.
 // <p>
 // <b>For DataSources with serverType "generic"</b><br>
 // +link{group:visualBuilder,Visual Builder} sets this property when it creates a generic 
 // DataSource using the Javabean Wizard.  It has no built-in server-side effects.
+// <p/>
+// <b>For JPA DataSources</b><br/>
+// The fully qualified class name of the JPA annotated entity.
 //
 // @see OperationBinding.beanClassName
-// @serverDS allowed
+// @serverDS only
 // @visibility external
 //<
 
@@ -4882,6 +5865,18 @@ isc.DataSource.addMethods({
             var fieldIndex = {};
             for (var i = 0; i < fields.length; i++) {
                 var field = fields[i];
+                // if includeFrom is set, but name isn't pick up name from includeFrom property
+                if (field.includeFrom != null) {
+                    var split = field.includeFrom.split(".");
+                    if (split == null || split.length  != 2) {
+                        this.logWarn("Field has includeFrom specified as :"  + field.includeFrom
+                            + " format not understood - clearing this property");
+                        field.includeFrom = null;
+                    } else {
+                        if (field.name == null) field.name = split[1];
+                    }
+                }
+                
                 // last field wins on name collision.  
                 if (fieldIndex[field.name] != null) {
                     this.logWarn("field.name collision: first field: " +
@@ -5324,10 +6319,7 @@ isc.DataSource.addMethods({
             service = this.getWebService(dsRequest),
             operation = this.getWSOperation(dsRequest);
 
-        var defaultCriteria = operationBinding.defaultCriteria || this.defaultCriteria;
-        if (defaultCriteria && dsRequest.operationType == "fetch") {
-            dsRequest.data = isc.addProperties({}, defaultCriteria, dsRequest.data);
-        }
+        this.addDefaultCriteria(dsRequest, operationBinding);
 
         // call transformRequest to allow the data to be changed before it is serialized to the
         // wire.  Hang onto the data in it's original format too
@@ -5335,44 +6327,34 @@ isc.DataSource.addMethods({
 
         this._storeCustomRequest(dsRequest);
 
-        // If sendExtraFields is false, remove any non-ds fields from the record(s) in request.data
-        // before calling transformRequest
-                
-        if (!this.sendExtraFields) {
-            var data = dsRequest.data;
-            if (!isc.isAn.Array(data)) data = [data];
-            for (var i = 0; i < data.length; i++) {
-                var record = data[i];
-                if (!isc.isAn.Object(record)) continue;
-                
-                for (var field in record) {                    
-                    if (!this.getField(field)) delete record[field];
-                }
-            }
-        }
+        this.applySendExtraFields(dsRequest);
+
+        // offline handling may mean we never send this request
+        if (this.fulfilledFromOffline(dsRequest)) return { dataProtocol:"clientCustom" };
+
         var transformedData = this.transformRequest(dsRequest);
         // correct the common error of returning the dsRequest itself incorrectly, which is
         // never right since the dsRequest contains various widgets and other data
         // inappropriate to send to the server.
         if (transformedData !== dsRequest) {
             dsRequest.data = transformedData;
+        }
 
-            if (this.autoConvertRelativeDates == true) {
-                // convert any relative dates in criteria into absolute dates so the server
-                // doesn't need to know how to handle relative dates
-                if (this.logIsInfoEnabled("relativeDates")) {
-                    this.logInfo("Calling convertRelativeDates from getServiceInputs "+
-                        "- data is\n\n"+isc.echoFull(transformedData));
-                }
-                
-                transformedData = this.convertRelativeDates(transformedData);
-                
-                if (this.logIsInfoEnabled("relativeDates")) {
-                    this.logInfo("Called convertRelativeDates from getServiceInputs "+
-                        "- data is\n\n"+isc.echoFull(transformedData));
-                }
-                dsRequest.data = transformedData;
+        if (this.autoConvertRelativeDates == true) {
+            // convert any relative dates in criteria into absolute dates so the server
+            // doesn't need to know how to handle relative dates
+            if (this.logIsInfoEnabled("relativeDates")) {
+                this.logInfo("Calling convertRelativeDates from getServiceInputs "+
+                    "- data is\n\n"+isc.echoFull(transformedData));
             }
+
+            transformedData = this.convertRelativeDates(transformedData);
+
+            if (this.logIsInfoEnabled("relativeDates")) {
+                this.logInfo("Called convertRelativeDates from getServiceInputs "+
+                    "- data is\n\n"+isc.echoFull(transformedData));
+            }
+            dsRequest.data = transformedData;
         }
 
         // If it was a clientCustom request, just return and wait for a call to
@@ -5486,6 +6468,59 @@ isc.DataSource.addMethods({
         return serviceInputs;
     },
     
+    addDefaultCriteria : function (dsRequest, operationBinding) {
+        var defaultCriteria = operationBinding.defaultCriteria || this.defaultCriteria;
+        defaultCriteria = isc.addProperties({}, defaultCriteria);
+        if (defaultCriteria && dsRequest.operationType == "fetch") {
+            if (this.isAdvancedCriteria(dsRequest.data)) {
+                // combineCriteria will retain references to like fields from both criteria sets,
+                // which is inappropriate for this use case - we want the real values to hide the
+                // default values, otherwise we'll end up with something like 
+                // "myField = 'defaultValue' AND myField = 'realValue'".  This isn't straightforward
+                // because AdvancedCriteria can be arbitrarily complex.  So, we'll assume that the 
+                // defaultCriteria is always simple (and document it that way) and remove from it
+                // any property that is named anywhere in the existing criteria
+                var fieldNames = this.mineCriteriaFieldNames(dsRequest.data);
+                for (var key in defaultCriteria) {
+                    if (fieldNames.contains(key)) delete defaultCriteria[key];
+                }
+            }
+            dsRequest.data = isc.DataSource.combineCriteria(dsRequest.data, defaultCriteria, "and", null, true);
+        }
+    },
+    
+    mineCriteriaFieldNames : function (criteria) {
+    	var fieldNames = [];
+        if (!criteria.criteria) return fieldNames;
+        
+        for (var i = 0; i < criteria.criteria.length; i++) {
+            if (criteria.criteria[i].criteria) {
+                fieldNames.addList(this.mineCriteriaFieldNames(criteria.criteria[i]));
+            } else {
+                fieldNames.add(criteria.criteria[i].fieldName);
+            }
+        }
+        return fieldNames;
+    },
+    
+    applySendExtraFields : function (dsRequest) {
+        // If sendExtraFields is false, remove any non-ds fields from the record(s) in request.data
+        // before calling transformRequest
+                
+        if (!this.sendExtraFields) {
+            var data = dsRequest.data;
+            if (!isc.isAn.Array(data)) data = [data];
+            for (var i = 0; i < data.length; i++) {
+                var record = data[i];
+                if (!isc.isAn.Object(record)) continue;
+                
+                for (var field in record) {                    
+                    if (!this.getField(field)) delete record[field];
+                }
+            }
+        }
+    },
+    
     //> @method DataSource.processResponse() (A)
     // Process a dsResponse for a request initiated by a DataSource with
     // +link{OperationBinding.dataProtocol,dataProtocol:"clientCustom"}.
@@ -5526,7 +6561,7 @@ isc.DataSource.addMethods({
     },
 
     _handleClientOnlyReply : function (rpcResponse, data, rpcRequest) {
-        var serverData = this.cacheAllData && !this.clientOnly ? 
+        var serverData = this.cacheAllData && !this.clientOnly && this.cacheResultSet ? 
                 this.cacheResultSet.getAllRows() : null,
             dsResponse = this.getClientOnlyResponse(rpcRequest._dsRequest, serverData),
             dsRequest = rpcRequest._dsRequest
@@ -5551,7 +6586,7 @@ isc.DataSource.addMethods({
     _handleJSONReply : function (rpcResponse, data, rpcRequest) {
         var dsRequest = rpcRequest._dsRequest,
             recordXPath = this.getOperationBinding(dsRequest).recordXPath || this.recordXPath;
-
+        
         // log the raw object reply if we didn't just eval it from text (if we eval it from
         // text we've already logged the raw response)
         if ((rpcResponse._wasJSONTextReply || rpcResponse._wasCSVTextReply) && this.logIsDebugEnabled("xmlBinding")) {
@@ -5601,10 +6636,10 @@ isc.DataSource.addMethods({
         this._completeResponseProcessing(rawData, dsResponse, dsRequest, rpcResponse, rpcRequest);
     },
     
-    _handleCSVTextReply : function (rpcResponse, jsonText, rpcRequest) {
+    _handleCSVTextReply : function (rpcResponse, csvText, rpcRequest) {
         if (rpcResponse.status != 0) return;
-
-        var data = rpcResponse.data.split("\r");
+        
+        var data = rpcResponse.data.split(/[\r\n]+/);
 
         var cols = data[0].split(",");
         cols = cols.map(function (col) {
@@ -5618,6 +6653,9 @@ isc.DataSource.addMethods({
             for (var j = 0; j < rowData.length; j++) {
                 var val = rowData[j];
                 if (val != null) val = val.trim();
+                
+                if (isc.startsWith(val, "\"")) val = val.substring(1);
+                if (isc.endsWith(val,"\"")) val = val.substring(0, val.length-1);
                 row[cols[j]] = val;
             }
             jsonObjects.add(row);
@@ -5689,7 +6727,7 @@ isc.DataSource.addMethods({
 
         this._handleJSONReply(rpcResponse, jsonObjects, rpcRequest);
     },
-
+    
     //> @method dataSource.recordsFromObjects() [A]
     // Transform a list of Objects to DataSource records.
     // <P>
@@ -6315,11 +7353,11 @@ isc.DataSource.addMethods({
     // +link{dsRequest.useFlatFields} makes that unnecessary as well.   
     // <P>
     // <b>Note:</b> when trying to send data to a web service, it is best to avoid putting
-    // together any XML yourself, instead modify the JavaScript data being fed to ISC's SOAP
-    // engine.  This is because the WSDL and SOAP rules for correctly namespacing and encoding
-    // Web Service messages are very complex and are subject to change with new versions of the
-    // web service you are contacting, whereas the data itself is easy to manipulate and less
-    // likely to change.
+    // together any XML yourself, instead modify the JavaScript data being fed to SmartClient's
+    // SOAP engine.  This is because the WSDL and SOAP rules for correctly namespacing and
+    // encoding Web Service messages are very complex and are subject to change with new
+    // versions of the web service you are contacting, whereas the data itself is easy to
+    // manipulate and less likely to change.
     // <P>
     // To troubleshoot message formation, you can set the log category "xmlSerialize" to 
     // <code>INFO</code> or <code>DEBUG</code> level in order to see diagnostics about XML
@@ -7005,7 +8043,7 @@ isc.DataSource.addMethods({
                                              rpcResponse, rpcRequest);
             return;
         }
-
+        
         // add namespaces to the xmlDoc to make subsequent selection easier
         if (xmlData) {
             if (operationBinding.wsOperation) {
@@ -7344,6 +8382,35 @@ isc.DataSource.addMethods({
         dsResponse.endRow = this._parseNumber(endRow);
         dsResponse.totalRows = this._parseNumber(dsResponse.totalRows, dsResponse.endRow);
 
+        //>Offline cache responses for subsequent offline use.  Do this after the response is
+        // known to be data-provider agnostic, that is, dsResponse.data is an Array of Object
+        // and not any provider-specific format.  This allows custom data protocols to use the
+        // offline system transparently, and skips the maximum amount of work when using
+        // offline response (eg, no parsing WSDL responses again)
+        if (this.useOfflineStorage && dsResponse.status == 0) {
+            isc.DataSource.cacheResponse(dsRequest, dsResponse);
+            if (isc.Offline) {
+                isc.Offline.storeResponse(dsRequest, dsResponse);
+            }
+        }
+        
+        // HACK: used by DBCs to tell if their data is in offline mode
+        if (dsRequest && dsRequest.resultSet) {
+            if (dsResponse.status == isc.RPCResponse.STATUS_OFFLINE) {
+                dsRequest.resultSet._offline = true;
+            } else {
+                dsRequest.resultSet._offline = false;
+            }
+        }
+        //<Offline
+
+        this.fireResponseCallbacks(dsResponse, dsRequest, rpcResponse, rpcRequest);
+    },
+
+    fireResponseCallbacks : function (dsResponse, dsRequest, rpcResponse, rpcRequest) {
+
+        if (!dsResponse.clientContext) dsResponse.clientContext = {};
+
         if (dsResponse.status >= 0) {
             // on success, notify ResultSets
             isc.DataSource.handleUpdate(dsResponse, dsRequest);
@@ -7497,6 +8564,8 @@ isc.DataSource.addMethods({
     _singleArray : [],
     // validate a value for a field of simple type
     validateFieldValue : function (field, value) {
+        if (!isc.Validator) return value; // forms module not loaded
+
         var validators = field.validators;
         if (!validators) return value;
 
@@ -7515,9 +8584,9 @@ isc.DataSource.addMethods({
                 this.logWarn(this.ID + "." + field.name + 
                              ": value: " + this.echoLeaf(value) +
                              " failed on validator: " + this.echo(validator));
-                // NOTE: this is the value as transformed by what validators did not fail.
-                // Hence, having originally been a String, it may now be an integer, but not in
-                // the correct range.
+                // NOTE: the value we return is the value as transformed by what validators did
+                // not fail.  Hence, having originally been a String, it may now be an integer,
+                // but not in the correct range.
                 return value;
             }
             var undef;
@@ -7726,7 +8795,12 @@ isc.DataSource.addMethods({
     // To export unformatted data, see +link{dataSource.exportData, exportData} which does
     // not include client-side formatters, but requires both the SmartClient server and the 
     // presence of server-side DataSources.
-    // @param data (Array of Object) Array of Objects to export, similar to ListGrid.data
+    // <P>
+    // Note that field +link{DataSourceField.displayFormat,displayFormat} is honored for 
+    // "date" and "datetime" fields when exporting direct to Excel; see the displayFormat
+    // docs for details.
+    //
+    // @param data (Array of Record) Array of Records to export
     // @param requestProperties (DSRequest properties) Request properties for the export
     // @visibility external
     //<
@@ -7791,7 +8865,7 @@ isc.DataSource.addMethods({
         parameters.exportDelimiter = requestProperties.exportDelimiter || ","; 
         parameters.exportTitleSeparatorChar = requestProperties.exportTitleSeparatorChar || ""; 
         parameters.exportFilename = requestProperties.exportFilename || "Results." + 
-        	parameters.exportAs;
+        	(parameters.exportAs == "ooxml" ? "xlsx" : parameters.exportAs);
         requestProperties.exportFilename = parameters.exportFilename;
         parameters.exportDisplay = requestProperties.exportDisplay || "download";
         parameters.lineBreakStyle = requestProperties.lineBreakStyle || "default"; 
@@ -8046,7 +9120,6 @@ isc.DataSource.addMethods({
     },
 
     sendDSRequest : function (dsRequest) {
-
         // provide default requestProperties for the operationBinding and the DataSource as a
         // whole
         isc.addDefaults(dsRequest, 
@@ -8100,6 +9173,27 @@ isc.DataSource.addMethods({
         // store off the dataSource layer callback as we will be passing a different callback
         // to the RPC layer
         dsRequest._dsCallback = dsRequest.callback;
+        
+        
+        
+        // Winnow the values object as follows:
+        // - If dataSource.sparseUpdates is set, we remove values:
+        //   - That are not present in this component's fields list
+        //   - That are present but have an identical value in oldValues
+        //   - But we keep all primaryKey fields
+        // - If DataSource.noNullUpdates is set, we:
+        //   - Remove properties from the values object where the value is null, even if it 
+        //     isn't null in oldValues, if this is an add operation.
+        //   - Replace the null value with one of the following, if this is an update operation:
+        //     - The field's nullReplacementValue, if it has one
+        //     - Otherwise the DataSource's nullStringValue, nullIntegerValue, nullFloatValue
+        //       or nullDateValue, depending on the field's underlying base SimpleType
+        var opType = dsRequest.operationType;
+        if ((opType == "update" || opType == "add") && 
+            (this.sparseUpdates || this.noNullUpdates)) 
+        {
+            this._applySparseAndNoNullUpdates(dsRequest.data, dsRequest.oldValues, opType, this);
+        }
 
         if (dataFormat == "iscServer") {
             this._storeCustomRequest(dsRequest);
@@ -8132,10 +9226,24 @@ isc.DataSource.addMethods({
             var protocol = this.getDataProtocol(dsRequest);
             if (protocol == "clientCustom") return;
 
-            if ((!this.clientOnly  && !this.cacheAllData) || dsRequest.cachingAllData) {
+            if ((!this.clientOnly  && !this.cacheAllData) || (dsRequest.cachingAllData 
+                    || (this.cacheAllData && dsRequest.operationType && dsRequest.operationType != "fetch")
+                )) 
+            {
                 if (this.logIsInfoEnabled("cacheAllData") && dsRequest.cachingAllData) {
                     this.logInfo("sendDSRequest: processing cacheAllData request", "cacheAllData");
                 }
+                this.addDefaultCriteria(dsRequest, this.getOperationBinding(dsRequest));
+                this.applySendExtraFields(dsRequest);
+                
+                var operationBinding = this.getOperationBinding(dsRequest);
+                if (operationBinding == null) operationBinding = {};
+                var defaultParams = operationBinding.defaultParams || this.defaultParams;
+                if (defaultParams) {
+                    dsRequest.data = isc.addProperties({}, defaultParams, dsRequest.data);
+                }
+                data = dsRequest.data;
+                
                 return this.performSCServerOperation(dsRequest, data);
             }
         }
@@ -8181,7 +9289,7 @@ isc.DataSource.addMethods({
             if (!rpcRequest.callbackParam) {
                 rpcRequest.callbackParam = opBinding.callbackParam || this.callbackParam;
             }
-            isc.RPC.sendRequest(rpcRequest);
+            isc.rpc.sendRequest(rpcRequest);
             return;
         }
 
@@ -8209,20 +9317,140 @@ isc.DataSource.addMethods({
             rpcRequest.callback = { target:this, method: this._handleJSONTextReply };
             isc.rpc.sendProxied(rpcRequest);
 
-
         // CSV pathway: will be converted to JSON and then processed as usual
         } else if (dataFormat == "csv") {
             rpcRequest.callback = { target:this, method: this._handleCSVTextReply };
             isc.rpc.sendProxied(rpcRequest);
-
+    
         // custom pathway: you receive the raw String result and must fill out a DSResponse
         } else {
             rpcRequest.serverOutputAsString = true;
             rpcRequest.callback = { target:this, method:this._handleCustomReply };
             isc.rpc.sendProxied(rpcRequest);
         }
-    },     
+    },
+
+    _applySparseAndNoNullUpdates : function (values, oldValues, operationType, ds) {
+        if (!this.noNullUpdates) {
+            if (!this.sparseUpdates) return;
+            if (oldValues == null) return;
+        }
+        for (var key in values) {
+            var value = values[key];
+            if (this.noNullUpdates && value === null) {
+                if (operationType == "add" && this.omitNullDefaultsOnAdd == true) {
+                    delete values[key];
+                } else {
+                    var field = this.getField(key),
+                        undef;
+                    if (field && field.nullReplacementValue !== undef) {
+                        values[key] = field.nullReplacementValue;
+                    } else {
+                        var type = isc.SimpleType.getBaseType(field.type, this);
+                        if (type == "integer") {
+                            values[key] = this.nullIntegerValue;
+                        } else if (type == "float") {
+                            values[key] = this.nullFloatValue;
+                        } else if (type == "date" || type == "time") {
+                            values[key] = this.nullDateValue;
+                        } else if (type == "boolean") {
+                            values[key] = this.nullBooleanValue;
+                        } else {   // Anything else, use the string default
+                            values[key] = this.nullStringValue;
+                        }
+                        
+                    }
+                }
+            // Sparse updates only apply to "update" operations
+            } else if (this.sparseUpdates && operationType == "update") {
+                if (oldValues == null) continue;
+                var oldValue = oldValues[key];
+                if (oldValue == null && !(value == null)) continue;
+                if (ds != null) {
+                    var field = ds.getField(key);
+                    if (field && field.primaryKey) continue;
+                }
+                if (isc.isA.Date(value) && Date.compareDates(value, oldValue) == 0) {
+                    delete values[key];
+                } else if (isc.isAn.Array(value)) {
+                    
+                    for (var i = 0; i < value.length; i++) {
+                        this._applySparseAndNoNullUpdates(value[i], oldValue[i], operationType,
+                                        field == null ? null : isc.DataSource.get(field.type));
+                        var keyCount = 0;
+                        for (var k2 in value[i]) keyCount++;
+                        if (keyCount == 0) delete value[i];
+                    }
+                    // If this process leaves an array full of nulls, don't bother serializing it
+                    var goodEntry;
+                    for (var i = 0; i < value.length; i++) {
+                        if (value[i] != null) {
+                            goodEntry = true;
+                            break;
+                        }
+                    }
+                    if (!goodEntry) delete values[key];
+                } else if (isc.isAn.Object(value)) {
+                    this._applySparseAndNoNullUpdates(value, oldValue, operationType,
+                                        field == null ? null : isc.DataSource.get(field.type));
+                    // If this process leaves an object with no properties, get rid of it
+                    var keyCount = 0;
+                    for (var k2 in value) keyCount++;
+                    if (keyCount == 0) delete values[key];
+                } else if (value == oldValue) {
+                    delete values[key];
+                }
+            }
+        }
+    },
     
+
+    
+    fulfilledFromOffline : function (dsRequest) {
+        if (this.useOfflineStorage && isc.Offline) {
+            var requestString = dsRequest.dataSource + "." + dsRequest.operationType;
+            if (isc.Offline.isOffline()) {
+                var dsResponse = isc.Offline.getResponse(dsRequest);
+                this.logInfo("currently offline, for request: " + requestString + 
+                             " found cached response: " + this.echoLeaf(dsResponse), 
+                             "offline"); 
+                this.processOfflineResponse(dsRequest, dsResponse);
+                // whether there's a cached response or not, we're done
+                return true;
+            } else if (dsRequest.useOfflineCache || dsRequest.useOfflineCacheOnly) {
+                var dsResponse = isc.Offline.getResponse(dsRequest);
+                if (dsResponse != null) {
+                    // found a cached response, return it
+                    this.logInfo("request: " + requestString + 
+                                 ", returning cached offline response", "offline"); 
+                    this.processOfflineResponse(dsRequest, dsResponse);
+                    return true;
+                } else if (dsRequest.useOfflineCacheOnly) {
+                    // no cached response, but we're only allowed to use offline data
+                    this.logInfo("request: " + requestString + 
+                                 ": useOfflineCacheOnly: no response available", "offline"); 
+                    this.processOfflineResponse(dsRequest);
+                    return true;
+                }
+                this.logInfo("request: " + requestString + 
+                             ", no cached response, proceeding with network request", "offline"); 
+            }
+        }
+        return false;
+    },
+
+    processOfflineResponse : function (dsRequest, dsResponse) {
+        // NOTE you get this response if the network's not available but also if you set
+        // useOfflineCacheOnly and no cached response is available
+        if (!dsResponse) dsResponse = {
+            status: isc.RPCResponse.STATUS_OFFLINE,
+            data: isc.DataSource.offlineMessage
+        };
+        dsResponse.isCachedResponse = true;
+        // this injects the cached response into the processing chain right at the point
+        // where it was previously stored off
+        this.fireResponseCallbacks(dsResponse, dsRequest);
+    },
 
     performSCServerOperation : function (dsRequest, data) {
         this.logWarn("Attempt to perform iscServer request requires options SmartClient server " +
@@ -8494,8 +9722,29 @@ isc.DataSource.addMethods({
 // from the client side.
 //
 // @see attr:operationBinding.outputs
+// @see attr:dsRequest.additionalOutputs
 // @visibility internal
 //<
+
+//> @attr dsRequest.additionalOutputs (String : null : IRA)
+// For fetch operation, an optional comma separated list of fields to fetch from another,
+// related DataSource.
+// <P>
+// Fields should be specified in the format 
+// <code>"localFieldName:relatedDataSourceID.relatedDataSourceFieldName"</code>.
+// where <code><i>relatedDataSourceID</i></code> is the ID of the related dataSource, and
+// <code><i>relatedDataSourceFieldName</i></code> is the field for which you want to
+// fetch related values. The returned field values will be stored on 
+// the data returned to the client under the specified <code><i>localFieldName</i></code>.
+// Note that this will be applied in addition to any specified +link{dsRequest.outputs}.
+// <P>
+// Note that as with +link{dataSourceField.includeFrom}, the related dataSource must be
+// linked to the primary datasource via a foreignKey relationship.
+//
+// @visibility crossDS
+//<
+
+
 
 //> @type TextMatchStyle
 // For "fetch" operations, how search criteria should be interpreted for text fields.
@@ -8571,7 +9820,7 @@ isc.DataSource.addMethods({
 // +link{operationBinding.operationId,on the operationBinding} which will cause that
 // operationBinding to be used for dsRequests containing a matching <code>operationId</code>.
 // This allows all the possible settings of an <code>operationBinding</code>, including
-// +link{operationBinding.wsOperation,wsOperation} or +link{DMI} settings, to be switched on a
+// +link{operationBinding.wsOperation,wsOperation} or +link{dmiOverview,DMI} settings, to be switched on a
 // per-component or per-request basis.  
 // <P>
 // For example, by setting the <code>fetchOperation</code> on a particular ListGrid, you could
@@ -8959,7 +10208,7 @@ isc.DataSource.addMethods({
 //> @class ServerObject
 //
 // The ServerObject tells the ISC server how to find or create a server-side object involved in
-// +link{DMI} (Direct Method Invocation).  
+// +link{dmiOverview,DMI} (Direct Method Invocation).  
 // <p>
 // A ServerObject declaration appears in the XML definition of a +link{DataSource} (for
 // responding to +link{DSRequest}s) or in an Application configuration file (.app.xml) for
@@ -8991,7 +10240,7 @@ isc.DataSource.addMethods({
 // specified by +link{serverObject.className} must provide exactly one method named
 // <code>create</code> that must return the class instance on which you wish the DMI method to
 // be invoked.  Like the DMI methods, the <code>create</code> method can request a standard set of
-// values as arguments.  See +link{DMI} for a list of available values.
+// values as arguments.  See +link{dmiOverview,DMI} for a list of available values.
 // <li> "attribute": The instance on which the DMI method is to be invoked is looked up in the
 // scope defined by +link{serverObject.attributeScope} via the attribute name specified in
 // +link{serverObject.attributeName}.
@@ -9108,7 +10357,7 @@ isc.DataSource.addMethods({
 //> @attr serverObject.dropExtraFields     (Boolean : null : IR)
 // By default, for DMI DSResponses, DSResponse.data is filtered on the server to just the set
 // of fields defined on the DataSource.  This behavior can be overridden in several ways - see
-// the overview in +link{DMI} for details.  The value of this attribute overrides
+// the overview in +link{dmiOverview,DMI} for details.  The value of this attribute overrides
 // +link{DataSource.dropExtraFields}.
 // 
 // @serverDS only
@@ -9123,6 +10372,27 @@ isc.DataSource.addMethods({
 // intention of this property is to allow easier access to your existing Java objects 
 // and reduce the need to write SmartClient-specific server code.
 // 
+// @serverDS only
+// @visibility external
+//<
+
+//> @attr serverObject.crudOnly (boolean : null : IR)
+//
+// For a ServerObject defined at the +link{DataSource.serverObject,DataSource level}, by 
+// default we only allow it to intercept standard CRUD operations (ie, ordinary fetches, adds,
+// updates and removes).  To allow the ServerObject to intercept other types of operation - 
+// custom operations, validations, etc - set this property to false.  Note that ServerObjects 
+// declared at the +link{OperationBinding.serverObject,OperationBinding level} always intercept
+// that operation, whatever its type, and this property has no effect.
+// <p>
+// <b>NOTE:</b> If you are intercepting operations on the server because you wish to inspect
+// them before deciding whether to process them with bespoke code or allow them to proceed 
+// with normal processing, the way to invoke normal processing without causing any interference
+// is:<pre>
+//    return dsRequest.execute();
+// </pre>
+//
+// @requiresModules SCServer
 // @serverDS only
 // @visibility external
 //<
@@ -9217,6 +10487,11 @@ isc.DataSource.addMethods({
 //> @attr operationBinding.serverMethod (string : null : IR)
 //
 // The name of the method to invoke on the +link{ServerObject} for this operationBinding.
+// <p>
+// <b>NOTE:</b> If you have a +link{DataSource.serverObject,DataSource-level ServerObject} and
+// wish to override this operation so that it simply calls a different method on the same 
+// server object, it is sufficient to specify just this property on the operationBinding:
+// there is no need to redefine the serverObject at the operationBinding level.
 //
 // @requiresModules SCServer
 // @serverDS only
@@ -9229,7 +10504,8 @@ isc.DataSource.addMethods({
 // +link{operationBinding.serverMethod} using this attribute.  This isn't required - in the
 // absence of <code>methodArguments</code>, the DMI implementation will still automatically
 // pass a stock set of arguments to your method (see the overview in +link{ServerObject}), but
-// specifying arguments explicitly gives you more flexibility in what can be passed.
+// specifying arguments gives you the ability to call pre-existing methods without adding
+// SmartClient-specific code.
 // <p>
 // The format for specifying <code>methodArguments</code> is as a comma separated list of VTL
 // (Velocity Template Language) expressions.  See the
@@ -9704,6 +10980,17 @@ isc.DataSource.addMethods({
 // @visibility external
 //<
 
+//> @attr operationBinding.autoJoinTransactions (boolean : null : IR)
+// If true, causes requests against this operation to automatically start or join a transaction.
+// if false, causes requests against this operation to be committed individually.  If null, 
+// falls back to +link{DataSource.autoJoinTransactions}.
+// <P>
+// See +link{DataSource.autoJoinTransactions} for further details of SmartClient's automatic
+// transaction control.
+//
+// @serverDS only
+// @visibility transactions
+//<
 
 // Velocity template variables
 // ---------------------------------------------------------------------------------------
@@ -9719,6 +11006,8 @@ isc.DataSource.addMethods({
 // precision.  If you are not using +link{RPCManager.startQueue,queuing}, this value will be
 // identical to <b>$currentDate</b></li>
 // <li><b>$servletRequest</b>. The associated <code>HttpServletRequest</code></li> 
+// <li><b>$dsRequest</b>. The associated +link{class:DSRequest} (though of course this is a
+// server-side <code>DSRequest</code> object, so please also see the server-side Javadocs)</li> 
 // <li><b>$session</b>. The associated <code>HttpSession</code></li>
 // <li><b>$httpParameters</b>. This variable gives you access to the parameters Map of the 
 // associated <code>HttpServletRequest</code>; it is an alternate form of 
@@ -9739,9 +11028,11 @@ isc.DataSource.addMethods({
 //     class's useful helper functions</li>
 // </ul>
 // All of these variables (other than the two dates) represent objects that can contain other 
-// objects (attributes or parameters).  They all implement the <code>Map</code> interface, so
-// you can use the Velocity "property" shorthand notation to access them.  The following usage
-// examples show five different ways to return the value of the session attribute named "foo":
+// objects (attributes or parameters or object properties).  The variables based on the Servlet
+// API (session, sessionAttributes, httpParameters, servletRequest and requestAttributes) all 
+// implement the <code>Map</code> interface, so you can use the Velocity "property" shorthand 
+// notation to access them.  The following usage examples show five equivalent ways to return 
+// the value of the session attribute named "foo":
 // <pre>
 //    $session.foo
 //    $session.get("foo")
@@ -9815,7 +11106,7 @@ isc.DataSource.addMethods({
 // +link{group:customQuerying} for a full discussion.
 //
 // @value "$defaultSelectClause"  The column names to select, for a fetch operation only
-// @value "$defaultTablesClause"  The table name(s) to select from or update
+// @value "$defaultTableClause"   The table name(s) to select from or update
 // @value "$defaultWhereClause"   The "where" condition, which will be derived from supplied 
 //                                criteria or a primary key value, depending on the type of 
 //                                operation
@@ -9829,6 +11120,9 @@ isc.DataSource.addMethods({
 //<
 
 //> @groupDef customQuerying
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href="http://smartclient.com/product">smartclient.com/product</a> for details.
+// <p>
 // The SmartClient server provides a number of ways to let you customize the SQL or Hibernate
 // query it generates to fetch data from or update your database.  You can provide full 
 // custom queries in either +link{OperationBinding.customSQL,SQL} or 
@@ -9855,7 +11149,12 @@ isc.DataSource.addMethods({
 // clause snippets, and SmartClient will insert the appropriate values.  A simple 
 // +link{OperationBinding.whereClause,whereClause} example:
 // <p>
-// <code>&lt;whereClause&gt;continent = $criteria.continent AND population > $criteria.minPop&lt;/whereClause&gt;</code>
+// <pre><code>
+//  &lt;operationBinding 
+//         operationType="fetch"
+//         whereClause="continent = $criteria.continent AND population &gt; $criteria.minPop"
+//  /&gt;
+// </code></pre>
 // 
 // <h4>Other template variables</h4>
 // In addition to the Velocity template variables described above, we also provide a number of
@@ -9873,6 +11172,22 @@ isc.DataSource.addMethods({
 // <p>
 // You can also use them within query snippets in the various subclause properties:<p>
 // <code>&lt;selectClause&gt;$defaultSelectClause, foo, bar&lt;/selectClause&gt;</code>
+// 
+// <h4>Velocity Template Language conditional logic</h4>
+// When writing a customize a SQL clause for an operation, it is commonly desirable to be
+// able to include conditional logic - for example only modifying a where clause if a
+// certain criteria value is present. Velocity template language conditional statements
+// can be embedded directly into your template code to achieve this. For example the following
+// <code>whereClause</code> would produce different output depending on whether the 
+// request criteria included a value for the field <code><i>someField</i></code>:<p>
+// <code>&lt;whereClause&gt;$defaultWhereClause #if ($criteria.someField) AND someDatabaseField = $criteria.someField #end&lt/whereClause&gt;</code>
+// <p>
+// If <code><i>criteria.someField</i></code> was not present in the request, the generated
+// SQL statement would simply use the default where clause -- otherwise
+// <code>AND someDatabaseField = <i>[some value]</i></code> would be appended to it (where
+// <code><i>[some value]</i></code> was picked up from value of <code>someField</code> on 
+// the request criteria object).
+// <p>
 //
 // <h4>Stored procedures</h4>
 // It is possible to include templated calls to SQL stored procedures in a
@@ -9883,7 +11198,7 @@ isc.DataSource.addMethods({
 // procedure to do all this, and then invoke it with a customSQL clause:
 // <pre>
 //    &lt;operationBinding operationType="remove"&gt;
-//        &lt;customSQL&gt;call deleteOrder($criteria.orderNo)&lt;customSQL&gt;
+//        &lt;customSQL&gt;call deleteOrder($criteria.orderNo)&lt;/customSQL&gt;
 //    &lt;/operationBinding&gt;
 // </pre>
 // <h4>Custom queries are safe</h4>
@@ -9909,64 +11224,17 @@ isc.DataSource.addMethods({
 // the client.  For instance: <p>
 // <code>&lt;whereClause&gt;($defaultWhereClause) AND confidential = '0'&lt;/whereClause&gt;</code>.
 //
-// <h4>Column case-sensitivity issues</h4>
-// Different database products have different rules concerning case-sensitivity in column 
-// names.  Consider the following query:
-// <br><br><code>&nbsp;&nbsp;SELECT orderNumber FROM Order</code>
-// <ul>
-// <li>MySQL and Microsoft SQL Server are not case-sensitive with regard to column names, so 
-// this query will work whether the column is called "orderNumber" or "ORDERNUMBER" or any 
-// other variation.</li>
-// <li>Oracle, HSQLDB and DB2 default to upper-case column names.  Therefore, this query will
-// fail if the column is actually called "orderNumber"; it will only work if the underlying
-// column name is "ORDERNUMBER"</li>
-// <li>PostgreSQL defaults to lower-case column names, so this query will fail unless the 
-// underlying column name is actually "ordernumber"</li>
-// </ul>
-// These differences are one barrier to writing SQL that is portable from one database product
-// to another.  There are two ways to work around them.
-// <p>
-// Firstly, you can simply accept the database's default behavior.  So, your table would 
-// contain a column called "orderNumber" on MySQL, "ORDERNUMBER" on Oracle and "ordernumber"
-// on PostgreSQL (note that you can still use mixed-case DataSource field names; SmartClient
-// will map DataSource field "orderNumber" to Oracle column "ORDERNUMBER" transparently). This
-// is the simplest approach.
-// <p>
-// If you can't, or don't want to, accept the database default - if you are working with an
-// existing schema, for example - then you will need to quote column names in your queries.
-// Unfortunately, the way you do this also differs by database product, so quoting a column
-// name correctly in one database's syntax will mean that the query cannot be ported to a
-// different database without change.
-// <p>
-// To help with this case, we provide two extra container variables that you can use.
-// <b>$fields</b> contains the names of all the fields in your DataSource, but quoted in
-// accordance with the column-quoting rules of the target database.  <b>$qfields</b> also
-// contains a list of field names, but in this case each one is qualified with its table
-// name.<p>
-// As an example of how to use <b>$fields</b> and <b>$qfields</b>, consider a DataSource with
-// a field called "itemID", bound to a column also called "itemID", and a tableName property 
-// of "orderItem".  Here are three ways to write a +link{OperationBinding.selectClause,selectClause} 
-// for a custom SQL query that returns that field:<ul>
-// <li><code>orderItem."itemID"</code>
-// <li><code>orderItem.$fields.itemID</code>
-// <li><code>$qfields.itemID</code>
-// </ul>
-// The first of these is not portable.  It will work fine in HSQL and Oracle, but will fail 
-// with a syntax error in MySQL, amongst others, because you quote a field name with backticks 
-// in MySQL, not quote marks.
-// <p>
-// The usages via <b>$fields</b> and <b>$qfields</b> <em>are</em> portable.  The second line, 
-// when targeting Oracle, will be translated to <code>orderItem."itemID"</code>; when targeting
-// MySQL, it will be translated to <code>orderItem.itemID</code>, or <code>orderItem.`itemID`</code>
-// if column quoting is enabled for that database (it generally isn't required, since MySQL 
-// preserves case by default).
-// 
 // @title Custom Querying Overview
 // @visibility customSQL
 //<
         
-        
+
+
+
 //> @attr operationBinding.selectClause (String : null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // For a dataSource of +link{DataSource.serverType,serverType} "sql", this 
 // property can be specified on an operationBinding to provide the server with a bespoke
 // SELECT clause to use when constructing the SQL query to perform this operation.  The
@@ -9989,6 +11257,9 @@ isc.DataSource.addMethods({
 //<
 
 //> @attr operationBinding.tableClause (String : null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // For a dataSource of +link{DataSource.serverType,serverType} "sql", this 
 // property can be specified on an operationBinding to provide the server with a bespoke
 // table clause to use when constructing the SQL query to perform this operation.  The
@@ -10005,6 +11276,9 @@ isc.DataSource.addMethods({
 //<
 
 //> @attr operationBinding.whereClause (String : null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // For a dataSource of +link{DataSource.serverType,serverType} "sql", this 
 // property can be specified on an operationBinding to provide the server with a bespoke
 // WHERE clause to use when constructing the SQL query to perform this operation.  The
@@ -10023,6 +11297,9 @@ isc.DataSource.addMethods({
 //<
 
 //> @attr operationBinding.groupClause (String : null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // For a dataSource of +link{DataSource.serverType,serverType} "sql", this 
 // property can be specified on an operationBinding to provide the server with a bespoke
 // GROUP BY clause to use when constructing the SQL query to perform this operation.  The
@@ -10048,6 +11325,9 @@ isc.DataSource.addMethods({
 //<
 
 //> @attr operationBinding.orderClause (String : null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // For a dataSource of +link{DataSource.serverType,serverType} "sql", this 
 // property can be specified on an operationBinding to provide the server with a bespoke
 // ORDER BY clause to use when constructing the SQL query to perform this operation.  The
@@ -10067,6 +11347,9 @@ isc.DataSource.addMethods({
 //<
 
 //> @attr operationBinding.valuesClause (String : null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // For a dataSource of +link{DataSource.serverType,serverType} "sql", this 
 // property can be specified on an operationBinding to provide the server with a bespoke
 // set of values to add or update,  for use when constructing the SQL query to perform this 
@@ -10096,6 +11379,9 @@ isc.DataSource.addMethods({
 //<
 
 //> @attr operationBinding.customSQL (String : null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // For a dataSource of +link{DataSource.serverType,serverType} "sql" or "hibernate", this 
 // property can be specified on an operationBinding to indicate that the server should run 
 // user-specified SQL, rather than the query it would normally generate to satisfy a 
@@ -10115,11 +11401,7 @@ isc.DataSource.addMethods({
 // <p>
 // Note that you should use this feature with care. In particular, writing customSQL code
 // that makes use of a particular database engine's features or syntax will make your 
-// application less portable.  One way to avoid tying your query to a particular database's
-// name-quoting idiosyncrasies (every database product seems to have a different idea about 
-// how to treat unquoted names, and which characters to use to quote names) is to use the 
-// template variables <b>$fields</b> and <b>$qfields</b>, whioh provide the names of your
-// dataSource fields correctly quoted in the syntax of the underlying database.
+// application less portable.  
 // <p>
 // See +link{group:customQuerying} for an overview of writing custom queries and clauses.
 // <p>
@@ -10130,7 +11412,7 @@ isc.DataSource.addMethods({
 // <code>
 // &lt;operationBinding operationId="customFetch" operationType="fetch"&gt;<br>
 // &nbsp;&nbsp;&lt;customSQL&gt;<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;SELECT $defaultSelectClause FROM $defaultTablesClause
+// &nbsp;&nbsp;&nbsp;&nbsp;SELECT $defaultSelectClause FROM $defaultTableClause
 // &nbsp;&nbsp;&nbsp;&nbsp;WHERE $defaultWhereClause ORDER BY $defaultOrderClause
 // &nbsp;&nbsp;&lt;/customSQL&gt;<br>
 // &lt;/operationBinding&gt;<br>
@@ -10164,7 +11446,12 @@ isc.DataSource.addMethods({
 // @visibility customSQL
 //<
 
+
+
 //> @attr operationBinding.customHQL (String : null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // For a dataSource of +link{DataSource.serverType,serverType} "hibernate", this 
 // property can be specified on an operationBinding to indicate that the server should run 
 // user-specified HQL (Hibernate Query Language), rather than the Hibernate criteria query or 
@@ -10190,33 +11477,62 @@ isc.DataSource.addMethods({
 // @visibility customSQL
 //<
 
-//> @attr operationBinding.customValueFields (String or Array: null : [IR])
-// Specifies, for this operationBinding only, a list of extra field names that should be included in
-// the default +link{selectClause,selectClause} SmartClient generates.  Here, "extra" refers to
-// fields that would not normally be included because they are marked as 
-// +link{DataSourceField.customSQL,customSQL}.
-// You can specify this property as either an array or a string containing a comma-separated list 
-// of field names (eg, "foo, bar, baz").
+//> @attr operationBinding.customFields (String or Array: null : [IR])
+// Indicates that the listed fields should be included in the default
+// +link{selectClause,selectClause} and +link{selectClause,whereClause} generated for this 
+// operationBinding, even if they are marked +link{listGridField.customSQL,customSQL="true"}.
+// <P>
+// If you need to apply different sets of overrides for the <code>selectClause</code> and the
+// <code>whereClause</code>, use +link{customValueFields,customValueFields} and/or 
+// +link{customCriteriaFields,customCriteriaFields} instead.  If you specify both
+// <code>customFields</code> and <code>customCriteriaFields</code> or 
+// <code>customValueFields</code>, the more specific variant wins.  If you specify both 
+// <code>customFields</code> and +link{excludeCriteriaFields,excludeCriteriaFields}, 
+// <code>customFields</code> wins (this is another use case when you may wish to use 
+// <code>customValueFields</code> instead)
 // <p>
-// This property is only applicable to DataSources of type "sql".
+// You can specify this property as a comma-separated list (eg, "foo, bar, baz") or by just
+// repeating the &lt;customFields&gt; tag multiple times with one field each.
+// <p>
+// This property is only applicable to DataSources of +link{dataSource.serverType,"sql"}.
 //
 // @group customQuerying
+// @see OperationBinding.customValueFields
+// @see OperationBinding.customCriteriaFields
+// @see OperationBinding.excludeCriteriaFields
+// @serverDS only
+// @visibility customSQL
+//<        
+
+//> @attr operationBinding.customValueFields (String or Array: null : [IR])
+// Indicates that the listed fields should be included in the default
+// +link{selectClause,selectClause} generated for this operationBinding, even if they are marked 
+// +link{listGridField.customSQL,customSQL="true"}.
+// <P>
+// You can specify this property as a comma-separated list (eg, "foo, bar, baz") or by just
+// repeating the &lt;customValueFields&gt; tag multiple times with one field each.
+// <p>
+// This property is only applicable to DataSources of +link{dataSource.serverType,"sql"}.
+//
+// @group customQuerying
+// @see OperationBinding.customFields
 // @see OperationBinding.customCriteriaFields
 // @serverDS only
 // @visibility customSQL
 //<        
 
-//> @attr operationBinding.customCriteriaFields (String or Array: null : [IR])
-// Specifies, for this operationBinding only, a list of extra field names that should be included in
-// the default +link{whereClause,whereClause} SmartClient generates.  Here, "extra" refers to
-// fields that would not normally be included because they are marked as 
-// +link{DataSourceField.customSQL,customSQL}.
-// You can specify this property as either an array or a string containing a comma-separated list 
-// of field names (eg, "foo, bar, baz").
+//> @attr operationBinding.customCriteriaFields (String or Array : null : [IR])
+// Indicates that the listed fields should be included in the default
+// +link{whereClause,whereClause} generated for this operationBinding, even if they are marked 
+// +link{listGridField.customSQL,customSQL="true"}.
+// <P>
+// You can specify this property as a comma-separated list (eg, "foo, bar, baz") or by just
+// repeating the &lt;customCriteriaFields&gt; tag multiple times with one field each.
 // <p>
-// This property is only applicable to DataSources of type "sql".
+// This property is only applicable to DataSources of +link{dataSource.serverType,"sql"}.
 //
 // @group customQuerying
+// @see OperationBinding.customFields
 // @see OperationBinding.customValueFields
 // @see OperationBinding.excludeCriteriaFields
 // @serverDS only
@@ -10224,17 +11540,20 @@ isc.DataSource.addMethods({
 //<        
 
 //> @attr operationBinding.excludeCriteriaFields (String or Array: null : [IR])
-// Specifies, for this operationBinding only, a list of field names that should be excluded from
-// the default +link{whereClause,whereClause} SmartClient generates.  The idea behind this is 
-// that you can then use these criteria manually in a complex query - for example, in the 
-// WHERE clause of a subquery.
+// Indicates that the listed fields should be excluded from the default
+// +link{whereClause,whereClause} generated for this operationBinding.  
+// <P>
+// This enables you to use these fields in a +link{group:customQuerying,custom query} while
+// still allowing the $defaultWhereClause to be generated for all other fields.  For example,
+// you might take a particular field and apply it in the WHERE clause of a subquery.
 // <p>
-// You can specify this property as either an array or a string containing a comma-separated list 
-// of field names (eg, "foo, bar, baz").  Note that if a field is included in both 
-// excludeCriteriaFields and +link{operationBinding.customCriteriaFields,customCriteriaFields}, 
-// customCriteriaFields wins.
+// You can specify this property as a comma-separated list (eg, "foo, bar, baz") or by just
+// repeating the &lt;customCriteriaFields&gt; tag multiple times with one field each.
+// Note that if a field is included in both excludeCriteriaFields and
+// +link{operationBinding.customCriteriaFields,customCriteriaFields}, customCriteriaFields
+// wins.
 // <p>
-// This property is only applicable to DataSources of type "sql".
+// This property is only applicable to DataSources of +link{dataSource.serverType,"sql"}.
 //
 // @group customQuerying
 // @see OperationBinding.customCriteriaFields
@@ -10374,10 +11693,25 @@ isc.DataSource.addMethods({
 // You specify this property as a string containing a comma-separated list of field names 
 // (eg, "foo, bar, baz")
 // 
+// @serverDS only
 // @visibility external
-//<        
+//<
+
+	
+//> @attr operationBinding.sqlPaging (SQLPagingStrategy : null : IRW)
+// The paging strategy to use for this specific OperationBinding.  If this property is not
+// set, we fall back to the +link{DataSource.sqlPaging} value, and the defaults described in
+// the documentation for that property.
+//
+// @see dataSource.sqlPaging
+// @serverDS only
+// @visibility sqlPaging
+//<
 
 //> @object DSRequestModifier
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // An object that modifies a dsRequest based on several available 
 // values, including preceding responses from the same queue. You provide a list of 
 // DSRequestModifiers as the +link{operationBinding.criteria} or +link{operationBinding.values}
@@ -10419,7 +11753,7 @@ isc.DataSource.addMethods({
 // to know the unique primary key that was assigned to the order.  This value will be in the 
 // response to the DSRequest that added the order header.  See this example:
 // +explorerExample{queuedAdd}.
-//
+// <p>
 // You can obtain the responseData of prior responses using the following Velocity syntax:<p>
 // <code>$responseData.first.myField</code> is the myField property of the first response in the queue<br>
 // <code>$responseData.first('order').myField</code> is the myField property of the first response to an 
@@ -10428,7 +11762,8 @@ isc.DataSource.addMethods({
 // response to an "add" operation on the "order" DataSource<p>
 // All of these syntactic variations are also available on the <code>$responseData.last</code> object - 
 // "last" here meaning the most recent response matching the DataSource and operation type (if 
-// applicable).
+// applicable).  Please see the server-side Javadoc for the
+// <code>com.isomorphic.velocity.ResponseDataHandler</code> class.
 // 
 // @see group:velocitySupport
 // @serverDS allowed
@@ -10436,6 +11771,9 @@ isc.DataSource.addMethods({
 //<
 
 //> @attr operationBinding.criteria (List of DSRequestModifier: null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // A list of +link{DSRequestModifier}s that will be used to modify the criteria of each 
 // +link{DSRequest} that uses this operationBinding.
 //
@@ -10445,6 +11783,9 @@ isc.DataSource.addMethods({
 //<        
 
 //> @attr operationBinding.values (List of DSRequestModifier: null : [IR])
+// <b>This feature is available with Power or better licenses only.</b> See 
+// <a href=http://smartclient.com/product>smartclient.com/product</a> for details.
+// <p>
 // A list of +link{DSRequestModifier}s that will be used to modify the values object of each 
 // +link{DSRequest} that uses this operationBinding.
 //
@@ -10491,7 +11832,11 @@ isc.DataSource.addMethods({
 
 //> @attr operationBinding.requiresRole (String : null : IR)
 // Comma-separated list of user roles that are allowed to invoke the operation described by
-// this operationBinding.
+// this operationBinding. If the current user has any of the roles listed, they can
+// invoke the operation. Also note that <code>authentication.superuserRole</code> can be 
+// specified in the <code>server.properties</code> file. If set this denotes a "super user" 
+// role - any user with that role will have access to all operations, regardless of the
+// "requiresRole" settings for the operation.
 // <P>
 // Whether the current user has a given role is determined by calling the standard Java
 // servlets method <code>httpServletRequest.isUserInRole()</code>, hence works with both simple
@@ -10499,13 +11844,51 @@ isc.DataSource.addMethods({
 // Authorization Service).
 // <P>
 // If you wish to use a role-based security scheme that does not make use of the servlet API's 
-// standards, SmartClient Server also implements the <code>setUserRoles</code> method
-// on <code>RPCManager</code>.  You can use this API to tell SmartClient that all the 
-// requests in the queue currently being processed are associated with a user who has the roles
-// you supply; in this case, SmartClient will not attempt to resolve the user's roles via 
-// <code>httpServletRequest.isUserInRole()</code>.
+// standards, SmartClient Server also implements the <code>setAuthenticated</code> and
+// <code>setUserRoles</code> methods on <code>RPCManager</code>. 
+// You can use this API to tell SmartClient that all the requests in the queue currently 
+// being processed are associated with a user who has the roles you supply; in this case,
+// SmartClient will not attempt to resolve the user's roles via 
+// <code>httpServletRequest.isUserInRole()</code>. When taking this approach, the 
+// <code>rpcManager.setUserRoles()</code> method should be called on the server for 
+// each transaction recieved from the client. We recommend doing this by overriding the 
+// special IDACall servlet and checking server side state to determine the current user's 
+// roles, calling the API, and then calling <code>handleDSRequest()</code> or
+// <code>handleRPCRequest()</code> directly to handle the request(s) passed in.<br>
+// Here's an example of this approach which assumes the current user's roles has been
+// set directly on the HttpSession object as a comma-separated-string attribute "roles":
+// <pre><code>
+//  public class SecureIDACall extends IDACall {
+//		
+//      public void processRequest(HttpServletRequest request,
+//              HttpServletResponse response)
+//       throws ServletException, IOException
+//      {
+//          HttpSession session = request.getSession();
+//          Object roles = session == null ? null : session.getAttribute("roles");
+// 
+//          if (roles != null) {
+//              try {
+//                  RequestContext context = RequestContext.instance(this, request, response);   
+//                  RPCManager rpc = new RPCManager(request, response);
+//                  rpc.setAuthenticated(true);
+//                  rpc.setUserRoles((String) roles); 
+//                  
+//                  // call processRPCTransaction() to iterate through all RPCRequests and
+//                  // DSRequests and execute them
+//                  processRPCTransaction(rpc, context);
+// 
+//              } catch (Throwable e) {
+//                  handleError(response, e);
+//              }
+//          } else {
+//              super.processRequest(request, response);
+//          } 
+//      }
+//  }
+// </code></pre>
 // <P>
-// If there an operationBinding declared for a given operationType which does not have an
+// If there is an operationBinding declared for a given operationType which does not have an
 // +link{operationId}, that is, it is the default operationBinding for the type, then any other
 // operationBinding of the same type is assumed to have the same setting for
 // <code>requiresRole</code> as the default operationBinding for the operationType.  For
@@ -10601,6 +11984,16 @@ isc.DataSource.addMethods({
 // provide neither of these, your email will have no body; if you provide both, SmartClient will
 // ignore the file and just use the content directly provided.
 // <p>
+// <b>Mail server configuration</b><br>
+// The mail server to use for sending emails is configured in the <code>server.properties</code>
+// file.  The following values can be provided:<p>
+// <code>mail.system.mail.smtp.host</code>: The name of the SMTP server to use; defaults 
+// to "localhost"<br>
+// <code>mail.system.mail.smtp.port</code>: What port is the MTA listening on; defaults to 25<br>
+// <code>mail.system.mail.smtp.auth</code>: Whether this server requires authentication; 
+// defaults to false<br>
+// <code>mail.system.mail.smtp.user</code>: SMTP user, if authentication is on; no default<br>
+// <code>mail.system.mail.smtp.password</code>: Password, if authentication is on; no default<br>
 //
 // @treeLocation Client Reference/Data Binding/DataSource
 // @visibility external
@@ -10630,6 +12023,7 @@ isc.DataSource.addMethods({
 // it makes no sense to specify them both.
 //
 // @group mail
+// @serverDS only
 // @visibility external
 //<
 
@@ -11056,7 +12450,23 @@ isc.DataSource.addMethods({
 
 		return this.mergedFields = fields;
 	},
-
+	
+	// helper method to tell us if a dataSource has fields. Helpful if a ds
+	// doesn't define fields itself, but inherits them instead. Used in 
+	// listGrid.setFields
+	hasFields : function () {
+	    if (this.fields) return true;
+	    else if (this.inheritsFrom) {
+	        // climb the inheritance chain and check for fields
+	        var ds = this;
+	        while (ds.inheritsFrom) {
+	            ds = isc.DataSource.get(this.inheritsFrom);
+	            if (ds.fields) return true;
+	        }
+	    }
+	    return false;
+	},
+	
     // get all simple type fields, throughout this DataSource and any sub-DataSources.
     // if path/pathProperty is passed, also construct a dataPath and return *copies* of the
     // discovered fields with the dataPath applied under "pathProperty".
@@ -11499,7 +12909,8 @@ isc.DataSource.addMethods({
         // exact field name match between the two datasources.
         if ( foreignKeyFieldName == null && parentDS) {
             foreignKeyFieldName = targetField = isc.getKeys(this.fields).intersect(isc.getKeys(parentDS.fields))[0];
-            this.logWarn("matched tree relationship field by name: " + foreignKeyFieldName);
+            this.logWarn("no foreign key declaration, guessing tree relationship " + 
+                         "is on field name: " + foreignKeyFieldName + " which occurs in both DataSources");
         }
 
         var field;
@@ -11829,9 +13240,9 @@ isc.DataSource.addMethods({
             allRows: this.cacheData ? this.cacheData : null,
             cachingAllData: true,
             dataArrived : function (startRow, endRow) {
-//                if (this.logIsInfoEnabled("cacheAllData")) {
-                    this.logWarn("cacheAllData - cacheResultSet.dataArrived: startRow/endRow: "+startRow+"/"+endRow);
-//                }
+                if (this.logIsInfoEnabled("cacheAllData")) {
+                    this.logInfo("cacheAllData - cacheResultSet.dataArrived: startRow/endRow: "+startRow+"/"+endRow);
+                }
                 if (this.lengthIsKnown()) {
                     var ds = this.getDataSource();
                     if (ds.cacheResultSet == null) return;
@@ -13404,7 +14815,7 @@ isc.DataSource.addClassMethods({
     //> @classMethod dataSource.combineCriteria()
     // Combines two criteria (either simple criteria objects or AdvancedCriteria) using the 
     // "outerOperator".  Note that the combined criteria object will be an AdvancedCriteria
-    // unless <ul>
+    // unless: <ul>
     // <li>both input criteria objects are simple, and</li>
     // <li>the "outerOperator" is "and", and</li>
     // <li>there is no collision of key names on the two criteria</li>
@@ -13420,7 +14831,7 @@ isc.DataSource.addClassMethods({
     // @example dynamicReporting
     // @visibility external
     //<
-    combineCriteria : function(criteria1, criteria2, outerOperator, textMatchStyle) {
+    combineCriteria : function (criteria1, criteria2, outerOperator, textMatchStyle) {
         if (!criteria1) return criteria2;
         if (!criteria2) return criteria1;        
     
@@ -13480,6 +14891,73 @@ isc.DataSource.addClassMethods({
         }
         
         return aCrit;
+    },
+    
+    // When we have advanced criteria objects we can have more layers of nesting than are
+    // actually necessary
+    // For example:
+    // {operator:"and",
+    //  criteria:[
+    //    {fieldName:"x", value:"y", operator:"z"},
+    //    {operator:"and",
+    //      criteria:[
+    //        {fieldName:"a", value:"b", operator:"c"},
+    //        {fieldName:"d", value:"e", operator:"f"}
+    //      ]
+    //     }
+    //   ]
+    //  }
+    // Could have the inner "and" clause eliminated.
+    // This method will simplify advanced criteria by flattening nested and / or clauses
+    // as much as possible to make it easier to work with the criteria object
+    // returned
+    simplifyAdvancedCriteria : function (criteria) {
+        // If we're passed simple criteria don't attempt to do anything to it!
+        if (!this.isAdvancedCriteria(criteria)) {
+            return criteria;
+        }
+        
+        criteria = this._simplifyAdvancedCriteria(criteria);
+        criteria._constructor = "AdvancedCriteria";
+        return criteria;
+    },
+    _simplifyAdvancedCriteria : function (criteria) {
+        var operator = criteria.operator;
+
+        if (operator == "and" || operator == "or") {
+
+            var innerCriteria = criteria.criteria;
+            
+            // Sanity check - we don't really expect to see empty criteria array as it'd
+            // be meaningless
+            if (innerCriteria == null || innerCriteria.length == 0) {
+                return criteria;
+            }
+            
+            // Single item in an "and" / "or" block means the outer block is unnecessary
+            if (innerCriteria.length == 1) {
+                criteria = innerCriteria[0];
+                return this._simplifyAdvancedCriteria(criteria);
+            }
+            
+            // Nested 'and'/'or' blocks - can combine upwards
+            var newInnerCriteria = [];
+            for (var i = 0; i < innerCriteria.length; i++) {
+                var innerCrit = innerCriteria[i];
+                // simplify recursively
+                innerCrit = this._simplifyAdvancedCriteria(innerCrit);
+                if (innerCrit.operator == operator) {
+                    newInnerCriteria.addList(innerCrit.criteria);
+                } else {
+                    newInnerCriteria.add(innerCrit);
+                }
+            }
+            criteria.criteria = newInnerCriteria;
+            return criteria;
+        // anything that isn't an 'and' or 'or' can't be simplified further.
+        } else {
+            return criteria;
+        }
     },
     
     //> @classMethod    DataSource.combineFieldData()  ([IA])
@@ -14120,7 +15598,15 @@ isc._initBuiltInOperators = function () {
             
             var eq = (value == record[fieldName]);
             if (isc.isA.Date(value) && isc.isA.Date(record[fieldName])) {
-                eq = (Date.compareDates(value, record[fieldName]) == 0);
+                // for date fields to a logical date compare - for 
+                // datetimes do full compare. This will match server logic since
+                // we serialize dates (and omit times) for date fields.
+                var field = ds.getField(fieldName);
+                if (field && field.type == "datetime") {
+                    eq = (Date.compareDates(value, record[fieldName]) == 0);
+                } else {
+                    eq = (Date.compareLogicalDates(value, record[fieldName]) == 0);
+                }
             }
             if (operator.negate) return !eq;
             else return eq;
@@ -14252,6 +15738,7 @@ isc._initBuiltInOperators = function () {
             }
             if (operator.startsWith) var result = isc.startsWith(tested, test);
             else if (operator.endsWith) result = isc.endsWith(tested, test);
+            else if (operator.equals) result = (tested == test);
             else result = isc.contains(tested, test);
             
             if (operator.negate) return !result;
@@ -14429,15 +15916,20 @@ isc._initBuiltInOperators = function () {
             // If we get here, we can indicate identical / more restrictive
             return thisLevelRtn;
         };
-
+ 
     var equalityComp = 
-        function (newCriterion, oldCriterion, operator) {
+        function (newCriterion, oldCriterion, operator, ds) {
             // There's no way an equality check can be more restrictive - either it's identical,
             // or it's less restrictive
             if (newCriterion.fieldName == oldCriterion.fieldName) {
                 var eq = (newCriterion.value == oldCriterion.value);
                 if (isc.isA.Date(newCriterion.value) && isc.isA.Date(oldCriterion.value)) {
-                    eq = (Date.compareDates(newCriterion.value, oldCriterion.value) == 0);
+                    var field = ds.getField(newCriterion.fieldName);
+                    if (field && field.type == "datetime") {
+                        eq = (Date.compareDates(newCriterion.value, oldCriterion.value) == 0);
+                    } else {
+                        eq = (Date.compareLogicalDates(newCriterion.value, oldCriterion.value) == 0);
+                    }
                 }
                 if (eq) {
                     return 0;
@@ -14586,41 +16078,42 @@ isc._initBuiltInOperators = function () {
                 {
                     return 0;
                 }
+                return -1;
             }
                 
             if (operator.startsWith && !operator.negate && 
-                    newVal.length > oldVal.length && newVal.startsWith(oldVal)) 
+                    newVal.length > oldVal.length && isc.startsWith(newVal, oldVal)) 
             {
                 return 1;
             }
                 
                 
             if (operator.startsWith && operator.negate && 
-                    oldVal.length > newVal.length && oldVal.startsWith(newVal)) 
+                    oldVal.length > newVal.length && isc.startsWith(oldVal, newVal)) 
             {
                 return 1;
             }
 
             if (operator.endsWith && !operator.negate && 
-                    newVal.length > oldVal.length && newVal.endsWith(oldVal)) 
+                    newVal.length > oldVal.length && isc.endsWith(newVal, oldVal)) 
             {
                 return 1;
             }                
                 
             if (operator.endsWith && operator.negate && 
-                    oldVal.length > newVal.length && oldVal.endsWith(newVal)) 
+                    oldVal.length > newVal.length && isc.endsWith(oldVal, newVal)) 
             {
                 return 1;
             }
 
             if (!operator.startsWith && !operator.endsWith && !operator.negate && 
-                    newVal.length > oldVal.length && newVal.contains(oldVal)) 
+                    newVal.length > oldVal.length && isc.contains(newVal, oldVal)) 
             {
                 return 1;
             }                
                 
             if (!operator.startsWith && !operator.endsWith && operator.negate && 
-                    oldVal.length > newVal.length && oldVal.contains(newVal)) 
+                    oldVal.length > newVal.length && isc.contains(oldVal, newVal)) 
             {
                 return 1;
             }
@@ -15324,7 +16817,9 @@ isc.defineClass("XJSONDataSource", "DataSource").addMethods({
 // <P>
 // This approach is called Client-Side Data Integration, which means:
 // <ul>
-// <li> You +link{group:dataSourceDeclaration,create DataSources} in JavaScript 
+// <li> You +link{group:dataSourceDeclaration,create DataSources} 
+// <var class="smartclient">in JavaScript</var>
+// <var class="smartgwt">programmatically in Java (with <code>new DataSource()</code>)</var>
 // which describe the data to be loaded and manipulated in the user interface. The
 // JavaScript that creates these DataSources may be dynamically generated and/or existing
 // metadata may be +link{group:metadataImport,imported}.

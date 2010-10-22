@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -588,7 +588,7 @@ isc.Dialog.Prompt = {
     bodyStyle:"promptBody", // no border-top, since there is no header
                             // TODO autogenerate border in Window based on header visibility
     
-    message:"Loading...",
+    message:"Loading...&nbsp;${loadingImage}",
 
     blurbDefaults : {width:390, align:isc.Canvas.CENTER, valign:isc.Canvas.CENTER, canSelectText: true},
     
@@ -609,7 +609,11 @@ isc.Dialog.Prompt = {
 		// first add the properties specified
 		this.setProperties(properties);
     
-        this.message = newMessage;
+        this.message = newMessage.evalDynamicString(this, {
+            loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
+                                       isc.Canvas.loadingImageSize, 
+                                       isc.Canvas.loadingImageSize)
+            });
 
         // Note: we lazily create children on draw, so verify that the items have been
         // initialized before manipulating the label
@@ -648,6 +652,7 @@ isc.Dialog.Prompt = {
 //  advise calling this method, then using +link{Class.delayCall()} or +link{Timer.setTimeout}
 //  to kick off the slow logic in a separate thread. This ensures that the prompt is showing
 //  before the lengthy execution begins.
+//  <p/>Use <code>"\${loadingImage}"</code> to include +link{Canvas.loadingImageSrc,a loading image}.
 //  
 //
 //	@param	message			(string)	message to display
@@ -1274,14 +1279,16 @@ isc.LoginDialog.addProperties({
     //<
 
     //> @attr loginDialog.dismissable (Boolean : false : [IR])
-    // If true, allow the user to close the LoginDialog by pressing Escape or by pressing
-    // a Close button on the upper right corner (only visible when true).
-    // <p>If the Dialog is dismissed,
-    // +link{LoginDialog.loginFunc} is called with null arguments.
-    // <p>Note that this attribute overrides the dismissOnEscape and showCloseButton
-    // attributes.
+    // Whether the user should be able to dismiss the login dialog without entering
+    // credentials.  Set to true if logging in is optional.  When set, a close button will be
+    // present, and hitting escape will also dismiss the dialog.
+    // <p>
+    // If the Dialog is dismissed, +link{LoginDialog.loginFunc} is called with null arguments.
+    // <p>
+    // Note that this attribute overrides the dismissOnEscape and showCloseButton attributes.
     // @visibility external
     //<
+    dismissable: false,
     
     //> @attr   loginDialog.dismissOnEscape  (boolean : null : [IRW])
     // Do not set LoginDialog.dismissOnEscape; it is controlled by the 
@@ -1296,8 +1303,6 @@ isc.LoginDialog.addProperties({
     // property.
     // @visibility external
     //<
-    
-    dismissable: false,
     
     //> @attr loginDialog.allowBlankPassword (Boolean : false : IR)
     // If true, the login form will allow blank passwords to be submitted. Otherwise
@@ -1516,7 +1521,12 @@ isc.LoginDialog.addProperties({
     },
     formDefaultFields: [
         { name: "loginFailureItem", type:"blurb", colSpan: 2, visible:false },
-        { name: "usernameItem", required:true, 
+        { name: "usernameItem", required:true,
+            // Diable spell checking etc where supported
+            browserSpellCheck:false,
+            browserAutoCorrect:false,
+            browserAutoCapitalize:false,
+            
             keyPress : function (item, form, keyName) {
                 if (keyName == "Enter") {
                     form.focusInItem("passwordItem");

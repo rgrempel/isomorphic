@@ -71,6 +71,8 @@
         <sqlType type="string"/>
 
         <outputs type="string"/>
+
+        <autoJoinTransactions type="boolean"/>
         
         </fields>
     

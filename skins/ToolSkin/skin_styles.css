@@ -392,9 +392,10 @@
 .tTextItemDisabled,
 .tSelectItemTextDisabled {
     color:#888888;
-    background-color:#404040
+    background-color:#404040;
     border:1px solid #595959;
 }
+
 
 /* selectItem */
 

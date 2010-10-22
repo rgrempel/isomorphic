@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -375,7 +375,7 @@ isc.ResultSet.addProperties({
     // in a way that affects functionality or is surprising.
     // <P>
     // This setting is distinct from <code>fetchMode:"local"</code>, which explicitly loads all
-    // available DataSource records up front.
+    // available DataSource records up front and always performs all filtering on the client.
     // <P>
     // See +link{resultSet.applyFilter()} for default filtering behavior.
     // <P>
@@ -512,6 +512,7 @@ isc.ResultSet.addProperties({
 isc.ResultSet.addMethods({
 
 init : function () {
+
 	// get a global ID so we can be called in the global scope
 	isc.ClassFactory.addGlobalID(this);
     //>!BackCompat 2004.7.30
@@ -571,31 +572,29 @@ init : function () {
     }
     
 	this.context = this.context || {};
-
-    // backcompat for old name for criteria: "filter"
-    this.criteria = this.criteria || this.filter || {};
-    if (this.criteria) {
-        var newCriteria = this.criteria;
-        this.criteria = null;
-        this.setCriteria(newCriteria);
-    }
-
-    // if we're given the set of all rows on construction, derive the current filter set right
-    // away, so that this.localData is not null, making us think we have no data
-    if (this.allRows != null && (this.isLocal() || this.shouldUseClientFiltering()) && 
-        this.localData == null) 
-    {
-        this.filterLocalData();
-    }
+  
+	
+	// backcompat for old name for criteria: "filter"
+    var newCriteria = this.criteria || this.filter || {};
+    
+    // calling setCriteria will set up this.criteria and call this.filterLocalData() if
+    // we were seeded with 'allRows' (causing this.localData to get set up).
+    this.criteria = null;
+    this.setCriteria(newCriteria);
+  
     
     // support for seeding a ResultSet with data on init
     if (this.initialData) {
         this.prepareSparseInitialData();
         this.fillCacheData(this.initialData);
         this.setFullLength(this.initialLength || this.totalRows || this.initialData.length);
+        // allow an initial sort direction to specified (in either format)
+        if (this.sortSpecifiers) this.setSort(this.sortSpecifiers, true);
+        if (this.sortBy) this.setSort(isc.DS.getSortSpecifiers(this.sortBy), true);
     } else if (this.isPaged()) {
         this.localData = [];
     }
+
 
     //>Offline
     this.observe(isc, "goOffline", this.getID()+".goOffline()");
@@ -643,13 +642,9 @@ prepareSparseInitialData : function () {
     }
 },
 
-getFirstDataElement : function () {
-    var firstIndex = this.getFirstUsedIndex();
-    if (this.localData) return this.localData[firstIndex];
-    else return this.get(0);
-},
-
 getFirstUsedIndex : function () {
+    if (!this.lengthIsKnown()) return 0; // we're in the middle of loading data
+
     if (this.localData) {
         for (var i=0; i<this.localData.length; i++) {
             if (this.localData[i] != null && this.localData[i] != Array.LOADING) return i;
@@ -670,8 +665,14 @@ isLocal : function () { return this.fetchMode == "local" },
 // @visibility external
 //<
 allMatchingRowsCached : function () {
-    // data has been loaded, and if paged, cache is full for current filter
-    return (this.localData != null &&
+    // allRows != null and no, or empty allRowsCriteria implies we have a complete cache
+    // (This can occur with this.localData being empty during init before setCriteria() has
+    // called filterLocalData and set up this.localData)
+    //
+    // Otherwise look at this.localData - check if data has been loaded and (if paged)
+    // cache is full for current filter
+    return (this.allRows != null && (!this.allRowsCriteria || this._emptyAllRowsCriteria)) ||
+            (this.localData != null &&
             (!this.isPaged() || 
              
              (this.allRows != null ||(this.cachedRows == this.totalRows))));
@@ -691,6 +692,7 @@ allRowsCached : function () {
     return (
             // - in fetchMode:"local" (load all data up front), data has been successfully
             //   loaded
+            
             (this.allRows != null && (!this.allRowsCriteria || this._emptyAllRowsCriteria)) 
             || 
             // - in other modes, we've detected emptyCriteria and full cache
@@ -1160,11 +1162,10 @@ fetchRemoteData : function (serverCriteria, startRow, endRow) {
 },
 
 fetchRemoteDataReply : function (dsResponse, data, request) {
-
     
     var index = dsResponse.clientContext.requestIndex;
     if (!this._lastProcessedResponse) this._lastProcessedResponse = 0;
-    if (index != (this._lastProcessedResponse+1)) {
+    if (index != (this._lastProcessedResponse+1) && !dsResponse.isCachedResponse) {
         this.logInfo("server returned out-of-sequence response for fetch remote data request " +
                 " - delaying processing: last processed:"+ this._lastProcessedResponse + ", returned:"+ index);
         if (!this._outOfSequenceResponses) this._outOfSequenceResponses = [];
@@ -1287,9 +1288,11 @@ fetchRemoteDataReply : function (dsResponse, data, request) {
 _handleNewData : function (newData, result) {
     if (this.isLocal()) {
         // when we get the complete dataset from the server we hold onto it as "allRows" and
-        // set this.localData to a locally filtered subset        
-	    this.allRows = newData;
-    	this.filterLocalData();
+        // set this.localData to a locally filtered subset      
+        // Don't pass this.criteria into setAllRows - we're caching the complete set of data
+        // (which has empty criteria)
+	    this._setAllRows(newData);
+	    this.filterLocalData();
         return;
     } else if (!this.isPaged()) {
         this._startChangingData();
@@ -1304,7 +1307,8 @@ _handleNewData : function (newData, result) {
         // so we can perform a local filter on a call to 'setCriteria'.  NOTE: done within
         // fillCacheData for a paged ResultSet
         if (this.allRowsCached()) {
-            this.allRows = this.localData;
+            this._setAllRows(this.localData, this.criteria);
+            
         }
         
     	this._doneChangingData();
@@ -1426,6 +1430,8 @@ findByKey : function (keyValue) {
 // operation.
 //
 // @param newCriteria (Criteria) the filter criteria
+// @return (boolean) Returns false if the new criteria match the previous criteria, implying
+//    the data is unchanged.
 // @visibility external
 //<
 // An overview on the caching system:
@@ -1450,117 +1456,72 @@ findByKey : function (keyValue) {
 // than it would for the same "allRowsCriteria" with the new text match style, but we always
 // apply a local filter to this data so the developer / user should never see these extra rows.
 setCriteria : function (newCriteria) {
-
-    // NOTE: determine this before setting new criteria, otherwise, if we a full cache for the
-    // current criteria, and we just changed to empty criteria, we'll believe we have a full
-    // cache for empty criteria, hence all rows cached
-    var allRowsCached = this.allRowsCached();
-    // remember whether criteria are empty
-    this._emptyCriteria = (isc.getKeys(newCriteria).length == 0);
-
-    var oldCriteria = this.criteria || {},
-        oldTextMatchStyle = this._textMatchStyle,
-        ds = this.getDataSource();
-     
+    // use _willFetchData to determine whether we'll hit the server
+    // calling the internal version of this method means we'll get back 'null' if the
+    // criteria are unchanged, allowing us to skip the call to filterLocalData();
+    if (newCriteria == null) newCriteria = {};
+    var requiresFetch = this._willFetchData(newCriteria);
+    
+    if (requiresFetch == null) {
+        
+        // Catch the case where we were seeded with this.allRows on init but haven't yet
+        // set up this.localData
+        if (this.localData == null && this.allRows != null) this.filterLocalData();
+        
+        //>DEBUG
+        this.logInfo("setCriteria: filter criteria unchanged");
+        //<DEBUG
+        return false;
+    }
+    
     // clone the criteria passed in - avoids potential issues where a criteria object is passed in
     // and then modified outside the RS
     // Avoid this with advanced criteria - our filter builder already clones the output
-    if (!ds.isAdvancedCriteria(newCriteria)) {
+    if (!this.getDataSource().isAdvancedCriteria(newCriteria)) {
         // use clone to deep copy so we duplicate dates, arrays etc
         newCriteria = isc.clone(newCriteria);
     }
-
+    var oldCriteria = this.criteria;
     this.criteria = newCriteria;
+    
+    // remember whether criteria are empty
+    this._emptyCriteria = (isc.getKeys(newCriteria).length == 0);
+
     this._textMatchStyle = (this.context && this.context.textMatchStyle) ? 
                                 this.context.textMatchStyle : null;
 
-    // If the textMatchStyle has changed, we may have to hit the server even if the 
-    // new criteria are more restrictive or unchanged.
-    var result = this.compareTextMatchStyle(this._textMatchStyle, oldTextMatchStyle);
+   
     
-    // If text match style has become less restrictive, it doesn't matter whether the criteria 
-    // are more restrictive or unchanged - we are likely to have to hit the server for fresh
-    // data
-    if (result >= 0) {        
-        // if we have switched into local filtering mode after obtaining a full cache (indicated by
-        // allRowsCriteria being set), check whether the new criteria are more or less restrictive
-        // than the criteria in use when we obtained a full cache.  This determines whether we can
-        // continue to do local filtering.
-        
-        // If one of the criteria objects is an AdvancedCriteria, convert the other one to 
-        // enable comparison
-        if (ds.isAdvancedCriteria(newCriteria) && !ds.isAdvancedCriteria(oldCriteria)) {
-            oldCriteria = isc.DataSource.convertCriteria(oldCriteria, this._textMatchStyle);
-        }
-        if (!ds.isAdvancedCriteria(newCriteria) && ds.isAdvancedCriteria(oldCriteria)) {
-            newCriteria = isc.DataSource.convertCriteria(newCriteria, this._textMatchStyle);
-            this.criteria = newCriteria;
-        }
-        var criteriaResult = this.compareCriteria(newCriteria, 
-                                          this.allRowsCriteria ? this.allRowsCriteria : oldCriteria,
-                                          this.context);
-        // If the criteria changed, respect whether they are more or less strict
-        // Otherwise use the result based on whether the text match style changed (becoming more
-        // or less strict).
-        if (criteriaResult != 0) result = criteriaResult;
-    }
-	if (result == -1) {      
-        // criteria (including textMatchStyle) less restrictive
-        // Already tested against allRowCriteria if present.
-        // - do local filtering if we have a complete cache only
-        if (this.isLocal() || 
-            (!this.allRowsCriteria && this.allRows && this.shouldUseClientFiltering())) 
-        {
-            // derive localData from the set of all rows
-        	if (this.allRows != null) this.filterLocalData();
-        } else {   
-		    //>DEBUG
-    		this.logInfo("setCriteria: filter criteria changed, invalidating cache");
-    		//<DEBUG
-    		this.invalidateCache();
-            this.allRowsCriteria = null;
-            delete this._emptyAllRowsCriteria;
-        }
-	    return true;
-	} else if (result == 1) {        
-        // criteria more restrictive.  If we are allowed to useClientFiltering and we have a
-        // complete cache for the current criteria, use client-side filtering from here on,
-        // until the criteria become less restrictive than the allRowsCriteria.
-        if (this.allRowsCriteria) {            
-            // if allRowsCriteria is set, it indicates we have already started using
-            // client-side filtering
-            this.filterLocalData();
-        } else if (this.shouldUseClientFiltering() && this.allMatchingRowsCached()) {
-            // begin using client-side filtering
-            this.allRows = this.localData;
-            this.allRowsCriteria = oldCriteria;
-            this._emptyAllRowsCriteria = (isc.getKeys(oldCriteria).length == 0);
-            this.filterLocalData();
-        } else {
-            // can't use client-side filtering, just invalidateCache
-		    //>DEBUG
-    		this.logInfo("setCriteria: filter criteria changed, invalidating cache");
-    		//<DEBUG
-    		this.invalidateCache();
-        }
-        return true;
+    if (requiresFetch) {
+        //>DEBUG
+        this.logInfo("setCriteria: filter criteria changed, invalidating cache");
+        //<DEBUG
+        this.invalidateCache();
     } else {
-        // result = 0, identical criteria.
-        // When we are using local filtering after obtaining a full cache (allRowsCriteria !=
-        // null), this means the new criteria are identical to the criteria at the time we
-        // switched into local filtering mode (allRowsCriteria).  We still need to perform
-        // local filtering in case we *were* using criteria more restrictive than allRowsCriteria
-        // and just switched back to the allRowsCriteria.
+        // If we're going to do a local filter and we don't yet have this.allRows set up,
+        // populate it now
         
-        if (this.allRowsCriteria && this.compareCriteria(newCriteria, oldCriteria) != 0) {
-            this.filterLocalData();
+        if (this.allRows == null) {
+            this._setAllRows(this.localData, oldCriteria);
         }
+        this.filterLocalData();
     }
-	//>DEBUG
-	this.logInfo("setCriteria: filter criteria unchanged");
-	//<DEBUG
-	return false;
+    // this indicates the filter criteria changed
+    return true;
 },
+    
+
+// Setter for the 'allRows' attribute. This is a (complete) cache of records that
+// match the criteria passed in and is the most unrestrictive set of data we've recieved
+// from the server.
+// Once set we'll use local filtering if shouldUserClientFiltering() returns true and
+// criteria are more restrictive than this cache
+_setAllRows : function (data, criteria) {
+    this.allRows = data;
+    this.allRowsCriteria = criteria || {};
+    this._emptyAllRowsCriteria = (isc.getKeys(this.allRowsCriteria).length == 0);
+},
+
 //>!BackCompat 2004.7.23
 setFilter : function (newCriteria) { return this.setCriteria(newCriteria) },
 //<!BackCompat
@@ -1620,31 +1581,118 @@ compareTextMatchStyle : function (newStyle, oldStyle) {
 //<
 
 willFetchData : function (newCriteria, textMatchStyle) {
+    return (this._willFetchData(newCriteria, textMatchStyle) == true);
+},
+
+// Internal version of willFetchData() which actually determines whether we'll fetch
+// The only difference is that if the criteria are unchanged it will return explicit null
+// rather than true/false. Called directly by setCriteria() where we care about whether
+// new criteria would actually require a local filter, as well as whether we should drop
+// cache
+_willFetchData : function (newCriteria, textMatchStyle) {
+    if (newCriteria == null) newCriteria = {};
     
-    var undef, result;
-    if (textMatchStyle !== undef) {
-        result = this.compareTextMatchStyle(textMatchStyle, this._textMatchStyle);
-        if (result == -1) return true;
+    // if we have *no* local data we know we have to hit the server
+    // regardless of the new criteria (we've never fetched and weren't seeded with this.allRows)
+    if (this.localData == null && this.allRows == null) return true;
+    
+    // Determine if the criteria are unchanged / more or less restrictive
+    if (newCriteria == null) newCriteria = {};
+    var oldCriteria = this.criteria || {},
+        oldTextMatchStyle = this._textMatchStyle,
+        ds = this.getDataSource();
+    
+    if (textMatchStyle == null) {
+        textMatchStyle = (this.context && this.context.textMatchStyle) ? 
+                                this.context.textMatchStyle : null;
     }
     
-    // if allRows is specified we have more cached rows than our current criteria, so
-    // compare to allRowsCriteria
-    var oldCriteria = this.allRows ? this.allRowsCriteria : this.criteria;
-    result = this.compareCriteria(newCriteria, oldCriteria);
+    var result = this.compareTextMatchStyle(textMatchStyle, oldTextMatchStyle);
+   
+    // are we currently viewing a subset of a larger cache of data?
+    var isFilteringLocally = this.allRows && this.shouldUseClientFiltering()
+                             && (oldCriteria != this.allRowsCriteria);
+    // If text match style is less restrictive, no need to check
+    // whether the criteria are more restrictive
+    if (result >= 0) {
+        
+        // if we have switched into local filtering mode after obtaining a full cache (indicated by
+        // allRows being set), check whether the new criteria are more or less restrictive
+        // than the criteria in use when we obtained a full cache.  This determines whether we can
+        // continue to do local filtering.
+        var cacheDataCriteria = isFilteringLocally ? this.allRowsCriteria : oldCriteria;
+        // if allRowsCriteria is unset, convert to an empty object so we can compare
+        // against the criteria passed in.
+        
+        if (cacheDataCriteria == null) cacheDataCriteria = {};
+        
+       // If one of the criteria objects is an AdvancedCriteria, convert the other one to 
+        // enable comparison
+        if (ds.isAdvancedCriteria(newCriteria) && !ds.isAdvancedCriteria(cacheDataCriteria)) {
+            cacheDataCriteria = isc.DataSource.convertCriteria(cacheDataCriteria, textMatchStyle);
+        }
+        if (!ds.isAdvancedCriteria(newCriteria) && ds.isAdvancedCriteria(cacheDataCriteria)) {
+            newCriteria = isc.DataSource.convertCriteria(newCriteria, textMatchStyle);
+        }
+        var fetchContext = isc.addProperties({},this.context);
+        if (textMatchStyle != null) fetchContext.textMatchStyle = textMatchStyle;
+        var criteriaResult = this.compareCriteria(newCriteria, cacheDataCriteria, fetchContext);
+        // If the criteria changed, respect whether they are more or less strict
+        // Otherwise use the result based on whether the text match style changed (becoming more
+        // or less strict).
+        if (criteriaResult != 0) result = criteriaResult;
+    }
     
-    // If we have no change in criteria we won't perform a fetch
-    
-    if (result == 0) return false;
-    
-    // If we can't filter on the client we always perform a true fetch
-    if (!this.shouldUseClientFiltering()) return true;
-    
-    // If we don't have a full cache of rows matching the current criteria, we perform a true 
-    // fetch
-    if (!this.allMatchingRowsCached()) return true;
-    
-    // criteria are less restrictive => fetch
-    return (result == -1);
+    if (result == 0) {
+        // criteria match
+        
+        // If we're already viewing a subset of a larger cache we tested against that larger
+        // cache -- compare the current criteria against the criteria passed in as well to see
+        // if the criteria are actually unchanged as far as the visible data is concerned
+        
+        if (isFilteringLocally) {
+            if (ds.isAdvancedCriteria(newCriteria) && !ds.isAdvancedCriteria(oldCriteria)) {
+                oldCriteria = isc.DataSource.convertCriteria(oldCriteria, textMatchStyle);
+            }
+            if (this.compareCriteria(newCriteria, oldCriteria) != 0) {
+                return false;
+            }
+        }
+        
+        return null;
+    } else {
+        // If the criteria have changed at all, we know we'll have to hit the server if 
+        // we don't have a complete cache based on our current criteria.
+        if (!this.allMatchingRowsCached()) {
+            return true;
+        }
+        
+        // If this is a local resultSet we will always filter locally once we've got any results
+        // (and we just verified we have a complete cache for at least our current criteria)
+        if (this.isLocal()) {
+            return false;
+        }
+        
+        
+        // criteria (including textMatchStyle) less restrictive than whatever we have cached,
+        // And we know this isn't a local resultset
+        // Have to fetch.
+        if (result == -1) {
+            return true;
+            
+        } else if (result == 1) {        
+            
+            // criteria more restrictive (and we have a complete cache for current criteria)
+            // unless useClientFiltering is disabled we can filter locally
+            if (this.shouldUseClientFiltering()) {
+                return false;
+            }
+            
+            // shouldUseClientFiltering is false - have to fetch
+            return true;
+            
+        }
+    }
 },
     
 
@@ -1843,19 +1891,22 @@ getSort : function () {
 //   per sort-field and direction
 // @visibility external
 //<
-setSort : function (sortSpecifiers) {
+setSort : function (sortSpecifiers, init) {
     var serverSorts = [],
         sameSorts = [],
         field
     ;
 
-    for (var i = 0; i<sortSpecifiers.length; i++) {
+    for (var i = 0; i < sortSpecifiers.length; i++) {
         var item = sortSpecifiers[i];
         // If we were passed a null normalizer - use the field type as normalizer instead.
         // (May still be null, in which case array sorting will try to derive from actual elements)
         if (item.normalizer == null) {
             var field = this.getDataSource().getField(item.property);    
-            if (field) item.normalizer = field.type;
+            if (field) {
+                item.normalizer = field.type;
+                item._autoNormalizer = item.normalizer;
+            }
         }
 
         // If the sort property has a displayField defined and either no optionDataSource or the 
@@ -1887,7 +1938,15 @@ setSort : function (sortSpecifiers) {
 
         // If the sort-specs appear the same, remember the same items
         if (this._sortSpecifiers && this._sortSpecifiers.length > 0) {
-            var itemIndex = this._sortSpecifiers.findIndex(item);
+            var matchProps = {
+                property : item.property,
+                direction : item.direction
+            };
+            
+            if (item.normalizer != null && item.normalizer != item._autoNormalizer) {
+                matchProps.normalizer = item.normalizer;
+            }
+            var itemIndex = this._sortSpecifiers.findIndex(matchProps);
             if (itemIndex == i) {
                 sameSorts.add(item);
             }
@@ -1904,7 +1963,7 @@ setSort : function (sortSpecifiers) {
     this._sortSpecifiers = isc.shallowClone(sortSpecifiers);
     this._serverSortBy = serverSorts;
 
-    this._doSort();
+    if (!init) this._doSort();
 },
 
 // Handling Updates
@@ -2011,7 +2070,7 @@ notifyOnUnchangedCache:false,
 // Override doneChangingData to pass updated row info to dataChanged if a single record was
 // modified
 
-_doneChangingData : function () {
+_doneChangingData : function (filterChanged) {
     
     // If we're dealing with a single row update we can test for the case where the filtered cache
     // wasn't updated at all (and we don't need to fire dataChanged)
@@ -2052,7 +2111,7 @@ _doneChangingData : function () {
     // decrement the _dataChangeFlag even if the cache isn't modified so we can track when
     // to actually fire dataChanged
 	if (--this._dataChangeFlag == 0 && !unmodifiedCache) {
-        this.dataChanged(operation, record, row, this._lastUpdateData);
+        this.dataChanged(operation, record, row, this._lastUpdateData, filterChanged);
         // clear all 'single row update' type flags unconditionally once we fire dataChanged
         delete this._lastUpdateOperation;
         delete this._lastOrigRecord;
@@ -2755,7 +2814,7 @@ filterLocalData : function () {
     // completely changed.
     if (!this._isDataArriving() && this.dataArrived) this.dataArrived(0, this.localData.length-1);
 
-	this._doneChangingData();
+	this._doneChangingData(true);
 },
 
 //> @method resultSet.applyFilter() [A]
@@ -2865,7 +2924,7 @@ fillCacheData : function (newData, startRow) {
     }
 
     if (this.allRowsCached()) {
-        this.allRows = this.localData;
+        this._setAllRows(this.localData, this.criteria);
     }
 },
 
@@ -2921,7 +2980,7 @@ invalidateCache : function () {
     
     this._invalidateCache();
     // dataChanged() is required to force a refresh from the server
-	if (!this._isChangingData()) this.dataChanged();
+	if (!this._isChangingData()) this.dataChanged(null,null,null,null,true);
 },
 
 // NOTE: does not call dataChanged() automatically and should not be externally observed
@@ -2945,6 +3004,7 @@ _invalidateCache : function () {
 invalidateRows : function () {
 	this.localData = this.allRows = null;
     this.allRowsCriteria = null;
+    delete this._emptyAllRowsCriteria;
     
 	this.cachedRows = 0;
     // one time flag for invalidating rows on fetch can now be cleared
@@ -3056,7 +3116,10 @@ isc.ResultSet.registerStringMethods({
     //                               and +link{updateCacheFromRequest} is set.
     // @visibility internal
     //<
-    dataChanged : "operationType,originalRecord,rowNum,updateData"
+    // 'filterChanged' boolean - passed when this method was called from invalidateCache
+    // or from filterLocalData (applying a client side filter to a dataSet). In both cases
+    // the visible data-set has changed due to a re-filter
+    dataChanged : "operationType,originalRecord,rowNum,updateData,filterChanged"
     
 });
 

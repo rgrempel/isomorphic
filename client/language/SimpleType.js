@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -190,6 +190,9 @@ isc.GroupingMessages.addClassProperties({
 isc.builtinTypes =
 {
     // basic types
+  
+    
+    //any:{},
     text:{validators:{type:"isString", typeCastValidator:true}},
     "boolean":{validators:{type:"isBoolean", typeCastValidator:true}},
     integer:{validators:{type:"isInteger", typeCastValidator:true},
@@ -602,6 +605,40 @@ isc.defineClass("SimpleType").addClassMethods({
     //
     // @visibility external
     //<
+    
+    //> @method simpleType.editFormatter()
+    // Formatter for values of this type when displayed in a freeform text editor, such as
+    // a +link{TextItem}.
+    // <P>
+    // See also +link{simpleType.parseInput()} for parsing an edited text value back to
+    // a data value.
+    // @param value (any) value to be formatted
+    // @param [field] (FormItem) Editor for this field
+    // @param [form] (DynamicForm) DynamicForm containing this editor
+    // @param [record] (Record) Current edit values for this record, as displayed in
+    //      the edit component.
+    //
+    // @return (string) formatted value
+    //
+    // @visibility external
+    //<
+    
+    //> @method simpleType.parseInput()
+    // Parser to convert some user-edited value to an underlying data value of this type.
+    // This parser is called when storing out values edited in a freeform editor such as
+    // a +link{TextItem}. Typically this will convert from the format produced by 
+    // +link{simpleType.editFormatter} back to a data value.
+    //
+    // @param value (String) edited value provided by the user
+    // @param [field] (FormItem) Editor for this field
+    // @param [form] (DynamicForm) DynamicForm containing this editor
+    // @param [record] (Record) Current edit values for this record, as displayed in
+    //      the edit component.
+    //
+    // @return (any) data value derived from display string passed in.
+    //
+    // @visibility external
+    //<
 
     //> @classMethod SimpleType.getType()
     // Retrieve a simpleType definition by type name
@@ -1005,7 +1042,14 @@ isc.defineClass("SimpleType").addClassMethods({
     //<
     getDefaultSummaryFunction : function (type) {
         var typeObj = this.getType(type);
-        if (typeObj) return typeObj._defaultSummaryFunction;
+        if (typeObj) {
+            if (typeObj._defaultSummaryFunction != null) {
+                return typeObj._defaultSummaryFunction;
+            }
+            if (typeObj.inheritsFrom != null && typeObj.inheritsFrom != type) {
+                return this.getDefaultSummaryFunction(typeObj.inheritsFrom);
+            }
+        }
     },
     
     //> @classMethod SimpleType.applySummaryFunction()

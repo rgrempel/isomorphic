@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -334,6 +334,9 @@ prettyPrint: true,
 //		@return	(string)			serialized object as a string
 //<
 _serialize : function (object, prefix, objPath) {	
+
+    //if (this.autoDupMethods) this.duplicateMethod("_serialize");
+
     if (!objPath) {
         if (object && object.getID) objPath = object.getID();
         else objPath = "";
@@ -387,11 +390,6 @@ _serialize : function (object, prefix, objPath) {
         }
 	}
 
-    if (isc.isA.Class(object)) {
-        this.logWarn("Attempt to serialize class of type: " + object.getClassName()
-                     + " at path: " + objPath + " - returning null for this slot.");
-        return null;
-    }
     if (object == window) {
         this.logWarn("Serializer encountered the window object at path: " + objPath
                     +" - returning null for this slot.");

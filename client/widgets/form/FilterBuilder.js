@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -32,7 +32,7 @@ isc.DynamicFilterForm.addProperties({
         // We need to suppress normal DynamicForm saveOnEnter behavior; we also need to let
         // the FilterBuilder that will eventually see this event know whether or not the field
         // triggering it was a TextItem
-        var item = this.getFocusItem();
+        var item = this.getFocusSubItem();
         if (isc.isA.TextItem(item)) eventInfo.firedOnTextItem = true;
         
         // But we need normal key handling for everything except Enter!
@@ -132,6 +132,11 @@ showRemoveButton:true,
 //<
 removeButtonPrompt: "Remove",
 
+// set this flag to prevent non-filterable fields from being excluded - such exclusion makes
+// sense in a FilterBuilder, but we don't want it when we're using a FilterClause widget simply 
+// as a UI - for instance, from the HiliteEditor.
+excludeNonFilterableFields: true,
+
 //> @attr filterClause.removeButton (AutoChild : null : IR)
 // The clause removal ImgButton that appears before this clause if
 // +link{showRemoveButton} is set.
@@ -193,7 +198,12 @@ getSearchOperator : function (operatorName) {
 },
 
 combineFieldData : function (field, targetField) {
-    return this.getPrimaryDS().combineFieldData(field, targetField);
+    var ds = this.getPrimaryDS(),
+        dsField = ds.getField(targetField);
+    
+    if (dsField) 
+        return ds.combineFieldData(field, targetField);
+    else return field;
 },
 
 setupClause : function () {
@@ -227,7 +237,7 @@ setupClause : function () {
 
             isc.addProperties(items[0], { type: "staticText", clipValue: true, wrap: false });
 
-            if (!field || field.canFilter == false) specificFieldName = fieldNames[0];
+            if (!field || (this.excludeNonFilterableFields && field.canFilter == false)) specificFieldName = fieldNames[0];
             else if (this.showFieldTitles) {
                 fieldTitle = field.title ? field.title : specificFieldName;
             }
@@ -426,6 +436,8 @@ buildValueItemList : function (field, operator) {
                     displayField : props.displayField ? props.displayField : field.name
                 });
             }
+        } else if (field.editorProperties) {
+            fieldDef = isc.addProperties({}, fieldDef, field.editorProperties);
         }
 
         items.add(fieldDef);
@@ -549,6 +561,10 @@ getValues : function () {
     return clause.getValues();
 },
 
+getFieldName : function () {
+    return this.fieldPicker.getValue() || this.fieldName;
+},
+
 //> @method filterClause.getCriterion()
 // Return the criterion specified by this FilterClause.
 // 
@@ -559,7 +575,7 @@ getCriterion : function () {
     if (!this.clause) return null;
 
     var clause = this.clause,
-        fieldName = this.fieldPicker.getValue() || this.fieldName,
+        fieldName = this.getFieldName(),
         operator = this.operatorPicker.getValue(),
         valueField = clause.getField("value"),
         startField = clause.getField("start"),
@@ -1234,6 +1250,27 @@ topOperatorFormDefaults : {
 //<
 defaultSubClauseOperator:"or",
 
+//> @attr FilterBuilder.matchAllTitle (String : "Match All" : IR)
+// Title for the "Match All" (and) operator
+// @group i18nMessages
+// @visibility external
+//<
+matchAllTitle: "Match All",
+
+//> @attr FilterBuilder.matchNoneTitle (String : "Match None" : IR)
+// Title for the "Match None" (not) operator
+// @group i18nMessages
+// @visibility external
+//<
+matchNoneTitle: "Match None",
+
+//> @attr FilterBuilder.matchAnyTitle (String : "Match Any" : IR)
+// Title for the "Match Any" (or) operator
+// @group i18nMessages
+// @visibility external
+//<
+matchAnyTitle: "Match Any",
+
 // Init
 // ---------------------------------------------------------------------------------------
 
@@ -1271,6 +1308,13 @@ initWidget : function () {
     var ds = this.getPrimaryDS(),
         tempMap = ds.getTypeOperatorMap("text", true, "criteria"),
         tempArr = [];
+        
+    var radioItemMap = {
+        "and": this.matchAllTitle,
+        "or": this.matchAnyTitle,
+        "not": this.matchNoneTitle
+    };
+
     // We haven't got a lot of room, so we really want to be saying "and" in this 
     // select box, rather than "All subcriteria are true"
     for (var prop in tempMap) {
@@ -1289,7 +1333,7 @@ initWidget : function () {
             this.addMember(removeButton);
         }
         this.addAutoChild("topOperatorForm");
-        this.topOperatorForm.items[0].valueMap = tempArr;
+        this.topOperatorForm.items[0].valueMap = tempMap;
         this.topOperatorForm.items[0].defaultValue = this.topOperator;
 
         this.addAutoChild("bracket");
@@ -1300,13 +1344,15 @@ initWidget : function () {
         this.addAutoChild("radioOperatorForm");
         var radioMap = {};
         for (var i = 0; i < this.radioOptions.length; i++) {
-            radioMap[this.radioOptions[i]] = tempMap[this.radioOptions[i]];
+            radioMap[this.radioOptions[i]] = radioItemMap[this.radioOptions[i]];
         }
         this.radioOperatorForm.items[0].valueMap = radioMap; 
         this.radioOperatorForm.items[0].defaultValue = this.topOperator;
     }
     this.addAutoChildren(["buttonBar", "addButton", "subClauseButton"]);
 
+    // support criteria being passed with null elements
+    this.stripNullCriteria(this.criteria);
     this.setCriteria(this.criteria);
 },
 
@@ -1565,6 +1611,9 @@ addSubClause : function (criterion) {
         clause.bracket.setHeight(clause.getVisibleHeight());
     });
 
+    // update the firstRemoveButton on the containing clause
+    this.updateFirstRemoveButton();
+
     return clause;
 },
 
@@ -1630,6 +1679,8 @@ filterReady : function () { },
 setCriteria : function (criteria) {
 
     this.clearCriteria(true);
+
+    this.stripNullCriteria(criteria);
 
     if (!this._loadingFieldData && this.fieldDataSource && criteria) {
         // fetch the necessary field-entries so they can be passed into the filterClauses
@@ -1707,6 +1758,18 @@ setCriteria : function (criteria) {
     this.clauseStack.show();
     this.redraw();
     this.filterReady();
+},
+
+stripNullCriteria : function (criteria) {
+    if (criteria && criteria.criteria && criteria.criteria.length>0) {
+        for (var i = criteria.criteria.length-1; i>=0; i--) {
+            if (criteria.criteria[i] == null) {
+                criteria.criteria.removeAt(i);
+            } else {
+                if (criteria.criteria[i].criteria) this.stripNullCriteria(criteria.criteria[i]);
+            }
+        }
+    }
 },
 
 fetchFieldsReply : function (data, criteria) {

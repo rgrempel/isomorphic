@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -17,32 +17,68 @@
 // 
 // RPCManager is a static singleton class that manages transparent client/server RPC (remote
 // procedure call).  This class provides a generic, low-level client/server communication
-// integration point.  You can use it to send arbitrary data to a URL of your choosing on the
-// server and optionally be called back with server-returned data when the server replies.  
-// You can process the RPC request in a JSP, Servlet or Filter on the server.
+// integration point.
 // <P>
-// SmartClient's powerful +link{DataBoundComponent,DataBoundComponents} automatically issue
+// SmartClient's powerful databinding subsystem (see +link{DataSource}, 
+// +link{DataBoundComponent,DataBoundComponents}) automatically make use of this class to issue
 // RPCs as necessary, based on the 
-// +link{group:dataSourceOperations,DataSource protocol}.  To integrate DataBoundComponents
+// +link{group:dataSourceOperations,DataSource protocol}. To integrate DataBoundComponents
 // with your server, +link{group:clientServerIntegration,start here}.
 // <P>
-// <u>Simple example (client code):</u>
-// <P><code>
+// For arbitrary client/server interactions outside of the DataSource subsystem, the
+// SmartClient server also provides the +link{dmiOverview,Direct Method Invocation} feature.
+// <P>
+// The RPCManager class can also be used <i>directly</i> to send data to a URL of your
+// choosing and optionally be called back with server-returned data when the server replies.
+// <P>
+// The SmartClient +link{iscServer,server code} has APIs for processing RPC requests 
+// providing features such as automatic Java &lt;--&gt; JavaScript object translation 
+// and handling of queued requests.<br>
+// The +link{servletDetails,IDACall servlet} makes use of these features to handle standard
+// +link{DataSource} requests and +link{DMI} calls. Developers can also override the
+// <code>actionURL</code> of specific requests and use these APIs directly in a 
+// JSP, Servlet or Filter.
+// <P>
+// Note: the client-side RPCManager class can also be used without the SmartClient server.
+// For an overview of client/server interactions without the SmartClient server, see
+// +link{group:nonJavaBackend,this overview}.
+// <P>
+// <u>Simple arbitrary Remote Procedure Call example (client code):</u>
+// <var class="smartclient">
+// <P>
+// <code>
 // var data = { here: "is some data", to: ["send to the server"]};<br>
 // RPCManager.sendRequest({ data: data, callback: "myCallback(data)", actionURL: "/rpcHandler.jsp"});<br>
 // function myCallback(data) { alert("response from the server: " + data); }
-// </code><br><br>
-// <u>Simple example (server code: /rpcHandler.jsp):</u>
+// </code>
+// </var>
+// <var class="smartgwt">
+// <P>
+// <code>
+// <pre>
+//  RPCRequest request = new RPCRequest();
+//  // Note data could be a String, Map or Record
+//  request.setData("Some data to send to the client");
+//  request.setActionURL("/rpcHandler.jsp");
+// 
+//  RPCManager.sendRequest(request, 
+//      new RPCCallback () {
+//          public void execute(RPCResponse response, Object rawData, RPCRequest request) {
+//              SC.say("Response from the server:" + rawData);
+//          }
+//      }
+//  );
+// </pre>
+// </code>
+// </var>
+// <P>
+// <u>Simple arbitrary Remote Procedure Call example (server code: /rpcHandler.jsp):</u>
 // <br><br><code>
 // RPCManager rpc = new RPCManager(request, response, out);<br>
 // Object data = rpc.getData();<br>
 // System.out.println("client sent: " + data.toString());<br>
 // rpc.send("here's a response");<br>
 // </code>
-// <P>
-// Note that, while the example above uses the SmartClient Java Server, the RPCManager is also
-// capable of issuing RPCs that do not require a SmartClient server.  See
-// +link{group:clientDataIntegration,Client-Side Data Integration} for details.
 // <P>
 // <u><b>Queuing</b></u>
 // <br>
@@ -51,15 +87,41 @@
 // possible.  The RPCManager provides a queuing mechanism that allows this.
 // <br><br>
 // <u>Queuing example (client code):</u>
+// <var class="smartclient">
 // <br><br><code>
-// RPCManager.startQueue();<br>
+// var wasQueuing = RPCManager.startQueue();<br>
 // RPCManager.send("a string of data", "myCallback(data)", {actionURL: "/rpcHandler.jsp"});<br>
 // RPCManager.sendRequest({ data: ["some", "more data", 2], callback: "myCallback(data)", actionURL: "/rpcHandler.jsp"});<br>
 // RPCManager.sendRequest({ data: "different callback", callback: "myCallback2(data)", actionURL: "/rpcHandler.jsp"});<br>
-// RPCManager.sendQueue()<br>
+// if (!wasQueuing) RPCManager.sendQueue()<br>
 // function myCallback(data) { alert("response from the server: " + data); }<br>
 // function myCallback2(data) { alert("response from the server (other callback): " + data); }
-// </code><br><br>
+// </code>
+// </var>
+// <var class="smartgwt">
+// <br><br><code><pre>
+//  boolean wasQueuing = RPCManager.startQueue();
+//	 
+//  RPCCallback callback = new RPCCallback() {
+//      public void execute(RPCResponse response, Object rawData, RPCRequest request) {
+//          Window.alert("response from server:" + rawData);
+//      }
+//  };
+//		 
+//  RPCRequest request1 = new RPCRequest();
+//  request1.setActionURL("/rpcHandler.jsp");
+//  request1.setData("A String of Data");
+//  RPCManager.sendRequest(request1, callback);
+//		 
+//  RPCRequest request2 = new RPCRequest();
+//  request2.setActionURL("/rpcHandler.jsp");
+//  request2.setData("Another String of Data");
+//  RPCManager.sendRequest(request2, callback);
+//		 
+//  if (!wasQueuing) RPCManager.sendQueue();
+// </pre></code>
+// </var>
+// <p>
 // <u>Queuing example (server code: /rpcHandler.jsp):</u>
 // <br><br><code>
 // RPCManager rpc = new RPCManager(request, response, out);<br>
@@ -142,20 +204,44 @@ isc.RPCRequest.addClassMethods({
 
 //> @attr rpcRequest.data (any serializeable : null : IRW)
 //
-// This attribute specifies the payload of the RPCRequest.  When using the SmartClient server,
+// This attribute specifies the payload of the RPCRequest.  
+// <var class="smartclient">
+// When using the +link{iscServer,SmartClient server},
 // any JavaScript simple type or arbitrarily nested set of Objects and Arrays can be sent
-// to server and automatically translated to Java Objects.  Here are the 
+// to server and automatically translated to Java Objects.  
+// </var>
+// <var class="smartgwt">
+// When using the +link{iscServer,SmartClient server}, objects sent to the server as
+// <code>request.data</code> will be available on the server-side <code>RPCRequest</code>
+// object as Java Objects. This is achieved by serializing the client side data
+// in a JSON type format and generating Java Objects on the server from this serialized data.
+// <P>
+// If the client side <code>request.data</code> is set to a Java object in your SmartGWT code
+// it will be serialized as JSON as follows:<br>
+// - Numeric client side values (int, Integer, etc) will be serialized as JavaScript numbers.<br>
+// - String values will be serialized as JavaScript strings.<br>
+// - Date values will be serialized as JavaScript dates.<br>
+// - Maps or Record objects will be serialized as JavaScript Objects.<br>
+// - Arrays or Lists will become JavaScript arrays<br>
+// Serialization of Maps and Arrays is recursive - each entry in an Array, or attribute
+// on a Map will also be serialized according to the above rules.<br>
+// Note that you can also set <code>request.data</code> directly to a JavaScriptObject,
+// and use the <code>JSOHelper</code> class or <code><i>SomeObject.</i>getJSObj()</code> to 
+// perform your own data conversions on the client. The serialized JavaScript will then be
+// converted back to Java on the server according to the following rules.
+// </var>
+// <P>
+// Here are the 
 // mapping of JavaScript types to their corresponding server object types:<br><br>
 //
 // <table class='normal' border='1'>
-//   <tr><td><b>JS Type</b></td>     <td><b>Java Type</b></td> <td><b>C# Type</b></td> <td><b>Perl Type</b></td></tr>
-//
-//   <tr><td>Object: {}</td>         <td>Map</td>              <td>IDictionary</td>      <td>Associative Array: {}</td></tr>
-//   <tr><td>Array: []</td>          <td>List</td>             <td>IList</td>      <td>Array: []</td></tr>
-//   <tr><td>String</td>             <td>String</td>           <td>string</td>         <td>string</td></tr>
-//   <tr><td>Number</td>             <td>Long|Double</td>      <td>long|double</td>    <td>string</td></tr>
-//   <tr><td>Boolean</td>            <td>Boolean</td>          <td>bool</td>           <td>string</td></tr>
-//   <tr><td>Date</td>               <td>java.util.Date</td>   <td>DateTime</td>       <td>string</td></tr>
+//   <tr><td><b>JS Type</b></td>     <td><b>Java Type</b></td></tr>
+//   <tr><td>Object: {}</td>         <td>Map</td></tr>
+//   <tr><td>Array: []</td>          <td>List</td></tr>
+//   <tr><td>String</td>             <td>String</td></tr>
+//   <tr><td>Number</td>             <td>Long|Double</td></tr>
+//   <tr><td>Boolean</td>            <td>Boolean</td></tr>
+//   <tr><td>Date</td>               <td>java.util.Date</td></tr>
 // 
 // </table>
 // <br><br>
@@ -170,6 +256,7 @@ isc.RPCRequest.addClassMethods({
 // becomes simple HTTP parameters or an HTTP request body - see +link{rpcRequest.useSimpleHttp}
 // for details.
 //
+// @see RPCResponse.data
 // @visibility external
 //<
 
@@ -360,14 +447,14 @@ isc.RPCRequest.addClassMethods({
 // <code>rpcRequest.params</code> is not deserialized by the SmartClient server, and
 // all values arrive on the server as String type (like HTTP parameters always do).
 // <p>
-// <span class="smartclient">
+// <var class="smartclient">
 // The params value can also be specified as a componentID or component instance that provides
 // a method getValues() that returns an Object literal.  SmartClient components
 // +link{class:DynamicForm}, +link{class:ValuesManager} are two such classes.  Lastly, you may
 // specify the ID of a native form element (retrievable via getElementById()) and the params
 // will be populated from there.  If there is an error resolving your params directive, it will
 // be logged to the Developer Console.
-// </span>
+// </var>
 // <p>
 // Note: The params are submitted once per http transaction.  If you are using 
 // +link{RPCManager.startQueue(),request queuing} to bundle multiple RPCRequests or DSRequests
@@ -753,15 +840,35 @@ isc.RPCRequest.addClassMethods({
 // The data sent by the server.
 // <P>
 // When communicating with the SmartClient server, rpcResponse.data is the data passed to the
-// server-side method RPCResponse.setData() by your Java code, as translated into JavaScript
-// objects by the rules described under +link{rpcRequest.data}.
+// server-side method RPCResponse.setData() by your Java code.
+// <var class="smartclient">This data is translated into JavaScript
+// objects by the rules described under +link{rpcRequest.data}.</var>
+// <var class="smartgwt">This data is translated into JavaScript
+// objects by the rules described under +link{rpcRequest.data}. Simple types (Numeric values,
+// Strings, Dates, Booleans) will be available as their equivalent Java types in your
+// client side GWT code. Complex objects (such as serialized Maps or Lists from the server)
+// will not be automatically translated back into Java on the client - they will arrive as
+// <code>JavaScriptObject</code> instances. You can easily convert
+// to the appropriate type yourself using the <code>JSOHelper</code> class. The 
+// +link{JSOHelper.convertToJava()} method performs a recursive conversion of JavaScriptObjects
+// returning a List (or array) for JavaScript arrays or a Map for simple
+// JavaScript objects (key:value pairs).
+// </var>
 // <P>
-// When not communicating with the SmartClient server (+link{rpcRequest.useSimpleHttp} or
-// another flag that implies it is set), rpcResponse.data contains the raw HTTP response body.
-// For an exception, see +link{rpcRequest.evalResult}.
-// 
+// When not communicating with the SmartClient server rpcResponse.data contains the
+// raw HTTP response body. See +link{rpcRequest.useSimpleHttp},
+// +link{rpcRequest.serverOutputAsString}, +link{rpcRequest.evalResult} for details.
 // @visibility external
 //<
+
+
+
+// Server->client conversion follows the this table as well, with some extras.  See the toJS()
+// method on JSTranslater in the server documentation for a description of additional
+// behaviors.
+// <P>
+
+
 
 //> @attr rpcResponse.status (integer : false : R)
 // 
@@ -956,6 +1063,17 @@ errorCodes : {
     //<
     STATUS_SUCCESS: 0,
 
+    //> @classAttr rpcResponse.STATUS_OFFLINE (integer : 1 : R)
+    //
+    // Indicates that the browser is currently offline, and that we do not hold a cached 
+    // response for the request.  
+    // 
+    // @see class:RPCRequest
+    // @group statusCodes
+    // @visibility external
+    //<
+    STATUS_OFFLINE: 1,
+
     //> @classAttr rpcResponse.STATUS_FAILURE (integer : -1 : R)
     //
     // Indicates a generic failure on the server.  
@@ -1036,6 +1154,20 @@ errorCodes : {
     // @visibility external
     //<
     STATUS_UPDATE_WITHOUT_PK_ERROR: -9,
+
+    //> @classAttr rpcResponse.STATUS_TRANSACTION_FAILED (integer : -10 : R)
+    //
+    // Indicates that the request was either never attempted or was rolled back, because 
+    // automatic or user transactions are in force and another request in the same transaction
+    // failed.  Note that the request(s) that actually failed will have a code specific to the
+    // actual failure; it is only the requests that would otherwise have succeeded that are 
+    // marked with this failure code.
+    // 
+    // @see class:RPCRequest
+    // @group statusCodes
+    // @visibility external
+    //<
+    STATUS_TRANSACTION_FAILED: -10,
 
     //> @classAttr rpcResponse.STATUS_TRANSPORT_ERROR (integer : -90 : R)
     //
@@ -1206,7 +1338,7 @@ isc.RPCManager.addClassProperties({
     // @see attr:rpcRequest.promptStyle
     // @group rpcPrompt
     //<
-    promptStyle: "dialog",
+    promptStyle: isc.Dialog ? "dialog" : "cursor",
 
     //> @classAttr RPCManager.useCursorTracker (boolean : platform-dependent : IRW)
     //
@@ -3255,22 +3387,35 @@ isLocalURL : function (url) {
 		for (var i = 0, j = 0; i < requests.length; i++) {
             
             var request = requests[i];
-            var response = isc.addProperties(this.createRPCResponse(transaction, request), {
+            
+            // Handle Queue (so structured responses) 
+            // containing both clientOnly requests and real http turnarounds
+            // For any clientOnly requests the response is simply "success" and we rely on 
+            // the callback at the DS level to populate with meaningful results
+            var response;
+            if (responseIsStructured && request.clientOnly) {
+                response = isc.addProperties(this.createRPCResponse(transaction, request), {
                 
-                isStructured: responseIsStructured,
-                
-                // for scriptInclude, make all values available via callbackArgs - typically
-                // there will be only one - and that's accessible via "data", but all args
-                // are available via this callbackArgs - not currently exposed
-                callbackArgs : transaction.transport == "scriptInclude" ? results : null,
-                
-                // get the results from the server results array; 
-                //
-                // if the response is not an rpc, then the same response applies to all
-                // requests.  In general we really expect there to be only one request for non
-                // RPC responses.
-                results: responseIsStructured ? results[j++] : results
+                        isStructured: false
                 });
+            } else {
+                response = isc.addProperties(this.createRPCResponse(transaction, request), {
+                    
+                    isStructured: responseIsStructured,
+                    
+                    // for scriptInclude, make all values available via callbackArgs - typically
+                    // there will be only one - and that's accessible via "data", but all args
+                    // are available via this callbackArgs - not currently exposed
+                    callbackArgs : transaction.transport == "scriptInclude" ? results : null,
+                    
+                    // get the results from the server results array; 
+                    //
+                    // if the response is not an rpc, then the same response applies to all
+                    // requests.  In general we really expect there to be only one request for non
+                    // RPC responses.
+                    results: responseIsStructured ? results[j++] : results
+                 });
+            }
 
             // if no status has been set on the response, set to SUCCESS.  This can happen with
             // unstructured responses that simply load a file.
@@ -3562,29 +3707,51 @@ isLocalURL : function (url) {
 	
 //> @groupDef relogin
 // 
-// For applications that require authentication and use session timeout, a background RPC may
-// occur with an expired session.  The ideal handling of this scenario is that, with the attempted
-// transaction still suspended, a modal dialog is used to re-authenticate the user, and then the
-// original transaction is resumed without loss of data or context.  SmartClient makes it easy to
+// When a user's session has expired and the user tries to navigate to a protected resource,
+// typical authentication systems will redirect the user to a login page.  With Ajax systems
+// such as SmartClient, this attempted redirect may happen in response to background data
+// operations such as a form trying to save.  In this case, the form perceives the login page
+// as a malformed response and displays a warning, and the login page is never displayed to the
+// user.
+// <P>
+// The ideal handling of this scenario is that the form's attempt to save is "suspended" while the
+// user re-authenticates, then is completed normally.  SmartClient makes it easy to
 // implement this ideal handling <i>without</i> having to implement session timeout handling in
 // every codepath that contacts the server, by providing central notification of session timeout,
 // and the ability to re-send a transaction that encountered session timeout.
 // <P>
-// When session timeout occurs, typical authentication systems intercept requests to protected
-// resources and return a page that tells the user that login is required.  With a background RPC
-// this page won't be shown to the user.
+// <h3>Detecting session timeout</h3>
 // <P>
-// To enable SmartClient to detect that session timeout has occurred, a snippet of HTML called the
-// loginRequiredMarker must be added to the session timeout response sent by the authentication
-// system.  The loginRequiredMarker is standardized and does not need to be customized for your
-// deployment.  It can be added to an HTML page without visual effect, or if the response sent on
-// session timeout is not an HTML page, simply embedded in any other type of response, or sent
-// as the entirety of the response.  The loginRequiredMarker is in
-// isomorphic/login/loginRequiredMarker.html.
+// To enable SmartClient to detect that session timeout has occurred, a special marker needs to
+// be added to the HTTP response that is sent when a user's session has timed out.  This is
+// called the <code>loginRequiredMarker</code>.
 // <P>
-// When SmartClient detects the loginRequired marker, the transaction that encountered session
-// timeout is put on hold, and +link{RPCManager.loginRequired()} is called.  At this point you
-// have a few options:
+// If your authentication system will redirect to a login page when a user's session is timed
+// out, it's sufficient to simply embed the <code>loginRequiredMarker</code> in the login page.  The
+// <code>loginRequiredMarker</code> is valid HTML and will have no effect on the behavior or
+// appearance of the page.  The <code>loginRequiredMarker</code> is found in
+// <var class="smartclient">smartclientSDK/isomorphic/login/loginRequiredMarker.html</var>
+// <var class="smartgwt">docs/loginRequiredMarker.html</var>
+// in your SDK.  Simply copy the contents of this file verbatim into your login page anywhere
+// inside the &lt;body&gt; tag; it does not need to be customized in any way for your application.
+// <P>
+// If it's a problem to modify the login page (even with a marker that has no effect on
+// appearance or behavior), see if you can configure your authentication system to return a
+// special response specifically for background requests for data.  By default, when using the
+// SmartClient Server Framework, all such requests go to the +link{RPCManager.actionURL} and
+// include an HTTP query parameter "isc_rpc=1"; various authentication systems can be
+// configured to detect these requests and handle them separately.  One approach is to simply
+// copy loginRequiredMarker.html into your application in an area not protected by
+// authentication and redirect to it when a background data request with an expired session is
+// detected.
+// <P>
+// <h3>Handling session timeout</h3>
+// <P>
+// When SmartClient detects the <code>loginRequiredMarker</code>, the transaction that
+// encountered session timeout is put on hold, and 
+// <var class="smartclient">+link{RPCManager.loginRequired()} is called.</var>
+// <var class="smartgwt">the RPCManager LoginRequired event is raised.</var>
+// At this point you have a few options:
 // <ol>
 // 
 // <li> Leave the SmartClient application and take the user to the login page, by simply doing a
@@ -3599,12 +3766,13 @@ isLocalURL : function (url) {
 // 
 // <li> Use a SmartClient interface, typically a DynamicForm in a Window, to collect credentials,
 // perform login as a background RPC, and on success re-send the intercepted transaction
-// (+link{RPCManager.resendTransaction()}.  A complete example of this, which assumes
-// an authentication system that can take credentials as HTTP POST params, is included in the SDK
-// as isomorphic/login/reloginFlow.js.
+// (+link{RPCManager.resendTransaction()}.  <var class="smartclient">A complete example of this,
+// which assumes an authentication system that can take credentials as HTTP POST params, is
+// included in the SDK as isomorphic/login/reloginFlow.js.</var>
 // 
 // </ol>
 // <B>Authentication via background RPC form POST</B>
+// <var class="smartclient">
 // <P>
 // The approach shown in reloginFlow.js posts the credentials gathered from the user to
 // +link{RPCManager.credentialsURL}.  To make this work with an authentication system that can
@@ -3619,6 +3787,45 @@ isLocalURL : function (url) {
 // If your authentication system can accept POST'd credentials at any URL it protects, the last
 // step may be as simple as configuring the loginSuccessMarker file itself as a protected
 // resource (isomorphic/login/loginSuccess.html).
+// </var>
+// <span class="smartgwt">
+// <var class="smartgwt">
+// <P>
+// To relogin against any system that can accept credentials as an HTTP POST:
+// <ol>
+// <li> when the LoginRequired event is raised, show a login form in a modal dialog.  The
+//      +link{LoginWindow} component is a simple version of this, or you can create your own
+// <li> when the user enters credentials, POST them using code like the following:
+// <pre>
+//    RPCRequest request = new RPCRequest();
+//    request.setContainsCredentials(true);
+//    request.setActionURL(credentialsURL);
+//    request.setUseSimpleHttp(true);
+//    request.setShowPrompt(false);
+//    Map<String,String> params = new HashMap<String,String>();
+//    // adjust parameter names to match your authentication system
+//    params.put("j_username",<i>username</i>);
+//    params.put("j_password",<i>password</i>);
+//    request.setParams(params);
+//    RPCManager.sendRequest(request,new RPCCallback(){
+//        public void execute(RPCResponse response, Object rawData, RPCRequest request) {
+//            if (response.getStatus() == RPCResponse.STATUS_SUCCESS) {
+//                // get rid of login window
+//                RPCManager.resendTransaction();
+//            } else if (response.getStatus() == RPCResponse.STATUS_LOGIN_INCORRECT) {
+//                // show an error in the login window
+//            }
+//        }
+//    });
+// </pre>
+// <li> configure your authentication system to send back the loginSuccessMarker as part of a
+// successful login response, and the loginRequiredMarker as part of a failed login response
+// </ol>
+// If your authentication system can accept POST'd credentials at any URL it protects, the last
+// step may be as simple as configuring the loginSuccessMarker file itself as a protected
+// resource (isomorphic/login/loginSuccess.html).
+// </var>
+// </span>
 // <P>
 // <B>Authentication via background SmartClient server RPC/DMI</B>
 // <P>
@@ -4238,7 +4445,7 @@ isc.InstantDataApp.addMethods({
 //     <li>If your ultimate storage is not SQL, write a 
 //         +link{group:writeCustomDataSource,custom DataSource}</li>
 //     <li>Whether or not your storage is SQL, add business logic either declaratively in the 
-//         DataSource definition, via +link{class:DMI}, or any combination of the two:
+//         DataSource definition, via +link{dmiOverview,DMI}, or any combination of the two:
 //   <ul><li>The &lt;criteria&gt; and &lt;values&gt; properties of an +link{class:OperationBinding}
 //           allow you to dynamically set data values at transaction-processing time, using 
 //           built-in +link{group:velocitySupport,Velocity support}</li>
@@ -4641,7 +4848,7 @@ isc.InstantDataApp.addMethods({
 // the entire queue of transactions.  For every DSRequest in the queue, this RPCManager:</li>
 //   <ul>
 //   <li>Validates the DSRequest</li>
-//   <li>Sends the DSRequest through +link{DMI} - in other words, your code - if this is 
+//   <li>Sends the DSRequest through +link{dmiOverview,DMI} - in other words, your code - if this is 
 //       configured in the DataSource.  As described later in this section, your code can
 //       perform some custom logic here: either completely fulfilling the request, or
 //       alternatively modifying the request and causing the default
@@ -4679,7 +4886,7 @@ isc.InstantDataApp.addMethods({
 //   <li>For SQL DataSources, use +link{group:customQuerying,SQL Templating} to change, add 
 //       to or even completely replace the SQL sent to the database, including calling
 //       stored procedures</li>
-//   <li>Use +link{class:DMI,Direct Method Invocation} to call directly into your own Java 
+//   <li>Use +link{dmiOverview,Direct Method Invocation} to call directly into your own Java 
 //       classes.  As described in the DMI discussion linked to above, DMI calls can be used 
 //       in conjunction with normal <code>DSRequest</code> process flow, thus enabling you
 //       to add custom logic to built-in DataSources without having to create your own 
@@ -4702,7 +4909,8 @@ isc.InstantDataApp.addMethods({
 // +explorerExample{transactionsFolder,Queuing examples}.</li>
 // </ul>
 // <P>
-// For more information on the DMI subsystem, see the +link{DMI} class and the 
+// For more information on the DMI subsystem, see the +link{dmiOverview,DMI overview},
+// +link{DMI,DMI class} and the 
 // +explorerExample{DMI,DMI example} in the Feature Explorer.
 // <P>
 // Note that, as you continue to integrate your prototype with your backend, you can use a

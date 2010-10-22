@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -314,7 +314,7 @@ isc.defineClass("PortalColumn", "Layout").addProperties({
     
     rowConstructor:"PortalRow",
     addPortlet : function (portlet, position) {
-        
+
         // offset position to be position within rows
         if (this.showColumnHeader) position += 1;
         
@@ -341,6 +341,21 @@ isc.defineClass("PortalColumn", "Layout").addProperties({
         this.addMember(portalRow, position);
         
         portalRow.addMember(portlet);
+    },
+
+    addPortletToExistingRow : function (portlet, rowNum, rowOffset) {
+
+        // offset position to be position within rows
+        if (this.showColumnHeader) rowNum += 1;
+
+        var rows = this.getMembers();
+
+        if (rows == null || rows.length <= rowNum) {
+            this.addPortlet(portlet);
+        } else {
+            var portalRow = this.getMember(rowNum);
+            portalRow.addMember(portlet, rowOffset);
+        }
     },
     
     getDropPosition : function () {
@@ -501,6 +516,10 @@ isc.defineClass("PortalLayout", "Layout").addProperties({
         
         var column = this.getMember(colNum);
         if (column != null) column.addPortlet(portlet, rowNum);
+    },
+    
+    getColumn : function (colNum) {
+        return this.getMember(colNum);
     },
     
     //>@method portalLayout.removePortlet()

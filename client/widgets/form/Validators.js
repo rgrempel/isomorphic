@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -118,7 +118,7 @@
 // are considered by Velocity to be the boolean values represented by those words).  All of 
 // the following are valid forms:
 // <p><code>
-// &nbsp;&nbsp;$value < 100<br>
+// &nbsp;&nbsp;$value &lt; 100<br>
 // &nbsp;&nbsp;$util.contains($value, "some string")<br>
 // &nbsp;&nbsp;$record.someVariable </code>(assuming that "someVariable" contains a boolean value)<code><br>
 // &nbsp;&nbsp;false </code>(not terribly useful as a validation - this would fail in every case)
@@ -184,7 +184,7 @@
 // expects to find a compliant method called "condition".
 // <P>
 // Additional arguments may be declared and are automatically supplied based on the declared
-// argument type, via +link{DMI}.  Available objects include:
+// argument type, via +link{dmiOverview,DMI}.  Available objects include:
 // <ul>
 // <li><b>DataSource</b> - the DataSource where this validator is declared, an instance of
 //                         com.isomorphic.datasource.DataSource or a subclass</li>
@@ -204,8 +204,14 @@
 // @example dmiValidation
 //<
 
+//> @attr validator.resultingValue (Object : null : IR)
+// To transform the incoming value that is validated into a different value or format set this
+// property from +link{validator.condition()} to the desired value.
+// @serverDS allowed
+// @visibility external
+//<
 
-//> @attr validator.errorMessage               (String : null : [IR])
+//> @attr validator.errorMessage (String : null : IR)
 // Text to display if the value does not pass this validation check.
 // <P>
 // If unspecified, default error messages exist for all built-in validators, and a generic

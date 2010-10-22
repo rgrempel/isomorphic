@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -292,20 +292,20 @@ isc.defineClass("Operators", "Class").addClassProperties({
     // @group i18nMessages
     // @visibility external
     //<
-    andTitle: "Match All",
+    andTitle: "and",
 
     //> @classAttr Operators.notTitle (String : "Match None" : IR)
     // Title for the "not" operator
     // @group i18nMessages
     // @visibility external
     //<
-    notTitle: "Match None",
+    notTitle: "not",
 
     //> @classAttr Operators.orTitle (String : "Match Any" : IR)
     // Title for the "or" operator
     // @group i18nMessages
     // @visibility external
     //<
-    orTitle: "Match Any"
+    orTitle: "or"
     
 });

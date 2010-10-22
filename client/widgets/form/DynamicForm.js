@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -71,11 +71,6 @@ isc.addGlobal("FormLayout", isc.DynamicForm);
 // properties in the overall form's values.  Some items exist purely for layout or appearance
 // purposes (eg SpacerItem) and do not manage a value.
 // @title Form Items
-// @visibility external
-//<
-
-//> @groupDef tableLayout
-// Manipulating the values stored in the form.
 // @visibility external
 //<
 
@@ -327,17 +322,17 @@ isc.DynamicForm.addProperties({
     //<
     flattenItems:false,
    
-    //>	@attr	dynamicForm.numCols		(number : 2 : [IRW])
+    //>	@attr dynamicForm.numCols		(number : 2 : [IRW])
     // The number of columns of titles and items in this form's layout grid. A title and
     // corresponding item each have their own column, so to display two form elements per
     // row (each having a title and item), you would set this property to 4.
     //
-    // @group tableLayout
+    // @group formLayout
     // @visibility external
     //<
 	numCols:2,
     
-    //>	@attr	dynamicForm.fixedColWidths	(boolean : false : IRW)
+    //>	@attr dynamicForm.fixedColWidths	(boolean : false : IRW)
 	// If true, we ensure that column widths are at least as large as you specify them.  This
     // means that if any single column overflows (due to, eg, a long unbreakable title),
     // the form as a whole overflows.
@@ -347,7 +342,7 @@ isc.DynamicForm.addProperties({
     // available room, until there is no more free space, in which case the form as a whole
     // overflows.
     // 
-	// @group tableLayout
+	// @group formLayout
     // @visibility external
 	//<
     
@@ -376,39 +371,39 @@ isc.DynamicForm.addProperties({
     //     widths). Multiple columns can use "*", in which case remaining width is divided
     //     between all columns marked "*".
     // </ul>
-    // @group tableLayout
+    // @group formLayout
     // @visibility external
     // @example columnSpanning
     //<
 	colWidths:null,
     
-    //>	@attr	dynamicForm.minColWidth		(number : 20 : IRW)
+    //>	@attr dynamicForm.minColWidth		(number : 20 : IRW)
 	// Minimum width of a form column.
-	// @group tableLayout
+	// @group formLayout
     // @visibility external
 	//<
 	minColWidth:20,
 
     //>	@attr	dynamicForm.cellSpacing		(number : 0 : [IRW])
     // The amount of empty space, in pixels, between form item cells in the layout grid.
-    // @group tableLayout
+    // @group formLayout
     // @visibility internal
     //<
     
 	cellSpacing:0,
     
-    //>	@attr	dynamicForm.cellPadding		(number : 2 : [IRW])
+    //>	@attr dynamicForm.cellPadding		(number : 2 : [IRW])
     // The amount of empty space, in pixels, surrounding each form item within its cell in
     // the layout grid.
-    // @group tableLayout
+    // @group formLayout
     // @visibility external
     //<
 	cellPadding:2,
     
-    //>	@attr	dynamicForm.cellBorder		(number : 0 : [IRW])
+    //>	@attr dynamicForm.cellBorder		(number : 0 : [IRW])
     // Width of border for the table that form is drawn in. This is primarily used for debugging
     // form layout.
-    // @group tableLayout
+    // @group formLayout
     // @visibility external
     //<
 	cellBorder:0,
@@ -423,7 +418,7 @@ isc.DynamicForm.addProperties({
     //
     // @see type:VisibilityMode
     // @see class:SectionItem
-    // @group tableLayout
+    // @group formLayout
     // @visibility external
     //<
     sectionVisibilityMode: "multiple",
@@ -872,10 +867,10 @@ isc.DynamicForm.addProperties({
     // at the item or form level if required for backcompat.
     //rejectInvalidValueOnChange:null,
 
-    //>	@attr	dynamicForm.unknownErrorMessage	(string : "Invalid value" : [IRW])
-    //          The error message for a failed validator that does not specify its own errorMessage.
-    //      @group validation, i18nMessages
-    //      @visibility external
+    //>	@attr dynamicForm.unknownErrorMessage (string : "Invalid value" : [IRW])
+    // The error message for a failed validator that does not specify its own errorMessage.
+    // @group validation, i18nMessages
+    // @visibility external
     //<                                       
 	unknownErrorMessage : "Invalid value",
 
@@ -889,6 +884,20 @@ isc.DynamicForm.addProperties({
     // @visibility external
     // @see formItem.validateOnExit
     //<	
+
+    //> @attr dynamicForm.implicitSave (boolean : false : IRW)
+    // If true, form item values will be automatically saved when each item's "editorExit" 
+    // handler is fired as well as when the entire form is submitted.
+    // @visibility external
+    //<	
+
+    //> @attr dynamicForm.implicitSaveDelay (number : 2000 : IRW)
+    // When +link{dynamicForm.implicitSave, implicitSave} is true, indicates that form item 
+    // values will be automatically saved after a given pause during editing, as well as when 
+    // each item's "editorExit" handler is fired and when the entire form is submitted.
+    // @visibility external
+    //<	
+    implicitSaveDelay: 2000,
 
     //> @attr dynamicForm.stopOnError (boolean : null : IR)
     // Indicates that if validation fails, the user should not be allowed to exit
@@ -1005,14 +1014,15 @@ isc.DynamicForm.addProperties({
     // If this browser has a 'spellCheck' feature for text-based form item elements, should
     // it be used for items in this form? Can be overridden at the item level via 
     // +link{FormItem.browserSpellCheck}
-    // @visibility internal
+    // <P>
+    // Notes:<br>
+    // - this property only applies to text based items such as TextItem and TextAreaItem.<br>
+    // - this property is not supported on all browsers.
+    //
+    // @see formItem.browserSpellCheck
+    // @visibility external
     //<
-    // Only supported in Moz
     
-
-    // NOTE:  Property exposed on our publict forum here: 
-    //   http://forums.smartclient.com/showthread.php?p=552#post552
-    // Comment in that post "not publically documented as not supported cross browser"
     browserSpellCheck:true,
     
     // Direct Submit
@@ -1434,10 +1444,10 @@ setItems : function (itemList, firstInit) {
 // Set the +link{dynamicForm.fields,items} for this DynamicForm.  Takes an array of item
 // definitions, which will be converted to +link{FormItem}s and displayed in the form.
 // <P>
-// <span class="SmartClient">
+// <var class="SmartClient">
 // Note: Do not attempt to create +link{FormItem} instances directly. This method should be
 // passed the raw properties for each item only.
-// </span>
+// </var>
 // <P>
 // Objects passed to <code>setFields()</code> may not be reused in other forms and may not be
 // used in subsequent calls to <code>setFields()</code> with the same form, new objects must be
@@ -1492,7 +1502,7 @@ visibleAtPoint : function (x, y, withinViewport, ignoreWidgets) {
     
     var items = this.items || [],
         containerWidgets = {},
-        focusItemIndex = items.indexOf(this.getFocusItem());
+        focusItemIndex = items.indexOf(this.getFocusSubItem());
     
     for (var i = -1; i < items.length; i++) {
         
@@ -1616,7 +1626,7 @@ _addItems : function (newItems, position, fromSetItems, firstInit) {
     else this.items.addListAt(newItems, position);
     
     
-    if (!firstInit) this.setItemValues(this.getValues(), false, true, newItems);
+    if (!firstInit) this.setItemValues(null, false, true, newItems);
 
     // enable multipart encoding if upload fields are included
     // NOTE: imperfect: we aren't detecting all the ways you can include an UploadItem, eg
@@ -2501,19 +2511,24 @@ clearValues : function () {
 },
 
 //>	@method	dynamicForm.valuesHaveChanged() ([])
-//          Compares the current set of values with the values stored by the call to the
-//          <code>rememberValues()</code> method. Returns true if the values have changed, and false
-//          otherwise.
-//      @visibility external
-//		@group formValues
-//
+// Compares the current set of values with the values stored by the call to the
+// +link{dynamicForm.rememberValues()} method.  <code>rememberValues()</code> runs when the
+// form is initialized and on every call to +link{dynamicForm.setValues()}.
+// Returns true if the values have changed, and false otherwise.
 //		@return	(boolean)	true if current values do not match remembered values
+//
+// @see getChangedValues()
+// @see getOldValues()
+//
+// @group formValues
+// @visibility external
 //<
-valuesHaveChanged : function () {
+valuesHaveChanged : function (returnChangedVals) {
 	var values = this.getValues(),
         // form._oldValues is used to store the values in rememberValues()
         oldValues = this._oldValues, 
-        changed = false;
+        changed = false,
+        changedVals = {};
 
     if (!isc.isAn.Object(oldValues)) oldValues = {};
     
@@ -2531,14 +2546,53 @@ valuesHaveChanged : function () {
         } else {
             changed = !isc.DynamicForm.compareValues(values[prop], oldValues[prop]);
         }
-        // no need to keep going once we've found a difference.
-        if (changed) return true;
+        // no need to keep going once we've found a difference
+        // unless we've been asked to return the changed values
+        if (changed) {
+            if (!returnChangedVals) return true;
+            changedVals[prop] = values[prop];
+        }
     }
     
     
-    return changed;
+    return (returnChangedVals ? changedVals : changed);
 },
 
+//> @method dynamicForm.getOldValues() ([])
+// Returns the set of values last stored by +link{dynamicForm.rememberValues()}.
+// Note that <code>rememberValues()</code> is called automatically by
+// +link{dynamicForm.setValues()}, and on form initialization, so this typically contains
+// all values as they were before the user edited them.
+//
+// @return (Object) old values in the form
+// @group formValues
+// @see getChangedValues()
+// @visibility external
+//<
+getOldValues : function () {
+    var oldValues = {};
+    isc.addProperties(oldValues, this._oldValues);
+    return oldValues;
+},
+
+
+getOldValue : function (itemName) {
+    return this.getOldValues()[itemName];
+},
+
+//> @method dynamicForm.getChangedValues()  ([])
+// Returns all values within this DynamicForm that have changed since 
+// +link{dynamicForm.rememberValues()} last ran. Note that +link{dynamicForm.rememberValues()}
+// runs on dynamicForm initialization, and with every call to +link{dynamicForm.setValues()}
+// so this will typically contain all values the user has explicitly edited since then.
+// @return (Object) changed values in the form
+// @group formValues
+// @see getOldValues()
+// @visibility external
+//<
+getChangedValues : function () {
+    return this.valuesHaveChanged(true);
+},
 
 //>	@method	dynamicForm.getValues() ([])
 // An Object containing the values of the form as properties, where each propertyName is
@@ -2568,7 +2622,7 @@ getValues : function () {
 //<
 updateFocusItemValue : function () {
     
-    var focusItem = this.getFocusItem();
+    var focusItem = this.getFocusSubItem();
 	if (!this._setValuesPending && focusItem != null && focusItem._itemValueIsDirty()) {
         focusItem.updateValue();
 	}
@@ -2650,6 +2704,10 @@ getData : function () {
 //
 // @param advanced (boolean) if true, return an +link{AdvancedCriteria} object even if the
 //   form item values could be represented in a simple +link{Criterion} object.
+// @param [textMatchStyle] (TextMatchStyle) This parameter may be passed to indicate whether
+//   the criteria are to be applied to a substring match (filter) or exact match (fetch).
+//   When advanced criteria are returned this parameter will cause the appropriate
+//   <code>operator</code> to be generated for individual fields' criterion clauses.
 //
 // @group criteriaEditing
 // @return (Criteria or AdvancedCriteria) a +link{Criteria} object, or +link{AdvancedCriteria}
@@ -2658,7 +2716,7 @@ getData : function () {
 //<
 
 
-getValuesAsCriteria : function (advanced, returnNulls) {
+getValuesAsCriteria : function (advanced, textMatchStyle, returnNulls) {
     
     if (advanced == null) {
         advanced = (this.operator != "and") || 
@@ -2697,7 +2755,7 @@ getValuesAsCriteria : function (advanced, returnNulls) {
                             criteria:[]};
     
     
-    var criteria = this._getMappedCriteriaValues(true);
+    var criteria = this._getMappedCriteriaValues(true, textMatchStyle);
     baseCriteria.criteria.addList(criteria);
     return baseCriteria;
     
@@ -2709,7 +2767,7 @@ getValuesAsCriteria : function (advanced, returnNulls) {
 // 
 // Combine this with items from the form values object so we don't omit criteria fields
 // without a specified item
-_getMappedCriteriaValues : function (advanced) {
+_getMappedCriteriaValues : function (advanced, textMatchStyle) {
     
     // Note we iterate through all the items in the form, but we also need to look at the
     // form's values object, since there may be values set for fields that have no associated
@@ -2744,7 +2802,7 @@ _getMappedCriteriaValues : function (advanced) {
             
         } else {
          
-            var criterion = item.getCriterion();
+            var criterion = item.getCriterion(textMatchStyle);
             if (criterion != null) advancedCriteria.add(criterion);
         }
     }
@@ -2756,10 +2814,13 @@ _getMappedCriteriaValues : function (advanced) {
             if (advancedCriteria.find("fieldName", fieldName)) continue;
             // we don't want null values adding as criteria elements
             if (values[fieldName] == null) continue;
+            
             advancedCriteria.add({
-                    operator:"equals",
-                    fieldName:fieldName,
-                    value:values[fieldName]
+                // DF's can be used as a filter (substring match) or a fetch (exact match)
+                // allow a textMatchStyle param to configure what operator we produce here
+                operator:isc.DataSource.getCriteriaOperator(values[fieldName], textMatchStyle), 
+                fieldName:fieldName,
+                value:values[fieldName]
             });
         }
         return advancedCriteria;
@@ -2842,15 +2903,14 @@ setValuesAsCriteria : function (criteria, advanced) {
         var items = this.getItems(),
             values = {},
             innerCriteria = criteria.criteria;
-            
         for (var i = 0; i < innerCriteria.length; i++) {
     
             for (var ii = 0; ii < items.length; ii++) {
                 if (!items[ii].shouldSaveValue) continue;
 
-                if (items[ii].canEditCriterion(innerCriteria[i])) {
-                    //this.logWarn("applying advanced criterion:" + isc.Comm.serialize(innerCriteria[i]) + 
-                    //    "to item:" + items[ii]);
+                if (this.shouldApplyCriterionToItem(items[ii], innerCriteria[i])) {
+//                    this.logWarn("applying advanced criterion:" + isc.Comm.serialize(innerCriteria[i]) + 
+//                        "to item:" + items[ii]);
                     
                     items[ii].setCriterion(innerCriteria[i]);
                     innerCriteria[i] = null;
@@ -2867,6 +2927,23 @@ setValuesAsCriteria : function (criteria, advanced) {
     }
 },
 
+shouldApplyCriterionToItem : function (item, criterion) {
+    if (item.canEditCriterion(criterion)) return true;
+    if (criterion.fieldName != null && criterion.fieldName == item.getCriteriaFieldName()) {
+        // This is likely to be somewhat common. 
+        // However we could downgrade this to 'info' since it's not really an error
+        this.logWarn("Editing AdvancedCriteria in a dynamicForm. Criteria " +
+                    "includes a value for field:" + criterion.fieldName + 
+                    ". This form includes an item " + item + " with the same fieldName" +
+                    " but the specified operator '" + 
+                    criterion.operator + "' does not match the operator for this form item:" + 
+                    item.getOperator() +
+                    ". Original criterion will be retained and combined with any " +
+                    "criterion returned from this item.", "AdvancedCriteria");
+    }
+    return false;
+},
+
 //>	@method	dynamicForm.getValuesAsAdvancedCriteria()
 // Return an AdvancedCriteria object based on the current set of values within this form.
 // <p>
@@ -2874,13 +2951,15 @@ setValuesAsCriteria : function (criteria, advanced) {
 // is guaranteed to be an AdvancedCriteria object, even if none of the form's fields has a
 // specified +link{formItem.operator}
 //
+// @param [textMatchStyle] (TextMatchStyle) If specified the text match style will be used to
+//   generate the appropriate <code>operator</code> for per field criteria.
 // @group criteriaEditing
 // @return (AdvancedCriteria) a +link{AdvancedCriteria} based on the form's current values
 //
 // @visibility external
 //<
-getValuesAsAdvancedCriteria : function (returnNulls) {
-    return this.getValuesAsCriteria(true, returnNulls);
+getValuesAsAdvancedCriteria : function (textMatchStyle, returnNulls) {
+    return this.getValuesAsCriteria(true, textMatchStyle, returnNulls);
     
 },
 
@@ -2980,7 +3059,7 @@ getValue : function (fieldName) {
     // This check for item.getValue() should be unnecessary, since this.values is kept in synch 
     // with the values of each form item
 	var item = this.getItem(fieldName);
-    if (item) return item.getValue();
+    if (item && isc.isA.Function(item.getValue)) return item.getValue();
 
     return this._getValue(fieldName);
 },
@@ -3291,8 +3370,15 @@ getErrors : function () {
 // a validator on a dataSource field too.
 getFieldErrors : function (fieldName) {
     if (!this.errors) return null;
-    if (isc.isA.FormItem(fieldName)) fieldName = fieldName.getFieldName();
-    return this.errors[fieldName];
+    var dataPath;
+    if (isc.isA.FormItem(fieldName)) {
+        var formItem = fieldName;
+        fieldName = formItem.getFieldName();
+        dataPath = formItem.getDataPath();
+    }
+    if (this.errors[fieldName]) return this.errors[fieldName];
+    if (dataPath != null && this.errors[dataPath]) return this.errors[dataPath];
+    return null;
 },
 
 
@@ -3546,13 +3632,15 @@ _delayedSetValuesFocus : function () {
 //<
 redraw : function () {
 
+	
     this._itemsRedrawing();
-
-	// make sure we're not focused in any element
+    // make sure we're not focused in any element
     // Note: FormItem.storeFocusForRedraw / restoreFocusAfterRedraw handles silently refocusing
     // after the redraw completes
     
     this._blurFocusItemWithoutHandler();
+    
+    if (this.__suppressBlurHandler != null) delete this.__suppressBlurHandler;
     
 	// call the superclass method to redraw the form
 	this.Super("redraw", arguments);
@@ -3661,7 +3749,9 @@ _notifyCanvasItems : function (method) {
 redrawFormItem : function (item, reason) {
 
     var items = this.getItems();
-    if (!item || !items.contains(item)) return;
+    if (!item) return;
+    while (item.parentItem) item = item.parentItem;
+    if (!items.contains(item)) return;
 
     // Set this._itemsChanged so when we redraw we'll re-run the TableResizePolicy before 
     // This is required for showing / hiding items or changing colSpan, etc.
@@ -3686,8 +3776,17 @@ getElementValues : function () {
 setItemValues : function (values, onRedraw, initTime, items) {
 	// get the item values from the values object if it was not passed in.
     var setToExisting = (values == null);
-	if (setToExisting) values = this.getValues();
+    if (setToExisting) values = this.getValues();
     if (values == null) values = {};
+    
+    // If we're changing the set of items and setValuesAsCriteria has been
+    // called, we may have advancedCriteria stored that didn't have an item but now
+    // applies to an item that's been added.
+    var extraCriteria;
+    if (initTime) {
+        extraCriteria = this._extraAdvancedCriteria ? this._extraAdvancedCriteria.criteria : null;
+    }
+	
     items = items || this.items;
 	for (var itemNum = 0; itemNum < items.length; itemNum++) {
 		var item = items[itemNum],
@@ -3718,6 +3817,34 @@ setItemValues : function (values, onRedraw, initTime, items) {
             
             isUndefined = ((!fieldName && !dataPath) || value === undefined);
 
+        var initValue = null;
+        // support initializing form items with a specified 'value'
+        if (initTime && isUndefined && item.value != null) {
+            initValue = item.value;
+            // Ignore the fact that item is set to default if the init-value (item.value) 
+            // doesn't match the value stored as item._value [which is derived from the default]
+            if (initValue != item._value) isSetToDefault = false;
+        }
+        
+        // If there's no value for the item in the simple values array,
+        // but we have something in the 'extraCriteria' object
+        // that applies to the item, use setCriteria to apply it
+        
+        var setToCriterion = null;
+        if (isUndefined && extraCriteria != null) {
+            for (var i = 0; i < extraCriteria.length; i++) {
+                if (item.canEditCriterion(extraCriteria[i])) {
+                    isUndefined = false;
+                    setToCriterion = extraCriteria[i];
+                    // Arrays are passed around by reference in JS so this we're updating
+                    // this._extraAdvancedCriteria here
+                    extraCriteria.removeAt(i);
+                    if (extraCriteria.length == 0) delete this._extraAdvancedCriteria;
+                    break;
+                }
+            }
+        }
+
         if (item.shouldSaveValue == false) {           
             if (!isUndefined) {
                 // If the item is marked as shouldSaveValue false, but we've been passed a
@@ -3736,17 +3863,24 @@ setItemValues : function (values, onRedraw, initTime, items) {
             } else {
                 
                 var oldItemValue = (isSetToDefault ? null : item._value);
+                if (initValue != null) oldItemValue = initValue;
                 item.setValue(oldItemValue, (isSetToDefault ? false : onRedraw));
                 continue;
             }
 
+        }
+        
+        if (initValue != null) {
+            isUndefined = false;
+            value = initValue;
         }
 
         // If the value is undefined, we want to use 'item.clearValue()' to reset to the
         // default value.  Note that in order to cause defaultValues to be re-evaluated on a
         // redraw, if an item has it's default value we need to call clearValue() rather than
         // restoring the old default value.
-        if (isUndefined || (setToExisting && isSetToDefault)) {
+        if (isUndefined || (setToCriterion == null && setToExisting && isSetToDefault)) {
+
             
             var undef;
             if (!initTime) item.clearValue();
@@ -3754,9 +3888,20 @@ setItemValues : function (values, onRedraw, initTime, items) {
                 item.saveValue(item._value, true);
             }
         } else {
-            //this.logWarn("setValues() setting item:" + item + " to value:" + value, "formValues");        
             
-            item.setValue(value, true);
+            
+//            this.logWarn("setValues() setting item:" + item + 
+//               (setToCriterion == null ? " to value:" + this.echo(value)
+//                                       : " to criterion:" + this.echo(setToCriterion)),
+//                                                              "formValues");        
+            
+            if (setToCriterion != null) {
+                item.setCriterion(setToCriterion);
+            } else {
+                
+                item.setValue(value, true);
+        
+            }
         }
 	}
 },
@@ -3974,10 +4119,18 @@ getInnerHTML : function () {
             // total width for all label columns
             totalElementColWidth = totalWidth - (titleCols * this.titleWidth),
             // width of each form element column
-            elementColWidth = Math.floor(totalElementColWidth / (this.numCols-titleCols));
-        // don't let it get too small
-        elementColWidth = Math.max(this.minColWidth, elementColWidth);
-
+            elementColWidth;
+        if (this.isPrinting) {
+            // When printing don't calculate element column widths based on
+            // the DynamicForm size -- the printHTML may be written into a 
+            // different sized container
+            elementColWidth = "*";
+        } else {
+            elementColWidth =  Math.floor(totalElementColWidth / (this.numCols-titleCols));
+            // don't let it get too small
+            elementColWidth = Math.max(this.minColWidth, elementColWidth);
+        }
+        
 		for (var i = 0; i < titleCols; i++) {
 			// add a column for the label
 			colWidths.add(this.titleWidth);
@@ -4009,10 +4162,11 @@ getInnerHTML : function () {
         else if (isc.Browser.isSafari) innerHeight -= this.cellSpacing;
     }   
 
-    items._defaultRowHeight = this.defaultRowHeight;    
-	isc.Canvas.applyTableResizePolicy(items, innerWidth, innerHeight, 
-                                      this.numCols, colWidths);
-
+    items._defaultRowHeight = this.defaultRowHeight;
+    isc.Canvas.applyTableResizePolicy(items, innerWidth, innerHeight, 
+                                  this.numCols, colWidths);
+   
+    
     
     var overflowed = false;
     if (isc.CanvasItem) {
@@ -4029,19 +4183,29 @@ getInnerHTML : function () {
     }
 
     if (overflowed) {
-    	isc.Canvas.applyTableResizePolicy(items, innerWidth, innerHeight,
+        isc.Canvas.applyTableResizePolicy(items, innerWidth, innerHeight,
                                           this.numCols, colWidths, null, true);
     }
-	
-    colWidths = items._colWidths;
     
-	// output <COL> tags to set the sizes of the columns.
+    if (!this.isPrinting) {
+        colWidths = items._colWidths;
+    }
+	
+    // output <COL> tags to set the sizes of the columns.
     
 	for (var colNum = 0; colNum < colWidths.length; colNum++) {
         var colWidth = colWidths[colNum];
-        output.append(this._$colWidthEquals, colWidth, this._$rightAngle);
+        // In printing mode we avoided the tableResizePolicy - we expect to see
+        // colWidths specified as "*" and titleWidth
+        // If "*" just omit writing out a width at all
+        if (colWidth == "*") {
+            output.append("<COL>");
+        } else {
+            output.append(this._$colWidthEquals, colWidth, this._$rightAngle);
+    
+        }
     }
-
+    
     
 
     
@@ -4051,22 +4215,26 @@ getInnerHTML : function () {
     output.append(this._$topRowTag);
 
     for (var colNum = 0; colNum < colWidths.length; colNum++) {
-        var innerWidth = colWidths[colNum];
-        // NOTE: correct for spacing, but *do not* correct for padding, because we write out
-        // padding:0px on the cells
-        innerWidth -= (this.cellSpacing!= null ? (2 * this.cellSpacing) : 0);
-        // The top row has theoretically a height of zero px, but can actually be visible in IE
-        // if it has a bg-color applied to it.
-        // We've seen this occur with a stylesheet that globally sets td background-color.
-        // handle this by applying standard form cell style
-         
-        this._$topRowCellStart[3] = (isc.FormItem ? isc.FormItem.getPrototype().baseStyle : null);
-    
-        var spacerHeight = isc.Browser.isIE ? 1 : 0,
-            cellStart = this._$topRowCellStart.join(isc.emptyString);
-        output.append(cellStart, 
-                      this.fixedColWidths ? isc.Canvas.spacerHTML(innerWidth,spacerHeight) : null,
-                      this._$topRowCellEnd);
+        if (!isc.isA.Number(colWidths[colNum])) {
+            output.append(this._$topRowCellStart.join(isc.emptyString), this._$topRowCellEnd);
+        } else {
+            var innerWidth = colWidths[colNum];
+            // NOTE: correct for spacing, but *do not* correct for padding, because we write out
+            // padding:0px on the cells
+            innerWidth -= (this.cellSpacing!= null ? (2 * this.cellSpacing) : 0);
+            // The top row has theoretically a height of zero px, but can actually be visible in IE
+            // if it has a bg-color applied to it.
+            // We've seen this occur with a stylesheet that globally sets td background-color.
+            // handle this by applying standard form cell style
+             
+            this._$topRowCellStart[3] = (isc.FormItem ? isc.FormItem.getPrototype().baseStyle : null);
+        
+            var spacerHeight = isc.Browser.isIE ? 1 : 0,
+                cellStart = this._$topRowCellStart.join(isc.emptyString);
+            output.append(cellStart, 
+                          this.fixedColWidths ? isc.Canvas.spacerHTML(innerWidth,spacerHeight) : null,
+                          this._$topRowCellEnd);
+        }
     }
     output.append(this._$rowEnd);
 
@@ -4854,7 +5022,8 @@ getTableStartHTML : function () {
     var template = isc.isA.DynamicForm(this) ? this._$tableStartTemplate : 
                                         isc.DynamicForm.getPrototype()._$tableStartTemplate;
     template[1] = this._getTableElementID();
-    template[4] = (this.getInnerContentWidth != null ? this.getInnerContentWidth() 
+    template[4] = this.isPrinting? "100%" :
+                    (this.getInnerContentWidth != null ? this.getInnerContentWidth() 
                                                      : this.getInnerWidth());
     template[6] = this.cellSpacing;
     template[8] = this.cellPadding;
@@ -5064,13 +5233,25 @@ submitForm : function () {
         return form.submit();
     } catch (e) {
         this.logWarn("Form submission was unsuccessful. In some browsers this can occur when " +
-            "an upload item is present and has an invalid value.");
+            "an upload item is present and has an invalid value.\n" + e.message);
         // We could fire a generic 'submission failed' handler here.
         // Developers can override this to warn the user in a way that makes sense for their
         // application.
         this.formSubmitFailed();
     }
 },
+
+// when implicitSave is true, this method is called by changed formItems at editorExit(), or 
+// after a pause in editing specified by implicitSaveDelay
+performImplicitSave : function (item, onPause) {
+    if (item.awaitingImplicitSave) delete item.awaitingImplicitSave;
+    if (item._fireOnPauseTimer != null) isc.Timer.clear(item._fireOnPauseTimer);
+    this.logInfo("implicitSave called " + 
+        (!onPause ? "by editorExit()" : "after implicitSaveDelay (" + this.implicitSaveDelay + "ms)") +
+        " for item " + item.name + ".");
+    this.saveData(this.getID()+".implicitSaveCallback(data)");
+},
+
 
 //> @attr DynamicForm.formSubmitFailedWarning (String : "Form was unable to be submitted. The most likely cause for this is an invalid value in an upload field." : IRWA)
 // Warning to display to the user if an attempt to +link{dynamicForm.submitForm,natively submit} a
@@ -5252,6 +5433,9 @@ validate : function (validateHiddenFields, ignoreDSFields, typeValidationsOnly, 
             item = this.items[itemNum],
             // get the name of this column in the values
             column = item.getFieldName(),
+            // get the dataPath so we can perform validation with dataPath
+            
+            dp = item.getDataPath(),
             // get the value of this item
             value = item.getValue(),
             hidden = !item.visible || isc.isA.HiddenItem(item)
@@ -5271,7 +5455,8 @@ validate : function (validateHiddenFields, ignoreDSFields, typeValidationsOnly, 
                                                  values, validationOptions);
             if (fieldResult != null) {
                 if (fieldResult.errors != null) {
-                    fieldErrorsFound = this.addValidationError(errors, column, fieldResult.errors);
+                    fieldErrorsFound = this.addValidationError(errors, column || dp,
+                                                                fieldResult.errors);
                     if (fieldErrorsFound) errorsFound = true;
                 }
 
@@ -5280,7 +5465,11 @@ validate : function (validateHiddenFields, ignoreDSFields, typeValidationsOnly, 
                 // (such as with the mask validator).
                 if (fieldResult.resultingValue != null) { 
                     // remember that value in the values list
-                    value = values[column] = fieldResult.resultingValue;
+                    value = fieldResult.resultingValue;
+                    if (column) {
+                        values[column] = value;
+                    }
+                    
                     hasChanges = true;
                 }
             }
@@ -5290,13 +5479,14 @@ validate : function (validateHiddenFields, ignoreDSFields, typeValidationsOnly, 
         // developer handle errors on hidden fields
         // Note that this includes 'hiddenItems' that are not marked as visible:false
         if (hidden) {
-            if (fieldErrorsFound) hiddenErrors[column] = errors[column];
+            if (fieldErrorsFound) hiddenErrors[column || dp] = errors[column || dp];
 
         // Remember the first visible error item so we can restore focus to it            
         } else if (firstErrorItem == null && errorsFound) firstErrorItem = item;
         
         // Validators applied to an item are a superset of the validators applied to
         // a dataSource field - therefore no need to run DSField validators for this field
+        
         if (dsFields) delete dsFields[column];
     }
     
@@ -5582,7 +5772,8 @@ setRequiredIf : function () {
 //  Internal method used to track which form item last had focus.
 //  The focusItem is updated with this method whenever an item receives focus.  When focus()
 //  is called on the form, the focusItem will then be given focus.
-//  Can be retrieved via 'getFocusItem()', and cleared via 'clearFocusItem()'
+//  Can be retrieved via 'getFocusSubItem()' [or 'getFocusItem()' if we don't want sub items
+//  of containerItems], and cleared via 'clearFocusItem()'
 //  Note that the focusItem may not currently have focus - focus could be on another widget.
 //  Check formItem.hasFocus to see if an item currently has focus.
 //
@@ -5605,10 +5796,22 @@ setFocusItem :  function (item) {
 //
 // @group eventHandling, focus
 //
-// @return (item) returns the item that has the focus, or null if no item is currently focused
+// @return (FormItem) returns the item that has the focus, or null if no item is currently focused
+// @visibility external
 //<
-
 getFocusItem : function () {
+    var item = this.getFocusSubItem();
+    while (item && item.parentItem != null) {
+        item = item.parentItem;
+    }
+    return item;
+},
+
+// For container items, we actually store the focusable sub item rather than
+// the containerItem.
+// This is what we typically use internally as this is where we'll explicitly put focus
+// on redraw, etc.
+getFocusSubItem : function () {
 	return this._focusItem;
 },
 
@@ -5628,7 +5831,7 @@ setFocus : function (hasFocus) {
     if (hasFocus) {
 
         // focus back in the last focus item if there is one.
-        var item = this.getFocusItem();
+        var item = this.getFocusSubItem();
         if (item == null) {
             var items = this.getItems();
             for (var i = 0; i < items.length; i++) {
@@ -5660,7 +5863,7 @@ setFocus : function (hasFocus) {
         // Note we use the internal _blurItem() method to avoid clearing out this._focusItem.
         // This means a subsequent 'focus()' call on this form will restore focus to the same 
         // item.
-        this._blurItem(this.getFocusItem());
+        this._blurItem(this.getFocusSubItem());
         
     }
 },
@@ -5678,7 +5881,7 @@ _focusInNextTabElement : function (forward, mask, skipItems) {
     // Determine the current focus item - if we don't have one, focus in the first item if
     // we're moving forward, or the last item if we're moving backwards
     var items = this.items,
-        item = this.getFocusItem();
+        item = this.getFocusSubItem();
 
     if (item == null) {
         this.focusAtEnd(forward);
@@ -5822,7 +6025,7 @@ focusInItem : function (itemName) {
     if (itemName != null) {
         var item = this.getItem(itemName);
     } else {
-        var item = this.getFocusItem();
+        var item = this.getFocusSubItem();
     }
     // if nothing was found to focus in, bail!
     if (!item) {
@@ -5862,7 +6065,7 @@ clearFocusItem : function () {
 //<
 
 blurFocusItem : function () {
-    var focusItem = this.getFocusItem();
+    var focusItem = this.getFocusSubItem();
     if (focusItem != null) {
         this._blurItem(focusItem);
         // clear out the remembered focus item - this is an explicit blur, so we don't want
@@ -5884,13 +6087,13 @@ _blurItem : function (item) {
 
 _blurFocusItemWithoutHandler : function () {
       
-    var focusItem = this.getFocusItem();
+    var focusItem = this.getFocusSubItem();
     if (focusItem != null && focusItem.hasFocus) {
         if (this.__suppressBlurHandler == null) this.__suppressBlurHandler = 0;
         else this.__suppressBlurHandler += 1;
-        // Call the internal _blurItem rather than the 'blurFocusItem' method as we don't want
-        // to clear out this._focusItem
-        this._blurItem(focusItem);  
+        
+        this._blurItem(focusItem); 
+        
     } else {
         this.logDebug("blur w/o handler: no item to blur");
     }
@@ -5951,7 +6154,7 @@ setOpacity : function (newOpacity, animating, forceFilter, a,b,c) {
         (newOpacity != oldOp) && 
         (newOpacity == null || newOpacity == 100 || oldOp == null || oldOp == 100) ) 
     {
-        var item = this.getFocusItem();
+        var item = this.getFocusSubItem();
         if (item && item._willHandleInput()) {
             this._blurFocusItemWithoutHandler();
             this._focusInItemWithoutHandler(item);
@@ -5965,18 +6168,19 @@ setOpacity : function (newOpacity, animating, forceFilter, a,b,c) {
 
 clearingElement : function (item) {
     
+    
     if (this.__suppressFocusHandler != null && this.__suppressFocusItem == item) {
         delete this.__suppressFocusHandler;
         delete this.__suppressFocusItem;
     }
-    if (this.__suppressBlurHandler != null && (this.getFocusItem() == item)) {
+    if (this.__suppressBlurHandler != null && (this.getFocusSubItem() == item)) {
         delete this.__suppressBlurHandler;
     }
 },
 
 hide : function () {
     
-    if (isc.Browser.isMoz) this._blurItem(this.getFocusItem());
+    if (isc.Browser.isMoz) this._blurItem(this.getFocusSubItem());
     this.Super("hide", arguments);
 },
 
@@ -6001,14 +6205,14 @@ clear : function () {
 _focusChanged : function (hasFocus) {
     this.Super("_focusChanged", arguments);
     
-    if (!this.hasFocus) this._blurItem(this.getFocusItem());
+    if (!this.hasFocus) this._blurItem(this.getFocusSubItem());
 
 },
 
 
 parentVisibilityChanged : function (newVisibility) {
     //this.logWarn("parentVisibilityChanged, visible: " + this.isVisible());
-    if (!this.isVisible() && isc.Browser.isMoz) this._blurItem(this.getFocusItem());
+    if (!this.isVisible() && isc.Browser.isMoz) this._blurItem(this.getFocusSubItem());
     this.Super("parentVisibilityChanged", arguments);
     this.itemsVisibilityChanged();
     
@@ -6080,6 +6284,68 @@ _getEventTargetItemInfo : function (event) {
     // item the event ocurred over directly
     event.itemInfo = info;
     return info;
+},
+
+//> @method dynamicForm.getEventItem () 
+// If the current mouse event occured over an item in this dynamicForm, returns that item.
+// @return (FormItem) the current event target item
+// @visibility external
+//<
+getEventItem : function () {
+    var info = isc.EH.lastEvent.itemInfo;
+    // skip events over titles or over "inactive" elements (EG placeholders in 
+    // alwaysShowEditors grids...)
+    if (info != null && !info.inactiveContext && !info.overTitle) return info.item;
+    return null;
+},
+
+//> @object FormItemEventInfo
+// An object containing details for mouse events occuring over a FormItem.
+// @visibility external
+//<
+
+//>@attr formItemEventInfo.item (FormItem : null : R)
+// Item over which the event occured.
+// @visibility external
+//<
+
+//>@attr formItemEventInfo.overItem (Boolean : null : R)
+// True if the event occurred over the main body of the item (for example the text-box), rather
+// than over the title or within the form item's cell in the DynamicForm but outside the
+// text box area.
+// @visibility external
+//<
+
+//>@attr formItemEventInfo.overTitle (Boolean : null : R)
+// True if the event occurred over the items title.
+// @visibility external
+//<
+
+//>@attr formItemEventInfo.icon (String : null : IR)
+// If this event occurred over a formItemIcon this attribute contains the 
+// +link{formItemIcon.name} for the icon.
+// 
+// @visibility external
+//<
+
+//> @method dynamicForm.getEventItemInfo () 
+// If the current mouse event occured over an item, or the title of an item in this
+// dynamicForm, return details about where the event occurred.
+// @return (FormItemEventInfo) the current event target item details
+// @visibility external
+//<
+getEventItemInfo : function () {
+    var itemInfo = this._getEventTargetItemInfo();
+    if (itemInfo == null || itemInfo.inactiveContext) return null;
+    return {
+        item:itemInfo.item,
+        // simplify details of which part of the form item recieved the event
+        // since the difference between (EG) textBox and element is implementation dependent
+        // only        
+        overItem:(itemInfo.overElement || itemInfo.overTextBox || itemInfo.overControlTable),
+        overTitle:itemInfo.overTitle,
+        icon:itemInfo.overIcon
+    }
 },
 
 // Have handleMouseStillDown send a 'mouseStillDown' event to items, if they have a handler
@@ -6169,7 +6435,7 @@ _itemMouseEvent : function (itemInfo, eventType) {
     if (lastMoveItem && lastMoveItem.destroyed) {
         lastMoveItem = null;
         this._lastMoveItem = null;
-        this._lastOverIcon = null;
+        this._lastOverIconID = null;
         this._overItemTitle = null;
     }
     if (item && item.destroyed) {
@@ -6233,8 +6499,12 @@ _itemMouseEvent : function (itemInfo, eventType) {
             
         // In this case we know the user has moved within an item's cell or title cell.
         } else {
+            
+//            this.logWarn("overTitle:" + overTitle + ", overIcon: "+ overIcon);
+            
             if (overTitle) item.handleTitleMove();
             else {
+                
                 // we may have moved between icons within the item's cell.
                 if (lastOverIcon != overIcon) {
                     if (lastOverIcon) item._iconMouseOut(lastOverIcon);
@@ -6442,6 +6712,8 @@ handleDoubleClick : function (event, eventInfo) {
             return this.bubbleItemHandler(item, "handleCellDoubleClick", item);
         }
     }
+    return this.Super("handleDoubleClick", arguments);
+
 },
 
 //>	@method	dynamicForm.elementFocus()	(A)
@@ -6539,7 +6811,7 @@ handleKeyPress : function (event, eventInfo) {
     // occurred in a text item, auto-submit the form
     if (event.keyName == this._$Enter) {
         if (this.saveOnEnter) {
-            var item = this.getFocusItem();
+            var item = this.getFocusSubItem();
             // Note that this.submit() will call this.saveData() unless this.canSubmit is true
             if (isc.isA.TextItem(item)) this.submit();
             // we always return STOP_BUBBLING on enter keypress (handled below) which is
@@ -6575,8 +6847,7 @@ handleKeyPress : function (event, eventInfo) {
         }
     }
     if (this._formItemKeys[event.keyName] && event.keyTarget != this) {
-        var item = this.getItem(event.keyTarget.name);
-        if (!item) return isc.EventHandler.STOP_BUBBLING;
+        return isc.EventHandler.STOP_BUBBLING;
     }
 
     return this.Super("handleKeyPress", arguments);
@@ -7088,7 +7359,8 @@ _$upload:"upload", _$file:"file",
 _$base64Binary: "base64Binary", _$enum:"enum", _$CycleItem:"CycleItem", _$selectOther:"selectOther",
 _$relation:"relation", _$nestedEditor:"NestedEditorItem", _$nestedListEditor:"NestedListEditorItem",
 _$imageFile:"imageFile", _$viewFileItem:"ViewFileItem",
-
+_$section:"section", _$sectionItem:"SectionItem",
+_$button:"button", _$buttonItem:"ButtonItem",
 getEditorType : function (field, widget) {
     // choosing which form item type to use:
     // Each field may consist of either entirely properties that were passed in, a mixture
@@ -7128,7 +7400,12 @@ getEditorType : function (field, widget) {
         
     	if (type == this._$binary || type == this._$file || type == this._$imageFile) 
             type = this._$viewFileItem;
-        else type = this._$staticText;
+        // a couple of common special-cases to avoid converting to staticText
+        else if (type != this._$section && type != this._$sectionItem &&
+                 type != this._$button && type != this._$buttonItem) 
+        {
+            type = this._$staticText;
+        }
     } else if (type == this._$boolean) {
         var map = field.valueMap;
         // assumption is that if a valueMap is provided, a boolean storage type
@@ -7227,6 +7504,7 @@ _getItemInfoFromElement : function (target, form) {
         textBoxString = isc.DynamicForm._textBoxString,
         controlTableString = isc.DynamicForm._controlTableString,
         titleString = isc.DynamicForm._title;
+
 
     // We mark form items' HTML elements with a 'containsItem' parameter so we can determine
     // which item we're looking at.

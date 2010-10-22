@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1104,9 +1104,8 @@ makeIndex : function (property, alwaysMakeArray, useIndexAsKey) {
             } else {
                 // if the existing value is an array, add to it, otherwise put the new and old
                 // value together in a new array
-                var existingValue = index[key];
                 if (isc.isAn.Array(existingValue)) {
-                    index[key].add(existingValue);
+                    index[key].add(item);
                 } else {
                     index[key] = [existingValue, item];
                 }

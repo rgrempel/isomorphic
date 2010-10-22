@@ -16,6 +16,10 @@ isc.DataSource.create({
             type:"string",
             xmlAttribute:"true"
         },
+        disabled:{
+            title:"Disabled",
+            type:"boolean"
+        },
         idAllowed:{
             title:"ID Allowed",
             type:"boolean",
