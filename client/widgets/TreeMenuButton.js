@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -104,7 +104,7 @@ isc._treeMenuButtonProps = {
 	//<
     pathSeparatorString : "&nbsp;&gt;&nbsp;",
     
-    //>	@attr	treeMenuButton.selectedBaseStyle    (CSS styleName: "treeMenuSelected" : IRW)
+    //>	@attr	treeMenuButton.selectedBaseStyle    (CSSStyleName: "treeMenuSelected" : IRW)
 	// Base style to apply to the selected path within the menu. (The "over" version of this
     // style should also be defined in the stylesheet applied to this widget).
 	//<

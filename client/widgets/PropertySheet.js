@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -53,13 +53,8 @@ isc.defineClass("PropertySheet", "DynamicForm").addProperties({
     
 
     SelectItemDefaults : {
-        controlStyle:"propSheetSelectControl",
-    	pickListProperties:{cellHeight:16, border:"1px solid black"},
     	height:20,
-	    width:"*",
-        pickerIconHeight:15, pickerIconWidth:15,
-        pickerIconSrc:"[SKIN]/DynamicForm/PropSheet_pickbutton.gif",
-        showOver:false
+        width:"*"
     },
 
     DateItemDefaults : {
@@ -68,7 +63,12 @@ isc.defineClass("PropertySheet", "DynamicForm").addProperties({
 
     TextItemDefaults : {
     	width:"*",
-	    height:16,
+        height:20
+    },
+
+    StaticTextItemDefaults : {
+    	width:"*",
+        height:20,
     	textBoxStyle:"propSheetField"
     },
 

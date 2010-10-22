@@ -644,7 +644,7 @@
 .textItemDisabled,
 .selectItemTextDisabled {
     color:#888888;
-    background-color:#404040
+    background-color:#404040;
     border:1px solid #595959;
 }
 
@@ -1142,26 +1142,13 @@
 	background-color:#404040;
 }
 
-.tallCell,
-.tallCellDark,
-.tallCellOver,
-.tallCellOverDark,
-.tallCellSelected,
-.tallCellSelectedDark,
-.tallCellSelectedOver,
-.tallCellSelectedOverDark,
-.tallCellDisabled,
-.tallCellDisabledDark {
- border-bottom:1px solid #E1E1E1;
- }
-.cellDark
+.cellDark,
+.tallCellDark
 {
     color:#D9D9D9;
 	background-color:#262626;
 }
-.tallCellDark {
-	background-color:#F6F7F9;
-}
+
 .cellOver,
 .cellOverDark,
 .specialColOver,
@@ -1172,21 +1159,21 @@
 }
 .tallCellOver,
 .tallCellOverDark {
-	background-color:#E5F6FF; border-bottom:1px solid #C4DEFF;
+    color:#111111;
+	background-color:#8EDFF3;
 }
 .cellSelected,
 .cellSelectedDark,
+.tallCellSelected,
+.tallCellSelectedDark,
+
 .specialColSelected,
 .recordSummaryCellSelected,
 .recordSummaryCellSelectedDark {
     color:#EEEEEE;
 	background-color:rgb(44,88,147);
 }
-.tallCellSelected,
-.tallCellSelectedDark {
-    color:#EEEEEE;
-	background-color:rgb(44,88,147); border-bottom:1px solid #C4DEFF;
-}
+
 .cellSelectedOver,
 .cellSelectedOverDark,
 .specialColSelectedOver,
@@ -1197,7 +1184,8 @@
 }
 .tallCellSelectedOver,
 .tallCellSelectedOverDark {
-	background-color:#A2CBFF; border-bottom:1px solid #9BC8FF;
+    color:#DDDDDD;
+    background-color:rgb(44,88,180);
 }
 .cellDisabled,
 .cellDisabledDark,

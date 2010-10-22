@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -469,6 +469,27 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         this.pickList.clearLastHilite();
         this.pickList.scrollRecordIntoView(0);
     },
+    
+    // Override getSelectedRecord to look at the pickList if present
+    getSelectedRecord : function () {
+          
+        var record = this.Super("getSelectedRecord", arguments);
+     
+        
+        // If we didn't get selected record via 'fetchMissingValues',
+        // use the pickList to try to find the selectedRecord in the pickList data
+        if (record == null && this._value != null && this.getOptionDataSource()) {
+            if (this.pickList == null || this.pickList.destroyed) this.makePickList(false);
+    
+            if (this.pickList && this.pickList.data) {
+                record = this.pickList.data.find(this.getValueFieldName(), this._value);
+                if (record != null) this._storeSelectedRecord(record);
+            }
+        }
+        return record;
+    },        
+        
+        
 
     // ------------------------
     // Filtering data
@@ -521,10 +542,10 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     //> @attr ComboBoxItem.filterLocally
     // @include PickList.filterLocally
     // @visibility external
-    //<    
+    //<
 
     //> @method ComboBoxItem.getSelectedRecord()
-    // @include PickList.getSelectedRecord()
+    // @include FormItem.getSelectedRecord()
     // @visibility external
     //<
     
@@ -643,7 +664,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // @include PickList.filterClientPickListData()
     //<
 
-    //> @attr comboBoxItem.textMatchStyle (String : "startsWith" : IR)
+    //> @attr comboBoxItem.textMatchStyle (TextMatchStyle : "startsWith" : IR)
     // @include PickList.textMatchStyle
     //<
 
@@ -705,8 +726,8 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         delete this._showOnFilter;
         delete this._showOnDelayedFilter;
 
-        // bail if the pickList isn't showing 
-        if (!pickList || !pickList.isVisible()) return;
+        // bail if the pickList isn't showing or has been passed to another form item already
+        if (!pickList || !pickList.isVisible() || pickList.formItem != this) return;
 
         // hide the pickList
         pickList.hide();
@@ -805,7 +826,9 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // record, return the displayField name; otherwise, just return the item name
     getCriteriaFieldName : function () {
         if (this.displayField && !this.getSelectedRecord()) return this.displayField;
-        return this.getFieldName();
+        // Note: DO NOT CALL Super.getCriteriaFieldName() - we subclass TextItem which returns
+        // displayField if set
+        return this.criteriaField || this.getFieldName();
     },
     
     // Override checkForDisplayFieldValue()

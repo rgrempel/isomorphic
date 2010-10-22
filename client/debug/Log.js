@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -411,7 +411,7 @@ isc.ClassFactory.defineClass("Log");
 // For example, the following log message:
 // <pre>
 //     11:59:25:806:INFO:Page:Page loading complete.</pre>
-// Occured at 11:59:25 local time and 806 milliseconds.  It's priority was <code>INFO</code>,
+// Occurred at 11:59:25 local time and 806 milliseconds.  It's priority was <code>INFO</code>,
 // it occurred in the category <i>Page</i>, and the message is "Page loading complete.".
 // <P>
 // Each logging <i>category</i> has a <i>priority</i> associated with it.  If a message's
@@ -435,7 +435,7 @@ isc.ClassFactory.defineClass("Log");
 // +externalLink{http://www.getfirebug.com/,Firebug} extensions for FireFox.  "Console2" simply
 // replaces the default FireFox JavaScript console with a more functional console;
 // Firebug aims to be a true debugger.  Both tools will typically load or identify the correct
-// file and line number where a JS error occured.
+// file and line number where a JS error occurred.
 // <P>
 // In Internet Explorer, when JS errors occur, SmartClient is able to report full stack traces
 // in the Developer Console.  This can be invaluable when your code triggers a JS error
@@ -762,7 +762,7 @@ isc.Log.addClassMethods({
     // @param [overridesOnly] (boolean) If this method is retrieving the priorities specific 
     //                                  to logging for some class or instance, this parameter
     //                                  can be used to view only the overrides to the default
-    //                                  log priorites on this object.
+    //                                  log priorities on this object.
     // @return (Object) priority settings
     // @visibility external
     //<
@@ -1087,6 +1087,24 @@ isc.Log.addClassMethods({
 			// roll over the messsageIndex to 0
 			this._messageIndex = 0;
 		}
+		if (this.showInlineLogs) {
+		    this.updateInlineLogResults();
+		}
+	},
+	
+	showInlineLogs:false,
+	updateInlineLogResults : function () {
+	    if (isc.Canvas == null || this._messageCache == null) return;
+	    if (!this.inlineLogCanvas) {
+	        this.inlineLogCanvas = isc.Canvas.create({
+	                width:"50%", height:"100%", overflow:"auto",
+	                backgroundColor:"white",
+	                canDragReposition:true,
+	                autoDraw:true
+	        });
+	    }
+	    this.inlineLogCanvas.setContents(this._messageCache.join("<br>"));
+	    this.inlineLogCanvas.bringToFront();
 	},
 	
 	// return the array of messages stored in the master log
@@ -1132,6 +1150,55 @@ isc.Log.addClassMethods({
         if (this.logViewer) this.logViewer.clear(); 
 	},
     
+    // evaluate an expression and log the results
+    evaluate : function (expr, evalVars) {
+        // execute the expression - and always report execution time
+        var start = isc.timeStamp();
+
+        var error,
+            result
+        ;
+        // NOTE: "this" is the Log so that this.logWarn, this.echo et al will work
+        if (isc.Log.supportsOnError) {
+            // in IE, if there's an error, we report it via window.onerror
+            result = isc.Class.evalWithVars(expr, evalVars, this);
+        } else {
+            // NOTE: try {} catch is not supported in Safari11, Nav4, or IE4
+            try {
+                result = isc.Class.evalWithVars(expr, evalVars, this);
+            } catch (e) {
+                error = e;
+            }
+        }
+        var end = isc.timeStamp(),
+            // show a timestamp for the log message itself if enabled
+            resultString = isc.Log.getLogTimestamp() + ":";
+        
+        // don't show the entire expression
+        var lines = expr.split(/[\r\n]+/);
+        if (lines.length > 1) expr = lines[0] + "...";
+        if (expr.length > 200) expr = expr.substring(0,200) + "...";
+        if (error) {
+            if (!isc.Log.supportsOnError) {
+                isc.Log._reportJSError(error);
+                return;
+            }
+
+            // In IE the error is an object - get the description property.
+            // Unused since we let errors fall through in IE
+            //if (isc.Browser.isIE) error = error.description;
+            
+            resultString += "Evaluator: '" + expr + "' returned a script error: \r\n" 
+                         + "'" + error + "'";
+        } else {
+            resultString = "Evaluator: result of '" + expr + "' (" + (end-start) + 
+                "ms):\r\n" + this.echo(result);
+        }
+        // Use addToLog instead of addToMasterLog() 
+        // - we don't care about losing this on log window reload
+        if (this.logViewer) this.logViewer.addToLog(resultString, true);
+	},
+
     // update the form in the log viewer
     updateStats : function (stat) {
         if (this.logViewer) this.logViewer.updateStats(stat);
@@ -1535,9 +1602,6 @@ isc.LogViewer.addMethods({
         return (this._logWindowLoaded && this._logWindow != null && !this._logWindow.closed );
     },
     
-	// Note: multiple-monitors: the log window position that's saved doesn't work properly
-    // unless the log window is in the primary monitor. Also, negative coordinates will mean
-    // that the window will be displayed at (0, 0) instead.
 	showLog : function (loading, logWindow, dontSaveState, windowName) {
         // allow a log window to be passed in.  This allows the log window to reconnect to the
         // opener after the opener has been navigated to a new ISC page.
@@ -1570,8 +1634,9 @@ isc.LogViewer.addMethods({
 
         if (globalLogCookie != null) {
             rect = globalLogCookie;
-            // Commented out; in a multi-mon config coordinates could be reset even if they
-            // weren't off-screen
+	        // Disabled due to multiple-monitors: the log window position that's saved doesn't
+            // work properly unless the log window is in the primary monitor. Also, negative
+            // coordinates will mean that the window will be displayed at (0, 0) instead.
             /*
             // make sure the log window doesn't end up off the screen
             rect.left = rect.left > screen.availWidth ? 0 : rect.left;
@@ -1739,50 +1804,7 @@ isc.LogViewer.addMethods({
     },
 
     evaluate : function (expr, evalVars) {
-
-        // execute the expression - and always report execution time
-        var start = isc.timeStamp();
-
-        var error,
-            result
-        ;
-        // NOTE: "this" is the Log so that this.logWarn, this.echo et al will work
-        if (isc.Log.supportsOnError) {
-            // in IE, if there's an error, we report it via window.onerror
-            result = isc.Class.evalWithVars(expr, evalVars, this);
-        } else {
-            // NOTE: try {} catch is not supported in Safari11, Nav4, or IE4
-            try {
-                result = isc.Class.evalWithVars(expr, evalVars, this);
-            } catch (e) {
-                error = e;
-            }
-        }
-        var end = isc.timeStamp(),
-            // show a timestamp for the log message itself if enabled
-            resultString = isc.Log.getLogTimestamp() + ":";
-        
-        // don't show the entire expression
-        var lines = expr.split(/[\r\n]+/);
-        if (lines.length > 1) expr = lines[0] + "...";
-        if (expr.length > 200) expr = expr.substring(0,200) + "...";
-        if (error) {
-            if (!isc.Log.supportsOnError) {
-                isc.Log._reportJSError(error);
-                return;
-            }
-
-            // In IE the error is an object - get the description property.
-            // Unused since we let errors fall through in IE
-            //if (isc.Browser.isIE) error = error.description;
-            
-            resultString += "Evaluator: '" + expr + "' returned a script error: \r\n" 
-                         + "'" + error + "'";
-        } else {
-            resultString = "Evaluator: result of '" + expr + "' (" + (end-start) + 
-                "ms):\r\n" + this.echo(result);
-        }
-        this.addToLog(resultString, true);
+        return isc.Log.evaluate(expr, evalVars);
 	},
 
     clear : function () {

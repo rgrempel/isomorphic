@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -16,6 +16,25 @@
 
 //> @class CanvasItem
 // Form item which renders a Canvas inline in a DynamicForm instance.
+// <P>
+// CanvasItem is +link{FormItem.shouldSaveValue,shouldSaveValue}:false by default, meaning that
+// no value from the CanvasItem will be present in +link{form.values} and no value will be
+// saved when +link{dynamicForm.saveData()} is called.
+// <P>
+// The simplest way to have a CanvasItem contribute a value to the data that a form saves is
+// retrieve a value directly from the managed Canvas and then call
+// +link{dynamicForm.setValue()} immediately before calling
+// +link{dynamicForm.saveData(),saveData()}.  
+// <P>
+// For example if you were to embed a +link{Slider} widget into a form via a CanvasItem, your
+// code to save might be:
+// <pre>
+//   <i>formId</i>.setValue("<i>canvasItemFieldName</i>", <i>sliderId</i>.getValue());
+//   <i>formId</i>.saveData();
+// </pre>
+// Note that there is a pre-existing +link{SliderItem} so this approach is not necessary for
+// embedding a Slider into a DynamicForm, just use SliderItem.
+//
 // @treeLocation Client Reference/Forms/Form Items
 // @visibility external
 //<
@@ -56,11 +75,24 @@ isc.CanvasItem.addProperties({
   	//> @attr	canvasItem.canvas		(Canvas : null : [IRW])
     //
     // The canvas that will be displayed inside this item.  You can pass an instance you've 
-    // already created, or its global ID as a String.  If none is passed, one will be 
-    // auto-created using the overrideable defaults: +link{attr:CanvasItem.canvasProperties} and
-    // +link{attr:CanvasItem.canvasConstructor}
+    // already created, or its global ID as a String. You can also implement 
+    // +link{CanvasItem.createCanvas()} to dynamically create the canvas when the FormItem
+    // is initialized.
+    // <P>
+    // If <code>canvas</code> and <code>createCanvas()</code> are unspecified, the 
+    // canvas for this item will be auto-created using the overrideable defaults:
+    // +link{attr:CanvasItem.canvasProperties} and +link{attr:CanvasItem.canvasConstructor}
+    // <P>
+    // Note that +link{canvas.canvasItem} will be set on the canvas to point back to this
+    // item.
     //
     //  @visibility external
+	//<
+	
+	//> @attr canvas.canvasItem (CanvasItem : null : [IR])
+	// If this canvas is being displayed in a +link{CanvasItem}, this property will be set
+	// to point at the item. Otherwise this property will be null.
+	// @visibility external
 	//<
 
   	//> @attr	canvasItem.canvasConstructor		(String : "Canvas" : [IRW])
@@ -120,6 +152,22 @@ isc.CanvasItem.addMethods({
     // _createCanvas    Method to ensure that the canvas for this item has been instantiated
     // with appropriate properties, and added to the containerWidget as a child.
     _createCanvas : function () {
+
+        // CanvasItem.canvas
+        // - can be defined as a live canvas instance
+        // - can be defined as a properties block to turn into a live canvas
+        // If this.createCanvas() is specified, this.canvas is dynamically set to the
+        // result of calling that method
+        // 
+        // If this.canvas is still unspecified we'll use the autoChild pattern
+        // (canvasConstructor, canvasDefaults, canvasProperties)
+        //
+        // Undocumented: The autoChild subsystem also supports dynamically getting defaults via
+        // getDynamicDefaults() which would allow dynamic customization of the canvas autoChild
+        // when it's auto-created.
+        if (this.createCanvas != null) {
+            this.canvas = this.fireCallback("createCanvas");
+        }
         
         //>DEBUG
         if (!isc.isAn.Object(this.canvas) && !this.canvasProperties && !window[this.canvas]) {
@@ -650,3 +698,14 @@ isc.CanvasItem.addMethods({
     }
 });
 
+isc.CanvasItem.registerStringMethods({
+    //> @method canvasItem.createCanvas ()
+    // This method allows dynamic creation of a CanvasItem's canvas, rather than
+    // setting +link{CanvasItem.canvas} statically.
+    // If specified this +link{stringMethod} will be called when the form item is 
+    // initialized and should return the Canvas to display for this item.
+    // @return (Canvas) the canvas to be rendered inside this CanvasItem
+    // @visibility external
+    //<
+    createCanvas:""
+});

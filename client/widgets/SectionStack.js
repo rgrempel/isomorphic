@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -40,6 +40,7 @@ isc.SectionStack.addProperties({
 
     //> @attr sectionStack.styleName (CSSStyleName : "sectionStack" : IR)
     // Default CSS style for the SectionStack as a whole.
+    // @visibility external
     //<
     styleName:"sectionStack",
 
@@ -63,7 +64,7 @@ isc.SectionStack.addProperties({
     // </ul>
     // From then on, when the sectionHeader is clicked on, it should call
     // +link{method:SectionStack.sectionHeaderClick()}.
-    // <br>
+    // <P>
     // Whenever the section is hidden or shown, sectionHeader.setExpanded(true|false) will be
     // called if implemented.
     //
@@ -160,22 +161,24 @@ isc.SectionStack.addProperties({
     // Identifier for the section.  This can be used later in calls to +link{SectionStack} APIs such as
     // +link{sectionStack.expandSection} and +link{sectionStack.collapseSection}. Note that if no name
     // is specified for the section, one will be auto-generated when the section is created.
+    // This property should be a string which may be used as a valid JavaScript identifier
+    // (should start with a letter and not contain space or special characters such as "*").
     // @visibility external
     //<
 
     //> @attr SectionStackSection.ID (String : null : [IR])
-    // Optional ID for the section. By default this will be applied to the generated 
-    // SectionStackHeader widget as a standard widget ID, meaning it should be unique within a page.
-    // To disable this behavior, set +link{SectionStackSection.useGlobalSectionIDs} to false.
+    // Optional ID for the section. If +link{useGlobalSectionIDs} is true, this property will
+    // be applied to the generated SectionStackHeader widget as a standard widget ID, meaning
+    // it should be unique within a page.
     // <P>
     // <b>Backcompat Note</b>: Section stack sections may be uniquely identified within a stack
     // via the +link{SectionStackSection.name} attribute (introduced in Jan 2010). Prior to this,
     // the section ID attribute was used in this way (and would not be applied to the section header 
     // as a widget ID). For backwards compatibility this is still supported: If 
     // <code>section.name</code> is unspecified for a section but <code>section.ID</code> is set,
-    // the ID will be used as a default name attribute for the section. You can also disable the
-    // standard behavior of having the <code>section.ID</code> being applied to the generated
-    // section header (thereby avoiding the page-level uniqueness requirement) by setting 
+    // the ID will be used as a default name attribute for the section. For backwards compatibility
+    // we also disable the standard behavior of having the <code>section.ID</code> being applied to the generated
+    // section header (thereby avoiding the page-level uniqueness requirement) by defaulting 
     // +link{SectionStackSection.useGlobalSectionIDs} to false.
     //  
     // @visibility external
@@ -641,6 +644,7 @@ isc.SectionStack.addMethods({
             if (this.vertical) sectionHeader.height = this.headerHeight;
             else sectionHeader.width = this.headerHeight;
             
+            
             // Name vs ID
             // As of Jan 2010, sections within a section stack may be referenced by the "name"
             // property. This is a unique identifier for the section within the stack.
@@ -926,6 +930,9 @@ isc.SectionStack.addMethods({
     // Expands a section or sections.  This action shows all the items assigned to the section.
     // If the section is currently hidden, it is shown first and then expanded.  Calling this
     // method is equivalent to the user clicking on the SectionHeader of a collapsed section.
+    // <var class="SmartClient">This method is called when the user clicks on SectionHeaders
+    // to expand / collapse sections and so may be overridden to act as a notification method
+    // for the user expanding or collapsing sections.</var>
     //
     // @param sections (Integer | String | Array of Integers | Array of Strings)
     //                      Section(s) to expand.  For this parameter, you can pass the position 
@@ -1067,6 +1074,9 @@ isc.SectionStack.addMethods({
     // Collapse a section or sections.  This action hides all the items assigned to the
     // section.  Calling this method is equivalent to the user clicking on the SectionHeader of
     // an expanded section.
+    // <var class="SmartClient">This method is called when the user clicks on SectionHeaders
+    // to expand / collapse sections and so may be overridden to act as a notification method
+    // for the user expanding or collapsing sections.</var>
     //
     // @param sections (Integer | String | Array of Integers | Array of Strings)
     //                      Section(s) to collapse.  For this parameter, you can pass the position 
@@ -1393,6 +1403,13 @@ isc.SectionStack.addMethods({
         this._lastExpandedSection = section;
 
         return false; // cancel event bubbling
+    },
+    
+    getSectionCursor : function (sectionHeader) {
+        var config = this.getSectionConfig(sectionHeader);
+        if (config == null) return isc.Canvas.DEFAULT;
+        if (config.cursor) return config.cursor;
+        return config.canCollapse == false ? isc.Canvas.DEFAULT : isc.Canvas.HAND;
     },
 
     // For a given member, return the closest resizeable member _before_ us in the members
@@ -1771,7 +1788,12 @@ isc.defineClass("SectionHeader", "Label").addMethods(isc._commonHeaderProps,
             this.icon = null;
             this.showIconState = false;
         }
-
+        // sections may be rendered outside of true sectionStacks
+        // (for example in SectionItems)
+        if (this.getSectionStack().getSectionCursor != null) {
+            var cursor = this.getSectionStack().getSectionCursor(this);
+            this.setCursor(cursor);
+        }
         this.invokeSuper(isc.SectionHeader, "draw", a,b,c,d);
 
         this.addControls();
@@ -1870,6 +1892,17 @@ isc.defineClass("ImgSectionHeader", "HLayout").addMethods({
         props.canDragReposition = this.canDragReposition;
         props.canDrop = this.canDrop;
         props.dragTarget = this;
+        
+        
+        // sections may be rendered outside of true sectionStacks
+        // (for example in SectionItems)
+        if (this.getSectionStack().getSectionCursor != null) {
+          
+            var cursor = this.getSectionStack().getSectionCursor(this);
+            props.cursor = cursor;
+            this.setCursor(cursor);
+        }
+        
         this.addAutoChild("background", props, isc.StretchImgButton);
 
         this.addControls();
@@ -1905,6 +1938,10 @@ isc.SectionStack.registerStringMethods({
     onSectionHeaderClick:"sectionHeader"
 });
 
+isc.SectionStack.registerDupProperties(
+    "sections",
+    // second array is sub-properties!
+    ["items"]);
 
 
 

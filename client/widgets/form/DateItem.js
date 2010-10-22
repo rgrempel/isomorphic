@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -39,35 +39,9 @@ isc.DateItem.addClassProperties({
 	//<
 	mapCache:{},	
  
-    //>	@const	DateItem.TEXT_FIELD     (object : {...} : IRW)
-	//		Text field to hold the entire date in "type in" format, if 'useTextField' is true
-    //      for an item.
-	//<	
-    TEXT_FIELD:    {name:"dateTextField",   type:"text",    changeOnBlur:true,
-                    
-                        changeOnKeypress:false,
-                        
-                        // Override the blur method to update the DateItem value
-                        // Using blur rather than saveValue / change allows changeOnKeypress to
-                        // be set to true without the dateItem clobbering the user's half-typed
-                        // strings
-                        blur : function () {
-                            if (this.parentItem) this.parentItem.updateValue();
-                        },
-                        
-                        shouldSaveValue:false,
-                        // Determine our size based on our parents specified textBox size
-                        getInnerWidth : function () {
-                            if (this.parentItem) return this.parentItem.getTextBoxWidth();
-                            return this.Super("getInnerWidth", arguments);
-                        }
-                   },
-    
-	
-	
 	//>	@type	DateItemSelectorFormat
     // Order of pickers and which pickers are present when using a DateItem with
-    // +link{useTextField} false.
+    // +link{dateItem.useTextField} false.
 	DAY_MONTH_YEAR:"DMY",		//	@value	isc.DateItem.DAY_MONTH_YEAR		Output fields in day, month, year order.
 	MONTH_DAY_YEAR:"MDY",		//	@value	isc.DateItem.MONTH_DAY_YEAR		Output fields in month, day, year order.
 	YEAR_MONTH_DAY:"YMD",		//	@value	isc.DateItem.YEAR_MONTH_DAY		Output fields in year, month, day order.
@@ -89,10 +63,67 @@ isc.DateItem.addClassProperties({
 });
 
 isc.DateItem.addProperties({
-    //>	@attr	DateItem.daySelector		(AutoChild : null : IR)
+        
+    //>	@attr dateItem.textField (AutoChild : null : R)
+    // Text field hold the entire date in "type in" format, if 'useTextField' is true
+    // for an item.
+    // 
+    // @group dateItemAppearance
+    // @visibility external
+    //<	
+    
+    // Its documented as an autoChild so Defaults / Properties are implied but
+    // explicitly expose the 'properties' block as this is good to have clearly visible
+    // for customization of items.
+    //> @attr dateItem.textFieldProperties (TextItem properties : null : IRA)
+    // Custom properties to apply to this dateItem's generated +link{dateItem.textField}.
+    // Only applies if +link{dateItem.useTextField} is true.
+    // @group dateItemAppearance
+    // @visibility external
+    //<
+
+    textFieldDefaults:    {name:"dateTextField",   type:"text",    changeOnBlur:true,
+                    
+                        // on keypress run standard 'change' behavior to store the value
+                        // as this._value - also mark as "dirty"
+                        // This allows us to preserve partially typed entries across redraws
+                        // while the item has focus.
+                        // We clear the dirty flag when we actually update the DateItem's value
+                        // on blur, or in setValue() if we're changing to a new value.
+                        changeOnKeypress:true,
+                        changed : function () {
+                            this.isDirty = true;
+                        },
+                        
+                        // Override the blur method to update the DateItem value
+                        // Using blur rather than saveValue / change allows changeOnKeypress to
+                        // be set to true without the dateItem clobbering the user's half-typed
+                        // strings
+                        blur : function () {
+                            this.isDirty = false;
+                            if (this.parentItem) this.parentItem.updateValue();
+                        },
+                        
+                        shouldSaveValue:false,
+                        // Determine our size based on our parents specified textBox size
+                        getInnerWidth : function () {
+                            if (this.parentItem) return this.parentItem.getTextBoxWidth();
+                            return this.Super("getInnerWidth", arguments);
+                        }
+                   },
+                   
+    //>	@attr	DateItem.daySelector		(AutoChild : null : R)
 	//	Select item to hold the day part of the date.
+	// @group dateItemAppearance
 	// @visibility external
 	//<	
+	
+	//> @attr dateItem.daySelectorProperties (SelectItem properties : null : IRA)
+    // Custom properties to apply to this dateItem's generated +link{dateItem.daySelector}.
+    // @group dateItemAppearance
+    // @visibility external
+    //<
+    
 	daySelectorDefaults:	{name:"daySelector",		prompt:"Choose a day", type:"select", 	
                         valueMap:"this.parentItem.getDayOptions()", shouldSaveValue:false,
                         // Override saveValue to update the parent.
@@ -104,10 +135,19 @@ isc.DateItem.addProperties({
                         cssText:"padding-left:3px;",
                         width:45},
 
-	//>	@attr	DateItem.monthSelector		(AutoChild : null : IR)
+	
+    //>	@attr	DateItem.monthSelector		(AutoChild : null : R)
 	//	Select item to hold the month part of the date.
+    // @group dateItemAppearance
 	// @visibility external
 	//<	
+	
+	//> @attr dateItem.monthSelectorProperties (SelectItem properties : null : IRA)
+    // Custom properties to apply to this dateItem's generated +link{dateItem.monthSelector}.
+    // @group dateItemAppearance
+    // @visibility external
+    //<
+    
 	monthSelectorDefaults:	{name:"monthSelector",	prompt:"Choose a month", type:"select", 	
                         valueMap:"this.parentItem.getMonthOptions()", shouldSaveValue:false,
                         saveValue:function () {
@@ -117,10 +157,19 @@ isc.DateItem.addProperties({
                         width:55},
 	
 
-	//>	@attr	DateItem.yearSelector		(AutoChild : null : IR)
+	//>	@attr	DateItem.yearSelector		(AutoChild : null : R)
 	//	Select item to hold the year part of the date.
+    // @group dateItemAppearance
 	// @visibility external
 	//<	
+	
+	
+	//> @attr dateItem.yearSelectorProperties (SelectItem properties : null : IRA)
+    // Custom properties to apply to this dateItem's generated +link{dateItem.yearSelector}.
+    // @group dateItemAppearance
+    // @visibility external
+    //<
+    
 	yearSelectorDefaults:	{name:"yearSelector",		prompt:"Choose a year", type:"select",	
                         valueMap:"this.parentItem.getYearOptions()", shouldSaveValue:false,
                         saveValue:function () {
@@ -233,14 +282,6 @@ isc.DateItem.addProperties({
     // rejecting setValue() calls with an invalid date.
     enforceDate:false,
     
-    // Allow overriding of properties on the text or select fields on a per-instance basis
-
-    
-    //textFieldProperties:null,
-    //daySelectorProperties:null,
-    //monthSelectorProperties:null,
-    //yearSelectorProperties:null,
- 
     //>	@attr	dateItem.invalidDateStringMessage   (string : "Invalid date" : IRW)
     //  Validation error message to display if the user enters an invalid date
     // @visibility external
@@ -423,11 +464,31 @@ isc.DateItem.addMethods({
         }
     },
 
-    _inputFormatMask:{
-        "MDY": "[01][0-9]/[0-3]#/####",
-        "DMY": "[0-3]#/[01][0-9]/####",
-        "YMD": "####/[01][0-9]/[0-3]#"
+    getInputFormatMask : function (inputFormat) {
+        
+        var separator = this.maskDateSeparator || this._getDefaultDateSeparator();
+        
+        var mask;
+        // Could use indexOf etc but quicker just to look at the standard set of options
+        if (inputFormat == "YMD") {
+            mask = [this._yearMask,separator,this._monthMask,separator,this._dayMask];
+        } else if (inputFormat == "DMY") {
+            mask = [this._dayMask,separator,this._monthMask,separator,this._yearMask];
+        } else {
+            // assume MDY as last valid format
+            mask = [this._monthMask,separator,this._dayMask,separator,this._yearMask];
+        }
+        
+        // Support DateTimeItem with additional mask
+        if (isc.isA.DateTimeItem(this)) {
+            mask.addList([" ",this._timeMask]);
+        }
+        return mask.join("");
+
     },
+    _monthMask:"[01][0-9]",
+    _dayMask:"[0-3]#",
+    _yearMask:"####",
     _timeMask: "[0-2][0-9]:[0-6][0-9]",
 
     _maskDisplayFormats:{
@@ -440,8 +501,13 @@ isc.DateItem.addMethods({
     //
     // 	Override the setItems() routine to set the order of the fields according to this.dateFormat
     //<
-    _$defaultDateSeparator:"/",
-    _$defaultDateSeparatorRegex:/\//g,   // Find all separators
+    _getDefaultDateSeparator:function () {
+        return Date.getDefaultDateSeparator();
+    },
+    _getDefaultDateSeparatorRegex : function () {
+        var sep = this._getDefaultDateSeparator();
+        return new RegExp(sep, "/g");
+    },
     setItems : function (itemList) {
     
         var DI = isc.DateItem,
@@ -457,39 +523,42 @@ isc.DateItem.addMethods({
         itemList = this.items = [];      
 
         if (this.useTextField) {
-            
+            // Setup properties that are being merged from the date item into the text field
+            var mergeProperties = {
+                textAlign: this.textAlign,
+                emptyDisplayValue: this.emptyDisplayValue
+            };
+            if (this.showHintInField) {
+                mergeProperties.showHintInField = this.showHintInField;
+                mergeProperties.hint = this.hint;
+                this.hint = null;
+            }
+
             var maskProperties = {};
             if (this.useMask) {
                 var inputFormat = this.getInputFormat();
                 // Default to US date format
                 if (!inputFormat) inputFormat = "MDY";
                 
-                var mask = this._inputFormatMask[inputFormat];
-                // Update mask with non-default date separator
-                var separator = this.maskDateSeparator || this._$defaultDateSeparator;
-                if (separator != this._$defaultDateSeparator) {
-                    mask = mask.replace(this._$defaultDateSeparatorRegex, separator);
-                }
-                // Support DateTimeItem with additional mask
-                if (isc.isA.DateTimeItem(this)) {
-                    mask += " " + this._timeMask;
-                }
+                var mask = this.getInputFormatMask(inputFormat);
+                
                 maskProperties.mask = mask;
                 maskProperties.maskSaveLiterals = true;
                 maskProperties.maskOverwriteMode = true;
 
-                // Make sure leading zeroes are retained
-                
-                Number._lzero = "0";
                 // Display format must match input so we force it here
-                if (this.inputFormat)
+                if (this.inputFormat) {
                     this.displayFormat = this._maskDisplayFormats[inputFormat];
+                }
             }
             
-            var textField = isc.addProperties({textAlign:this.textAlign}, 
+            var textField = isc.addProperties(mergeProperties,
+                                              this.textFieldDefaults,
                                               DI.TEXT_FIELD,
                                               this.textFieldProperties,
                                               maskProperties);
+            // Ensure noone overrode the name of the dtf!
+            textField.name = "dateTextField";
             // If we have a specified height, expand the text box to fill the available space
             
             if (this.height && (!this.textFieldProperties || !this.textFieldProperties.height)) 
@@ -520,6 +589,7 @@ isc.DateItem.addMethods({
                     } else {
                         dayField = isc.addProperties({}, this.daySelectorDefaults, DI.DAY_SELECTOR);
                     }
+                    dayField.name = "daySelector";
                     itemList.add(dayField);
                 } else if (field == "M") {
                     var monthField;
@@ -527,7 +597,9 @@ isc.DateItem.addMethods({
                         monthField = isc.addProperties({}, this.monthSelectorDefaults, DI.MONTH_SELECTOR, this.monthSelectorProperties);
                     } else {
                         monthField = isc.addProperties({}, this.monthSelectorDefaults, DI.MONTH_SELECTOR);
-                    }                
+                    }     
+                    monthField.name = "monthSelector";
+
                     itemList.add(monthField);
                 } else if (field == "Y") {
                     var yearField;
@@ -536,6 +608,8 @@ isc.DateItem.addMethods({
                     } else {
                         yearField = isc.addProperties({}, this.yearSelectorDefaults, DI.YEAR_SELECTOR);
                     }
+                    yearField.name = "yearSelector";
+
                     itemList.add(yearField);
                 }
     		}
@@ -543,6 +617,11 @@ isc.DateItem.addMethods({
         
 		// call the superclass routine to properly set the items
 		this.Super("setItems", [itemList]);
+		
+		
+		if (this.useTextField) {
+		    this.textField = this.dateTextField;
+		}
 	},
 
     // override getInnerWidth().
@@ -593,6 +672,10 @@ isc.DateItem.addMethods({
             value = this.getDefaultValue();    
             setToDefault = true;
         }
+
+        var setToExisting = (isc.isA.Date(value) && isc.isA.Date(this._value)
+                                    ? (Date.compareLogicalDates(value,this._value) == 0) 
+                                    : value == this._value);
         
         var date, invalidDate;
         // allow null values if useTextField is true and field is blank
@@ -666,9 +749,24 @@ isc.DateItem.addMethods({
         // Avoid attempting to parse / correct the dates in response to these setValues calls
         this._suppressUpdates = true;
         if (this.useTextField) {
-            // re-format the date-string entered by the user if necessary
-            var textValue = invalidDate ? date : this.formatDate(date);
-            if (this.dateTextField) this.dateTextField.setValue(textValue);
+            if (this.dateTextField) {
+                // If the dateTextField is dirty this implies it has focus and the user
+                // has entered some characters
+                // Unless we're actually setting to a *new* date value, don't wipe out what
+                // the user has entered.
+                // This is required to ensure that if a redraw occurs 
+                // (which calls setItemValues(), then falls through to setValue()) 
+                // we don't lose a partially typed entry
+                // If it's truly a new value, we can change the typed entry of course.
+                if (setToExisting && this.dateTextField.isDirty) {
+                    this.dateTextField.setValue(this.dateTextField._value);                    
+                } else {
+                    // re-format the date-string entered by the user if necessary
+                    var textValue = invalidDate ? date : this.formatDate(date);
+                    this.dateTextField.setValue(textValue);
+                    delete this.dateTextField.isDirty;
+                }
+            }
 
         }
 		// set the day, month and year selectors
@@ -707,7 +805,6 @@ isc.DateItem.addMethods({
     
     // Override updateValue to verify that the contents of the element(s) make a valid date.
     updateValue : function () {
-        
         // _suppressUpdates flag set when we're in the process of setting our sub items' values
         // to represent a known, valid date.
         
@@ -758,6 +855,9 @@ isc.DateItem.addMethods({
                 }
             }
             
+            // If value hasn't actually changed, stop here
+            if (value == this.getValue()) return;
+
             // If enforceDate is true and we're showing an invalid date error, clear it unless
             // we still have an invalid date
             if (this.enforceDate) {
@@ -1186,8 +1286,10 @@ isc.DateItem.addMethods({
 	//<
 	parseDate : function (dateString, inputFormat) {
         if (inputFormat == null) inputFormat = this.getInputFormat();
-        return Date.parseInput(dateString, inputFormat, 
+
+        var date = Date.parseInput(dateString, inputFormat, 
                                 this.centuryThreshold, true, this.useCustomTimezone);
+        return date;
 	},
     
     // formatDate() - given a live date object, returns the formatted date string to display
@@ -1241,6 +1343,7 @@ isc.DateItem.addMethods({
     // override 'showPicker' - instead of creating a picker instance we're reusing a shared
     // one.
     showPicker : function () {
+        this.updateValue();
 
         if (!this.picker) {
             if (this.useSharedPicker) this.picker = isc.DateChooser.getSharedDateChooser();
@@ -1314,12 +1417,32 @@ isc.DateItem.addMethods({
         var year = date.getFullYear(),
             month = date.getMonth(),
             day = date.getDate();
-
+            
+        // The date-picker creates "logical dates" -- dates with time set to zero
+        // in browser local time
+        // Note that browser local time (offset from UTC) can vary by date due to
+        // daylight savings time.
+        //
+        // If useCustomTimezone is set to true (as with dateTimeItems) ensure we apply
+        // the standard UTCHoursOffset so the time displays as zero
+        if (this.useCustomTimezone) {
+            // Apply the timezone offset to effectively zero out the time, but
+            // ensure that the target time > 0 so we don't change date!
+            var hourOffset = isc.Time.getUTCHoursDisplayOffset(date),
+                minuteOffset = isc.Time.getUTCMinutesDisplayOffset(date),
+                utcHours = hourOffset > 0 ? 24-hourOffset : 0-hourOffset,
+                utcMins = minuteOffset > 0 ? 60-minuteOffset : 0-minuteOffset;
+            date.setUTCHours(utcHours)
+            date.setUTCMinutes(utcMins);
+        }
+        
+            
         // avoid firing 'updateValue' while setting the values of sub items
         this._suppressUpdates = true;
 
         if (this.useTextField) {
-            this.dateTextField.setValue(this.formatDate(date));
+            var formatted = this.formatDate(date);
+            this.dateTextField.setValue(formatted);
         } else {
             var date = this._value || this.getDefaultValue(),
                 hiddenSelector;
@@ -1353,7 +1476,46 @@ isc.DateItem.addMethods({
         // Ensure we have focus
         
         if (!this.hasFocus) this.focusInItem();
-	}
+    },
+
+    setHint : function (hintText) {
+        if (this.useTextField && this.showHintInField) {
+            this.dateTextField.setHint(hintText);
+        } else {
+            this.Super("setHint", arguments); 
+        }
+    },
+
+    // Override getPickerData() -- add support for providing a default picker date separate
+    // from the default date for the item as a whole    
+    getPickerData : function () {
+        var date = this.getValue();
+        if (date != null && isc.isA.Date(date)) return date;
+        return this.getDefaultChooserDate();
+    },
+    
+    //> @attr DateItem.defaultChooserDate (Date : null : IRW)
+    // Default date to show in the date chooser. If this items value is currently unset,
+    // this property may be specified to set a default date to highlight in the dateChooser 
+    // for this item. If unset, the date chooser will highlight the current date by default.
+    // Note that this has no effect if the item as a whole currently has a value - in that
+    // case the date chooser will always highlight the current value for the item.
+    // @visibility external
+    //<
+    //defaultChooserDate:null,
+    
+    //> @method DateItem.getDefaultChooserDate()
+    // Returns the default date to display in the date chooser if this form items value is
+    // currently unset.
+    // <P>
+    // Default implementation returns +link{dateItem.defaultChooserDate}
+    // @return (Date) date to display, or null, indicating the current system date should be
+    //   displayed.
+    // @visibility external
+    //<
+    getDefaultChooserDate : function () {
+        return this.defaultChooserDate;
+    }
 
     //>EditMode dynamically changing useTextField
     , 

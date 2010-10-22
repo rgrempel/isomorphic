@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -67,14 +67,14 @@ isc.ViewFileItem.addProperties({
         if (this.type == "imageFile" && this.showFileInline != false) {
             this.canvas.setHeight("*");
             this.canvas.setWidth("*");
-            this.canvas.setContents(this.getImageHTML());
+            this.canvas.setContents(this.getImageHTML() || "&nbsp;");
         } else {
             if (this.showFileInline == true) { // non-imageFile field
 	            this.logWarn("setValue(): Unsupported field-type for showFileInline: " +this.type);
             }
             this.canvas.setHeight(20);
             this.canvas.setWidth("*");
-            this.canvas.setContents(this.getViewDownloadHTML(data, record));
+            this.canvas.setContents(this.getViewDownloadHTML(data, record) || "&nbsp;");
         }
         this.Super("setValue", arguments);
     },

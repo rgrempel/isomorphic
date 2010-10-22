@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -859,6 +859,14 @@ canResizeTimelineEvents: false,
 // @visibility internal
 //<
 allowEventOverlap: true,
+
+// @attr calendar.equalDatesOverlap (boolean : null : IR) 
+// If true, when events or date ranges share a border on exactly the same date,
+// they will be treated as overlapping. By default, they will not be treated
+// as overlapping.
+//
+// @visibility internal
+//<
 
 // @attr calendar.sizeEventsToGrid (boolean : true : IR)
 // if true, events will be sized to the grid, even if they start and/or end at times
@@ -1965,7 +1973,6 @@ _prepareAutoArrangeOffsets : function (events, grid) {
                 }
             }
         }
-        if (endHours == 0) endHours = 24;
 
         curr._eventOffset = 0;
         curr._eventEndOffset = 0;
@@ -1984,7 +1991,7 @@ _prepareAutoArrangeOffsets : function (events, grid) {
                 var startTimeInUse = assigned != 0;
                 // set the event's left-offset 
                 curr._eventOffset = assigned;
-                 
+
                 if (this.eventOverlap) {
                     if (!this.eventOverlapIdenticalStartTimes) {
                         curr._drawOverlap = exactTime == 0;
@@ -1993,9 +2000,9 @@ _prepareAutoArrangeOffsets : function (events, grid) {
                     }
                     exactTime = 1;
                 }
-                
+
                 assigned++;
-                
+
                 if (assigned > columnCount) {
                     // summarise the max columns required
                     columnCount = assigned;
@@ -2066,21 +2073,22 @@ getDayEnd : function (startDate) {
 },
 
 _renderEventRange : function (isWeek, start, end) {
-    
+
     var grid = (isWeek ? this.weekView : this.dayView);
+    if (!grid.isDrawn()) return;
 
     var rowSize = grid.getRowHeight(1),
         colSize = grid.getColumnWidth(grid.isLabelCol(0) ? 1 : 0);
 
     var startDate = start, endDate = end;
 
-    if (Date.compareDates(startDate, endDate) < 0 || endDate.getHours() == 0) {
+    if (Date.compareDates(startDate, endDate) < 0 || (endDate.getHours() == 0)) {
         endDate = this.getDayEnd(startDate);
     }
 
     // get the events that overlap
     var localEvents = this._getEventsTouchingRange(startDate, endDate, true);
-    
+
     // sort the array by start-time and end-time
     localEvents.sortByProperties([this.startDateField, this.endDateField], 
         [true, false]);
@@ -2118,16 +2126,18 @@ _renderEventRange : function (isWeek, start, end) {
         
         // catch the case where the end of the event is on 12am, which happens when an
         // event is dragged or resized to the bottom of the screen
-        var eHrs = curr[this.endDateField].getHours() == 0 ? 24 : curr[this.endDateField].getHours();
+        var eHrs = curr[this.endDateField].getHours();
+        if (eHrs == 0 && curr[this.endDateField].getMinutes() == 0) eHrs = 24;
+
         // if the event ends on the next day, render it as ending on the last hour of the 
         // current day
         var spansDays = false;
-        
+
         if (start.getDate() > end.getDate()) {
             spansDays = true;
             eHrs = 24;
         }
-        
+
         var eHeight = (eHrs - curr[this.startDateField].getHours()) * (rowSize * 2)
 
         // for border overlap
@@ -2449,24 +2459,42 @@ createChildren : function () {
         this.addEventButton = this.createAutoChild("addEventButton", {
             click: function () {
                 var cal = this.creator;
+                var currView = cal.getCurrentViewName();
+                
                 cal.eventDialog.event = null;
                 cal.eventDialog.items[0].createFields(false);
       
-                var sDate = new Date();
-                // if hiding weekends, find next non-weekend day
-                if (!this.showWeekends) {
-                    var wends = Date.getWeekendDays();
-                    for (var i = 0; i < wends.length; i++) {
-                        if (wends.contains(sDate.getDay())) sDate.setDate(sDate.getDate() + 1);
+                var sDate = new Date(), 
+                    pickedDate = cal.chosenDate.duplicate();
+                // if dayView is chosen, set dialog date to chosen date
+                if (currView == "day") {
+                    sDate = pickedDate;
+                // if weekview, set dialog to first day of chosen week unless
+                // today is greater
+                } else if (currView == "week") {
+                    if (cal.chosenWeekStart.getTime() > sDate.getTime()) {
+                        sDate = cal.chosenWeekStart.duplicate();    
                     }
+                    // if hiding weekends, find next non-weekend day
+                    if (!this.showWeekends) {
+                        var wends = Date.getWeekendDays();
+                        for (var i = 0; i < wends.length; i++) {
+                            if (wends.contains(sDate.getDay())) sDate.setDate(sDate.getDate() + 1);
+                        }
+                    }
+                    sDate.setMinutes(0);
+                    // move event to next day if now is end of day
+                    if (sDate.getHours() > 22) {
+                        sDate.setDate(sDate.getDate() + 1);
+                        sDate.setHours(0);
+                    } // otherwise move to next hour
+                    else sDate.setHours(sDate.getHours() + 1);
+                // if monthView, set dialog to first day of chosen month unless
+                // today is greater
+                } else if (currView == "month") {
+                    pickedDate.setDate(1);
+                    if (pickedDate.getTime() > sDate.getTime()) sDate = pickedDate; 
                 }
-                sDate.setMinutes(0);
-                // move event to next day if now is end of day
-                if (sDate.getHours() > 22) {
-                    sDate.setDate(sDate.getDate() + 1);
-                    sDate.setHours(0);
-                } // otherwise move to next hour
-                else sDate.setHours(sDate.getHours() + 1);
                 cal.eventDialog.setDate(sDate);
                 // place the dialog at the left edge of the calendar, right below the button itself
                 cal.eventDialog.setPageLeft(cal.getPageLeft());
@@ -2843,6 +2871,29 @@ createChildren : function () {
 
                             var sdate = cal.eventEditorLayout.currentStart,
                                 edate = cal.eventEditorLayout.currentEnd;
+                            
+                            // Differing calendar dates:
+                            // For an end date of midnight we end up with the start date
+                            // and the end date being on different days.
+                            // Cases we need to handle:
+                            // - stored start/end date are the same day, and user has
+                            //   moved end time forward to midnight.
+                            //   * call 'setHour(24)' - will auto increment date value
+                            // - stored start/end date are different days (so end is midnight)
+                            //   and user has moved end date back to a time before midnight.
+                            //   * call 'setDate()' to decrease the end date to the same day,
+                            //     then apply the new time via setHour()
+                            // - stored start end date are different (end date is midnight)
+                            //   and user has left it selected
+                            //   * no need to actually setHours on end date but if we do,
+                            //     convert the '24' set up above to zero so we don't
+                            //     increment the date an additional day.
+                            if (edate.getDate() > sdate.getDate()) {
+                                if (eHrs == 24) eHrs = 0;
+                                else {
+                                    edate.setDate(sdate.getDate());
+                                }
+                            }
                             sdate.setHours(sHrs);
                             sdate.setMinutes(sMins);
                             edate.setHours(eHrs);
@@ -4540,7 +4591,6 @@ isc.EventWindow.addProperties({
         }
         var cal = this.calendar;
         var doDefault = cal.eventClick(this.event, this._isWeek ? "week" : "day");
-        isc.logWarn("in click");
         if (doDefault) {
             if (!cal.canEditEvent(this.event)) return;
             // handle the case when a selection is made, then an event is clicked
@@ -4754,6 +4804,7 @@ isc.TimelineWindow.addProperties({
             this.showTitle = false;
             
         }
+        //this.showBody = false;
         this.Super("initWidget");    
         
     },
@@ -4780,7 +4831,6 @@ isc.TimelineWindow.addProperties({
     click : function () {
         var cal = this.calendar;
         var doDefault = cal.eventClick(this.event, this._isWeek ? "week" : "day");
-        isc.logWarn("in click");
         if (doDefault) {
             if (!cal.canEditEvent(this.event)) return;
             // handle the case when a selection is made, then an event is clicked
@@ -5260,10 +5310,11 @@ isc.TimelineView.addProperties({
         
         this.body.snapVGap = this.eventHeight;
         // scroll to today if defined
-        if (this.scrollToToday) {
+        if (this.scrollToToday != false) {
             var today = new Date();
-            today.setDate(today.getDate() - (this.scrollToToday + 1));
-            var sLeft = this.creator.getDayDiff(this.startDate, today) * this.eventWidth;
+            today.setDate(today.getDate() - this.scrollToToday);
+            var diff = this.creator.getDayDiff(this.startDate, today);            
+            var sLeft = diff * this.eventWidth;
             this.bodies[1].scrollTo(sLeft, 0);
         }
         this.logDebug('draw', 'calendar');
@@ -5276,7 +5327,7 @@ isc.TimelineView.addProperties({
     
     getCellCSSText : function (record, rowNum, colNum) {
          var currDate = this.startDate.duplicate();
-         currDate.setDate(currDate.getDate() + colNum - 1);
+         currDate.setDate(currDate.getDate() + colNum - this.getLabelColCount());
          var today = new Date();
          
          if (currDate.toShortDate() == today.toShortDate() && this.creator.todayBackgroundColor) {
@@ -5288,8 +5339,16 @@ isc.TimelineView.addProperties({
         return  date.getShortMonthName() + " " + date.getDate() + ", " + date.getFullYear(); 
     },
     
+    getLabelColCount : function () {
+        if (this.creator.timelineLabelFields) {
+            return this.creator.timelineLabelFields.length;
+        } else {
+            return 1;
+        }
+    },
+    
     isLabelCol : function (colNum) {
-        if (colNum == 0) return true;
+        if (colNum < this.getLabelColCount()) return true;
         else return false;
     },
     
@@ -5315,9 +5374,12 @@ isc.TimelineView.addProperties({
         this.endDate.setDate(this.endDate.getDate() + pageSize);
         this.setFields(this.calcFields());
         //isc.logWarn("nextOrPrev:" + this.creator.data.willFetchData(this.creator.getNewCriteria()));
-        if (this.creator.dataSource) {
+        if (this.creator.dataSource && isc.ResultSet && isc.isA.ResultSet(this.creator.data)) {
             this.creator.data.invalidateCache();
             this.creator.filterData(this.creator.getNewCriteria());
+        } else {
+            // force dataChanged hooks to fire so event positions are correctly updated
+            this.creator.dataChanged();
         }
       
     },
@@ -5341,9 +5403,7 @@ isc.TimelineView.addProperties({
         this.refreshVisibleEvents();
     },
     
-    getVisibleEvents : function () {
-       
-        
+    getVisibleEvents : function () {               
         var dateRange = this.getVisibleDateRange();
         var rowRange = this.getVisibleRowRange();
         var cal = this.creator;
@@ -5376,10 +5436,10 @@ isc.TimelineView.addProperties({
             if (this.eventsOverlap(rangeObj, event) && rowRange[0] <= eventRowIndex 
                 && eventRowIndex <= rowRange[1]) {
                 results.add(event);    
-            } /*else {
+            } /*else {                
                 isc.logWarn('event not added to vis events:' + event.id);
-                isc.logWarn('dates:' + [rangeObj.start, rangeObj.end, event.start, event.end]);
-                
+                isc.logWarn('dates:' + [rangeObj.start, rangeObj.end, event.start, event.end]);                     
+               
             }*/
         }
         
@@ -5430,15 +5490,15 @@ isc.TimelineView.addProperties({
         // get visible events and add them. addEvent takes care of reclaiming and positioning
         var events = this.getVisibleEvents();
         var eventsLen = events.getLength();
-        this.logDebug('refreshing visible events','calendar');
+        this.logDebug('refreshing visible events','calendar');  
         for (var i = 0; i < eventsLen; i++) {
-            //if (i > 5) break;
+            //if (i > 20) break;
             var event = events.get(i);
             //isc.logWarn('refreshing event:' + event.id);
             // reset the visited flag on each event so that tagDataForOverlap code knows it can 
             // tag this event if it needs to be retagged (any time an event in the same row is 
             // changed).
-            if (event._overlapProps) event._overlapProps.visited = false
+            if (event._overlapProps) event._overlapProps.visited = false;           
             this.addEvent(event, i);
         }   
         // hide events after repositiong visible events, starting right after the number of the 
@@ -5596,27 +5656,23 @@ isc.TimelineView.addProperties({
          
         if (a[cal.trailingDateField] && b[cal.trailingDateField]) endField = cal.trailingDateField;
         else endField = cal.endDateField;
-        // when sizeEventsToGrid, count equal dates as overlapping, as events may be specified
-        // in such a way that start and end have time fields zeroed out, but should still be
-        // considered as overlapping the same zeroed out date (for example, the date represented
-        // by a column boundary. Otherwise left edge events can get dropped from rendering.
-        if (this.creator.sizeEventsToGrid) {
-             if ((a[startField] >= b[startField] && a[startField] <= b[endField]) 
-                 || (a[endField] <= b[endField] && a[endField] >= b[startField])
-                 || (a[startField] <= b[startField] && a[endField] >= b[endField])) {
-                    return true;
-             } else {
-                    return false;
-             }
+        
+        
+        // simple overlap detection logic: there can only be an overlap if 
+        // neither region A end <= region B start nor region A start >= region b end.
+        // No need to check other boundary conditions, this should satisfy all
+        // cases: 1. A doesn't overlap B, A partially overlaps B, A is completely
+        // contained by B, A completely contains B.
+        // NOTE: using the equals operator makes the case where 
+        // two dates are exactly equal be treated as not overlapping.
+        if (cal.equalDatesOverlap) {
+             if (a[endField] < b[startField] || a[startField] > b[endField]) return false;
+             else return true;   
         } else {
-            if ((a[startField] > b[startField] && a[startField] < b[endField]) 
-                || (a[endField] < b[endField] && a[endField] > b[startField])
-                || (a[startField] < b[startField] && a[endField] > b[endField])) {
-                return true;
-            } else {
-                return false;
-            }
+             if (a[endField] <= b[startField] || a[startField] >= b[endField]) return false;
+             else return true;
         }
+       
     },
     
     compareDates : function (date1, date2, d) {
@@ -5743,7 +5799,7 @@ isc.TimelineView.addProperties({
         
         // reset style name to new event as the window may have a stylename from the event
         // it was previously representing (recycled window)
-        var styleName = event[cal.eventWindowStyleField];
+        var styleName = event[cal.eventWindowStyleField] || cal.eventWindowStyle;
         if (styleName) eventWin.setStyleName(styleName);
         // set eventWindowBackgroundColor if present on event, otherwise null it out if it
         // was there from a previous event
@@ -5786,7 +5842,11 @@ isc.TimelineView.addProperties({
         
         // draw leading and trailing lines
         if (event[cal.leadingDateField] && event[cal.trailingDateField]) {
-            this.addLeadingAndTrailingLines(eventWin);
+            if (eventWin._lines) this.addLeadingAndTrailingLines(eventWin);
+            // split this onto another thread so that ie doesn't pop the 
+            // slow script warning. Applies to first draw only.
+            else this.delayCall("addLeadingAndTrailingLines", [eventWin]);
+          
         }
         
     },
@@ -5802,6 +5862,10 @@ isc.TimelineView.addProperties({
             top = top + Math.floor((height * (overlapProps.slotNum - 1)));
         }
         eventWin.resizeTo(width, height);
+         // continuation of ugly hack from getNewEventWindow:
+        // for some reason the header lable doesn't respect the sizing of its
+        // parent, so make sure we resize it here.
+        if (eventWin._customHeader) eventWin.header.resizeTo(width, height);
         eventWin.moveTo(left, top);
     },
     
@@ -6003,8 +6067,16 @@ isc.TimelineView.addProperties({
         
         
         this.sizeEventWindow(win, reclaimed);
-        if (this.body && !reclaimed) this.body.addChild(win);
-        //win.body.show();
+        // Adding a check on parentElement here to ensure that we can't end up with a window
+        // in the event bin that is not a child of this.body.  This is related to the change 
+        // made a few lines further down, to ensure that an undrawn window is drawn.  I suspect
+        // the root of this is event windows being created before the Timeline itself has 
+        // been drawn
+        if (this.body && (!reclaimed || win.parentElement != this.body)) {         
+            this.body.addChild(win);  
+        }
+        if (!win.isDrawn()) win.draw();
+        if (win.body) win.body.show();
         win.show(); 
         
     },
@@ -6024,10 +6096,11 @@ isc.TimelineView.addProperties({
     
     getNewEventWindow : function (event) {
         var styleName = event[this.creator.eventWindowStyleField] || this.creator.eventWindowStyle;
-        var bodyProps, headerProps;
+        var bodyProps, headerProps, showMembers = true;
         if (this.creator.showDescription == false) {
-            bodyProps = {height: 0, overflow:"hidden" };
-            headerProps = {height: "*"};
+            //bodyProps = {height: 0, overflow:"hidden" };
+            //headerProps = {height: "*"};
+            showMembers = false;
         }
         var canDrag = (this.creator.canDragEvents == true && event[this.creator.canDragEventField] != false);
       
@@ -6044,15 +6117,38 @@ isc.TimelineView.addProperties({
             showCloseButton: false,
             event: event,
             descriptionText: event[this.creator.descriptionField] || "",
-            headerProperties: headerProps,
-            bodyProperties: bodyProps
+            showHeader: showMembers,
+            showBody: showMembers
+            //,headerProperties: headerProps,
+            //bodyProperties: bodyProps
+            
             
         }
         if (event.eventWindowBackgroundColor) {
             eventWinProps.backgroundColor = event.eventWindowBackgroundColor;    
         }
         var eventWin =  isc.TimelineWindow.create(eventWinProps); 
-       
+        // somewhat ugly hack, probably due to performance optimization by 
+        // _redrawWithParent = false above: 
+        // if showDescription is false, we completely eliminate the header and 
+        // body of the window, and simply make our own header. We add this to
+        // the event window as a child (if added as a member it won't be drawn).
+        // The regular header won't be drawn if showBody:false, probably having
+        // to do with _redrawWithParent on the window.
+        
+        if (!showMembers) {
+            var eventWin =  isc.TimelineWindow.create(eventWinProps); 
+            var lbl = isc.Label.create({
+                    autoDraw:false,
+                    styleName: styleName,
+                    border: "0px",
+                    height: "*"
+            });
+            eventWin.addChild(lbl);
+            eventWin.header = lbl;
+            eventWin._customHeader = true;
+        }
+        
         this.creator.setEventWindowID(event, eventWin.ID);
         //isc.logWarn('getNewEventWindow:' + [eventWin.ID, eventWin.canDragResize]);
         return eventWin;
@@ -6217,5 +6313,6 @@ _eventScaffolding: [
 
 // Call the AutoTest method to apply Calendar-specific methods now we've loaded
 isc.AutoTest.customizeCalendar();
+
 
 

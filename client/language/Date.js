@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -311,7 +311,8 @@ parseInput : function (dateString, format, centuryThreshold, suppressConversion,
             }
             if (newDate != null) {
                 newDate._applyTimezoneOffset(
-                    -isc.Time.UTCHoursDisplayOffset, -isc.Time.UTCMinutesDisplayOffset
+                    -isc.Time.getUTCHoursDisplayOffset(newDate), 
+                    -isc.Time.getUTCMinutesDisplayOffset(newDate)
                 );
             }
             return newDate;
@@ -570,6 +571,29 @@ setShortDisplayFormat : function (format) {
     }
 },
 
+//>	@classMethod Date.setDefaultDateSeparator
+// Sets a new default separator that will be used when formatting dates. By default, this
+// is a forward slash character: "/"
+// @group   dateFormatting
+// @param separator (string) separator to use in dates 
+// @visibility external
+//<
+setDefaultDateSeparator : function (separator) {
+    Date.prototype._shortDateTemplate = [,,,,separator,,,,,separator,,,,null];
+    Date.prototype._separator = separator;
+},
+
+//>	@classMethod Date.getDefaultDateSeparator
+// gets the default date separator string
+// @group   dateFormatting
+// @return(string) the default date separator 
+// @visibility external
+//<
+getDefaultDateSeparator : function (separator) {
+    if (Date.prototype._separator) return Date.prototype._separator;
+    else return "/";    
+},
+
 //> @classMethod Date.setShortDatetimeDisplayFormat()
 //  Set the default short format for datetime values. After calling this method, subsequent calls to 
 // +link{Date.toShortDateTime()} will return a string formatted according to this format 
@@ -757,9 +781,11 @@ getFormattedDateRangeString : function (fromDate, toDate) {
     var fromMonth = fromDate ? fromDate.getMonth() : null,
         fromMonthName = fromDate ? fromDate.getShortMonthName() : null,
         fromYear = fromDate ? fromDate.getFullYear() : null,
+        fromDay = fromDate ? fromDate.getDate() : null,
         toMonth = toDate ? toDate.getMonth() : null,
         toMonthName = toDate ? toDate.getShortMonthName() : null,
         toYear = toDate ? toDate.getFullYear() : null,
+        toDay = toDate ? toDate.getDate() : null,
         result = ""
     ;
 
@@ -767,9 +793,15 @@ getFormattedDateRangeString : function (fromDate, toDate) {
         if (fromYear == toYear) {
             // dates are in the same year - check the months 
             if (fromMonth == toMonth) {
-                // dates are in the same month, use "month start - end, year"
-                result = fromMonthName + " " + fromDate.getDate() + " - " +
-                    toDate.getDate() + ", " + fromYear;
+                // dates are in the same month - check the day-numbers
+                if (fromDay == toDay) {
+                    // dates are the same - use just the one date
+                    result = fromMonthName + " " + fromDate.getDate() + ", " + fromYear;
+                } else {
+                    // day-numbers are different, use "month start - end, year"
+                    result = fromMonthName + " " + fromDate.getDate() + " - " +
+                        toDate.getDate() + ", " + fromYear;
+                }
             } else {
                 // dates are in different months, use "month start - month end, year"
                 result = fromMonthName + " " + fromDate.getDate() + " - " +
@@ -1043,12 +1075,14 @@ _getTimezoneOffsetDate : function (hourOffset, minuteOffset) {
     return offsetDate;
     
 },
-
+               
+                
 // _toShortDate()
 // Internal method to give us a shortDate - either DD/MM/YYYY, MM/DD/YYYY or YYYY/MM/DD.
 // this will be passed "MDY" / "DYM" / etc. as a format parameter.
 // useCustomTimezone parameter: use the hour and minute offset specified by
 // Time.setDefaultDisplayTimezone() rather than the native browser local timezone
+_$zero:"0",
 _toShortDate : function (format, useCustomTimezone) {
     
     var template = this._shortDateTemplate,
@@ -1060,7 +1094,10 @@ _toShortDate : function (format, useCustomTimezone) {
         year = this.getFullYear();
     } else {
         var offsetDate = this._getTimezoneOffsetDate(
-                            isc.Time.UTCHoursDisplayOffset, isc.Time.UTCMinutesDisplayOffset);
+                            isc.Time.getUTCHoursDisplayOffset(this), 
+                            isc.Time.getUTCMinutesDisplayOffset(this)
+                         );
+
         month = offsetDate.getUTCMonth() + 1;
         day = offsetDate.getUTCDate();
         year = offsetDate.getUTCFullYear();
@@ -1091,10 +1128,10 @@ _toShortDate : function (format, useCustomTimezone) {
     // For month/day - if we need a leading zero, fill the first slot with it
     // Use fillNumber to fill 3 slots even though we have a max of 2 digits to ensure
     // the last slot gets cleared out if it was populated by a year already.
-    template[dayIndex] = day < 10 ? Number._lzero : null
+    template[dayIndex] = day < 10 ? this._$zero : null
     isc._fillNumber(template, day, dayIndex+1, 3);
         
-    template[monthIndex] = month < 10 ? Number._lzero : null
+    template[monthIndex] = month < 10 ? this._$zero : null
     isc._fillNumber(template, month, monthIndex+1, 3);
             
     isc._fillNumber(template, this.getFullYear(), yearIndex, 4);
@@ -1250,7 +1287,9 @@ _serialize : function () {
 // JavaScript date objects, but only the time information is displayed to the user.
 // Time formatting is handled by the +link{Time} class APIs. By default times are displayed to users
 // in the display timezone set up via +link{Time.setDefaultDisplayTimezone()} [if not explicitly
-// set, defaults to native browser local time].<br>
+// set, defaults to native browser local time]. Note that depending on the specific date being
+// displayed, a Daylight Savings Time offset may also be applied based on the browser locale.
+// To disable this behavior set +link{isc.Time.adjustForDST} to false.<br>
 // When communicating with a non SmartClient server via an "xml" DataSource, time field
 // values in requests will be serialized out as full times in UTC using the standard
 // <a target=_blank href="http://www.w3.org/TR/xmlschema-2/#dateTime">XML Schema date / time
@@ -1784,3 +1823,7 @@ parseEuropeanShortDateTime : function (string, centuryThreshold) {
 }   
 });
 //<!BackCompat
+
+
+
+

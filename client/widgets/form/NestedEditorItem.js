@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -23,9 +23,9 @@
 //<
 isc.ClassFactory.defineClass("NestedEditorItem", "CanvasItem");
 isc.NestedEditorItem.addProperties({
-    
+
     shouldSaveValue: true,
-    
+
   	//> @attr	nestedEditorItem.editor		(AutoChild : null : [IRW])
     //
     // The editor that will be rendered inside this item.  Unless overridden, the editor will be

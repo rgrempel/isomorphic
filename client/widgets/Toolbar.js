@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -128,6 +128,12 @@ isc.Toolbar.addProperties( {
 
     
 
+    //> @attr toolbar.allowButtonReselect (boolean : false : IRWA)
+    // When a button is clicked but is already selected, should an additional
+    // +link{buttonSelected} event be fired?
+    //<
+    allowButtonReselect:false,
+
 	//>	@attr	toolbar.buttonDefaults		(object : varies : [IRWA])
     // Settings to apply to all buttons of a toolbar. Properties that can be applied to
     // button objects can be applied to all buttons of a toolbar by specifying them in
@@ -148,10 +154,14 @@ isc.Toolbar.addProperties( {
             this.Super("click", arguments);
 			this.parentElement.itemClick(this, this.parentElement.getButtonNumber(this))
 		},
+		doubleClick : function () {
+		    this.Super("doubleClick", arguments);
+			this.parentElement.itemDoubleClick(this, this.parentElement.getButtonNumber(this))
+		},
         setSelected : function() {
             var oldState = this.isSelected();
             this.Super("setSelected", arguments);
-            if (oldState != this.isSelected()) {
+            if (this.parentElement.allowButtonReselect || oldState != this.isSelected()) {
                 if (this.isSelected()) this.parentElement.buttonSelected(this);
                 else this.parentElement.buttonDeselected(this);
             }
@@ -181,11 +191,15 @@ isc.Toolbar.addProperties( {
         // This means when tabbing out of the button, the focus will go to the appropriate next
         // element - use the _updateFocusButton() method on the toolbar to achieve this.        
         focusChanged : function (hasFocus) {
-            if (this.hasFocus) this.parentElement._updateFocusButton(this)
+            if (this.hasFocus && this.parentElement._updateFocusButton) {
+                this.parentElement._updateFocusButton(this)
+            }
         },
             
         _focusInNextTabElement : function (forward, mask) {
-            this.parentElement._focusInNextTabElement(forward, mask, this); 
+            if (this.parentElement._focusInNextTabElement) {
+                this.parentElement._focusInNextTabElement(forward, mask, this); 
+            }
         }
 	}
 });
@@ -382,7 +396,6 @@ _setButtonAccessKey : function (button, key) {
 // An internal method to set the tab indexes of any buttons in the toolbar without existing 
 // user-specified tab indexes
 setupButtonFocusProperties : function () {
-
     // first update the 'currentFocusButton' if its out of date.
     // This will set the tabIndex and accessKey for the button (unless that would override an
     // explicitly specified property for the button).
@@ -393,9 +406,19 @@ setupButtonFocusProperties : function () {
     var focusButton = this._currentFocusButton; 
    
     if ( (!focusButton || !isc.isA.Canvas(focusButton) || 
-          !focusButton.isVisible() ) && this.buttons.length > 0) 
+          focusButton.visibility == isc.Canvas.HIDDEN ) && this.buttons.length > 0) 
     {
-        this._updateFocusButton(this.members[0])
+        var newFocusButton;
+        for (var i = 0; i < this.members.length; i++) {
+            
+            if (isc.isA.Canvas(this.members[i]) &&
+                this.members[i].visibility != isc.Canvas.HIDDEN) 
+            {
+                newFocusButton = this.members[i];
+                break;
+            }
+        }
+        this._updateFocusButton(newFocusButton)
         focusButton = this._currentFocusButton;
     }
 
@@ -546,7 +569,7 @@ setButtons : function (newButtons) {
     if (this.buttons == null) this.buttons = [];
 
     var newMembers = [];
-	for (var i = 0; i < this.buttons.length; i++) {
+    for (var i = 0; i < this.buttons.length; i++) {
         var button = this.buttons[i];
 
         // allow widgets to be placed directly in the buttons array, which we simply add as
@@ -942,6 +965,16 @@ buttonDeselected : function (button) {
 itemClick : function (item, itemNum) {
 },
 
+//>	@method	toolbar.itemDoubleClick() ([A])
+//	Called when one of the buttons receives a double-click event
+//		@group	event handling
+//		@param	item		(button)		pointer to the button in question
+//		@param	itemNum		(number)		number of the button in question
+// @visibility external
+//<
+itemDoubleClick : function (item, itemNum) {
+},
+
 //>	@method	toolbar.getMouesOverButtonIndex()	(A)
 //  @return (number) the number of the button the mouse is currently over, 
 //                   or -1 for before all buttons, -2 for after all buttons
@@ -952,39 +985,51 @@ getMouseOverButtonIndex : function () {
     return this.inWhichPosition(this.memberSizes, offset, this.getTextDirection());
 },
 
-//
-//	Drag and Drop operations on members
-//
 
+// Override prepareForDragging to handle dragResize / dragReorder of items in the toolbar.
 prepareForDragging : function () {
     // NOTE: we currently set a canDrag, canDragResize, etc flags on our children.  However, we
     // could manage everything from this function instead, eg, pick dragResize if there is a
     // resize edge hit on the child, otherwise dragReorder.
 
     var EH = this.ns.EH;
-    // This event is expected to be bubbled from a member being drag-repositioned/resized.
-    // Note: If the drag is not occurring on one of our members, (but a child of a member),
-    // allow normal drag handling to occur. (Unless the child is essentially a drag-handle for our
-    // member)
+    // This custom handling is for events bubbled from a member being drag repositioned
+    // (drag reorder) or drag resized.
+    // 
+    
     var lastTarget = EH.lastEvent.target;
     while (lastTarget.dragTarget) {
         lastTarget = lastTarget.dragTarget;
     }
-    if (!this.members.contains(lastTarget)) return;
-     
-    // If we hit a valid resize edge on a member, the member will have set the dragOperation to
-    // dragResize
-    if (EH.dragOperation == "dragResize") {
-        // for drag resizes on the length axis, do specially managed resizing.  Don't interfere
-        // with breadth-axis resize, if enabled
-        if ((this.vertical && ["T","B"].contains(EH.resizeEdge)) ||
-            (!this.vertical && ["L","R"].contains(EH.resizeEdge)))
-        {
-            EH.dragOperation = "dragResizeMember";  
-        }
-    // otherwise, starting a drag on a button means dragReordering the members.
+    var operation = EH.dragOperation;
     
-    } else if (this.canReorderItems && EH.dragOperation == "drag") EH.dragOperation = "dragReorder";
+    
+    if (( (this.canResizeItems && operation == "dragResize") 
+          || (this.canReorderItems && operation == "drag")
+         ) && this.members.contains(lastTarget)) 
+    {
+        
+        // If we hit a valid resize edge on a member, the member will have set the dragOperation to
+        // dragResize
+        if (operation == "dragResize") {
+            // for drag resizes on the length axis, do specially managed resizing.  Don't interfere
+            // with breadth-axis resize, if enabled
+            if ((this.vertical && ["T","B"].contains(EH.resizeEdge)) ||
+                (!this.vertical && ["L","R"].contains(EH.resizeEdge)))
+            {
+                EH.dragOperation = "dragResizeMember";
+                // We can just return - prepareForDragging() is bubbled so was already fired
+                // on the member and set up EH.dragTarget in this case
+                return;
+            }
+        // otherwise, starting a drag on a button means dragReordering the members.
+        } else if (operation == "drag") {
+            EH.dragOperation = "dragReorder";
+            return;
+        }
+    }
+    
+    return this.Super("prepareForDragging", arguments);
 },
 
 // Drag Reordering

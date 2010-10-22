@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -25,12 +25,16 @@ isc.addGlobal("shallowClone", function (object) { return isc.Comm._shallowClone(
 
 isc.Comm.addClassMethods({
 
-//>	@classMethod	isc.clone()
+//>	@classMethod isc.clone()
 // Create a deep clone of an object that can be edited without affecting the original
-// <br>
-// All mutable types, including Objects, Arrays and Dates, are copied.  All immutable types are
-// just preserved by reference.
-// <br>
+// <P>
+// All mutable types, including Objects, Arrays and Dates, are copied.  All immutable types
+// (Number, String, etc) are just preserved by reference.
+// <P>
+// Only JavaScript built-in types may be cloned.  SmartClient UI widgets do not support
+// cloning, instead, use +link{Class.create()} to make a new component with similar
+// configuration.
+// <P>
 // Does not handle looping references (will infinite loop).
 //
 // @visibility external

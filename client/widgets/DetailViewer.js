@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -284,6 +284,15 @@ isc.DetailViewer.addProperties({
     // @visibility external
 	//<
 	fieldIdProperty:"name",
+	
+	//> @attr detailViewerField.includeFrom (string : null : [IR])
+	// Indicates this field's values come from another, related DataSource.  
+	// The individual field will inherit settings such as +link{DetailViewerField.type,field.type}
+	// and +link{DetailViewerField.title,field.title} from the related DataSource just like
+	// fields from the primary DataSource.
+	//
+	// @visibility crossDS
+	//<
 
     // Multi-record display
 	// --------------------------------------------------------------------------------------------
@@ -479,12 +488,13 @@ isc.DetailViewer.addProperties({
 	//<
 	emptyMessageStyle:"normal",
 
-    //>	@attr	detailViewer.loadingMessage		(string : "&nbsp;" : IRW)
-    //          The string to display in the body of a detailViewer which is loading records.
+    //>	@attr	detailViewer.loadingMessage		(string : "&amp;nbsp;\${loadingImage}" : IRW)
+    // The string to display in the body of a detailViewer which is loading records.
+    // Use <code>"\${loadingImage}"</code> to include +link{Canvas.loadingImageSrc,a loading image}.
     // @group emptyMessage
     // @visibility external
     //<
-    loadingMessage:"&nbsp;",
+    loadingMessage:"&nbsp;${loadingImage}",
 
     //>	@attr	detailViewer.loadingMessageStyle		(CSSStyleName : "normal" : IRWA)
     // CSS style to use for the +link{loadingMessage}.
@@ -683,7 +693,7 @@ getBlockHTML : function (valueList) {
 		}
 	}
 	// end the table
-	output += "</TABLE>"
+	output += "</TABLE>";
 	// and return the output
 	return output;
 },
@@ -818,23 +828,27 @@ output_value : function (fieldNum, field, valueList) {
             formattedValue = this.getCellValue(record, field);
         }
 
-        // output the value as a cell.
+        // determine the cell style
         var rawValue = this.getRawValue(record,field);
-        
         var cellStyle;
-        if (field.getCellStyle)
+        if (field.getCellStyle) {
             cellStyle = field.getCellStyle(rawValue, field, record, this);
-        else cellStyle = (this.getCellStyle(rawValue, field, record, this) || this.cellStyle);
+        } else {
+            cellStyle = (this.getCellStyle(rawValue, field, record, this) || this.cellStyle);
+        }
 
+        // put together a STYLE attribute 
         var styleStr = " style='";
         if (this.clipValues) styleStr += "overflow:hidden;";
         styleStr += "text-align:" + this.valueAlign;
 
+        // allow custom CSS text per field
         if (this.getCellCSSText) {
             var cssText = this.getCellCSSText(rawValue, field, record, this);
             if (cssText != null) styleStr += isc.semi + cssText;
         }
 
+        // output the value as a cell
         styleStr += "'";
         output += "<TD CLASS='" + cellStyle + "'" + styleStr +
             (this.wrapValues ? ">" : " NOWRAP><NOBR>") +
@@ -864,7 +878,7 @@ getRawValue : function (record, field) {
 // @param viewer (DetailViewer) the viewer instance to which this cell belongs
 // @return (CSSText) CSS text to add to this cell
 //
-// @group apperance
+// @group appearance
 // @visibility external
 //<
 getCellCSSText : function (value, field, record, viewer) {
@@ -880,7 +894,7 @@ getCellCSSText : function (value, field, record, viewer) {
 // @param record (Record) record object for this cell
 // @param viewer (DetailViewer) the viewer instance to which this cell belongs
 // @return (CSSStyleName) CSS style for this cell
-// @group apperance
+// @group appearance
 // @visibility external
 //<
 // <P>
@@ -959,9 +973,9 @@ getCellValue : function (record, field) {
 
     // handle formula and summary fields
     if (field) {
-        if (field.userFormula) return this.getFormulaFieldValue(field, record);
-        if (field.userSummary) return this.getSummaryFieldValue(field, record);
-        if (field.type=="imageFile") {
+        if (field.userFormula) value = this.getFormulaFieldValue(field, record);
+        else if (field.userSummary) value = this.getSummaryFieldValue(field, record);
+        else if (field.type=="imageFile") {
             if (field.showFileInline != false) {
                 if (!record[field[this.fieldIdProperty] + "_imgURL"]) {
                     var dimensions = isc.Canvas.getFieldImageDimensions(field, record), 
@@ -982,7 +996,7 @@ getCellValue : function (record, field) {
     // apply hilites to capture htmlBefore/after
     var hilites = this.getFieldHilites(record, field);
     if (hilites != null) value = this.applyHiliteHTML(hilites, value);
-
+    
     return value;
 },
 
@@ -1104,7 +1118,11 @@ getEmptyMessage : function () {
 	return this.emptyMessage;
 },
 getLoadingMessage : function () {
-	return this.loadingMessage;
+	return this.loadingMessage.evalDynamicString(this, {
+        loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
+                                   isc.Canvas.loadingImageSize, 
+                                   isc.Canvas.loadingImageSize)
+        });
 },
 
 
@@ -1186,7 +1204,7 @@ getTitleFieldValue : function (record) {
 },
 
 // DBC level override to call local getCellValue implementation - Formula/Summary builders
-getSpecificFieldValue : function (record, fieldName) {
+getStandaloneFieldValue : function (record, fieldName) {
 	var value = this.getCellValue(record, this.getField(fieldName));
 	return value;
 },
@@ -1208,10 +1226,6 @@ toggleField : function (fieldName, showNow) {
     this.fieldStateChanged();
 },
 
-getAllFields : function () {
-    return this.completeFields || this.fields;
-},
-
 //>	@method	detailViewer.getField()	(A)
 // Return a field by fieldName
 //
@@ -1226,10 +1240,13 @@ getField : function (fieldName) {
 		field = allFields[fieldName] || fields[fieldName];
 	} else {
 		field = allFields.find(this.fieldIdProperty, fieldName) ||
-		fields.find(this.fieldIdProperty, fieldName)
+		    fields.find(this.fieldIdProperty, fieldName)
 	}
 
     return field;
+},
+getFormattedValue : function (record, fieldName, value) {
+    return this.getCellValue(record, this.getSpecifiedField(fieldName));
 },
 //> @method detailViewer.getPivotedExportData()
 // Export visual description of DetailViewer data into a form suitable for external
@@ -1263,11 +1280,14 @@ getPivotedExportData : function (settings) {
         fields = this.getAllFields(),
         data = this.data,
         includeHiddenFields,
-        allowedProperties;
+        allowedProperties,
+        alwaysExportExpandedStyles
+        ;
 
     if (isc.isA.Object(settings)) {
         includeHiddenFields = settings.includeHiddenFields;
         allowedProperties = settings.allowedProperties;
+        alwaysExportExpandedStyles = settings.alwaysExportExpandedStyles;
     }
     if (isc.isA.ResultSet(data)) data = data.getAllLoadedRows();
     if (!isc.isA.Array(data)) data = [data];
@@ -1291,19 +1311,18 @@ getPivotedExportData : function (settings) {
              rowIndex++)
         {
             var record = data[rowIndex],
-                value = this.getCellValue(record, field),
-                cssText = this.getRecordHiliteCSSText(record, null, field),
-                cssProps = this.convertCSSToProperties(cssText, allowedProperties);
-
+                fieldNum = this.getFieldNum(field.name),
+                exportProp = "value" + (rowIndex+1),
+                styleProp = exportProp + "$style";
             
-            if (value == null || value == "&nbsp;") value = "";
-
-
-            // undo the effects of formatters that apply HTML to a field.
-            value = this.htmlUnescapeExportFieldValue(value);
+            var value = this.getExportFieldValue(record, field.name, fieldNum);
             
-            exportObject["value" + (rowIndex+1)] = value;
-            if (cssProps) exportObject["value" + (rowIndex+1) + "$style"] = cssProps;
+            if (!(value == null || value == "&nbsp;")) exportObject[exportProp] = value;
+            
+            this.addDetailedExportFieldValue(exportObject, styleProp, record, field, fieldNum, 
+                                             allowedProperties, alwaysExportExpandedStyles);
+            if (exportObject[styleProp] == null || exportObject[styleProp] == "&nbsp;")
+                delete exportObject[styleProp];
         }
         exportOutput.push(exportObject);
     }

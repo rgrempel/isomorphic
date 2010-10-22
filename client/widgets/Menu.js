@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -511,8 +511,16 @@ isc.Menu.addProperties({
 	// CSS styles
     //>	@attr	menu.baseStyle		(CSSStyleName : "menu" : IRW)
 	//			CSS style for a normal cell
+	// @visibility external
 	//<
 	baseStyle:"menu",
+	
+	//> @attr menu.alternateRecordStyles (boolean : false : IRW)
+	// Explicitly disable alternateRecordStyles at the menu level by default so setting
+	// to true for all ListGrids will not impact menus' appearance.
+	// @visibility external
+	//<
+	alternateRecordStyles:false,
 
     //>	@attr	menu.showHeader		(boolean : false : IRWA)
 	//	Don't display a normal header in the menu.
@@ -751,11 +759,26 @@ isc.Menu.addProperties({
 	//<
 	
 	//> @attr menu.autoDismiss (boolean : true : IRW)
-	// When true, when a menu item is chosen (via mouse click or keyboard), the menu is not 
+	// When false, when a menu item is chosen (via mouse click or keyboard), the menu is not 
     // automatically hidden, staying in place for further interactivity
+    // @see Menu.cascadeAutoDismiss
 	// @visibility external
 	//<
 	autoDismiss:true,
+	
+	//> @attr menu.cascadeAutoDismiss (boolean : true : IRW)
+	// When true any generated submenus will inherit +link{menu.autoDismiss}
+	// from this menu.
+	// @visibility external
+	//<
+	cascadeAutoDismiss:true,
+	
+	//> @attr menu.autoDismissOnBlur (boolean : true : IRW)
+	// When false, when a user clicks outside the menu, or hits the Escape key, this menu
+	// will not be automatically hidden, staying in place for further interactivity.
+	// @visibility external
+	//<
+	autoDismissOnBlur:true,
     
     //> @attr   menu.fetchSubmenus      (boolean : true : IR)
     //  If false, submenus will not be fetched for this menu. This can be set on a per-item
@@ -978,7 +1001,13 @@ flatDataLoaded : function (dsResponse, data) {
 },
 
 getEmptyMessage : function () { 
-    if (this._loadingTreeNode) return this.loadingDataMessage;
+    if (this._loadingTreeNode) {
+        return this.loadingDataMessage.evalDynamicString(this, {
+            loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
+                                       isc.Canvas.loadingImageSize, 
+                                       isc.Canvas.loadingImageSize)
+        });
+    }
     return this.Super("getEmptyMessage", arguments);    
 },
 
@@ -1070,7 +1099,7 @@ selectMenuItem : function (item, colNum) {
 	
 	// if the item was not found, bail
 	if (item == null || !this.itemIsEnabled(item)) {
-		isc.Menu.hideAllMenus();
+		isc.Menu.hideAllMenus("itemClick");
 		return false;
 	}
 
@@ -1092,8 +1121,8 @@ selectMenuItem : function (item, colNum) {
 	while (rootMenu._parentMenu) {
 		rootMenu = rootMenu._parentMenu;	
 	}
-	if (rootMenu.autoDismiss && (item.autoDismiss || item.autoDismiss == null) ) {
-		isc.Menu.hideAllMenus();	
+	if (this.autoDismiss && (item.autoDismiss || item.autoDismiss == null) ) {
+		isc.Menu.hideAllMenus("itemClick");	
 	}
 	
 
@@ -1122,7 +1151,7 @@ selectMenuItem : function (item, colNum) {
 		returnValue = this.itemClick(item, colNum);
 	}
 	// refresh the row after click if autoDismiss is false
-	if (!(rootMenu.autoDismiss && (item.autoDismiss || item.autoDismiss == null))) {
+	if (!(this.autoDismiss && (item.autoDismiss || item.autoDismiss == null))) {
 		this.refreshRow(this.getRecordIndex(item));	
 	}
 	return returnValue;
@@ -1217,12 +1246,12 @@ bodyKeyPress : function (event, eventInfo) {
         
     // hide the menu if escape is hit  
 	
-    } else if (keyName == "Escape") {
+    } else if (keyName == "Escape" && this.autoDismissOnBlur != false) {
 		if (this._parentMenu != null) {
 			this._parentMenu.hideSubmenu();
 			this._parentMenu.focus();
 		} else {
-	        isc.Menu.hideAllMenus();
+	        isc.Menu.hideAllMenus("outsideClick");
 		}
         return false;
     
@@ -1312,16 +1341,15 @@ show : function (animationEffect) {
     // ensure that when we get hidden, we focus back into whatever previously had focus
     this.body.focusOnHide = isc.EH.getFocusCanvas();    
     
+    // now add this menu to the list of _openMenus so it can be hidden automatically
+    isc.Menu._openMenus.add(this);
+    
     // if this is the first menu being opened, show the click mask
-    if (isc.Menu._openMenus.length == 0) {
-        isc.Menu._menusClickMask = isc.EH.showClickMask("isc.Menu.hideAllMenus()", true);
-    }
+    if (this.autoDismissOnBlur) isc.Menu._showMenuClickMask();
     
     // bring this menu above everything else
     this.bringToFront();
     
-    // now add this menu to the list of _openMenus so it can be hidden automatically
-    isc.Menu._openMenus.add(this);
 
 	this.Super("show", arguments);
     
@@ -1489,6 +1517,13 @@ dataChanged : function (a,b,c,d) {
 
     var rv = this.invokeSuper(isc.Menu, "dataChanged", a,b,c,d);
     delete this._heightCalculated;
+    
+    // rebuild the dynamic items function -- the function body directly contains references
+    // to the current items so it needs to be refreshed
+    // initialize the enable/disable function if necessary
+	if (this.autoSetDynamicItems) {
+		this._refreshDynamicItemsFunction();
+	}
 
     return rv;
 },
@@ -1734,6 +1769,9 @@ getSubmenu : function (item) {
             fields[i] = isc.addProperties({}, this.fields[i]);
         }
         properties.fields = fields;
+    }
+    if (this.cascadeAutoDismiss) {
+        properties.autoDismiss = this.autoDismiss;
     }
     
 	var submenu = item.submenu;
@@ -1986,6 +2024,21 @@ _makeDynamicItemsFunction : function (){
 
     // create the setDynamicItems which will be called automatically before the menu is shown
     this.addMethods({setDynamicItems:new Function(output.toString())});
+    
+    // copy the current set of items onto the function as an attribute. This will allow us
+    // to determine when this function is stale
+    this.setDynamicItems._liveItems = this.data.duplicate();
+    
+},
+
+// This is run on every dataChanged, so handles refreshing the dynamicItems function when
+// setItems() or addItem() is called on the Menu. 
+// Avoid rebuilding the setDynamicItems function unless the set of items has actually changed
+// so other calls to dataChanged() don't trip this more than necessary.
+_refreshDynamicItemsFunction : function () {
+    if (this.setDynamicItems == null || !this.setDynamicItems._liveItems.equals(this.data)) {
+        this._makeDynamicItemsFunction();
+    }
 },
 
 refreshRow : function () {
@@ -2352,10 +2405,20 @@ setItemKeyTitle : function (item, menuKey) {
 isc.Menu.addClassMethods({
 
 //>	@classMethod	Menu.hideAllMenus()
-// Hide all menus that are currently open, and dismisses the clickMask
-//		@group	visibility
+// Hide all menus that are currently open. This method is useful to hide the current set of
+// menus including submenus, and dismiss the menu's clickMask.
+//
+// @visibility external
 //<
-hideAllMenus : function () {
+// @param dismissEvent (string) If passed, indicates what event caused this to occur. Options
+// are "itemClick" or "outsideClick".
+hideAllMenus : function (dismissEvent) {
+    var fromItemClick = dismissEvent == "itemClick",
+        fromOutsideClick = dismissEvent == "outsideClick";
+        
+    var hidingAllMenus = true;
+            
+    
 	// if there are any open menus
 	if (isc.Menu._openMenus.length > 0) {
 
@@ -2366,13 +2429,25 @@ hideAllMenus : function () {
             topMenu,
             focusCanvas = isc.EH.getFocusCanvas();
             
+        isc.Menu._openMenus = [];
+            
         for (var i = menus.length -1; i >= 0; i--) {
             var currentMenu = menus[i];
             // Note hide() doesn't remove menus from the _openMenus array
             if (!currentMenu.isVisible()) {                
                 continue;
             }
-            
+            if (fromItemClick && currentMenu.autoDismiss == false) {
+                isc.Menu._openMenus.addAt(currentMenu, 0);
+                hidingAllMenus = false;
+                continue;
+            }
+            if (fromOutsideClick && currentMenu.autoDismissOnBlur == false) {
+                isc.Menu._openMenus.addAt(currentMenu, 0);
+                hidingAllMenus = false;
+                continue;
+            }
+                
             if (currentMenu._isVisibilityAncestorOf(focusCanvas)) {
                 if (topMenu == null) topMenu = currentMenu;
                 forceFocusOnHide = true;
@@ -2382,10 +2457,7 @@ hideAllMenus : function () {
                 
         if (forceFocusOnHide && isc.isA.Canvas(topMenu.body.focusOnHide)) {
             topMenu.body.focusOnHide.focus();
-        }            
-        
-		// and clear the open menu list
-		isc.Menu._openMenus = [];
+        }
 	}
 
     // Kill any submenus pending show() on data fetch returns
@@ -2395,9 +2467,20 @@ hideAllMenus : function () {
     // called programmatically).
     // Note: the clickMask was shown when the first menu was opened, and the ID recorded on the
     // Menu class object
-	if (isc.Menu._menusClickMask) isc.EH.hideClickMask(isc.Menu._menusClickMask);
+    if (hidingAllMenus) {
+        if (isc.Menu._menusClickMask) {
+            isc.EH.hideClickMask(isc.Menu._menusClickMask);
+            isc.Menu._menusClickMask = null;
+        }
+    } else {
+        
+        // The clickMask is soft - if we're leaving any menus up, but have hidden
+        // the click mask due to an outside click, re-show it.
+        if (!isc.EH.clickMaskUp(isc.Menu._menusClickMask)) {
+            this._showMenuClickMask();
+        }
     
-    isc.Menu._menusClickMask = null;
+    }
 
     // If the menu(s) were triggered from a menubutton click, notify the menubutton that we're
     // in the process of hiding the menu so it doesn't re-show in response to the current click
@@ -2416,6 +2499,25 @@ hideAllMenus : function () {
 
 },
 
+_getAutoDismissOnBlurMenus : function () {
+    if (this._openMenus == null || this._openMenus.length == 0) return [];
+    var menus = [];
+    for (var i = 0; i < this._openMenus.length; i++) {
+        if (this._openMenus[i].autoDismissOnBlur != false) menus.add(this._openMenus[i]);
+    }
+    return menus;
+},
+
+_showMenuClickMask : function () {
+    // if this is the first menu being opened, show the click mask
+    if (isc.Menu._getAutoDismissOnBlurMenus().length > 0 &&
+        (isc.Menu._menusClickMask == null ||
+            !isc.EH.clickMaskUp(isc.Menu._menusClickMask)))
+    {
+        isc.Menu._menusClickMask = isc.EH.showClickMask("isc.Menu.hideAllMenus('outsideClick')",
+                                        true);
+    }
+},
 
 //>	@classMethod	menu.menuForValueMap()
 // Given a valueMap like that displayed in a ListGrid or FormItem, create a Menu that allows picking

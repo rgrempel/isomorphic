@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -190,7 +190,7 @@ isc.TextAreaItem.addProperties({
     // See FormItem._getIESelectionRange() for background on this
     // May cause poor performance determining selection range (for example on redraw) in 
     // items with a lot of content
-    supportsSelectionRange:true
+    supportsSelectionRange:true,
 
     //>@attr TextAreaItem.showHintInField (boolean : null : IRWA)
     // If showing hint for this form item, should it be shown within the field?
@@ -200,6 +200,18 @@ isc.TextAreaItem.addProperties({
     // @see FormItem.hint
     // @visibility external
     //<
+    
+    //>@attr TextAreaItem.printFullText (boolean : true : IRW)
+    // When generating a print-view of the component containing this TextArea, should
+    // the form item expand to accomodate its value? If set to false the text box not expand
+    // to fit its content in the print view, instead showing exactly as it does in the
+    // live form, possibly with scrollbars.
+    // @visibility external
+    // @group printing
+    //<
+    printFullText:true    
+    
+    
 });
 
 isc.TextAreaItem.addMethods({
@@ -247,44 +259,60 @@ isc.TextAreaItem.addMethods({
             valueIconHTML = this._getValueIconHTML(dataValue);
         if (valueIconHTML != null) output.append(valueIconHTML);
         if (!this.showValueIconOnly) {
-            output.append(
-                "<TEXTAREA NAME=" , this.getElementName(),
-                " ID=", this.getDataElementId(),
-    
-                // hang a flag on the element marking it as the data element for the
-                // appropriate form item.
-                this._getItemElementAttributeHTML(),
-                
-                this.getElementStyleHTML(),
-                (this.isDisabled() ? " DISABLED " : ""),
-    
-                // disable native autoComplete 
-                (this._getAutoCompleteSetting() != "native" ? " AUTOCOMPLETE=OFF " : ""),
+            if (!this.printFullText || !this._isPrinting()) {
+                output.append(
+                    "<TEXTAREA NAME=" , this.getElementName(),
+                    " ID=", this.getDataElementId(),
         
-                // enable / disable native spellcheck in Moz
-                // Same setting in Safari - see comments in TextItem.js
-                ((isc.Browser.isMoz || isc.Browser.isSafari) ? 
-                    (this.getBrowserSpellCheck() ? " spellcheck=true" : " spellcheck=false") :
-                    null),
-        
-                " WRAP=", this.wrap,
-    
-                " TABINDEX=", this._getElementTabIndex(),
-                (this.showTitle == false && this.accessKey != null ? 
-                    " ACCESSKEY=" + this.accessKey : ""),
+                    // hang a flag on the element marking it as the data element for the
+                    // appropriate form item.
+                    this._getItemElementAttributeHTML(),
                     
-                // If this browser supports the "input" event write out a handler for it.
-                (this._willHandleInput ? " ONINPUT='" + this.getID() + "._handleInput()'" 
-                                       : null),
-                                       
-                // If the readonly property is set, set it on the handle too
-                (this.readOnly || this.isInactiveHTML() ? " READONLY=TRUE" : null),
-                                        
-                // Ensure we pass events through the ISC event handling system.
-                " handleNativeEvents=false>",
-                (this.isInactiveHTML() ? value : null),
-                "</TEXTAREA>"
-			);
+                    this.getElementStyleHTML(),
+                    (this.isDisabled() ? " DISABLED " : ""),
+        
+                    // disable native autoComplete 
+                    (this._getAutoCompleteSetting() != "native" ? " AUTOCOMPLETE=OFF " : ""),
+            
+                    // enable / disable native spellcheck in Moz
+                    // Same setting in Safari - see comments in TextItem.js
+                    ((isc.Browser.isMoz || isc.Browser.isSafari) ? 
+                        (this.getBrowserSpellCheck() ? " spellcheck=true" : " spellcheck=false") :
+                        null),
+            
+                    " WRAP=", this.wrap,
+        
+                    " TABINDEX=", this._getElementTabIndex(),
+                    (this.showTitle == false && this.accessKey != null ? 
+                        " ACCESSKEY=" + this.accessKey : ""),
+                        
+                    // If this browser supports the "input" event write out a handler for it.
+                    (this._willHandleInput ? " ONINPUT='" + this.getID() + "._handleInput()'" 
+                                           : null),
+                                           
+                    // If the readonly property is set, set it on the handle too
+                    (this.readOnly || this.isInactiveHTML() ? " READONLY=TRUE" : null),
+                                            
+                    // Ensure we pass events through the ISC event handling system.
+                    " handleNativeEvents=false>",
+                    (this.isInactiveHTML() ? value : null),
+                    "</TEXTAREA>"
+                );
+            } else {
+                if (value == null) value ="";
+                // use a div with no sizing info specified. This'll fill the available
+                // space in the form cell (and expand vertically as required)
+                // note asHTML() to convert \n to <br> etc.
+                output.append(
+                    "<DIV style='",
+                    // if width is specified as a number write it out
+                    // if it's specified as "*" etc don't (we can't size based on the
+                    // DyanmicForm's rendered width since printHTML is not rendered into
+                    // the form!)
+                    (isc.isA.Number(this.width) ? "width:" + this.width + "px;" : null)
+                    ,"' class='", this.getTextBoxStyle(), "'>", value.asHTML(), "</DIV>"
+                );
+            }
         }
             
         //this.logWarn("textArea HTML:"+ output);

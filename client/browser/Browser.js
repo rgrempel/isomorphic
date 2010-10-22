@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -243,12 +243,6 @@ isc.Browser.isIE8Strict = isc.Browser.isIE && isc.Browser.isStrict &&
                             isc.Browser.isIE8;
 
 
-//> @classAttr  Browser.isBorderBox    (boolean : ? : R)
-// Do divs render out with "border-box" sizing by default.
-//<
-// See comments in Canvas.adjustHandleSize() for a discussion of border-box vs content-box sizing
-isc.Browser.isBorderBox = isc.Browser.isIE && !isc.Browser.isStrict;
-
 //> @classAttr  Browser.isAIR    (boolean : ? : R)
 // Is this application running in the Adobe AIR environment?
 //<
@@ -259,6 +253,11 @@ isc.Browser.isAIR = (navigator.userAgent.indexOf("AdobeAIR") != -1);
 // running. Will be a string, like "1.0".
 //<
 isc.Browser.AIRVersion = (isc.Browser.isAIR ? navigator.userAgent.substring(navigator.userAgent.indexOf("AdobeAir/") + 9) : null);
+
+//>	@classAttr	Browser.isWebKit (boolean : ? : R)
+// Are we in a WebKit-based browser (Safari, Chrome, mobile Safari and Android, others).
+//<
+isc.Browser.isWebKit = navigator.userAgent.indexOf("WebKit") != -1;
 
 //>	@classAttr	Browser.isSafari (boolean : ? : R)
 // Are we in Apple's "Safari" browser? Note that this property will also be set for other
@@ -336,10 +335,78 @@ isc.Browser.isWin2k = navigator.userAgent.match(/NT 5.01?/) != null;
 //<
 isc.Browser.isMac = navigator.platform.toLowerCase().indexOf("mac") > -1;	
 
-//>	@classAttr	Browser.isUnix		(boolean : ? : R)
-//		Is this a Unix computer ?
-//<
 isc.Browser.isUnix = (!isc.Browser.isMac &&! isc.Browser.isWin);
+
+//> @groupDef mobileDevelopment
+// SmartClient supports Safari on the Apple iPad, iPhone and iPhone touch platforms.
+// <P>
+// SmartClient makes writing web applications for deployment on mobile devices 
+// straightforward.  Wherever possible device-specific behavior has been abstracted away
+// allowing developers to provide full featured applications to mobile users using
+// standard SmartClient components and APIs.
+// <P>
+// Some specific features to be aware of:
+// <ul>
+// <li>The full set of SmartClient UI components is available on all supported 
+//     mobile platforms</li>
+// <li>The standard SmartClient event model (including click, double click, drag and drop
+//     behavior) is supported. Right click (or "contextMenu") events are also available - these
+//     are triggered by the user holding their finger over a context-menu enabled component</li>
+// <li>We provide the light-weight "Simplicity" skin, with less media, to cut down on
+//     your applications bandwidth requirements</li>
+// </ul>
+// <P>
+// Any SmartClient application will run on supported mobile platforms. However
+// the limited screen size often makes building a custom application specifically for
+// mobile users a good idea.<br>
+// Safari on the Apple iPod/iPhone supports explicitly configuring the viewport as detailed here:
+// +externalLink{http://developer.apple.com/safari/library/documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html}.
+// Including these meta tags in your bootstrap HTML file will allow you to set 
+// a default "zoom level" - how many pixels show up on the screen in landscape or portrait
+// mode as well as disabling the user's standard zoom interactions. We also have 
+// +link{Page.updateViewport(),an API} to configure the viewport programmatically at runtime.<br>
+// Note that the +link{Page.getOrientation()} API may be used to determine the current
+// orientation of the application, and +link{pageEvent,the page orientationChange event} will fire
+// whenever the user rotates the screen allowing applications to directly respond to the user
+// pivoting their device.
+// @title Development for mobile devices
+// @treeLocation Concepts
+// @visibility external
+//<
+// Theoretically Android is also supported.
+
+
+isc.Browser.isMobileWebkit = isc.Browser.isSafari && navigator.userAgent.indexOf(" Mobile/") > -1;	
+
+// intended for general mobile changes (performance, etc)
+isc.Browser.isMobile = (isc.Browser.isMobileWebkit);
+
+// browser has a touch interface (iPhone, iPad, Android device, etc)
+
+isc.Browser.isTouch = (isc.Browser.isMobileWebkit);
+
+// iPhone OS including iPad.  These devices also include "iPhone" or "iPad" in UA String but
+// we're assuming "AppleWebKit" will capture any future devices.
+isc.Browser.isIPhone = (isc.Browser.isMobileWebkit &&
+                        navigator.userAgent.indexOf("AppleWebKit"));
+
+// specifically a handset-sized device, with an assumed screen width of 3-4 inches, implying
+// the application will be working with only 300-400 pixels at typical DPI
+isc.Browser.isHandset = (isc.Browser.isMobileWebkit && navigator.userAgent.indexOf("iPad") == -1);
+
+// iPad.  Checks for "iPhone" OS + "iPad" in UA String.
+isc.Browser.isIPad = (isc.Browser.isIPhone &&
+                        navigator.userAgent.indexOf("iPad"));
+
+// tablet.  assumes isIPad for now
+isc.Browser.isTablet = (isc.Browser.isIPad);
+
+//> @classAttr  Browser.isBorderBox    (boolean : ? : R)
+// Do divs render out with "border-box" sizing by default.
+//<
+// See comments in Canvas.adjustHandleSize() for a discussion of border-box vs content-box sizing
+ 
+isc.Browser.isBorderBox = (isc.Browser.isIE && !isc.Browser.isStrict);
 
 //>	@classAttr	Browser.lineFeed	(string : ? : RA)
 //		Linefeed for this platform
@@ -390,3 +457,12 @@ isc.Browser.allowsXSXHR = (
     (isc.Browser.isChrome) ||
     (isc.Browser.isSafari && isc.Browser.safariVersion >= 531)
 );
+
+//> @classAttr Browser.isSGWT (boolean : ? : RA)
+// Are we running in SGWT.
+// This is set up by SmartGWT wrapper code in JsObject.init().
+// Obviously only applies to internal SmartClient code since developer code for an SGWT app
+// would be written in Java and there'd be no need to check this var!
+// @visibility internal
+//<
+

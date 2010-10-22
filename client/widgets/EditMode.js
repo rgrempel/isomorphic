@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1275,7 +1275,7 @@ isc.StatefulCanvas.addMethods({
 
 // Edit Mode impl for TabSet
 // -------------------------------------------------------------------------------------------
-
+if (isc.TabSet) {
 isc.TabSet.addClassProperties({
     addTabEditorHint: "Enter tab titles (comma separated)"
 });
@@ -1589,7 +1589,7 @@ isc.TabBar.addMethods({
         return this.Super("findEditNode", arguments);
     }
 });
-
+}
 // Edit Mode impl for Layout
 // -------------------------------------------------------------------------------------------
 

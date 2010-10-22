@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -145,7 +145,13 @@ isc.NativeSelectItem.addClassMethods({
 
 //!>Deferred
 isc.NativeSelectItem.addMethods({
-    
+    textMatchStyle: "startsWith",
+
+    getPickListFilterCriteria : function () {
+        var baseCrit = this.optionCriteria || {};
+        return isc.addProperties(baseCrit, this.pickListCriteria); 
+    },
+
     init : function () {
         this.Super("init", arguments);
         isc.NativeSelectItem.instances.add(this);
@@ -156,8 +162,21 @@ isc.NativeSelectItem.addMethods({
             var valFld = this.getValueFieldName();
             var dispFld = this.getDisplayFieldName();
             var self = this;
+
+            var context = {
+                textMatchStyle:this.textMatchStyle,
+                showPrompt:false
+            };
+            if (this.optionFilterContext != null) isc.addProperties(context, this.optionFilterContext);
+
+
+            // respect optionOperationId if specified
+            if (this.optionOperationId != null) context.operationId = this.optionOperationId;            
+
+            var criteria = this.getPickListFilterCriteria();
+
             // fetch data manually and create a valuemap from the data
-            ds.fetchData(null, function (dsResponse, data) {
+            ds.fetchData(criteria, function (dsResponse, data) {
                 var valMap;
                 if (!dispFld) valMap = [];
                 else valMap = {};
@@ -171,7 +190,7 @@ isc.NativeSelectItem.addMethods({
                 }
                 
                 self.setValueMap(valMap);
-            });
+            }, context);
              
         }
     },

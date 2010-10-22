@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -26,12 +26,13 @@ if (isc.ListGrid) {
 isc.ClassFactory.defineInterface("PickList");
 
 //>	@class PickListMenu
-// Subclass of ScrollingMenu used by FormItems which implement +link{interface:PickList} to display
-// a list of selectable options.<br>
-// Note that PickListMenu ultimately inherits from +link{class:ListGrid}.
+// +link{class:ListGrid} subclass used by FormItems which implement
+// +link{interface:PickList} to display
+// a list of selectable options.
 //  @treeLocation Client Reference/Forms/Form Items
 // @visibility external
 //<
+
 
 isc.ClassFactory.defineClass("PickListMenu", "ScrollingMenu");
 
@@ -70,8 +71,23 @@ isc.PickListMenu.addProperties({
     // Since we don't support drag resize of fields, turn canFreezeFields off by default
     canFreezeFields:false,
     
+    //> @attr pickListMenu.styleName (CSSStyleName : "pickListMenu" : IRW)
+    // @include listGrid.styleName
+    // @visibility external
+    //<
     styleName:"pickListMenu",
-    bodyStyleName:"pickListMenuBody"
+    //> @attr pickListMenu.bodyStyleName (CSSStyleName : "pickListMenuBody" : IRW)
+    // @include listGrid.bodyStyleName
+    // @visibility external
+    //<
+    bodyStyleName:"pickListMenuBody",
+    
+    
+    //> @attr pickListMenu.normalCellHeight (number : 16 : IRWA)
+    // @include listGrid.normalCellHeight
+    //<
+    normalCellHeight:16
+    
     
 });
 
@@ -366,10 +382,25 @@ isc.PickList.addInterfaceProperties({
     //> @attr    PickList.pickListBaseStyle (string : "pickListCell" : IR)
     // Base Style for pickList cells.  As with ListGrid Cells, will have 'over', 'selected'
     // and 'disabled' appended on changes of state for the cells.
+    // <p>
+    // Note: if +link{pickListTallBaseStyle} is specified, this property will be used as the
+    // +link{listGrid.normalBaseStyle,normalBaseStyle} and that property will be applied
+    // to cells that do not match the default cell height, or if +link{listGrid.fastCellUpdates}
+    // is true for the pickList in Internet Explorer.
+    //
     // @visibility external
     //<
     pickListBaseStyle : "pickListCell",
-
+    
+    //> @attr    PickList.pickListTallBaseStyle (string : null : IR)
+    // Optional +link{listGrid.tallBaseStyle,tallBaseStyle} for pickListCells. If unset
+    // +link{pickListBaseStyle} will be applied to all cells.
+    //
+    // @visibility external
+    //<
+    //pickListTallBaseStyle : null,
+    
+    
     //> @attr    PickList.pickListHiliteColor  (string : null : IR)
     // If specified this color will be applied to hilited rows in the pickList, when the
     // user rolls over them.  This color will be applied on top of the "over" CSS Style 
@@ -863,7 +894,11 @@ isc.PickList.addInterfaceMethods({
     
     getPickListCellHeight : function () {
         var cellHeight = this.pickListCellHeight;
-        if (this.valueicons != null || this.getValueIcon != null) {
+        // If a developer specifies pickListProperties.cellHeight, respect that too
+        if (this.pickListProperties && this.pickListProperties.cellHeight != null) {
+            cellHeight = this.pickListProperties.cellHeight;
+        }
+        if (this.valueIcons != null || this.getValueIcon != null) {
             var valueIconHeight = this.getValueIconHeight();
             if (valueIconHeight > cellHeight) cellHeight = valueIconHeight;
         }
@@ -879,7 +914,7 @@ isc.PickList.addInterfaceMethods({
         var pickList = this.pickList;
        
         
-        var cellHeight = this.pickListCellHeight;
+        var cellHeight = this.getPickListCellHeight();
         pickList.setCellHeight(cellHeight);     
         
         // These methods both no-op if the pickList is already applied to this item
@@ -908,12 +943,11 @@ isc.PickList.addInterfaceMethods({
         isc.addProperties(pickListProperties, {
             // Ensure there's a pointer back to the form item
             formItem:this,
-            // if the cellHeight for the picklist is greater than the normal cell
-            // height, use the default listgrid css class instead ('cell')
-            // The pickListBaseStyle in some skins uses media specifically designed
-            // for the default height, which looks bad for larger heights.
-            baseStyle: (this.pickList.cellHeight > this.pickList.normalCellHeight) ? 
-                "cell" : this.pickListBaseStyle,
+            
+            normalBaseStyle:this.pickListBaseStyle,
+            // If a tall style is defined use it, otherwise assume the normal version
+            // can stretch
+            tallBaseStyle:(this.pickListTallBaseStyle || this.pickListBaseStyle),
             
             hiliteColor:this.pickListHiliteColor,
             hiliteTextColor:this.pickListHiliteTextColor,
@@ -931,7 +965,7 @@ isc.PickList.addInterfaceMethods({
             dataArrived : function (startRow, endRow) {
                 if (isc._traceMarkers) arguments.__this = this;
                 this.Super("dataArrived", arguments);
-                if (this.formItem) this.formItem.handleDataArrived(startRow,endRow,this);
+                if (this.formItem) this.formItem.handleDataArrived(startRow,endRow,this.data);
             }
         });
         if (this.multiple && this.multipleAppearance == "picklist" 
@@ -1464,8 +1498,8 @@ isc.PickList.addInterfaceMethods({
             } else {
                 record = data.find(valueField, currVal);            
             }
-    
-            if (record) {
+
+            if (record && record != Array.LOADING) {
                 
                 if (this.pickList.allowMultiSelect) this.pickList.selectRecord(record);
                 else this.pickList.selection.selectSingle(record);
@@ -1500,7 +1534,8 @@ isc.PickList.addInterfaceMethods({
             } else {
                 list.setHeight(this.getPickListHeight());
                 var position = this.getPickListPosition();
-                list.placeNear(position[0], position[1]);
+                if (this.allowPickListToClip) list.setRect([position[0], position[1]]);
+                else list.placeNear(position[0], position[1]);
             }
 		} else {
             // if we set the flag to show the list after the filter, show it now!
@@ -1645,10 +1680,8 @@ isc.PickList.addInterfaceMethods({
     
     // -- Client side filtering --
     
-    //> @attr PickList.textMatchStyle (String : "startsWith" : IR)
-    // When applying filter criteria to pickList data, what type of matching to use.  Legal
-    // values are "substring" (value contains user input) or "startsWith" (value starts with
-    // user input).  Both matches are case insensitive.
+    //> @attr PickList.textMatchStyle (TextMatchStyle : "startsWith" : IR)
+    // When applying filter criteria to pickList data, what type of matching to use.
     // <P>
     // For a databound pickList (+link{optionDataSource} set), <code>textMatchStyle</code> is
     // sent to the server as +link{dsRequest.textMatchStyle}.
@@ -1900,29 +1933,10 @@ isc.PickList.addInterfaceMethods({
         // pickList onscreen without obscuring the select item body by placing above the item
         // if necessary... for other items using the pickList interface, this placeNear will
         // just position the pickList as close to the specified position as possible.
-        pickList.placeNear(left, top);
+        if (this.allowPickListToClip) pickList.setRect([left, top]);
+        else pickList.placeNear(left, top);
     },
 
-    //> @method PickList.getSelectedRecord()
-    // Returns the entire record object associated with the current value for this item
-    // (or null if no matching record exists in the PickList data).
-    // <P>
-    // Most commonly used for databound pickListItems to retrieve the values of other fields
-    // in the record.
-    //
-    // @return (object) record object
-    // @visibility external
-    //<
-    getSelectedRecord : function () {
-        if (this.pickList == null || this.pickList.destroyed) this.makePickList(false);
-        
-        // We can't just say this.pickList.getSelectedRecord(), since the
-        // value may not have been picked from a pickListClick -- instead force a selection
-        // that matches our item value then retrieve the selected value.
-        if (this.selectItemFromValue(this.getValue())) return this.pickList.getSelectedRecord();
-        return null;
-    },
-    
     // pickValue
     // This method is fired when a value is selected from the pick list.
     // Implementation will vary depending on the form item to which it is applied

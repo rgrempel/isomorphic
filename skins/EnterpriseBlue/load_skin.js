@@ -397,9 +397,11 @@ with (theWindow) {
             buttonConstructor: "IButton"
         })
         
-        isc.ColorPicker.addProperties({
-            layoutMargin:0
-        })
+        if (isc.ColorPicker) {
+            isc.ColorPicker.addProperties({
+                layoutMargin:0
+            })
+        }
 
 //----------------------------------------
 // 8) Dialogs
@@ -543,6 +545,7 @@ with (theWindow) {
     if (isc.Menu) {
         isc.Menu.addProperties({
             cellHeight:22,
+            fastCellUpdates:false,
             showShadow:false,
             shadowDepth:5,
             showEdges:false,
@@ -614,6 +617,7 @@ with (theWindow) {
 //----------------------------------------
     if (isc.ListGrid) {										  
         isc.ListGrid.addProperties({
+            alternateRecordStyles : true,
             editFailedCSSText:"color:FF6347;",
             errorIconSrc : "[SKINIMG]actions/exclamation.png",
 			tallBaseStyle: "tallCell",
@@ -637,7 +641,7 @@ with (theWindow) {
             headerTitleStyle:"headerTitle",
             
             bodyStyleName:"gridBody",
-            alternateBodyStyleName:"alternateGridBody",
+            alternateBodyStyleName:null,
             
             showHeaderMenuButton:true,
             headerMenuButtonConstructor:"HeaderImgButton",
@@ -649,11 +653,8 @@ with (theWindow) {
             groupIconPadding : 3,            
             groupIcon: "[SKINIMG]/ListGrid/group.png",
 
-            expansionFieldTrueImage : "[SKINIMG]/TreeGrid/opener_opened.png",
-            expansionFieldFalseImage: "[SKINIMG]/TreeGrid/opener_closed.png",
-            expansionFieldImageWidth : 22,
-            expansionFieldImageHeight : 22,
-            expansionFieldWidth: 10,
+            expansionFieldTrueImage : "[SKINIMG]/ListGrid/row_expanded.png",
+            expansionFieldFalseImage: "[SKINIMG]/ListGrid/row_collapsed.png",
             checkboxFieldImageWidth : 13,
             checkboxFieldImageHeight : 13
         })
@@ -679,6 +680,7 @@ with (theWindow) {
 
    if (isc.TreeGrid) {
         isc.TreeGrid.addProperties({
+            alternateRecordStyles : false,
 			tallBaseStyle: "treeTallCell",
 			normalBaseStyle: "treeCell",
             openerImage:"[SKIN]opener.png",
@@ -739,7 +741,8 @@ with (theWindow) {
         showFocused: true     
     })}
     
-    if (isc.SelectItem) {isc.SelectItem.addProperties({            
+    if (isc.SelectItem) {isc.SelectItem.addProperties({   
+        pickListTallBaseStyle:"tallPickListCell",
         textBoxStyle:"selectItemText",
         showFocusedPickerIcon:false,
         pickerIconSrc:"[SKIN]/pickers/comboBoxPicker.png",
@@ -748,6 +751,7 @@ with (theWindow) {
     })}
     
     if (isc.ComboBoxItem) {isc.ComboBoxItem.addProperties({
+        pickListTallBaseStyle:"tallPickListCell",
         textBoxStyle:"selectItemText",
         showFocusedPickerIcon:false,
         pickerIconSrc:"[SKIN]/pickers/comboBoxPicker.png",

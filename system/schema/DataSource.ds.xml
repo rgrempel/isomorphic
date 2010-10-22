@@ -126,6 +126,8 @@ Validator.ds.xml
         <!-- Return results in a Javabean instead of a map (SQL DataSources only) -->
         <beanClassName type="string"/>
         
+        <autoJoinTransactions type="boolean" />
+        
     </fields>
 </Object>
 

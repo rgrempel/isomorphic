@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -58,13 +58,14 @@ isc._commonMenuButtonProperties = {
 	//<
 	height:22,
 	
-    //>	@attr	menuButton.showMenuButtonImage		(boolean : true : IR)
-    //			show menu button image (up / down arrowhead) for this menu button
+    //> @attr menuButton.showMenuButtonImage (boolean : true : IR)
+    // Show menu button image (up / down arrowhead) for this menu button.
+    // 
     // @visibility external
     //<
     
     //> @attr iMenuButton.showMenuButtonImage (boolean : true : IR)
-    // @include menuBtton.showMenuButtonImage
+    // @include menuButton.showMenuButtonImage
     //<
     showMenuButtonImage:true,
     
@@ -144,8 +145,13 @@ isc._commonMenuButtonProperties = {
     alignMenuLeft: true,
     
     
-    //>	@attr	menuButton.menu		(Menu : null : IRW)
-    //			The menu to show.
+    //>	@attr menuButton.menu (Menu : null : IRW)
+    // The menu to show.
+    // <P>
+    // For a menu button with no menu (menu: null) the up/down arrow image can
+    // be suppressed by setting
+    // +link{menuButton.showMenuButtonImage, showMenuButtonImage}: <code>false</code>.
+    //
     // @visibility external
     //<
     //> @attr iMenuButton.menu (Menu : null : IRW)
@@ -176,9 +182,10 @@ isc._commonMenuButtonProperties = {
     
     // setter for showMenuButtonImage and showMenuBelow - required since we need to update the 
     // icon property and trip a redraw
-    //>@method MenuButton.setShowMenuButtonImage
+    //> @method MenuButton.setShowMenuButtonImage
     // Setter for the 'showMenuButtonImage' property - shows/hides the menu button image
-    // at runtime
+    // at runtime.
+    //
     // @param show (boolean) Should the image be shown
     // @visibility external
     //<
@@ -269,13 +276,13 @@ isc._commonMenuButtonProperties = {
     },
     
     showMenu : function () {
-    
+
         // lazily create the menu if necessary, so we can init with, or set menu to, an object 
         // properties block
         if (isc.isA.String(this.menu)) this.menu = window[this.menu];
         if (!isc.isA.Menu(this.menu)) this._createMenu(this.menu);
         if (!isc.isA.Menu(this.menu)) return;
-        
+
         
         isc.Menu._currentMenuButton = this;
     
@@ -298,8 +305,9 @@ isc._commonMenuButtonProperties = {
         menu.placeNear(left, top);
         menu.show(this.menuAnimationEffect);
     },
-    
+
     _createMenu : function (menu) {
+        if (!menu) return;
         menu.autoDraw = false;
         var cons = this.menuConstructor || isc.Menu;
         this.menu = cons.create(menu);

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -350,7 +350,7 @@ sendXmlHttpRequest : function (request) {
         // XMLHttp GET responses.
         if (request.bypassCache) {
               
-            xmlHttpRequest.setRequestHeader("If-Modified-Since", "Thu, 1 Jan 1970 00:00:00 GMT");
+            xmlHttpRequest.setRequestHeader("If-Modified-Since", "Thu, 01 Jan 1970 00:00:00 GMT");
         }
 
         this._setHttpHeaders(xmlHttpRequest, headers);

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -335,7 +335,7 @@ _iframeNavigate : function (id, title) {
                                                    .replace(/\n/g, "\\n");
     var html = "<HTML><HEAD><TITLE>"+
                (title != null ? title : this.historyTitle != null ? this.historyTitle : id)+
-               "</TITLE></HEAD><BODY><SCRIPT>top.isc.History.historyCallback(window,\""+escapedId+"\");</SCRIPT></BODY></HTML>";
+               "</TITLE></HEAD><BODY><SCRIPT>var pwin = window.parent;if (pwin && pwin.isc)pwin.isc.History.historyCallback(window,\""+escapedId+"\");</SCRIPT></BODY></HTML>";
     var win = this._historyFrame.contentWindow;
     win.document.open();
     win.document.write(html);
@@ -595,7 +595,12 @@ historyCallback : function (win, currentFrameHistoryId) {
 _fireHistoryCallback : function (id) {
     
     // suppress calling the same history callback twice in a row
-    if (this._lastHistoryId == id) return;
+    if (this._lastHistoryId == id) {
+        // if this is the first time the callback is fired and _lastHistoryId==id,
+        // the user has transitioned back to an anchorless URL - let that fire
+        if (this._firedHistoryCallback) return;
+    }
+    this._firedHistoryCallback=true;
 
     if (!this._historyCallback) {
         this.logWarn("ready to fire history callback, but no callback registered."

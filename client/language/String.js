@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -150,7 +150,7 @@ trim : function (chars) {
     
     // find last character not in the removal list
     i = l - 1;
-    while (end >= 0 && removeChars.contains(this.charAt(i--))) end--;
+    while (end >= 0 && end >= start && removeChars.contains(this.charAt(i--))) end--;
     
     return this.substring(start, end + 1);
 },

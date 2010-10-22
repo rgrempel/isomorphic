@@ -248,9 +248,13 @@
 .menuSelectedOver,
 .menuDisabled,
 .menuTitleField,
+.menuTitleFieldDark,
 .menuTitleFieldSelected,
+.menuTitleFieldSelectedDark,
 .menuTitleFieldOver,
+.menuTitleFieldOverDark,
 .menuTitleFieldSelectedOver,
+.menuTitleFieldSelectedOverDark,
 .menuTitleFieldDisabled,
 .menuIconField,
 .menuIconFieldOver,
@@ -269,30 +273,46 @@
 .menuSelected {
 }
 .menuOver,
+.menuOverDark,
 .menuSelectedOver,
+.menuSelectedOverDark,
 .menuTitleFieldOver,
+.menuTitleFieldOverDark,
 .menuTitleFieldSelectedOver,
+.menuTitleFieldSelectedOverDark,
 .menuIconFieldOver,
+.menuIconFieldOverDark,
 .menuIconFieldSelectedOver,
+.menuIconFieldSelectedOverDark,
 .treeMenuSelected,
+.treeMenuSelectedDark,
 .treeMenuSelectedOver,
+.treeMenuSelectedOverDark,
 .treeMenuSelectedSelected,
 .treeMenuSelectedSelectedOver {
     background:#FFFFFF url(./images/ListGrid/row_Over.png) repeat-x scroll 0px 1px;
 }
 
 .menuTitleField,
+.menuTitleFieldDark,
 .menuTitleFieldSelected,
+.menuTitleFieldSelectedDark,
 .menuTitleFieldOver,
+.menuTitleFieldOverDark,
 .menuTitleFieldSelectedOver,
+.menuTitleFieldSelectedOverDark,
 .menuTitleFieldDisabled {
 	padding-left:4px;
 }
 
 .menuIconField,
+.menuIconFieldDark,
 .menuIconFieldOver,
+.menuIconFieldOverDark,
 .menuIconFieldSelected,
+.menuIconFieldSelectedDark,
 .menuIconFieldSelectedOver,
+.menuIconFieldSelectedOverDark,
 .menuIconFieldDisabled {
 	padding-left:4px; padding-right:4px;
 }
@@ -308,6 +328,9 @@
 .menuButtonOver,
 .menuButtonDown,
 .menuButtonDisabled,
+.menuButtonFocused,
+.menuButtonFocusedDown,
+.menuButtonFocusedOver,
 .menuButtonSelected,
 .menuButtonSelectedDown,
 .menuButtonSelectedOver,
@@ -324,6 +347,8 @@ background:#A6ABB4 url(./images/cssButton/button_Over_stretch.png) repeat-x;
 }
 
 .menuButtonDown,
+.menuButtonFocusedDown,
+.menuButtonFocusedOver,
 .menuButtonSelected,
 .menuButtonSelectedDown,
 .menuButtonSelectedOver {
@@ -359,7 +384,7 @@ background:#A6ABB4 url(./images/cssButton/button_Over_stretch.png) repeat-x;
 
 .windowBody,
 .dialogBody {
-    background:#FEFEFE url(./images/shared/background.gif) repeat-x bottom left scroll;
+    background:#FFFFFF;
 }
 .promptBody {
 }
@@ -609,6 +634,13 @@ background:#A6ABB4 url(./images/cssButton/button_Over_stretch.png) repeat-x;
 .pickListCell,
 .pickListCellSelected,
 .pickListCellDisabled,
+.pickListCellDark,
+.pickListCellSelectedDark,
+.tallPickListCell,
+.tallPickListCellSelected,
+.tallPickListCellDisabled,
+.tallPickListCellDark,
+.tallPickListCellSelectedDark,
 .labelAnchor,
 .labelAnchorDisabled,
 .labelAnchorError,
@@ -718,14 +750,24 @@ border-top:1px solid #abadb3;
     background-color:#FFFFFF;
 }
 
-.pickListCell {
+.pickListCell,
+.pickListCellDark,
+.tallPickListCell,
+.tallPickListCellDark {
 	color:#333333;
 }
-.pickListCellSelected {
+.pickListCellSelected,
+.pickListCellSelectedDark {
     color:#333333;
     background:#faebb5;
 }
-.pickListCellDisabled {
+.tallPickListCellSelected,
+.tallPickListCellSelectedDark {
+    color:#333333;
+    background:#B2DFEE;
+}
+.pickListCellDisabled,
+.tallPickListCellDisabled {
 	color:#595959;
 	background-color:#C0C0C0;
 }
@@ -1330,7 +1372,6 @@ border-top:1px solid #abadb3;
 .treeTallCellSelectedOverDark,
 .treeTallCellDisabled,
 .treeTallCellDisabledDark {
- border-bottom:1px solid #E1E1E1;
  }
 
 .treeCellDark,

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -49,9 +49,9 @@ isc._start = new Date().getTime();
 
 // versioning - values of the form ${value} are replaced with user-provided values at build time.
 // Valid values are: version, date, project (not currently used)
-isc.version = "SC_SNAPSHOT-2010-05-15/LGPL Development Only";
-isc.versionNumber = "SC_SNAPSHOT-2010-05-15";
-isc.buildDate = "2010-05-15";
+isc.version = "SC_SNAPSHOT-2010-10-22/LGPL Development Only";
+isc.versionNumber = "SC_SNAPSHOT-2010-10-22";
+isc.buildDate = "2010-10-22";
 isc.expirationDate = "";
 
 // license template data
@@ -76,7 +76,8 @@ isc._optionalModules = {
     customSQL: {present: "false", name: "SQL Templating", serverOnly: true, isFeature: true},
     chaining: {present: "false", name: "Transaction Chaining", serverOnly: true, isFeature: true},
     batchDSGenerator: {present: "false", name: "Batch DS-Generator", serverOnly: true, isFeature: true},
-    batchUploader: {present: "false", name: "Batch Uploader", serverOnly: true, isFeature: true}    
+    batchUploader: {present: "false", name: "Batch Uploader", serverOnly: true, isFeature: true},
+    transactions: {present: "false", name: "Automatic Transaction Management", serverOnly: true, isFeature: true}    
 };
 isc.canonicalizeModules = function (modules) {
     if (!modules) return null;

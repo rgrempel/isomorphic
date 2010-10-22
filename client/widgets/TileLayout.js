@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -938,6 +938,7 @@ _dragTrackerThickness: 2,
 //		@group	dragging, drawing
 //<
 showDragLineForRecord : function () {
+   
      if (isc.isAn.Array(this.data)) {
         var x = this.getOffsetX(), y = this.getOffsetY(), xBase = this.getPageLeft(), yBase = this.getPageTop();
         if (this.data.getLength() == 0) {
@@ -978,7 +979,6 @@ showDragLineForRecord : function () {
         // store this for drop
         this._lastDropIndex = currIndex;
        
-        
         var lineWidth, lineHeight;
         if (this.orientation == "horizontal") {
             lineHeight = tile.getVisibleHeight();
@@ -1023,9 +1023,16 @@ findIndexForCoord : function (left, top) {
         start = 0;
         end = this.data.getLength();
     }
+    // obtain the ID of the drag target if it exists. It will be one of the 
+    // tiles if dragAppearance = 'target' on the tile
+    var dragTarg = this.ns.EH.dragTarget, dragID;
+    if (dragTarg) dragID = dragTarg.ID;
     for (var i = start; i < end; i++) {
         var tile = this.getRecordTile(i);
         if (!tile) continue;
+        // skip the drag target, otherwise the only valid index will ever be
+        // the start index of the target.
+        if (tile.ID == dragID) continue; 
         if (tile.getLeft() + tile.getVisibleWidth() > left 
             && tile.getTop() + tile.getVisibleHeight() > top) return i;
     }
@@ -1043,13 +1050,14 @@ drop : function () {
     var index = this._lastDropIndex || 0;
     var dropRecords = this.ns.EH.dragTarget;
     var dragStartIndex = this._dragStartIndex;
+    //isc.logWarn('dropped:' + index);
     // reset _dragStartIndex so the next drag will start over
     // NOTE can probably remove this code from here, as only TileGrid drop uses dragStartIndex
     // currrently. But leave it for now.
     this._dragStartIndex = null;
+   
     if (!isc.isAn.Array(dropRecords)) dropRecords = [dropRecords];
     var fromCanvas = dropRecords[0].parentElement;
-    
     
     var targetRecord = this.data.get(index);
     this.transferRecords(dropRecords, targetRecord, index, fromCanvas);

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -680,6 +680,10 @@ getOffsetLeft : function (element) {
     // IE and Moz both return somewhat unreliable values for element.offsetLeft by default.
     // Paper over these bugs and differences.
     var left = element.offsetLeft;
+    
+    if (isc.Browser.isIE && isc.Page.isRTL() && left < 0) {
+        left = -left;
+    }
     // --- caching code:
     // If we've already calculated a value (based on a reported offsetLeft value), and
     // the reported value has not changed, return the previously calculated value.
@@ -1209,25 +1213,43 @@ _deriveStyleProperties : function (className, mask) {
     if (!this._cellStyleTester) {
         
         this.createAbsoluteElement(
-            "<TABLE CELLPADDING=81 STYLE='position:absolute;left:0px;top:-300px;'><TR><TD " +
+            "<TABLE CELLPADDING=81 STYLE='position:absolute;left:0px;top:-2000px;'><TR><TD " +
             
             //(isc.Browser.isSafari ? "style='position:absolute;left:0px;top:0px;' " : "") +
             (isc.Browser.isIE8Strict ? 
             " ID=isc_cellStyleTester STYLE='border:0px;margin:0px'><DIV ID=isc_cellInnerStyleTester>" +
-                isc.Canvas.blankImgHTML(30,30) + "</DIV></TD></TR></TABLE>"                
+                isc.Canvas.blankImgHTML(30,30) + "</DIV></TD>"                
             :
-            " ID=isc_cellStyleTester>&nbsp;</TD></TR></TABLE>") 
+            " ID=isc_cellStyleTester>&nbsp;</TD>"
+            + "<TD ID=isc_cellNoStyleTester>&nbsp;</TD></TR></TABLE>"
+            ) 
         );
         this._cellStyleTester = isc.Element.get("isc_cellStyleTester");
         if (isc.Browser.isIE8Strict) {
             this._cellInnerStyleTester = isc.Element.get("isc_cellInnerStyleTester");
         }
-        this._$81px = "81px";                                 
+        // we set the table cellPadding to 81px - this will then be reported back
+        // if the padding on the style was unset (allows us to differentiate between
+        // null and explicit zero)
+        
+        this._$81px = "81px";
+        if (isc.Browser.isSafari || isc.Browser.isChrome) {
+            var noStyleElement = isc.Element.get("isc_cellNoStyleTester");
+            var paddingLeft = ["paddingLeft"];
+            var reported81 = this.getComputedStyle(noStyleElement, paddingLeft).paddingLeft;
+            if (reported81 != this._$81px) {
+                this.logDebug("Browser natively misreporting cell-padding (81px reported as:"
+                        + reported81 + "). This behavior is known to occur when the view is " +
+                        "zoomed in certain browsers but is worked around by SmartClient and " +
+                        "should have no visible effect on the application.", "sizing");
+                this._$81px = reported81;
+            }
+        }
         this._$16384px = "-16384px";       
 
         if (requiresDivTester) {
             this.createAbsoluteElement(
-                "<DIV ID=isc_styleTester STYLE='position:absolute;left:0px;top:-100px;'>&nbsp;</DIV>"
+                "<DIV ID=isc_styleTester STYLE='position:absolute;left:0px;top:-2000px;'>&nbsp;</DIV>"
             );
             this._styleTester = isc.Element.get("isc_styleTester");
             this._marginMask = ["marginLeft", "marginTop", "marginRight", "marginBottom"];
@@ -1481,6 +1503,11 @@ getStyleDeclaration : function (className, checkMultiples) {
 
             // @import css tags result in entries with no 'selectorText' property.            
             if (selectorText == null) continue;
+
+            
+            if (isc.Browser.isSafari && isc.Browser.safariVersion >= 312) {
+                selectorText = selectorText.toLowerCase()
+            }
 
             if (isc.Browser.isMoz) {
                 var selectorTextArray = selectorText.split(commaSpace);
@@ -1971,6 +1998,10 @@ _getHBorderPad : function (className) {
 
 getNativeScrollbarSize : function () {
     if (isc.Element._nativeScrollbarSize == null) {
+        if (isc.Browser.isMobileWebkit) {
+            // native scrollbars don't exist in iPhone
+            return (isc.Element._nativeScrollbarSize = 16);
+        }
         var elementHTML = "<div id=isc_ScrollbarTest " 
                             + "style='position:absolute;top:-100px;border:0px;padding:0px;margin:0px;height:100px;width:100px;overflow:scroll;'>"
                             + isc.nbsp // XHTML
@@ -1985,7 +2016,25 @@ getNativeScrollbarSize : function () {
     }
     
     return isc.Element._nativeScrollbarSize;
+},
+
+// ---------------------------------------------------------------------------------------
+
+vendorCSSPrefix : (isc.Browser.isMoz ? "-moz-" :
+                   isc.Browser.isSafari ? "-webkit-" :
+                   isc.Browser.isOpera ? "-o-" :
+                   ""),
+// Return CSS to transform by degrees around an origin
+
+getRotationCSS : function (degrees, origin) {
+    var prefix = this.vendorCSSPrefix;
+    var text = prefix + "transform: rotate(" + degrees + "deg);";   
+    if (origin != null) {   
+        text += (prefix + "transform-origin: " + origin + ";");
+    }  
+    return text;
 }
+
 
 });
 

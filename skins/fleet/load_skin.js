@@ -88,13 +88,14 @@ with (theWindow) {
     // Dynamic form skinning
     if (isc.ComboBoxItem) {
         isc.ComboBoxItem.addProperties({
-            textBoxStyle:"comboBoxItem"
+            controlStyle:"comboBoxItemControl",
+            textBoxStyle:"comboBoxItemText"
         });
     }
     
     if (isc.SpinnerItem) {
         isc.SpinnerItem.addProperties({
-            textBoxStyle:"comboBoxItem"
+            textBoxStyle:"comboBoxItemControl"
         });
     }
     // Native FILE INPUT items are rendered differently in Safari from other browsers

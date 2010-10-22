@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -135,7 +135,7 @@
 // {    
 //    response:{
 //       status:0,
-//       startRows:0,
+//       startRow:0,
 //       endRow:76,
 //       totalRows:546,
 //       data:[
@@ -366,9 +366,12 @@ isc.RestDataSource.addProperties({
     prettyPrintJSON: true,
     
     // Override init to pick up these paths
+    // Set default encapsulation for JSON messages
     init : function () {
         this.recordXPath = this.recordXPath || 
                 (this.dataFormat == "xml" ? this.xmlRecordXPath : this.jsonRecordXPath);
+        this.jsonPrefix = "//isc_JSONResponseStart-->";
+        this.jsonSuffix = "//isc_JSONResponseEnd";
         return this.Super("init", arguments);
     },
     
@@ -524,6 +527,13 @@ isc.RestDataSource.addProperties({
         var protocol = this.getDataProtocol(dsRequest);
         // "postMessage": Post data as XML serialized message
         if (protocol == "postMessage") {
+
+            // Set parameter specifying request/response data format
+            if (dsRequest.params == null) {
+                dsRequest.params = {};
+            }
+            dsRequest.params["isc_dataFormat"] = this.dataFormat;
+
             var params = {
                 dataSource:this.getID()
             };
@@ -548,6 +558,23 @@ isc.RestDataSource.addProperties({
                 ]
             });
             
+            if (this.autoConvertRelativeDates == true) {
+                // convert any relative dates in criteria into absolute dates so the server
+                // doesn't need to know how to handle relative dates
+                if (this.logIsInfoEnabled("relativeDates")) {
+                    this.logInfo("Calling convertRelativeDates from getServiceInputs "+
+                        "- data is\n\n"+isc.echoFull(dsRequest.data));
+                }
+
+                var transformedData = this.convertRelativeDates(dsRequest.data);
+
+                if (this.logIsInfoEnabled("relativeDates")) {
+                    this.logInfo("Called convertRelativeDates from getServiceInputs "+
+                        "- data is\n\n"+isc.echoFull(transformedData));
+                }
+                dsRequest.data = transformedData;
+            }
+
             params.data = dsRequest.data;
             params.oldValues = dsRequest.oldValues;
 
@@ -557,6 +584,8 @@ isc.RestDataSource.addProperties({
             }
 
             if (this.dataFormat == "json") {
+                if (params.data != null) params.data = this.serializeFields(params.data);
+                if (params.oldValues != null) params.oldValues = this.serializeFields(params.oldValues);
                 var settings = {prettyPrint: this.prettyPrintJSON};
                 return isc.JSON.encode(params, settings);
             } else {
@@ -601,7 +630,10 @@ isc.RestDataSource.addProperties({
                     if (value != null) params[parameterName] = value;
                 }
                 params[this.metaDataPrefix + "dataSource"] = this.getID();
+                params["isc_metaDataPrefix"] = this.metaDataPrefix;
             }
+            // Set parameter specifying response data format
+            params["isc_dataFormat"] = this.dataFormat;
             return params;
         }
         

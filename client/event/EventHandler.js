@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -217,6 +217,9 @@ isc.EventHandler.addClassProperties(
         //
         // @value "keyPress" Fires when a user presses a key on the keyboard. 
         //
+        // @value "orientationChange" Fires when the +link{Page.getOrientation()} changes due
+        //        to browser-window resize or rotation of a mobile device.
+        //
         // see classMethod:Page.setEvent()
         // see classMethod:Page.clearEvent()
         // @visibility external
@@ -235,6 +238,12 @@ isc.EventHandler.addClassProperties(
     	MOUSE_STILL_DOWN : "mouseStillDown",
     	MOUSE_OVER : "mouseOver",
 
+        //>Touch
+    	TOUCH_START: "touchStart",	
+    	TOUCH_MOVE: "touchMove",		
+    	TOUCH_END: "touchEnd",
+    	LONG_TOUCH:"longTouch",
+        //<Touch
 
         // XXX classify
     	SET_DRAG_TRACKER : "setDragTracker",
@@ -271,7 +280,8 @@ isc.EventHandler.addClassProperties(
     	IDLE : "idle",				
     	LOAD : "load",						
     	UNLOAD : "unload",					
-    	RESIZE : "resize"
+    	RESIZE : "resize",
+    	ORIENTATION_CHANGE : "orientationChange"
     },
     
     // Map used by getMouseEventProperties to convert from native mouse event names to 
@@ -296,6 +306,15 @@ isc.EventHandler.addClassProperties(
         mouseDown:"mouseDown",
         mouseUp:"mouseUp",
         mouseWheel:"mouseWheel",
+
+        //>Touch
+        touchstart:"touchStart",
+        touchmove:"touchMove",
+        touchend:"touchEnd",
+        touchStart:"touchStart",
+        touchMove:"touchMove",
+        touchEnd:"touchEnd",
+        //<Touch
         
         selectionstart:"selectionStart",
         selectionStart:"selectionStart",
@@ -317,6 +336,11 @@ isc.EventHandler.addClassProperties(
 	DRAG_RESIZE : "dragResize",			
     //	@value	isc.EventHandler.DRAG_REPOSITION		Repositioning by dragging
 	DRAG_REPOSITION : "dragReposition",	
+    //	@value	isc.EventHandler.DRAG_SCROLL            Scroll/pan by drag
+	DRAG_SCROLL : "dragScroll",	
+	// @value isc.EventHandler.DRAG_SELECT  Select content via drag
+	DRAG_SELECT : "dragSelect",
+	
     //	@value	isc.EventHandler.DRAG			General drag (custom implementation)
 	DRAG : "drag",
 	//<										
@@ -540,7 +564,17 @@ isc.EventHandler.addClassProperties(
         '48':'0', "49":"1", "50":"2", "51":"3", "52":"4", 
         "53":"5", "54":"6", "55":"7", "56":"8", "57":"9",
         
-                        // 58-64  Undefined 
+        // 58-64  Undefined 
+        // Exception: These are used on mousedown / mouseup for certain keys normally in
+        // the 187-222 range on mac osx / moz
+        
+                        
+        '58':';', // observed on shift+";" key (Mac osx, Moz)
+        '59':';', // observed on ";" (mac osx, moz)
+        '60':',', // observed on shift+ "," key (mac osx, moz)
+        '61':'=', // mac osx, moz
+        '62':"/", // observed on shift+ "/" key mac osx, moz
+        
 
         // Standard Char keys                        
         '65':'A', '66':'B', '67':'C', '68':'D', '69':'E', '70':'F', 
@@ -842,19 +876,28 @@ handleSyntheticEvent : function (event) {
 //<
 
 handleEvent : function (target, eventType, eventInfo) {
+    
+    this._handlingEvent = eventType;
 	
+    
         var EH = isc.EH;
     
 	// process the event globally
-  	if (isc.Page.handleEvent(target, eventType, eventInfo) == false) return false;
-
-	// if the target is enabled
+	var returnVal;
+  	if (isc.Page.handleEvent(target, eventType, eventInfo) == false) {
+  	    returnVal = false;
+  	
+    // if the target is enabled
 	// 	bubble the event up the target's chain
-	if (EH.targetIsEnabled(target) && EH.bubbleEvent(target, eventType, eventInfo)==false) {
-		return false;
+	} else if (EH.targetIsEnabled(target) && EH.bubbleEvent(target, eventType, eventInfo)==false) {
+		returnVal =false;
+	} else {
+	    returnVal = true;
 	}
 	
-	return true;
+	delete this._handlingEvent;
+	
+	return returnVal;
 },
 
 
@@ -1341,6 +1384,15 @@ _focusInLastWidget : function (mask) {
 //  @visibility internal
 //<
 handleMouseDown : function (DOMevent, syntheticEvent) {
+    // In touch environments (iPhone etc), we respond to onTouchStart / onTouchStop events
+    // and use these to fire our mouseDown/up/click events.
+    // This is required to support drag/drop as the mouseDown/up series of events fires
+    // after the touchStop event.
+    // Simply no-op from the native mouseDown / Up etc event handlers so we don't get
+    // doubled events and unpredictable behavior
+    
+    if (isc.Browser.isTouch && !syntheticEvent) return;
+    
 	
         var EH = isc.EH;
 
@@ -1377,8 +1429,8 @@ doHandleMouseDown : function (DOMevent, syntheticEvent) {
         forceBlur = focusCanvas != null &&
                     (focusCanvas != event.target) && !focusCanvas._useNativeTabIndex && 
                     !focusCanvas._useFocusProxy && 
-                    !(isc.isA.DynamicForm!=null && isc.isA.DynamicForm(focusCanvas) && focusCanvas.getFocusItem() 
-                      && focusCanvas.getFocusItem().hasFocus);
+                    !(isc.isA.DynamicForm!=null && isc.isA.DynamicForm(focusCanvas) && focusCanvas.getFocusSubItem() 
+                      && focusCanvas.getFocusSubItem().hasFocus);
     if (forceBlur) {
         // In IE if we blur() here, the thing we clicked on never gets native focus (not clear 
         // why), so do this on a timeout, if appropriate
@@ -1475,6 +1527,7 @@ doHandleMouseDown : function (DOMevent, syntheticEvent) {
     // NOTE that we allow right drag, and treat it just like left drag, although you can do
     // something special on right drag by checking EH.rightButtonDown()
     if (target) EH.prepareForDragging(target);
+    
     // bubble the mouseDown event to anyone who wants it
     var handlerReturn = EH.bubbleEvent(target, eventType, null, targetIsMasked);
     if (forceIEFocusTarget != null) forceIEFocusTarget.focus();
@@ -1512,6 +1565,7 @@ doHandleMouseDown : function (DOMevent, syntheticEvent) {
 
     // if the mouseDown handler didn't return false, set up a timer to send mouseStillDown events
 	if (handlerReturn != false) {	
+	    
 		// if the target or a parent has a mouseStillDown message fire the mouseStillDown event,
 		// this will keep firing on a timer until the mouse goes up
 		if (EH.hasEventHandler(target, EH.MOUSE_STILL_DOWN)) {
@@ -1522,7 +1576,8 @@ doHandleMouseDown : function (DOMevent, syntheticEvent) {
 
     
     
-    var aboutToDrag = EH.dragTarget != null;
+    var aboutToDrag = EH.dragTarget != null && EH.dragOperation != EH.DRAG_SELECT;
+    
     // Return false to cancel native drag mode if we're about to do an ISC drag.
     // Return false in Moz if text selection is diallowed    
     // (type-casting target._allowNativeTextSelection() to a boolean - if this 
@@ -1592,6 +1647,10 @@ stillWithinMouseDownTarget : function () {
 //<
 // called directly by DOM
 handleMouseMove : function (DOMevent) {
+    
+    // No-Ops in Touch environments
+    // (See comments in handleMouseDown for why we do this)
+    if (isc.Browser.isTouch) return;
 
     // Some browsers (like Mac IE) have problems dealing with events fired before the page
     // finishes loading.  Just skip mouse event processing if the page hasn't loaded yet.
@@ -1676,7 +1735,6 @@ __handleMouseMove : function (DOMevent, event) {
     }
 
     
-
  	var target = event.target,
  		isNative = EH.eventHandledNatively(EH.MOUSE_MOVE, event.nativeTarget)
  	;
@@ -1700,9 +1758,11 @@ __handleMouseMove : function (DOMevent, event) {
 
     
     var mouseDown = EH.mouseIsDown();
-    if (isc.Browser.isMoz && mouseDown && event.target && event.target._useMozScrollbarsNone 
+    if (isc.Browser.isMoz && (isc.Browser.geckoVersion < 20100914) && mouseDown &&
+        event.target && event.target._useMozScrollbarsNone 
         && event.target != EH.mouseDownTarget()) 
     {
+        event.nativeDraggingTarget = event.nativeTarget;
         event.nativeTarget = null;
         target = event.target = EH.mouseDownTarget();
     }
@@ -1720,8 +1780,9 @@ __handleMouseMove : function (DOMevent, event) {
 	}
 	
 	// if we're dragging, jump over to handleDragMove which does special processing
-	if (EH.dragging) return EH.handleDragMove();
-
+	if (EH.dragging) {
+	    return EH.handleDragMove();
+	}
 	// if the right button is down
 	if (EH.rightButtonDown()) {
 		// don't send mouseMove.  We could send a 'rightMouseMove' event, but we've decided not
@@ -1795,6 +1856,36 @@ __handleMouseMove : function (DOMevent, event) {
     	
     
     return true;
+    
+},
+
+//> @classMethod isc.EventHandler.getNativeMouseTarget() [A]
+// Returns the natively reported target (or source) DOM element for the current mouse event.
+// <b>NOTE:</b> SmartClient cannot guarantee that the same element will
+// be reported in all browser/platform configurations for all event types.
+// If you wish to make use of this value, we recommend testing your use case 
+// in all target browser configurations.
+//
+// @return (HTML Element) native DOM element over which the mouse event occurred
+// @visibility external
+//<
+// Common known issue - during drag/drop interactions some browsers may report
+// the mouse down target (the target being dragged) rather than the target the user is currently
+// hovering over.
+
+getNativeMouseTarget : function (event) {
+    if (!this.nativeTargetWarningLogged) {
+        this.nativeTargetWarningLogged = true;
+        this.logWarn("getNativeMouseTarget(). This method will return the DOM element " +
+            "the browser reports as the target or source of the current mouse event. " +
+            "Please note that SmartClient cannot guarantee that the same element will " +
+            "be reported in all browser/platform configurations for all event types. " +
+            "If you wish to make use of this value, we recommend testing your use case " +
+            "in all target browser configurations.");
+            
+    }
+    if (event == null) event = this.lastEvent;
+    return event.nativeTarget || event.nativeDraggingTarget;
     
 },
 
@@ -1926,6 +2017,10 @@ _handleMouseStillDown : function (timeStamp) {
 //<
 // called directly from DOM, and by other methods
 handleMouseUp : function (DOMevent, fakeEvent) {
+    // No-Ops in Touch environments
+    // (See comments in handleMouseDown for why we do this)
+    if (isc.Browser.isTouch && !fakeEvent) return;
+    
     
     
 	
@@ -2253,7 +2348,8 @@ isDoubleClick : function (target) {
     // If this click event occurred within the double-click delay of the last event, fire the
     // double-click handler rather than the click handler.
     
-    var useNativeEventTime = (isc.Browser.isMoz && isc.Browser.isWin),
+    var useNativeEventTime = EH.useNativeEventTime != null ? EH.useNativeEventTime :
+                            (isc.Browser.isMoz && isc.Browser.isWin),
         time, withinDoubleClickInterval;
         
     if (useNativeEventTime) {
@@ -2332,6 +2428,89 @@ targetIsEnabled : function (target) {
 	// otherwise, the target doesn't have the concept of being enabled, so assume it is enabled
 	return true;
 },
+
+//>Touch
+
+// Touch events
+// ---------------------------------------------------------------------------------------
+
+_handleTouchStart : function (DOMevent) {
+	
+        var EH = isc.EH;
+
+	var	event = EH.getMouseEventProperties(DOMevent);
+    var returnValue = EH.handleEvent(event.target, EH.TOUCH_START);
+
+    if (returnValue !== false) {
+        event.originalType = EH.TOUCH_START;
+        event.eventType = EH.MOUSE_DOWN;
+        EH.doHandleMouseDown(DOMevent, event);
+        
+        // Treat the user holding the finger over an item as a "long touch" - this
+        // will trip context menu behavior for mobile browsers (where right-click isn't
+        // otherwise possible)
+        // Could also trip hover prompt behavior at a pinch
+        if (EH._longTouchTimer != null) isc.Timer.clear(EH._longTouchTimer);
+        EH._longTouchTimer = this.delayCall("_handleLongTouch", [], EH.longTouchDelay);
+        
+    }
+},
+
+// Number of ms before we fire the synthetic "longTouch" event (user holding their finger
+// over a widget in a touch browser like iPad/safari)
+longTouchDelay:500,
+_handleLongTouch : function () {
+    
+    var EH = this;
+	if (!EH.mouseIsDown() || !EH.mouseDownTarget() || !EH.stillWithinMouseDownTarget()) return;
+	
+	// send the event up the chain of the target
+	EH.bubbleEvent(EH.mouseDownTarget(), EH.LONG_TOUCH);
+},
+
+
+_handleTouchMove : function (DOMevent) {
+	
+        var EH = isc.EH;
+
+	var	event = EH.getMouseEventProperties(DOMevent);
+
+    var returnValue = EH.handleEvent(event.target, EH.TOUCH_MOVE);
+
+    if (returnValue !== false) {
+        event.originalType = EH.TOUCH_MOVE;
+        event.eventType = EH.MOUSE_MOVE;
+        EH._handleMouseMove(DOMevent, event);
+        // prevent default full-page drag if we're doing an SC drag
+        if (EH.dragging && window.event != null) window.event.preventDefault();
+    }
+    
+    // kill "long touch" event on drag move - it's counter intuitive to have (for example)
+    // both scrolling and a context menu when you drag.
+    if (EH._longTouchTimer != null) isc.Timer.clear(EH._longTouchTimer);
+
+},
+
+_handleTouchEnd : function (DOMevent) {
+	
+        var EH = isc.EH;
+
+	var	event = EH.getMouseEventProperties(DOMevent);
+
+    var returnValue = EH.handleEvent(event.target, EH.TOUCH_END);
+    if (returnValue !== false) {
+        event.originalType = EH.TOUCH_END;
+        event.eventType = EH.MOUSE_UP;
+        EH._handleMouseUp(DOMevent, true);
+    }
+    
+    if (EH._longTouchTimer != null) isc.Timer.clear(EH._longTouchTimer);
+},
+
+//<Touch
+
+// Focus Handling
+// ---------------------------------------------------------------------------------------
 
 getFocusCanvas : function () {
     return this._focusCanvas;
@@ -2586,6 +2765,7 @@ handleDragStart : function (){
 	// during dragging no Canvii will get mouseOver/mouseOut, so we need to send a final mouse
     // out event to avoid a Canvas getting stuck in the "over" state.  
     EH.handleEvent(EH.lastMoveTarget, EH.MOUSE_OUT);
+    
     // likewise we need to send mouseOut to the mouseDownTarget to avoid it getting stuck in
     // the down state.  
     
@@ -2611,6 +2791,7 @@ handleDragStart : function (){
 	// bubble the appropriate [dragStart, dragRepositionStart, or dragResizeStart] message to
     // the target.  This is an opportunity to set EH.dragAppearance
 	var eventType = EH.dragOperation + "Start";
+	
 	if (EH.handleEvent(EH.dragTarget, eventType) == false) {
         //>DEBUG
         this.logInfo("drag cancelled by false return from: " + 
@@ -2630,6 +2811,7 @@ handleDragStart : function (){
 
 	// clear the lastMoveTarget since we've sent a mouseOut with no mouseOver
 	delete EH.lastMoveTarget;
+	
 
 	// if we're dragRepositioning, and the dragAppearance is not the tracker,
 	// set the isc.EventHandler.dragOffsetX and .dragOffsetY to the offset from the drag target
@@ -2775,7 +2957,7 @@ handleDragStart : function (){
 
 	// set the 'dragging' flag to true since we're dragging
 	EH.dragging = true;
-
+	
     //>DEBUG
     this.logInfo("Started dragOperation: " + EH.dragOperation + 
                   " with dragTarget: " + EH.dragTarget +
@@ -2869,7 +3051,6 @@ _getDragMoveEventName : function (dragOperation) {
 
 // Deliver the synthetic dragMove event, also handling the dragAppearance
 handleDragMove : function () {
-
 	var EH = this,
 		event = EH.lastEvent;
 
@@ -2965,6 +3146,21 @@ _handleDragScroll : function () {
     var EH = this,
         dragTarget = EH.dragTarget;
     
+    // don't use automatic drag scrolling at edges if the drag operation itself is scrolling
+    // (the two behaviors would fight)
+    if (EH.dragOperation == EH.DRAG_SCROLL) return;
+    
+    // In text selection, we always want to scroll only the drag target
+    if (EH.dragOperation == EH.DRAG_SELECT) {
+        if (dragTarget.overflow == isc.Canvas.VISIBLE) return;
+        
+        if (!dragTarget.containsEvent() || 
+            dragTarget._overDragThreshold(dragTarget.dragScrollDirection))
+        {
+            dragTarget._setupDragScroll(dragTarget.dragScrollDirection, true);
+        }
+    }
+
     // Determine which widget would be scrolled (assuming we're over the right place)
     
     var scrollCandidates = [];
@@ -3308,18 +3504,14 @@ _canAccessNativeTargetProperties : function(target) {
     
 
     // Optimization - if we're not in Moz, looking at a text node, assume we're ok
-    if (!(isc.Browser.isMoz && target == this._$textObjectString)) return true;        
-
-    // Note the try/catch block must be in String form since Nav4 will give a parse error if
-    // there's a try/catch block even if its never executed.
-    if (!this._nodeTestFunction) {
-        this._nodeTestFunction = 
-                new Function("_target", 
-                             "try{_target.parentNode}catch(e){return false}return true");
+    try {
+        if (!(isc.Browser.isMoz && target == this._$textObjectString)) return true; 
+        target.parentNode;
+    } catch (e) {
+        return false;
     }
-    
-    // If we caught an exception, return false - we can't access the properties of the target
-    return this._nodeTestFunction(target);
+    return true;
+   
 },
 
 
@@ -3364,10 +3556,10 @@ getDropTarget : function (event) {
 	if (target.dragIntersectStyle == EH.INTERSECT_WITH_MOUSE) {
  
         
-        if (event.target != this.mouseDownTarget() ||
-            (isc.Browser.isIE || isc.Browser.isSafari || 
+        if ((event.target != this.mouseDownTarget() ||
+            (isc.Browser.isIE || (isc.Browser.isSafari && !isc.Browser.isTouch) || 
             (isc.Browser.isMoz && isc.Browser.geckoVersion > 20040616 &&
-             !this.mouseDownTarget()._useMozScrollbarsNone))) 
+             !this.mouseDownTarget()._useMozScrollbarsNone))) )
         {
             var dropTarget = event.target;
 
@@ -3392,8 +3584,7 @@ getDropTarget : function (event) {
 		for (;i<length;i++) {
 			var candidate = dropCandidates[i];
             
-                
-			if (candidate.canAcceptDrop && !candidate.isDisabled() &&
+            if (candidate.canAcceptDrop && !candidate.isDisabled() &&
                 (
                  candidate.visibleAtPoint(event.x, event.y, false, 
                                           EH._getDragMoveComponents())
@@ -3402,22 +3593,21 @@ getDropTarget : function (event) {
                 (canDropOnSelf || candidate != target)
                ) 
             {
-				matches.add(candidate);
+                matches.add(candidate);
 			}
 		}
-	} else {
-		// check whether dragMoveTarget (tracker, outline, etc) intersects candidate drop target
-		for (;i<length;i++) {
-			var candidate = dropCandidates[i];
+    } else {
+        // check whether dragMoveTarget (tracker, outline, etc) intersects candidate drop target
+        for (;i<length;i++) {
+            var candidate = dropCandidates[i];
             if (!canDropOnSelf && candidate == target) continue;
             
-			if (candidate.intersects(target) && 
+            if (candidate.intersects(target) && 
                 candidate.canAcceptDrop && !candidate.isDisabled()) 
             {
-				matches.add(candidate);
-                
-			}
-		}
+                matches.add(candidate);
+            }
+        }
     }
 
     //this.logWarn("dropTarget matches" + matches);
@@ -3634,7 +3824,7 @@ hideEventMasks : function () {
 // processing and other similar cases.
 
 _handledNativelyReturnVal:isc.Browser.isIE ? isc.undef : true,
-eventHandledNatively : function (eventType, nativeTarget) {
+eventHandledNatively : function (eventType, nativeTarget, checkTargetOnly) {
     // If passed a native event name (standard behavior), convert the eventType to our ISC 
     // eventType.
     // Note: if we fail to convert it, we will simply work with whatever we were passed as
@@ -3647,16 +3837,18 @@ eventHandledNatively : function (eventType, nativeTarget) {
             iscEventType = this._nativeKeyEventMap[eventType];
     }
     
-    var returnValue = this._eventHandledNatively(iscEventType, nativeTarget);
+    var returnValue = this._eventHandledNatively(iscEventType, nativeTarget, checkTargetOnly);
     if (returnValue && this.logIsDebugEnabled() && iscEventType != "mouseMove") {
-        this.logDebug(eventType + " event on " + this.lastTarget + " handled natively")
+        this.logDebug(eventType + " event on " + 
+                        (checkTargetOnly ? " native target:" + nativeTarget : this.lastTarget)
+                        + " handled natively");
     }
     return returnValue;
 }, 
 
 _$handleNativeEvents:"handleNativeEvents",
 _$applet: "APPLET",
-_eventHandledNatively : function (eventType, nativeTarget) {
+_eventHandledNatively : function (eventType, nativeTarget, checkTargetOnly) {
     //!DONTCOMBINE
 
 	eventType = (eventType || "");
@@ -3681,7 +3873,7 @@ _eventHandledNatively : function (eventType, nativeTarget) {
         iscTarget = isMouseEvent ? event.target : event.keyTarget;
     
  
-    if (isMouseEvent && iscTarget == null) return true;
+    if (!checkTargetOnly && isMouseEvent && iscTarget == null) return true;
 
     //>DEBUG
     if ((this.logIsInfoEnabled() && eventType == EH.KEY_DOWN) ||
@@ -3691,7 +3883,6 @@ _eventHandledNatively : function (eventType, nativeTarget) {
                      ", native target: " + this.echoLeaf(nativeTarget));
     }
     //<DEBUG
-
 	// if it's a form element or an anchor, just return true so the event can be processed
     // automatically
 	// NOTE: we may have an image (or something else) that is contained in an anchor, 
@@ -3794,7 +3985,8 @@ _eventHandledNatively : function (eventType, nativeTarget) {
     // special elements that need native handling.
     //
 	// if the event was a mouse-event in a CSS scrollbar let it be handled natively.
-    if (isMouseEvent && this._eventOverCSSScrollbar(iscTarget, eventType, event)) return true;
+    if (!checkTargetOnly && isMouseEvent &&
+            this._eventOverCSSScrollbar(iscTarget, eventType, event)) return true;
 	// return false so isc event processing continues
 	return false;
 },
@@ -4176,12 +4368,12 @@ handleSelectStart : function () {
         target = EH.getEventTargetCanvas(wd.event);
 
     
-    var allowSelection = !EH.dragging && !EH.dragTarget && 
+    var dragging = (EH.dragging || EH.dragTarget) && EH.dragOperation != EH.DRAG_SELECT;
+    var allowSelection = !dragging && 
                          (mouseDownTarget != null ? 
                             mouseDownTarget._allowNativeTextSelection() : true) &&
                          (target != null ? 
                             target._allowNativeTextSelection() : true);
-                       
     if (allowSelection) return true;
     return EH.killEvent();
 },
@@ -4287,12 +4479,19 @@ handleResize : function (DOMevent) {
     return true;
 },
 
+// Fired when the user rotates a mobile device:
+// Safari / iPhone and iPad only
+handleOrientationChange : function (DOMEvent) {
+    this._fireResizeEvent();
+},
+
 
 _pageResizePollMethod : function () { isc.EH._pageResize(true); },
+
 _pageResize : function (polling) {
     isc.EH.resizeTimer = null;
+    var orientation = isc.Page.getOrientation();
     if (!polling) { 
-    
         // This both records the reported width, and ensures that it's up to date.
         this._previousInnerWidth = isc.Page.getWidth(window, true);
         this._previousInnerHeight = isc.Page.getHeight(window, true);
@@ -4306,7 +4505,7 @@ _pageResize : function (polling) {
             newHeight = isc.Page.getHeight(window, true),
             unchanged = (newWidth == this._previousInnerWidth && 
                        newHeight == this._previousInnerHeight)
-
+       
         // If we're polling for content changes that introduce / hide scrollbars, 
         // re-run this method on every idle
         if (isc.Page.pollPageSize) {        
@@ -4317,7 +4516,23 @@ _pageResize : function (polling) {
         // Don't actually fire the handler if there was no resize
         if (unchanged) return;
     }
+    this._fireResizeEvent(orientation);
+},
+
+currentOrientation:isc.Page.getOrientation(),
+_fireResizeEvent : function (orientation) {
     isc.Page.handleEvent(null, isc.EH.RESIZE);
+   
+    // Fire orientationChange event from resize event rather only on the native
+    // onOrientationChange - this means we can fire it
+    // on a desktop browser if the user drags from a portrait type sizing to a landscape
+    // type sizing
+    
+    if (orientation == null) orientation = isc.Page.getOrientation();
+    if (orientation != this.currentOrientation) {
+        this.currentOrientation = orientation;
+        isc.Page.handleEvent(null, isc.EH.ORIENTATION_CHANGE);
+    }
 },
 
 // handle a native "mousewheel" event, currently only available in IE6 and above, and Mozilla
@@ -4643,6 +4858,9 @@ _threadCodes : {
     mouseup : "MUP",
     mousemove : "MMV",
     mouseout : "MOU",
+    touchstart : "TDN",
+    touchmove : "TMVP",
+    touchend : "TUP",
     contextmenu : "CXT",
     keypress : "KPR",
     keydown : "KDN",
@@ -4884,7 +5102,7 @@ captureEvents : function (wd) {
     }
 
     this.captureEvent(wd, "onresize", EH.RESIZE, EH.handleResize);
-
+    
     // { iscEventName : [DOMObject, nativeName, EHFunction], .. }
     
     this.captureEvent(document, "onmousedown", EH.MOUSE_DOWN, EH.handleMouseDown);
@@ -4954,6 +5172,17 @@ captureEvents : function (wd) {
         
 	}
     
+    //>Touch
+    if (isc.Browser.isTouch) {
+        this.captureEvent(document, "ontouchstart", EH.TOUCH_START, EH._handleTouchStart);
+        this.captureEvent(document, "ontouchmove", EH.TOUCH_MOVE, EH._handleTouchMove);
+        this.captureEvent(document, "ontouchend", EH.TOUCH_END, EH._handleTouchEnd);
+    } //<Touch
+    
+    
+    if (isc.Browser.isMobile) {
+        isc.Page.pollPageSize = true;
+    }
 
 },
 
@@ -4988,7 +5217,7 @@ releaseEvents : function (wd) {
     // special case for ondragstart which never went through captureEvents and got added to
     // our _documentEventHandlers map
     if (isc.Browser.isIE) {
-        document.ondragstart = wd.onhelp =null;
+        document.ondragstart = wd.onhelp = null;
         // ditto for onhelp
         document.onhelp = wd.onhelp = null;
     }
@@ -5247,7 +5476,7 @@ getKeyEventCharacter : function (event) {
 //		@param	[event]	(SC Event)  Event to return keyName for
 //                                  Default is to use isc.EventHandler.lastEvent.
 getKey : function (event) {
-    return (event || this.lastEvent).keyName;
+    return (event || this.lastEvent).keyName || null;
 },
 
 // Add getKeyName() as a synonym of getKey() since we refer to the property as event.keyName
@@ -5266,7 +5495,7 @@ getKeyName : function (event) {
 //		@param	[event]	(ISC Event) Event from a call to getEventProperties().  
 //                                  Default is to use isc.EventHandler.lastEvent.
 shiftKeyDown : function (event) {
-	return (event || this.lastEvent).shiftKey;
+	return !!((event || this.lastEvent).shiftKey);
 },
 
 //>	@classMethod	isc.EventHandler.ctrlKeyDown()
@@ -5280,7 +5509,7 @@ shiftKeyDown : function (event) {
 //		@param	[event]	(ISC Event) Event from a call to getEventProperties().  
 //                                  Default is to use isc.EventHandler.lastEvent.
 ctrlKeyDown : function (event) {
-	return (event || this.lastEvent).ctrlKey;
+	return !!((event || this.lastEvent).ctrlKey);
 },
 
 //>	@classMethod	isc.EventHandler.altKeyDown()
@@ -5294,7 +5523,7 @@ ctrlKeyDown : function (event) {
 //		@param	[event]	(ISC Event) Event from a call to getEventProperties().  
 //                                  Default is to use isc.EventHandler.lastEvent
 altKeyDown : function (event) {
-	return (event || this.lastEvent).altKey;
+	return !!((event || this.lastEvent).altKey);
 },
 
 
@@ -5311,7 +5540,7 @@ altKeyDown : function (event) {
 //                                 Default is to use isc.EventHandler.lastEvent.
 
 metaKeyDown : function (event) {
-	return (event || this.lastEvent).metaKey;
+	return !!((event || this.lastEvent).metaKey);
 },
 
 
@@ -5420,10 +5649,59 @@ getMouseEventProperties : (isc.Browser.isIE ?
         var scEvent = this.lastEvent;
         scEvent.DOMevent = e;
         scEvent.eventType = this._nativeMouseEventMap[e.type];              
+
+        var ignoreCoordinates = false;
+        
+        if (isc.Browser.isMobileWebkit) { 
+
+        //>Touch
+		if (isc.startsWith(scEvent.eventType, "touch")) {
+            // e.touches is an array of event objects for each finger touching the screen.
+            // Report the first finger's coordinates on the event object as a whole.
+            if (scEvent.eventType == isc.EH.TOUCH_END) {
+                // "touchend" natively reports all coordinates as undefined or bogus (0) and
+                // has no e.touches Array.  This makes some sense since two or more fingers
+                // could have been touching the screen and so there is no single end coordinate
+                // to report.  In terms of this logic and mouse event handlers seeing analogous
+                // behavior to mouseUp, it means we need to avoid overwriting coordinates 
+                // recorded from the last touchstart / touchmove.  Native behavior noted on
+                // iPhone OS 3.2.
+                ignoreCoordinates = true;
+            } else if (e.touches != null && e.touches[0] != null) {
+                var touch = e.touches[0];
+                // relative to element viewport 
+                scEvent.clientX = touch.clientX;
+                scEvent.clientY = touch.clientY;
+                // relative to screen
+                scEvent.screenX = touch.screenX;
+                scEvent.screenY = touch.screenY;
+                // relative to page (content start)
+                scEvent.x = touch.pageX;
+                scEvent.y = touch.pageY;
+            }
+            /*
+            this.logWarn("native event: " + this.echo({
+                clientX : e.clientX,
+                clientY : e.clientY,
+                pageX : e.pageX,
+                pageY : e.pageY,
+                screenX : e.screenX,
+                screenY : e.screenY,
+                touchesLength : e.touches.length
+            }));
+            */
+        }
+        //<Touch
+
+        } else { 
+
+        scEvent.screenX = e.screenX;
+        scEvent.screenY = e.screenY;
+
         
         if (isc.Browser.isSafari) {
             // From Safari 3.0.3 to 3.0.4, the native event.x and y coordinates became relative
-            // to the  top of the browser viewport rather than the page, so adjust for that.
+            // to the top of the browser viewport rather than the page, so adjust for that.
             var adjustForPageScroll = isc.Browser.safariVersion >= 523.12
                 
             scEvent.x = parseInt(e.x);
@@ -5457,15 +5735,14 @@ getMouseEventProperties : (isc.Browser.isIE ?
             }
         }
 
+        } // end else on MobileWebkit
+
         scEvent.nativeTarget = e.target;
 
         scEvent._stillWithin = null; // clear cached result of stillWithinMouseDownTarget
 
         scEvent.target = this.getEventTargetCanvas(e, scEvent.nativeTarget);
         
-        scEvent.screenX = e.screenX;
-        scEvent.screenY = e.screenY;
- 
         
         if (scEvent.eventType == this.MOUSE_WHEEL) {
             
@@ -5498,15 +5775,29 @@ getMouseEventProperties : (isc.Browser.isIE ?
         }
 
         
-		if (scEvent.eventType == isc.EH.MOUSE_MOVE) {
+		if (scEvent.eventType == isc.EH.MOUSE_MOVE || scEvent.eventType == isc.EH.TOUCH_MOVE) {
 			// clear the button if the mouse is not down
 			if (!this._mouseIsDown) scEvent.buttonNum = 0;
+
+        // otherwise, a mouseDown/Up event - there's a button down, so which is it?
+
+        //>Touch
+		} else if (isc.Browser.isTouch) {
+            if (e.targetTouches && e.targetTouches.length > 1) {
+                // treat two fingers on a single target as context click by default
+                scEvent.buttonNum = 2;
+            } else {
+                scEvent.buttonNum = 1;
+            }
+    
+        //<Touch
 		} else {
             
 			scEvent.buttonNum = ((e.which == 1 || isc.Browser.isSafari && e.which == 65536) 
                                                     ? 1 : 2);
 		}
-        //this.logWarn("event: " + e.type + " which: " + e.which + " e.button: " + e.button);
+        //this.logWarn("event: " + e.type + " which: " + e.which + 
+        //             " e.button: " + e.button + ", scEvent.buttonNum: " + scEvent.buttonNum);
         //scEvent.nativeWhich = e.which;
 
         
@@ -5639,7 +5930,7 @@ determineEventKeyName : function(DOMevent) {
     if (isc.Browser.isIE) {
         
         if (type == EH.KEY_DOWN || type == EH.KEY_UP) {
-            return EH._virtualKeyMap[keyCode] 
+            return EH._virtualKeyMap[keyCode];
         }
         
         

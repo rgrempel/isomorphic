@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -85,7 +85,6 @@ var libs =
 		"communications/Comm",			// simple client-server communication channel and protocols
         
     
-
 		// event handling
 		"event/Timer",						// consolidated timing functions
 		"event/EventRegistry",			// global event trapping mechanism
@@ -110,8 +109,8 @@ var libs =
 
 		"widgets/Hover",				// singleton that manages hover (e.g. tooltip) timing and window
 
-        // used by cookie storage code
 		"language/Serialize",			// serialize an object as a js literal so it can be re-instantiated
+		"language/Clone",				// make a isc.clone (duplicate) of an object
 
         "tools/AutoTest",               // Module for simplified integration with automated
                                         // testing tools

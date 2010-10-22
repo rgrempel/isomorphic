@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -109,7 +109,7 @@ isc.RelativeDateItem.addClassMethods({
     // <li>[qualifier]: an optional timeUnit encapsulated in square-brackets and used to offset 
     //      the calculation - eg. if +1d is "plus one day", +1d[W] is "plus one day from the 
     //      end of the week".  You may also specify another complete RelativeDateString as the
-    //      [qualifier], which offers more control - eg, +1d[+1W] indiates "plus one day from 
+    //      [qualifier], which offers more control - eg, +1d[+1W] indicates "plus one day from 
     //      the end of NEXT week".</li>
     // </ul>
     // <P>
@@ -228,11 +228,11 @@ isc.RelativeDateItem.addClassMethods({
         switch (period) {
             case "MS":
             case "ms":
-                newDate.setUTCMilliseconds(date.getUTCMilliseconds()+(amount*multiplier));
+                newDate.setMilliseconds(date.getMilliseconds()+(amount*multiplier));
                 break;
             case "S":
             case "s":
-                newDate.setUTCSeconds(date.getUTCSeconds()+(amount*multiplier));
+                newDate.setSeconds(date.getSeconds()+(amount*multiplier));
                 if (period == "S") {
                     newDate = RDI.getEndOf(newDate, "S");
                     break;
@@ -240,7 +240,7 @@ isc.RelativeDateItem.addClassMethods({
                 break;
             case "MN":
             case "mn":
-                newDate.setUTCMinutes(date.getUTCMinutes()+(amount*multiplier));
+                newDate.setMinutes(date.getMinutes()+(amount*multiplier));
                 if (period == "MN") {
                     newDate = RDI.getEndOf(newDate, "MN");
                     break;
@@ -248,7 +248,7 @@ isc.RelativeDateItem.addClassMethods({
                 break;
             case "H":
             case "h":
-                newDate.setUTCHours(date.getUTCHours()+(amount*multiplier));
+                newDate.setHours(date.getHours()+(amount*multiplier));
                 if (period == "H") {
                     newDate = RDI.getEndOf(newDate, "H");
                     break;
@@ -256,7 +256,7 @@ isc.RelativeDateItem.addClassMethods({
                 break;
             case "D":
             case "d":
-                newDate.setUTCDate(date.getUTCDate()+(amount*multiplier));
+                newDate.setDate(date.getDate()+(amount*multiplier));
                 if (period == "D") {
                     switch (multiplier) {
                         case 1:
@@ -270,7 +270,7 @@ isc.RelativeDateItem.addClassMethods({
                 break;
             case "W":
             case "w":
-                newDate.setUTCDate(date.getUTCDate()+((amount*7)*multiplier));
+                newDate.setDate(date.getDate()+((amount*7)*multiplier));
                 if (period == "W") {
                     // the end of whatever week newDate is in
                     newDate = RDI.getEndOf(newDate, "W");
@@ -278,35 +278,35 @@ isc.RelativeDateItem.addClassMethods({
                 break;
             case "M":
             case "m":
-                newDate.setUTCMonth(date.getUTCMonth()+(amount*multiplier));
+                newDate.setMonth(date.getMonth()+(amount*multiplier));
                 if (period == "M") {
                     newDate = RDI.getEndOf(newDate, "M");
                 }
                 break;
             case "Q":
             case "q":
-                newDate.setUTCMonth(date.getUTCMonth()+((amount*3)*multiplier));
+                newDate.setMonth(date.getMonth()+((amount*3)*multiplier));
                 if (period == "Q") {
                     newDate = RDI.getEndOf(newDate, "Q");
                 }
                 break;
             case "Y":
             case "y":
-                newDate.setUTCFullYear(date.getUTCFullYear()+(amount*multiplier));
+                newDate.setFullYear(date.getFullYear()+(amount*multiplier));
                 if (period == "Y") {
                     newDate = RDI.getEndOf(newDate, "Y");
                 }
                 break;
             case "DC":
             case "dc":
-                newDate.setUTCFullYear(date.getUTCFullYear()+((amount*10)*multiplier));
+                newDate.setFullYear(date.getFullYear()+((amount*10)*multiplier));
                 if (period == "DC") {
                     newDate = RDI.getEndOf(newDate, "DC");
                 }
                 break;
             case "C":
             case "c":
-                newDate.setUTCFullYear(date.getUTCFullYear()+((amount*100)*multiplier));
+                newDate.setFullYear(date.getFullYear()+((amount*100)*multiplier));
                 if (period == "C") {
                     newDate = RDI.getEndOf(newDate, "C");
                 }
@@ -323,49 +323,49 @@ isc.RelativeDateItem.addClassMethods({
             case "s":
             case "S":
                 // start of second - bit dramatic, but may as well be there
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),
-                    newDate.getUTCHours(),newDate.getUTCMinutes(),newDate.getUTCSeconds(),0);
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),
+                    newDate.getHours(),newDate.getMinutes(),newDate.getSeconds(),0);
             case "mn":
             case "MN":
                 // start of minute
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),
-                    newDate.getUTCHours(),newDate.getUTCMinutes(),0,0);
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),
+                    newDate.getHours(),newDate.getMinutes(),0,0);
             case "h":
             case "H":
                 // start of hour
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),
-                    newDate.getUTCHours(),0,0,0);
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),
+                    newDate.getHours(),0,0,0);
             case "d":
             case "D":
                 // start of day
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),0,0,0,0);
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),0,0,0,0);
             case "w":
             case "W":
                 // start of week
-                newDate.setDate(date.getUTCDate()-date.getUTCDay());
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),0,0,0,0);
+                newDate.setDate(date.getDate()-date.getDay());
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),0,0,0,0);
             case "m":
             case "M":
                 // start of month
-                return new Date(date.getUTCFullYear(), date.getUTCMonth(), 1,0,0,0,0);
+                return new Date(date.getFullYear(), date.getMonth(), 1,0,0,0,0);
             case "q":
             case "Q":
                 // start of quarter
-                var quarterStart = Math.floor((date.getUTCMonth+1)/3) * 3;
-                return new Date(date.getUTCFullYear(), quarterStart-1, 1,0,0,0,0);
+                var quarterStart = Math.floor((date.getMonth+1)/3) * 3;
+                return new Date(date.getFullYear(), quarterStart-1, 1,0,0,0,0);
             case "y":
             case "Y":
                 // start of year
-                return new Date(date.getUTCFullYear(), 0, 1,0,0,0,0);
+                return new Date(date.getFullYear(), 0, 1,0,0,0,0);
             case "dc":
             case "DC":
                 // start of decade
-                var decade = Math.floor(date.getUTCFullYear() / 10) * 10;
+                var decade = Math.floor(date.getFullYear() / 10) * 10;
                 return new Date(decade, 0, 1,0,0,0,0);
             case "c":
             case "C":
                 // start of century
-                var century = Math.floor(date.getUTCFullYear() / 100) * 100;
+                var century = Math.floor(date.getFullYear() / 100) * 100;
                 return new Date(century, 0, 1,0,0,0,0);
         }
 
@@ -378,53 +378,53 @@ isc.RelativeDateItem.addClassMethods({
             case "s":
             case "S":
                 // end of second - bit dramatic, but may as well be there
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),
-                    newDate.getUTCHours(),newDate.getUTCMinutes(),newDate.getUTCSeconds(),999);
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),
+                    newDate.getHours(),newDate.getMinutes(),newDate.getSeconds(),999);
             case "mn":
             case "MN":
                 // end of minute
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),
-                    newDate.getUTCHours(),newDate.getUTCMinutes(),59,999);
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),
+                    newDate.getHours(),newDate.getMinutes(),59,999);
             case "h":
             case "H":
                 // end of hour
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),
-                    newDate.getUTCHours(),59,59,999);
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),
+                    newDate.getHours(),59,59,999);
             case "d":
             case "D":
                 // end of day
-                return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(),23,59,59,999);
+                return new Date(date.getFullYear(), date.getMonth(), date.getDate(),23,59,59,999);
             case "w":
             case "W":
                 // end of week
-                newDate.setUTCDate(date.getUTCDate()+(6-date.getUTCDay()));
-                return new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate(),23,59,59,999);
+                newDate.setDate(date.getDate()+(6-date.getDay()));
+                return new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate(),23,59,59,999);
             case "m":
             case "M":
                 // end of month
-                newDate = new Date(date.getUTCFullYear(), date.getUTCMonth()+1, 1, 23,59,59,999);
-                newDate.setUTCDate(newDate.getUTCDate()-1);
+                newDate = new Date(date.getFullYear(), date.getMonth()+1, 1, 23,59,59,999);
+                newDate.setDate(newDate.getDate()-1);
                 return newDate;
             case "q":
             case "Q":
                 // end of quarter
-                var quarterEnd = Math.floor((date.getUTCMonth()+4)/3) * 3;
-                newDate = new Date(date.getUTCFullYear(), quarterEnd, 1,23,59,59,999);
-                newDate.setUTCDate(newDate.getUTCDate()-1);
+                var quarterEnd = Math.floor((date.getMonth()+4)/3) * 3;
+                newDate = new Date(date.getFullYear(), quarterEnd, 1,23,59,59,999);
+                newDate.setDate(newDate.getDate()-1);
                 return newDate;
             case "y":
             case "Y":
                 // end of year
-                return new Date(date.getUTCFullYear(), 11, 31,23,59,59,999);
+                return new Date(date.getFullYear(), 11, 31,23,59,59,999);
             case "dc":
             case "DC":
                 // end of decade
-                var decade = ((date.getUTCFullYear() / 10) * 10) + 9;
+                var decade = ((date.getFullYear() / 10) * 10) + 9;
                 return new Date(decade, 11, 1,23,59,59,999);
             case "c":
             case "C":
                 // end of century
-                var century = (Math.floor(date.getUTCFullYear() / 100) * 100) + 99;
+                var century = (Math.floor(date.getFullYear() / 100) * 100) + 99;
                 return new Date(century, 11, 1,23,59,59,999);
         }
 
@@ -650,7 +650,8 @@ isc.RelativeDateItem.addProperties({
         type: "ComboBoxItem",
         name: "valueField",
         showTitle: false,
-        shouldSaveValue: false
+        shouldSaveValue: false,
+        validateOnChange: false
     },
 
     //> @attr relativeDateItem.defaultQuantity (integer : 1 : IR)
@@ -795,7 +796,7 @@ isc.RelativeDateItem.addProperties({
         width: 290,
         colWidths: [130, "*", "*"],
         itemChanged : function (item, newValue) {
-            this.creator.updateValue(this.getValuesAsCriteria());
+            this.creator.updateValue(this.creator.getValue());
         }
     },
 
@@ -815,7 +816,7 @@ isc.RelativeDateItem.addProperties({
     pickerDefaults: {
         width: isc.DateItem.chooserWidth,
         height: isc.DateItem.chooserHeight,
-        border:"1px solid black;",
+//        border: "none",
         // show a cancel button that closes the window
         showCancelButton: true,
         autoHide: true
@@ -851,7 +852,7 @@ isc.RelativeDateItem.addMethods({
 
     _createEditor: function(){
         var ds;
-        var dynProps = { _suppressColumnDiscrepencies: true };
+        var dynProps = { _suppressColWidthWarnings: true };
         this.addAutoChild("editor", dynProps);
         this.canvas = this.editor;        
 
@@ -864,7 +865,8 @@ isc.RelativeDateItem.addMethods({
             { 
                 valueMap: this.getValueFieldOptions(),
                 changed : function (form, item, value) {
-                    _this.valueFieldChanged(value);
+                    
+                    _this.delayCall("valueFieldChanged", [value], 1);
                 }
             } 
         );
@@ -917,10 +919,12 @@ isc.RelativeDateItem.addMethods({
 
         this.setValue(this.defaultValue);
     },
-    
-    valueFieldChanged : function (value) {
+
+    valueFieldChanged : function (value, fromSetValue) {
+        var range = this.valueField.getSelectionRange();
         this.fieldChanged();
-        if (this.quantityField.isVisible()) this.quantityField.delayCall("focusInItem");
+        if (range) this.valueField.delayCall("setSelectionRange", [range[0], range[1]]);
+        if (!fromSetValue && this.quantityField.isVisible()) this.quantityField.delayCall("focusInItem");
     },
     quantityFieldChanged : function (value) {
         this.fieldChanged();
@@ -928,10 +932,11 @@ isc.RelativeDateItem.addMethods({
 
     fieldChanged : function () {
         if (!this.valueField || !this.quantityField) return;
+        
         var value = this.valueField.getValue(),
             quantity = this.quantityField.getValue();
 
-        var showQuantity = (value && isc.isA.String(value) && value.indexOf("_") != -1);
+        var showQuantity = (value && isc.isA.String(value) && this.relativePresets[value]);
 
         if (!showQuantity) {
             this.quantityField.hide();
@@ -949,11 +954,15 @@ isc.RelativeDateItem.addMethods({
     getValueFieldOptions : function () {
         var options = isc.clone(this.presetOptions);
 
+        this.relativePresets = {};
+
         // add two entries for each available time-unit, one historical, the other futuristic
         for (var i=0; i< this.timeUnitOptions.length; i++) {
             var key = this.timeUnitOptions[i];
             options[key+"_ago"] = this[key+"sAgoTitle"];
             options[key+"_fromNow"] = this[key+"sFromNowTitle"];
+            this.relativePresets[key+"_ago"] = true;
+            this.relativePresets[key+"_fromNow"] = true;
         }
 
         return options;
@@ -962,14 +971,17 @@ isc.RelativeDateItem.addMethods({
     setValue : function (value) {
         if (value == null) {
             this.valueField.setValue(null);
-            this.valueFieldChanged(value);
+            this.valueFieldChanged(value, true);
             return;
         }
 
-        if (isc.isA.Date(value) || this.valueField.valueMap[value]) {
+        if (isc.isA.Date(value) || this.valueField.valueMap[value] || 
+                (value.value && this.valueField.valueMap[value.value])) 
+        {
             // the defaultValue is a preset or a date, just set the value
-            this.valueField.setValue(isc.isA.Date(value) ? this.formatDate(value) : value);
-            this.valueFieldChanged(value);
+            this.valueField.setValue(isc.isA.Date(value) ? this.formatDate(value) : 
+                    value.value ? value.value : value);
+            this.valueFieldChanged(value, true);
             return;
         }
 
@@ -977,7 +989,7 @@ isc.RelativeDateItem.addMethods({
             // the defaultValue is a timeUnit - select the future version of it
             value += "_fromNow";
             this.valueField.setValue(value);
-            this.valueFieldChanged(value);
+            this.valueFieldChanged(value, true);
             return;
         }
 
@@ -1006,7 +1018,7 @@ isc.RelativeDateItem.addMethods({
                     // the period to which this relativeDate applies is not in the list
 //                    this.valueField.setValue("$today");
                 }
-                this.valueFieldChanged();
+                this.valueFieldChanged(value, true);
             }
         }
     },
@@ -1049,7 +1061,7 @@ isc.RelativeDateItem.addMethods({
 
         // check for one of the other built-in types (in the format [period]_ago, [period]_fromNow
         var underscoreIndex = value.indexOf("_");
-        
+
         if (underscoreIndex >= 0) {
             var period = value.substring(0, underscoreIndex),
                 direction = (value.substring(underscoreIndex+1) == "ago" ? "-" : "+"),
@@ -1085,7 +1097,12 @@ isc.RelativeDateItem.addMethods({
     },
 
     updateValue : function(data) {
+        var tempValue = this.valueField.getValue();
         this._updateValue(data);
+        this._suppressUpdates = true;
+        this.valueField.setValue(tempValue);
+        this.valueFieldChanged();
+        this._suppressUpdates = false;
     },
 
     getCriteriaValue : function () {
@@ -1137,7 +1154,6 @@ isc.RelativeDateItem.addMethods({
                 this.picker = isc[this.pickerConstructor].create(
                     isc.addProperties({}, this.pickerDefaults, this.pickerProperties, 
                         {
-                            border: "none",
                             _generated:true,
                             // When re-using a DateChooser, we're almost certainly displaying it as a 
                             // floating picker rather than an inline element. Apply the common options for 

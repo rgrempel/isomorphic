@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -126,8 +126,11 @@ var libs =
         "widgets/form/DataPathItem",     // Item for managing a dataPath
 
         "widgets/form/RelativeDateItem",    // Item for managing relative dates
-        "widgets/form/DateRangeItem"     // Item for managing a pair of Date or RelativeDateItems
+        "widgets/form/DateRangeItem",     // Item for managing a pair of Date or RelativeDateItems
                                          //  also includes isc.DateRangeDialog
+		"widgets/EntityEditor" //,  // widget for auto-editing an entire Entity structure from the DB 
+        //"widgets/form/PresetCriteriaItem"     // Item for managing a preset-criteria with
+                                         //  readable titles
 
 	];
 

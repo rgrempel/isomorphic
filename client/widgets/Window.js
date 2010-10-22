@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1141,6 +1141,26 @@ makeHeader : function () {
 	}
 },
 
+setHeaderControls : function (headerControls) {
+    if (this.headerControls == headerControls) return;
+  
+    var oldHeaderControls = this.headerControls,
+        oldControls = [];
+    
+    this.headerControls = headerControls;
+    
+    if (this.header == null) return;
+       
+    for (var i = i ; i < oldHeaderControls.length; i++) {
+        // map from auto child names ('minimizeButton' etc) to live widgets
+        if (isc.isA.String(oldHeaderControls[i])) oldControls[i] = this[oldHeaderControls[i]]
+        else oldControls[i] = oldHeaderControls[i];
+    }
+    this.header.removeMembers(oldControls);
+    this.header.addMembers(headerControls);
+  
+    
+},
 
 // The way auto-children work is that if show[childName] is false, they aren't created as
 // part of addAutoChild()
@@ -1557,7 +1577,7 @@ hasInherentHeight : function () { return this.autoSize; },
 hasInherentWidth : function () { return this.autoSize; },
 
 //>	@method	Window.addItem()	([A])
-//			Adds a widget to the window. 
+// Adds a widget to the body area of the window.
 //      @visibility external
 //		@group	windowItems
 //      @param  item    (Canvas)    the widget to be added
@@ -1568,7 +1588,7 @@ addItem : function (item, position) {
 },
 
 //>	@method	Window.removeItem() ([A])
-//			Removes a widget from the window.
+// Removes a widget from the body area of the window. 
 //      @visibility external
 //		@group	windowItems
 //      @param  item    (Canvas)    the widget to be removed
@@ -1694,20 +1714,20 @@ replaceItem : function (oldItem, newItem) {
 },
 
 //> @method window.addMember() [A]
-// @include layout.addMember()
 // Same as +link{layout.addMember()}.  Note that in order to add items to +link{window.body},
 // you use +link{window.addItem()} rather than <code>addMember</code>.  Adding a member to 
 // a Window adds the member as a sibling to the header, body and other built-in Window
 // subcomponents.
+// @include layout.addMember()
 // @visibility external
 //<
 
 //> @method window.addMembers() [A]
-// @include layout.addMembers()
 // Same as +link{layout.addMembers()}.  Note that in order to add items to +link{window.body},
 // you use +link{window.addItem()} rather than <code>addMembers</code>.  Adding a member to 
 // a Window adds the member as a sibling to the header, body and other built-in Window
 // subcomponents.
+// @include layout.addMembers()
 // @visibility external
 //<
 
@@ -2878,3 +2898,6 @@ isc.Window.registerStringMethods({
 if (isc.definePrintWindow) isc.definePrintWindow();
 
 //!<Deferred
+
+isc.Window.registerDupProperties("items");
+

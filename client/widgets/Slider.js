@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -550,7 +550,7 @@ resizeBy : function (deltaX, deltaY) {
         }
 
         // fire setValue to update the thumb.
-        this.setValue(this.value, true); // no animation
+        this.setValue(this.value, true, true); // no animation, no logical value change
         // Also move the max (or min) marker
         if (this.showRange) {
             if (this.vertical) {
@@ -991,7 +991,7 @@ mouseUp : function() {
 // @param noAnimation (boolean) do not animate the slider thumb to the new value
 // @visibility external
 //<
-setValue : function (newValue, noAnimation) {
+setValue : function (newValue, noAnimation, noValueChange) {
 	var rawValue, thumbOffset;
 	if (!isc.isA.Number(newValue)) return;
 	
@@ -1028,7 +1028,7 @@ setValue : function (newValue, noAnimation) {
         }
     }
     
-	this.valueChanged(this.value);	// observable method
+	if (!noValueChange) this.valueChanged(this.value);	// observable method
 	
 	if (this.sliderTarget) isc.EventHandler.handleEvent(this.sliderTarget, isc.Slider.EVENTNAME, this);
 },

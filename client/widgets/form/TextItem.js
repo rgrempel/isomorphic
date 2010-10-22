@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -135,12 +135,28 @@ isc.TextItem.addProperties({
     
             } : null
         )
-    }
+    },
     
     //>@attr TextItem.browserSpellCheck (boolean : null : IRWA)
     // @include FormItem.browserSpellCheck
     // @visibility internal
     //<
+   
+    //>@attr textItem.browserAutoCapitalize (boolean : null : IRWA)
+    // @include FormItem.browserAutoCapitalize
+    // @visibility internal
+    //<
+    
+    //>@attr textItem.browserAutoCorrect (boolean : null : IRWA)
+    // @include formItem.browserAutoCorrect
+    // @visibility internal
+    //<
+   
+    //>@attr texttem.browserInputType (browserInputType : null : IRWA)
+    // @include formItem.browserInputType
+    // @visibility internal
+    //<
+    
     
     //>@attr TextItem.selectOnFocus (boolean : null : IRW)
     // @include FormItem.selectOnFocus
@@ -186,6 +202,17 @@ isc.TextItem.addProperties({
     // @see FormItem.hint
     // @visibility external
     //<
+    
+    //>@attr TextItem.printFullText (boolean : false : IRW)
+    // When generating a print-view of the component containing this TextItem, should
+    // the form item expand to accomodate its value? If set to false the text box will not expand
+    // to fit its content in the print view, instead showing exactly as it does in the
+    // live form.
+    // @visibility external
+    // @group printing
+    //<
+    printFullText:false
+
 
                                         
 });
@@ -251,80 +278,109 @@ isc.TextItem.addMethods({
         var valueIconHTML = this._getValueIconHTML(dataValue);
         if (this.showValueIconOnly) return valueIconHTML;
         
-		var template = this._$elementStartTemplate,
-            form = this.form,
-			formID = form.getID(),
-			itemID = this.getItemID()
-		;
-
-        // May be null
-        template[0] = valueIconHTML;
-		
-        template[2] = this._elementType;
-        template[4] = this.getElementName();
-        template[6] = this.getDataElementId();
+        var result;
         
-        // hang a flag on the element marking it as the data element for the
-        // appropriate form item.
-        template[8] = this._getItemElementAttributeHTML();
-        
-        // At this point we're appending to the end of the template Disable spellchecker in
-        // Moz if appropriate so we don't get the red wavy line under email addresses etc.
+        if (this._isPrinting() && this.printFullText) {
+            result = isc.StringBuffer.concat(
+                "<SPAN ",this.getElementStyleHTML(), ">",
+                dataValue == null ? "&nbsp;" : dataValue.asHTML(), "</SPAN>"
+            );
+        } else {
+            
+            var template = this._$elementStartTemplate,
+                form = this.form,
+                formID = form.getID(),
+                itemID = this.getItemID()
+            ;
+    
+            // May be null
+            template[0] = valueIconHTML;
+            
+            template[2] = this._elementType;
+            template[4] = this.getElementName();
+            template[6] = this.getDataElementId();
+            
+            // hang a flag on the element marking it as the data element for the
+            // appropriate form item.
+            template[8] = this._getItemElementAttributeHTML();
+            
+            // At this point we're appending to the end of the template Disable spellchecker in
+            // Moz if appropriate so we don't get the red wavy line under email addresses etc.
+             
+            
+            if (isc.Browser.isMoz || isc.Browser.isSafari) {
+                if (this.getBrowserSpellCheck()) template[template.length] = " spellcheck=true";
+                else template[template.length] = " spellcheck=false"
+            }
          
+            // iPhone / Safari specific native features
+            if (isc.Browser.isSafari) {
+                if (this.browserAutoCapitalize == false) {
+                    template[template.length] = " autocapitalize=off";
+                }
+                if (this.browserAutoCorrect == false) {
+                    template[template.length] = " autocorrect=off";
+                }
+                if (this.browserInputType != null) {
+                    var nativeType = this.browserInputTypeMap[this.browserInputType];
+                    if (nativeType == null) nativeType = this.browserInputType;
+                    template[template.length] = " type='" + nativeType + "'";
+                }
+            }
+            
+            // If we get an oninput event for this browser, write it out into our element's HTML
+            
+            if (this._willHandleInput) {
+                template[template.length] = " ONINPUT='" 
+                template[template.length] = this.getID() 
+                template[template.length] = "._handleInput()'"
+            }
+            
+            if (this.isDisabled()) template[template.length] = this._$disabled;
+            
+            // Write out 'readOnly' setting if present
+            if (this.isInactiveHTML() || this.readOnly) {
+                template[template.length] = " READONLY=TRUE"
+            }
+            
+            if (this.isInactiveHTML() && value != null && value != isc.emptyString) {
+                // run the value through makeXMLSafe - this'll escape single quotes
+                // / avoid terminating the tag if a '>' char is present etc
+                template[template.length] = " value='" + isc.makeXMLSafe(value) + "'";
+            }
+            
+            // disable native autoComplete 
+                  
+            if (this._getAutoCompleteSetting() != this._$native) {
+                template[template.length] = this._$autoCompleteOff;
+            }
+            
+            template[template.length] = this.getElementStyleHTML();
+            
+            
+            var tabIndex = this._getElementTabIndex();
+            if (tabIndex != null) {
+                var end = template.length;
+                template[end] = this._$tabIndexEquals;  
+                isc._fillNumber(template, tabIndex, end+1, 5);
+            }
+            
+            // Note: if we're showing a title for the element, we don't need to set
+            // up an accessKey here, since the label tag takes care of that
+            if (this.showTitle == false && this.accessKey != null) {
+                template[template.length] = this._$accessKeyEquals;
+                template[template.length] = this.accessKey;
+            }
+            
+            template[template.length] = this._$rightAngle;
+    
+            result = template.join(isc.emptyString);
         
-        if (isc.Browser.isMoz || isc.Browser.isSafari) {
-            if (this.getBrowserSpellCheck()) template[template.length] = " spellcheck=true";
-            else template[template.length] = " spellcheck=false"
+            // Trim the entries off the end of the template so we can reuse it.
+            template.length = 8;
         }
+        //this.logWarn("generated textItem HTML:"+ result);
         
-        // If we get an oninput event for this browser, write it out into our element's HTML
-        
-        if (this._willHandleInput) {
-            template[template.length] = " ONINPUT='" 
-            template[template.length] = this.getID() 
-            template[template.length] = "._handleInput()'"
-        }
-        
-        if (this.isDisabled()) template[template.length] = this._$disabled;
-        
-        // Write out 'readOnly' setting if present
-        if (this.isInactiveHTML() || this.readOnly) {
-            template[template.length] = " READONLY=TRUE"
-        }
-        
-        if (this.isInactiveHTML() && value != null && value != isc.emptyString) {
-            template[template.length] = " value='" + value + "'";
-        }
-        
-        // disable native autoComplete 
-              
-        if (this._getAutoCompleteSetting() != this._$native) {
-            template[template.length] = this._$autoCompleteOff;
-        }
-        
-        template[template.length] = this.getElementStyleHTML();
-        
-        
-        var tabIndex = this._getElementTabIndex();
-        if (tabIndex != null) {
-            var end = template.length;
-            template[end] = this._$tabIndexEquals;  
-            isc._fillNumber(template, tabIndex, end+1, 5);
-        }
-        
-        // Note: if we're showing a title for the element, we don't need to set
-        // up an accessKey here, since the label tag takes care of that
-        if (this.showTitle == false && this.accessKey != null) {
-            template[template.length] = this._$accessKeyEquals;
-            template[template.length] = this.accessKey;
-        }
-        
-        template[template.length] = this._$rightAngle;
-
-        var result = template.join(isc.emptyString);
-        
-        // Trim the entries off the end of the template so we can reuse it.
-        template.length = 8;
         return result;
 	},  
     
@@ -419,8 +475,8 @@ isc.TextItem.addMethods({
             // whether this element can recieve focus or not.
             // (slots 18 and 19)
         (isc.Browser.isMoz ? "-moz-user-focus:" 
-            
-            : isc.Browser.isIE ? "margin-top:-1px;margin-bottom:-1px;" : null),    // [18]
+          
+            :  null),    // [18]
         ,                   // [19] Moz: 'normal' or 'ignore' - otherwise null
         "' "                // [20]
     ],
@@ -430,9 +486,18 @@ isc.TextItem.addMethods({
     _$textAlignColon:"text-align:",
     _$semi:";",
     _$normal:"normal;", _$ignore:"ignore;",
+    
+    _$negativeMargins:"margin-top:-1px;margin-bottom:-1px;",
 	getElementStyleHTML : function () {
         
+	    // in 'printFullText' / printing mode we write out a span rather than
+	    // an input.
+	    // Most of the css will be the same but we can skip a few steps
+	    var isStaticElement = this._isPrinting() && this.printFullText;
+	    
         var template = this._$styleTemplate,
+        
+        
             width = this.getTextBoxWidth(),
             height = this.getTextBoxHeight(),
             style = this.getTextBoxStyle();
@@ -465,8 +530,10 @@ isc.TextItem.addMethods({
         } else {
             template[15] = template[16] = template[17] = null;
         }
-        
-        if (isc.Browser.isMoz) {
+        if (isc.Browser.isIE) {
+            template[18] = isStaticElement ? null : this._$negativeMargins;
+        }
+        if (isc.Browser.isMoz && !isStaticElement) {
             template[19] = (this._getElementTabIndex() > 0 ? this._$normal
                                                            : this._$ignore);
         }
@@ -512,9 +579,7 @@ isc.TextItem.addMethods({
         } else {
             value = this._unmapKey(displayValue);
         }
-        if (!this.applyStaticTypeFormat && this.parseEditorValue != null) {
-            return this.parseEditorValue(displayValue, this.form, this);
-        }
+        value = this._parseDisplayValue(value);
 
         // if the value to be saved is an empty string, map it to 'null' if necessary
         if (isc.is.emptyString(value)) value = this._emptyStringValue;
@@ -570,7 +635,7 @@ isc.TextItem.addMethods({
     // item name
     getCriteriaFieldName : function () {
         if (this.displayField) return this.displayField;
-        return this.getFieldName();
+        return this.Super("getCriteriaFieldName", arguments);
     },
 
     // When focus is received, the hint should be hidden if TextItem.showHintInField is true.
@@ -713,7 +778,10 @@ isc.TextItem.addMethods({
                         }
                     } else {
                         if (this.maskOverwriteMode) {
-                            this._maskBuffer[pos] = this.maskPromptChar;
+                            // Don't clear a non-entry position
+                            if (pos == this._getNextEntryPosition (pos - 1)) {
+                                this._maskBuffer[pos] = this.maskPromptChar;
+                            }
                         } else {
                             this._shiftMaskBufferLeft (pos);
                         }
@@ -1263,7 +1331,7 @@ isc.TextItem.addMethods({
 
         // Move each character <len> positions to the left where the character
         // matches the new position's filter.
-        for (var i = pos, pos2 = i+len-1; i < this._length; i++) {
+        for (var i = pos, pos2 = i+len-1; i < this._length; i++, pos2 = j) {
             if (this._maskFilters[i]) {
                 this._maskBuffer[i] = this.maskPromptChar;
                 var j = this._getNextEntryPosition (pos2++);

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -423,7 +423,7 @@ cacheOpenList:true,
 // children of the root node.
 // @visibility external
 //<
-discaredParentlessNodes:false,
+discardParentlessNodes:false,
 
 //> @attr Tree.indexByLevel (boolean : false : IR)
 // If enabled, the tree keeps an index of nodes by level, so that +link{tree.getLevelNodes()}
@@ -982,7 +982,9 @@ linkNodes : function (records, idProperty, parentIdProperty, rootValue, isFolder
         while (newParent != null) {
             if (newParent) newParents.add(newParent);
             newParentId = newParent[parentIdProperty];            
-            newParent = newParentId != null ? localNodeIndex[newParentId] : null;            
+            // Note: don't infinite loop if parentId==id - that's bad data, really, but such
+            // datasets exist in the wild..
+            newParent = newParentId != null && newParentId != node[parentIdProperty] ? localNodeIndex[newParentId] : null;            
         }
       
         if (newParents.length > 0) {            
@@ -1945,6 +1947,11 @@ getLevelNodes : function (depth, node) {
         return result;
     }
 }, 
+
+getDepth : function () {
+    if (this._levelNodes) return this._levelNodes.length;
+    return null;
+},
 
 //>	@method	tree.hasChildren()
 //

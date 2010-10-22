@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -192,15 +192,22 @@ isc._debugMethods = {
         // in earlier versions of IE we can use arguments.caller to walk up the stack
         // This actually allows us to get past recursive function calls in a way that
         // arguments.callee.caller does not - use it if available
-        var useArgsCaller = isc.Browser.isIE && isc.Browser.version <= 6;
+        
+        var useArgsCaller = isc.Browser.isIE && isc.Browser.version <= 5;
 
         // skip some of the stack (useful to eg, a logging subsystem) 
         for (var i = 0; i < ignoreLevels; i++) {
+            if (args == null) break;
             if (!useArgsCaller) {
                 args = args.callee.caller.arguments;
             } else {
                 args = args.caller;
             }
+        }
+
+        // we ran out of stack trying to skip past the ignoreLevels
+        if (args == null) {
+            return "";
         }
 
         var func = args.callee;

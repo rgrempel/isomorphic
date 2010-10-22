@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -154,9 +154,17 @@ isc.DateChooser.addProperties({
     //<
     yearMenuStyle:"dateChooserYearMenu",
 
-    
-	startYear:1990,
-	endYear:2010,
+    //> @attr dateChooser.startYear (integer : 1995 : IR)
+    // Earliest year that may be selected.
+    // @visibility external
+    //<
+	startYear:1995,
+
+    //> @attr dateChooser.endYear (integer : 2015 : IR)
+    // Last year that may be selected.
+    // @visibility external
+    //<
+	endYear:2015,
 
     //> @attr DateChooser.monthMenuStyle (CSSStyleName : "dateChooserMonthMenu" : IR)
     // Style for the pop-up year menu.

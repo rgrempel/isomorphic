@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -114,6 +114,12 @@ canSortFields: true,
 // @group	data
 // @see TileRecord
 // @setter TileGrid.setData()
+// @visibility external
+//<
+
+//> @attr TileGrid.printTilesPerLine (number : null : IR)
+//  How many tiles should be present in a line when printing?
+//
 // @visibility external
 //<
 
@@ -844,6 +850,11 @@ makeTile : function (record, tileNum) {
             this.creator._tileMouseDown(this);
             this.creator.focus();
         },
+        rightMouseDown : function () {
+            
+            this.creator._tileMouseDown(this);
+            this.creator.focus();
+        },
         
         mouseUp : function () {
             this.creator._tileMouseUp(this);    
@@ -1430,11 +1441,11 @@ drop : function () {
 
 // Formula/Summary builder required methods
 getCellValue : function (record, field) {
-    return this.detailViewer.getSpecificFieldValue(record, field[this.fieldIdProperty]);
+    return this.detailViewer.getStandaloneFieldValue(record, field[this.fieldIdProperty]);
 },
 
 // DBC level override to call local getCellValue implementation - Formula/Summary builders
-getSpecificFieldValue : function (record, fieldName) {
+getStandaloneFieldValue : function (record, fieldName) {
     var value = this.getCellValue(record, this.getField(fieldName));
 	return value;
 },
@@ -1525,9 +1536,64 @@ showActionInPanel : function (action) {
     // specifically add the "sort" action, which is not added by default
     if (action.name == "sort") return true;
     return this.Super("showActionInPanel", arguments);
-}
+},
 
 // ---------------------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// printing
+// ---------------------------------------------------------------------------
+getPrintHTML : function () {
+    // new dataset load in progress
+    if (!this.data.lengthIsKnown()) {
+        isc.logWarn("Attempt to print TileGrid " + this.ID + " while data is loading will be ignored");
+        return "";
+    }
+    
+    var len = this.data.getLength();
+    // bail if we are trying to print a partially loaded resultset
+    if (!this.data.rangeIsLoaded(0, len)) {
+        isc.logWarn("Make sure all data is loaded before attempting to print " +
+            "TileGrid: " + this.ID);
+        return "";
+    }
+    var table;
+    var tpl = this.printTilesPerLine ? this.printTilesPerLine : this.getTilesPerLine();
+    if (this.orientation == "horizontal") {
+        var width = this.getInnerWidth();
+        table = "<table width='" + width + "'>";
+        
+        for (var i = 0; i < len; i++) {
+            var currTile = this.getTile(i);
+            // for every time we lay out <tilesPerLine> tiles, create a new row
+            if (i % tpl == 0) {
+                // first row
+                if (i == 0) table += "<tr>";
+                // middle row with tiles left
+                else if (i < len - 1) table += "</tr><tr>";
+               
+            }
+            table += "<td>" + currTile.getPrintHTML() + "</td>";
+        }
+        table += "</tr></table>";
+    } else {        
+        //var height = this.getInnerHeight();
+        table = "<table>";
+        // number of rows is determined by tpl
+        for (var i = 0; i < tpl; i++) {
+            table += "<tr>";
+            // for each row, layout tiles by skipping every tpl number of tiles,
+            // starting at the current row number
+            for (var j = i; j < len; j += tpl ) {
+                var currTile = this.getTile(j);
+                table += "<td>" + currTile.getPrintHTML() + "</td>"        
+            }
+            table += "</tr>";
+        }
+        table += "</table>";
+    }
+    return table;
+}
 
 });
 

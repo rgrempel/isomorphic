@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -27,6 +27,8 @@
 // @visibility external
 //<
 
+if (isc.Window) {
+
 isc.ClassFactory.defineClass("ColorPicker", isc.Window);
 
 // add class properties
@@ -49,7 +51,7 @@ isc.ColorPicker.addClassMethods({
 // same user experience as creating a new instance without incurring the overhead.
 // However, some use cases will benefit from the picker remembering what the user
 // did last time.
-// @param properties (Object) Creation properties for the global ColorPicker object
+// @param properties (Object) Properties to apply to the global ColorPicker object
 // @param [keepCurrentState] (boolean) Should we keep the current state?
 //                                    If false (or not provided), revert to default state
 // @visibility external
@@ -58,7 +60,16 @@ getSharedColorPicker: function (properties, keepCurrentState) {
     
     if (!isc.isA.ColorPicker(this._globalColorPicker)) {
         this._globalColorPicker = isc.ColorPicker.create(properties);
+    } else {
+        // Ensure previous colorSelected won't fire even if properties.colorSelected is undefined 
+        if (properties.colorSelected == null) delete this._globalColorPicker.colorSelected;
+        if (properties.colorChanged == null) delete this._globalColorPicker.colorChanged;
+        
+        
+        // Set properties so that RichTextEditor can assign this._globalColorPicker.creator to itself (RichTextEditor.js, chooseColor method, line 587)
+        this._globalColorPicker.setProperties(properties);
     }
+
     
     if (!keepCurrentState) {
         var picker = this._globalColorPicker;
@@ -1451,3 +1462,5 @@ hslToRgb : function (h, s, l) {
     return { r: r, g: g, b: b};
 }    
 });
+
+}

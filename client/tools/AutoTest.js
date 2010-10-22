@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -36,19 +36,19 @@
 //   "logical function" of the component.<br>
 //   For example a listGrid header button may have a different auto-generated ID across page
 //   reloads due to various timing-related issues (which can change the order of of widget
-//   creation), loading a new skin, or otherwise trival changes to an application.<br>
+//   creation), loading a new skin, or otherwise trivial changes to an application.<br>
 //   Rather than storing the header button ID therefore, we want to store this as
 //   a string meaning "The header button representing field X within this list grid".
 //
 // <li>fallback strategies: In some cases a component or DOM element can be identified in 
-//   sevaral ways. For example a cell in a ListGrid can be identified by simple row and
+//   several ways. For example a cell in a ListGrid can be identified by simple row and
 //   column index, but also by fieldName and record primary key value. In these cases we
 //   attempt to record information for multiple locator strategies and then when parsing
 //   stored values we can provide APIs to govern which strategy is preferred. See the
 //   +link{type:LocatorStrategy} documentation for more on this.
 // </ul>
 // 
-// In order to address these concerns the AutoTest locator pattern is simlar to an
+// In order to address these concerns the AutoTest locator pattern is similar to an
 // XPath type structure, containing a root component identifier, followed by 
 // details of sub-components and then potentially details used to identify an element within
 // the components handle in the DOM.
@@ -94,17 +94,21 @@ isc.AutoTest.addClassMethods({
     //> @classMethod AutoTest.getLocator()
     // Returns the +link{type:Locator} associated with some DOM element in a SmartClient
     // application page.
-    // @param (DOMElement) DOM element within in the page. If null the locator for the last
+    // @param DOMElement (DOMElement) DOM element within in the page. If null the locator for the last
     //  mouse event target will be generated
+    // @param [checkForNativeHandling] (boolean) If this parameter is passed in, check whether
+    //  the target element responds to native browser events directly rather than going through
+    //  the SmartClient widget/event handling model. If we detect this case, return null rather
+    //  than a live locator.  This allows us to differentiate between (for example) an event on
+    //  a Canvas handle, and an event occurring directly on a simple <code>&lt;a href=...&gt;</code>
+    //  tag written inside a Canvas handle.
     // @return (AutoTestLocator) Locator string allowing the AutoTest subsystem to find
     //   an equivalent DOM element on subsequent page loads.
     // @visibility external
     // @group autoTest
     //<
     
-    // Additional 'event' param is a SmartClient event (isc.EH.lastEvent)
-    // We use this internally in displayMouseDownTarget() in Log.js
-    getLocator : function (DOMElement) {
+    getLocator : function (DOMElement, checkForNativeHandling) {
         var fromEvent;
         if (DOMElement == null) {
             fromEvent = true;
@@ -115,7 +119,18 @@ isc.AutoTest.addClassMethods({
         else {
             canvas = isc.AutoTest.locateCanvasFromDOMElement(DOMElement);            
         }
-        return canvas ? canvas.getLocator(DOMElement, fromEvent) : "";
+        
+        var locator = canvas ? canvas.getLocator(DOMElement, fromEvent) : "";
+        
+        
+        
+        if (checkForNativeHandling && locator && locator != "" &&
+            canvas.checkLocatorForNativeElement(locator, DOMElement)) 
+        {
+            locator = "";
+        }
+        return locator;
+
     },
     
     
@@ -174,14 +189,23 @@ isc.AutoTest.addClassMethods({
     },
     
     
+    getPageCoords : function (locator) {
+        var element = this.getElement(locator);
+        if (element == null) return;
+        
+        var canvas = this.locateCanvasFromDOMElement(element);
+        return canvas ? canvas.getAutoTestLocatorCoords(locator, element) : null;
+    },
+
+    
     // getBaseComponentFromLocatorSubstring: This actually gets the *base* component from
     // a locator substring.
     // 2 possibilities:
     // - explicit ID (respect that)
     // - part of the array of top-level canvii
     getBaseComponentFromLocatorSubstring : function (substring) {
-        
-        var IDType = substring.match("(.*)\\[")[1];
+        var IDMatches = substring.match("(.*)\\[");
+        var IDType = IDMatches ? IDMatches[1] : null;
         // if the recorded canvas had an auto-generated ID, try to find it by looking in the
         // top level (no parent) canvas array.
         // We'll look by name, title, then index by class, scClass and role!
@@ -197,9 +221,10 @@ isc.AutoTest.addClassMethods({
         } else {
         
             var className = IDType, 
-                ID = substring.match('ID=\\"(.*)\\"')[1];
+                IDMatches = substring.match('ID=[\\"\'](.*)[\'\\"]'),
+                ID = IDMatches ? IDMatches[1] : null;
 //            this.logWarn("className/ID:" + [className,ID]);
-            
+            if (ID == null) return null;
             var baseComponent = window[ID];
             if (!baseComponent) return null;
             if (baseComponent && className != "*any*" &&
@@ -1073,6 +1098,32 @@ isc.Canvas.addMethods({
         return this.getStandardChildLocator(canvas);
     },
     
+    // Called when AutoTest.getLocator() is called with the checkNativeElement parameter.
+    // This method tests for the case where we have an element that natively 
+    // "has meaning" in terms of events (IE eventHandledNatively is true) and our generated
+    // SC-locator won't get back to that element.
+    // Example case: A link written into a canvas handle -- the locator will likely point to
+    // the canvas, while the link itself is the element that should be recorded.
+    // In this case testing tools such as selenium may be able to get a better identifier 
+    // based on (EG) ID of the link element.
+    //
+    // We do have cases where a widget writes out a live element which will handle native events
+    // but we already handle generating a full locator to get at them (rather than just the
+    // canvas handle). Example case: link elements within the month view of a calendar widget.
+    // 
+    // We test for this case by doing a round-trip test - if the locator already directly
+    // points to the element (via AutoTest.getElement()), we use the locator.
+    //
+    
+    // Implemented at the Canvas level so we can override this in subclasses if appropriate.
+    checkLocatorForNativeElement : function (locator, element) {
+        if (element == null || locator == null) return false;
+        
+        return (isc.EventHandler.eventHandledNatively("mousedown", element, true) &&
+                (isc.AutoTest.getElement(locator) != element))
+    },
+
+    
     // getCanvasLocatorFallbackPath
     // generates a standard 'fallback path' to locate a widget from within a pool of widgets.
     // Used for locating mutliple auto children with the same name, members, peers, children
@@ -1307,7 +1358,7 @@ isc.Canvas.addMethods({
     // In some cases an explicit locatorTypeStrategy can be specified to modify this
     // behavior. As with +link{type:LocatorStrategy}, if we are unable to match using the
     // specified type strategy we continue to test against the remaining strategies in order - 
-    // so if a type stratgy of "scClass" was specified but we were unable to find a match
+    // so if a type strategy of "scClass" was specified but we were unable to find a match
     // with the appropriate core superclass, we will attempt to match by role.
     // Possible values are:
     // @value "Class" Match by class if possible
@@ -1475,9 +1526,28 @@ isc.Canvas.addMethods({
             
         }
         return this.getHandle();
+    },
+      
+    // Retrieving coordinates based on element / locator string
+    getAutoTestLocatorCoords : function (locator, element) {
+
+        // we assume both are present for now
+        if (locator == null || element == null) return null;
+
+        var rect = isc.Element.getElementRect(element);
+        // return the center of the element
+        
+        var left = rect[0],
+            width = rect[2];
+        left += Math.floor(width/2);
+        
+        var top = rect[1],
+            height = rect[3];
+            
+        top += Math.floor(height/2);
+        
+        return [left,top];
     }
-    
-    
 
 });
           
@@ -2252,6 +2322,9 @@ if (isc.ListGrid) {
                     if (this.fieldIsFrozen(field)) body = this.frozenBody;
                     else body = this.body;
                 }
+                // Bail if we haven't created the right body for some reason
+                
+                if (body == null) return null;
                 
                 // At this point we know what body it's in and what the colNum is within that
                 // body.
@@ -2488,6 +2561,41 @@ if (isc.TreeGrid) {
                 }
             }
             return this.Super("getInnerElementFromSplitLocator", arguments);
+        },
+        
+        getAutoTestLocatorCoords : function (locator, element) {
+            
+            
+            var coords = this.Super("getAutoTestLocatorCoords", arguments);
+            if (coords == null) return coords;
+            
+            var tg = this.grid;
+            // if we're picking up either icon (opener or other icon) coords will be position
+            // of icon so return it
+            // Otherwise, if the element is a cell in the tree field we need to modify the coords
+            // to be beyond the icons to avoid triggering an open/close.
+            if (tg == null || locator.endsWith("open") || locator.endsWith("extra")) return coords;
+            
+            var y = coords[1],
+                rowNum = this.getEventRow(y),
+                colNum = this.getEventColumn(coords[0]),
+                
+                data = tg.data,
+                node = tg.getRecord(rowNum),
+                isTreeField = tg.getTreeFieldNum() == tg.getFieldNumFromLocal(colNum, this);
+            
+            if (isTreeField && tg.data && tg.data.isFolder(node)) {
+                // use the openAreaWidth calculation already performed by the TreeGrid
+                // and put the event in the middle of the remaining space in the row.
+                var openAreaWidth = tg.getOpenAreaWidth(node),
+                    rect = isc.Element.getElementRect(element),
+                    left = (rect[0] +openAreaWidth),
+                    width = rect[2] - left;
+                
+                coords[0] = left+Math.floor(width/2);
+            }
+            return coords;
+
         }
     })
 }

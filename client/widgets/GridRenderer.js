@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -58,7 +58,7 @@ isc.GridRenderer.addClassProperties({
 
 isc.GridRenderer.addProperties({
     
-//>	@attr	gridRenderer.totalRows (number : 0 : [IRW])
+//>	@attr gridRenderer.totalRows (number : 0 : [IRW])
 // Total number of rows in the grid.<br><br>
 //
 // NOTE: in order to create a valid grid, you must either provide a totalRows value or implement
@@ -69,18 +69,20 @@ isc.GridRenderer.addProperties({
 //<
 totalRows : 0,
  
-//>	@attr	gridRenderer.showAllRows (boolean : false : [IRA])
-// Whether all rows should be drawn all at once, or only rows visible in the viewport.<br><br>
-//
+//>	@attr gridRenderer.showAllRows (boolean : false : [IRA])
+// Whether all rows should be drawn all at once, or only rows visible in the viewport.
+// <P>
 // Drawing all rows causes longer initial rendering time, but allows smoother vertical scrolling.
 // With a very large number of rows, showAllRows will become too slow.
+// <P>
+// See also +link{drawAheadRatio} and +link{drawAllMaxCells}.
 //
 // @group performance
 // @visibility external
 //<
 //showAllRows : false,
 
-//>	@attr	gridRenderer.virtualScrolling (boolean : null : [IRA])
+//>	@attr gridRenderer.virtualScrolling (boolean : null : [IRA])
 // When incremental rendering is switched on and there are variable record heights, the virtual
 // scrolling mechanism manages the differences in scroll height calculations due to the
 // unknown sizes of unrendered rows to make the scrollbar and viewport appear correctly.
@@ -91,7 +93,7 @@ totalRows : 0,
 //<
 //virtualScrolling:true,
 
-//>	@attr	gridRenderer.showAllColumns (boolean : false : [IRA])
+//>	@attr gridRenderer.showAllColumns (boolean : false : [IRA])
 // Whether all columns should be drawn all at once, or only columns visible in the viewport.
 // <P>
 // Drawing all columns causes longer initial rendering time, but allows smoother horizontal
@@ -130,19 +132,19 @@ totalRows : 0,
 drawAllMaxCells:250,
 
 
-//>@attr    gridRenderer.recordCanSelectProperty (string : "canSelect" : [IRA])
+//> @attr gridRenderer.recordCanSelectProperty (string : "canSelect" : [IRA])
 // If set to false on a record, selection of that record is disallowed.
 //<
 recordCanSelectProperty: "canSelect",
 
-//>@attr    gridRenderer.isSeparatorProperty (string : "isSeparator" : [IRA])
+//> @attr gridRenderer.isSeparatorProperty (string : "isSeparator" : [IRA])
 // If this property is defined on some record, render the record as a separator row.
 //<
 // Documented at the ListGrid level only. ListGrids will pass the isSeparatorProperty through
 // to their body.
 isSeparatorProperty:"isSeparator",
 
-//>@attr    gridRenderer.singleCellValueProperty (string : "singleCellValue" : [IRA])
+//> @attr gridRenderer.singleCellValueProperty (string : "singleCellValue" : [IRA])
 // If this property is defined on some record, render the record as a single cell (spanning all
 // columns).
 //<
@@ -160,20 +162,21 @@ singleCellValueProperty:"singleCellValue",
 //<
 scrollRedrawDelay:75,
 
-//>	@attr	gridRenderer.drawAheadRatio (float : 1.3 : [IRWA])
+//>	@attr gridRenderer.drawAheadRatio (float : 1.3 : [IRWA])
 // How far should we render rows ahead of the currently visible area?  This is expressed as a
-// ratio from viewport size to rendered area size.<br><br>
-// 
+// ratio from viewport size to rendered area size.
+// <P>
 // Tweaking drawAheadRatio allows you to make tradeoffs between continuous scrolling speed vs
-// initial render time and render time when scrolling by large amounts.<br><br>
-//
+// initial render time and render time when scrolling by large amounts.
+// <P>
 // NOTE: Only applies when showAllRows is false.
+//
 // @group performance
 // @visibility external
 //<
 drawAheadRatio : 1.3,
 
-//>	@attr	gridRenderer.quickDrawAheadRatio (float : 1.0 : [IRWA])
+//>	@attr gridRenderer.quickDrawAheadRatio (float : 1.0 : [IRWA])
 // Alternative to +link{drawAheadRatio}, to be used when the user
 // is rapidly changing the grids viewport (for example drag scrolling through the grid).
 // If unspecified +link{drawAheadRatio} will be used in all cases
@@ -182,7 +185,7 @@ drawAheadRatio : 1.3,
 //<
 quickDrawAheadRatio:1.0,
    
-//>	@attr	gridRenderer.cellHeight		(number : 20 : [IRW])
+//>	@attr gridRenderer.cellHeight		(number : 20 : [IRW])
 // The default height of each row in pixels.
 //
 // @see gridRenderer.getRowHeight()
@@ -191,7 +194,7 @@ quickDrawAheadRatio:1.0,
 //<
 cellHeight:20,							
 
-//>	@attr	gridRenderer.fixedRowHeights (boolean : true : IRWA)
+//>	@attr gridRenderer.fixedRowHeights (boolean : true : IRWA)
 // Should we vertically clip cell contents, or allow rows to expand vertically to show all
 // contents?
 // <P>
@@ -263,7 +266,7 @@ canSelectOnRightMouse:true,
 // Hover
 // ---------------------------------------------------------------------------------------
 
-//>	@attr	gridRenderer.canHover   (boolean : null : [RW])
+//>	@attr gridRenderer.canHover (boolean : null : [RW])
 // If true, cellHover and rowHover events will fire when the user leaves the mouse over a 
 // row / cell.
 // @group	events
@@ -273,7 +276,7 @@ canSelectOnRightMouse:true,
 // @see showHover
 //<
 
-//>	@attr	gridRenderer.showHover  (boolean : null : [RW])
+//>	@attr gridRenderer.showHover (boolean : null : [RW])
 // If true, and canHover is also true, when the user hovers over a cell, hover text will pop up
 // next to the mouse.  The contents of the hover is determined by +link{cellHoverHTML()}.
 // @group	events
@@ -363,20 +366,41 @@ emptyCellValue:"&nbsp;",
 // @visibility external
 //<
 
-//> @attr gridRenderer.fastCellUpdates (boolean: varies : IRWA)
+//>	@attr	gridRenderer.showOfflineMessage		(boolean : true : [IRW])
+// Indicates whether the text of the offlineMessage property should be displayed if no data is
+// available because we do not have a suitable offline cache
+//      @visibility external
+//      @group  emptyMessage
+//      @see	offlineMessage
+//<
+
+//>	@attr	gridRenderer.offlineMessage		(string : null : IRW)
+// The string to display in the body of a listGrid with an empty data array, if
+// showOfflineMessage is true and the data array is empty because we are offline and there
+// is no suitable offline cache
+// @group emptyMessage, i18nMessages
+// @visibility external
+//      @see	showOfflineMessage
+//      @see    offlineMessageStyle
+//<
+
+//> @attr gridRenderer.fastCellUpdates (boolean: true : IRWA)
 //
-// Advanced property to improve performance for dynamic styling of gridRenderer cells
-// at the expense of slightly slower drawing.
+// <b>Note: This property only has an effect in Internet Explorer</b>
+// <P>
+// Advanced property to improve performance for dynamic styling of gridRenderer cells in
+// Internet Explorer, at the expense of slightly slower initial drawing, and some 
+// limitations on supported styling options.
 // <P>
 // <code>fastCellUpdates</code> speeds up the dynamic styling system used by rollovers,
 // selections, and custom styling that calls +link{gridRenderer.refreshCellStyle()}, at
 // the cost of slightly slower draw() and redraw() times.
 // <P>
-// This property is enabled by default in Internet Explorer and only has an effect in that
-// browser.
-// <P>
 // Notes:
 // <ul>
+// <li>When this property is set, ListGrid cells may be styled using the 
+//     +link{listGrid.tallBaseStyle}. See +link{listGrid.getBaseStyle()} for 
+//     more information.</li>
 // <li>If any cell styles specify a a background image URL, the URL will be resolved relative
 //     to the page location rather than the location of the CSS stylesheet. This means cell
 //     styles with a background URL should either supply a fully qualified path, or the
@@ -385,13 +409,14 @@ emptyCellValue:"&nbsp;",
 //     from a remote host. Either the stylesheet containing cell styles needs to be loaded
 //     from the same host as the main page, or the cell styles need to be inlined in the html 
 //     of the bootstrap page.</li>
+// <li>fastCellUpdates will not work if the css styles for cells are defined in
+//     a <code>.css</code> file loaded via <code>@import</code>. Instead the <code>.css</code>
+//     file should be loaded via a <code>&lt;link ...&gt;</code> tag.</li>
 // </ul>
-// Also note that this property can effect the baseStyle used for for listGrid bodies.
-// See +link{listGrid.getBaseStyle()}.
 // @visibility external
 //<
 
-fastCellUpdates:isc.Browser.isIE,
+fastCellUpdates:true,
 
 //> @method gridRenderer.setFastCellUpdates()
 // Setter for +link{gridRenderer.fastCellUpdates}. Has no effect in browsers other than
@@ -402,8 +427,8 @@ fastCellUpdates:isc.Browser.isIE,
 setFastCellUpdates : function (fcu) {
     if (fcu && !isc.Browser.isIE) {
         this.fastCellUpdates = false;
-        this.logInfo("fastCellUpdates was enabled - this has no effect " +
-            "in browsers other than Internet Explorer. Disabling.");
+        //this.logInfo("fastCellUpdates was enabled - this has no effect " +
+        //    "in browsers other than Internet Explorer. Disabling.");
         return;
     }
     if (fcu == this.fastCellUpdates) return;
@@ -455,6 +480,7 @@ snapVDirection: isc.Canvas.BEFORE
 });
 
 isc.GridRenderer.addMethods({
+        
 
 initWidget : function () {
     // Make sure we have columnWidths set up - we rely on this for some methods
@@ -480,9 +506,13 @@ initWidget : function () {
         this._avoidRedrawFlash = true;
 
         if (this.showCustomScrollbars == false) {
-            this.logWarn("Variable height records cannot be used with native scrollbars;" +
-                         " set showCustomScrollbars:true globally or on this GridRenderer");
+            this.logInfo("Variable height records cannot be used with native scrollbars;" + 
+                         " setting showCustomScrollbars:true on this GridRenderer and using" +
+                         " the special 'NativeScrollbar' class as a scrollbarConstructor.");
+            this.showCustomScrollbars = true;
+            this.scrollbarConstructor = "NativeScrollbar";
         }
+
         // have to force rendering all columns, otherwise, row heights would vary with drawn
         // columns.
         
@@ -501,7 +531,7 @@ initWidget : function () {
 isEmpty : function () { return false; },
  
 _showEmptyMessage : function (startCol,endCol) {
-    return this.getEmptyMessageHTML(startCol,endCol);
+    return this.getEmptyMessageHTML(startCol,endCol, this.grid.isOffline());
 },
 
 //>	@method	gridRenderer.getEmptyMessageHTML()	([A])
@@ -509,8 +539,12 @@ _showEmptyMessage : function (startCol,endCol) {
 //		@group	drawing
 //		@return	(string)	HTML for the empty message layer
 //<
-getEmptyMessageHTML : function (startCol,endCol) {
-    if (!this.showEmptyMessage)	return "&nbsp;";
+getEmptyMessageHTML : function (startCol,endCol,offline) {
+    if (!offline) {
+        if (!this.showEmptyMessage)	return "&nbsp;";
+    } else {
+        if (!this.showOfflineMessage) return "&nbsp;";
+    }
     if (this.isPrinting) { 
         if (startCol == null) startCol = 0;
         if (endCol == null) endCol = this.fields ? this.fields.getLength() -1 : 0;
@@ -519,7 +553,8 @@ getEmptyMessageHTML : function (startCol,endCol) {
                 this.grid.getPrintHeaders(startCol, endCol) +
                 "<TR><TD  ALIGN=CENTER VALIGN=TOP class='" + this.emptyMessageStyle +
                 "' colspan='" + ((endCol-startCol)+1) + "'>" +
-                this.getEmptyMessage() + "</TD></TR></TABLE>";
+                (offline ? this.getOfflineMessage() : this.getEmptyMessage())
+                + "</TD></TR></TABLE>";
     }
     
     // Always ensure the empty message fills the viewport.
@@ -549,7 +584,7 @@ getEmptyMessageHTML : function (startCol,endCol) {
             "' style='padding-left:0px;padding-right:0px;'>",
             // NOTE: empty message can't be too tall, or it will introduce vscrolling in
             // shorter grids
-			this.getEmptyMessage(),
+			(offline ? this.getOfflineMessage() : this.getEmptyMessage()),
             (extraWidth && splitTable ? "<br>" + isc.Canvas.spacerHTML(width,1) : null),
 			"</TD>"
     );
@@ -571,6 +606,17 @@ getEmptyMessageHTML : function (startCol,endCol) {
 //<
 getEmptyMessage : function () {
 	return this.emptyMessage;
+},
+
+//>	@method	gridRenderer.getOfflineMessage()	([A])
+//		@group	drawing
+//			return the text for the offline message
+//			you can ovveride this function if your data has additional semantics
+//				(eg: initial conditions, loading, filtering, etc)
+//		@return	(string)	empty message
+//<
+getOfflineMessage : function () {
+	return this.offlineMessage;
 },
 
 // Drawing
@@ -958,7 +1004,9 @@ scrollTo : function (left, top, cssScroll,d) {
             this.markForRedraw("scrolled");
         } else {
             var _this = this;
-            this.fireOnPause("scrollRedraw", "markForRedraw", this.scrollRedrawDelay);
+            this.fireOnPause("scrollRedraw", 
+                             function () { _this.markForRedraw("scrolled") }, 
+                             this.scrollRedrawDelay);
         }
 
         
@@ -990,7 +1038,7 @@ _needRowRedraw : function () {
     var needRedraw = (firstVisible < this._firstDrawnRow || lastVisible > this._lastDrawnRow);
 
     
- 
+
     
     return needRedraw;
 },
@@ -1518,7 +1566,7 @@ finishAnimateRowHeight : function () {
 
 // returns the innerHTML for the table
 // If passed a startRow / endRow, it will return just the HTML for that fragment of the table.
-getTableHTML : function (colNum, startRow, endRow) {
+getTableHTML : function (colNum, startRow, endRow, discreteCols) {
     if (isc._traceMarkers) arguments.__this = this;
 	//>DEBUG
 	// timing
@@ -1649,9 +1697,15 @@ getTableHTML : function (colNum, startRow, endRow) {
     // colNum can be passed to render one column only - used for auto-sizing
     // or if passed an array can specify a specific set of columns - used for 
     // rendering an entire row (without spacers), for (EG) showing row HTML as a drag-tracker
-    var startCol, endCol;
+    // discreteCols parameter implies the colNum array passed in is a set of specific cols
+    // to render (used when we're determining auto-size of a set of discontiguous columns) - 
+    // in this case startCol / endCol aren't actually going to be used
+    var colsArray = colNum != null && isc.isAn.Array(colNum),
+        startCol, endCol;
+    if (!colsArray) discreteCols = false;
+    
     if (colNum != null) {
-        if (isc.isAn.Array(colNum)) {
+        if (colsArray) {
             startCol = colNum[0];
             endCol = colNum[1] + 1;
          } else {
@@ -1662,9 +1716,18 @@ getTableHTML : function (colNum, startRow, endRow) {
         startCol = this._firstDrawnCol;
         endCol = this._lastDrawnCol + 1;        
     }
+    
+    var colNums;
+    if (discreteCols) colNums = colNum;
+    else {
+        colNums = [];
+        for (var i = startCol; i < endCol; i++) {
+            colNums[colNums.length] = i;
+        }
+    }
 
     // total columns we'll be drawing, for colSpans
-    var numCols = endCol - startCol;
+    var numCols = colNums.length;
 
     // if "colNum" has been passed such that we are returning the HTML for just one column, we
     // are essentially in showAllColumns mode in the sense that we don't want to adding
@@ -1680,7 +1743,7 @@ getTableHTML : function (colNum, startRow, endRow) {
 
     // remember the specified width of the first column when we draw.  This helps us prevent
     // unnecessary redraw on resize; see setColumnWidths()
-    this._colWidthAtDraw = startCol != 0 ? null : this._fieldWidths[0];
+    this._colWidthAtDraw = colNums[0] != 0 ? null : this._fieldWidths[0];
 
     var leftColPad, rightColPad, totalHorizontalWidth, padType;
     if (!showAllColumns) {
@@ -1694,11 +1757,8 @@ getTableHTML : function (colNum, startRow, endRow) {
         //padType = "padding";
     }
 
-    // total size of the table we're drawing (NOTE: may be larger or smaller than the body
-    // Canvas, since the body Canvas is a viewport on to this table)
-    var tableWidth = this._fieldWidths.slice(startCol, endCol).sum(),
-        autoFit = this.autoFit;
-
+    var autoFit = this.autoFit;
+    
     var widthHTML = "";
     if (colNum != null) {
         if (!autoFit && this.fixedColumnWidths) {
@@ -1713,6 +1773,9 @@ getTableHTML : function (colNum, startRow, endRow) {
     } else if ((isc.Browser.isIE8Strict || isc.Browser.isMoz || isc.Browser.isSafari) 
                 && !autoFit) 
     {
+        // total size of the table we're drawing (NOTE: may be larger or smaller than the body
+        // Canvas, since the body Canvas is a viewport on to this table)
+        var tableWidth = this._fieldWidths.slice(startCol, endCol).sum();
         
         widthHTML = " WIDTH=" + tableWidth;
     }
@@ -1736,6 +1799,24 @@ getTableHTML : function (colNum, startRow, endRow) {
         this._startRowSpacerHeight = 0;
     }
     
+    
+    
+    var canResizeSpacerDivs = true;
+    var totalHeight = (rangeEnd - rangeStart) * this.getAvgRowHeight();
+    if (isc.Browser.isIE) {
+        if (totalHeight > 1300000) canResizeSpacerDivs = false;
+    }
+    if (!fragment) this._canResizeSpacerDivs = canResizeSpacerDivs;
+    
+    
+    if (totalHeight > 10000000) {
+        this.logWarn("This grid is showing " + (rangeEnd - rangeStart).toLocalizedString()
+            + " rows. Due to native rendering limitations, grids with this many rows" 
+            + " may not appear correctly on all browsers. Consider filtering the data"
+            + " displayed to the user to reduce the total number of rows displayed at a time."
+            + " This will improve usability as well as avoiding unpredictable behavior.");
+    }
+    
     if (!this.cacheDOM && !this.isPrinting) {
         // If the space is zero sized, we still want to write out the spacer div so we can handle
         // setStartSpace() etc without a redraw
@@ -1744,11 +1825,20 @@ getTableHTML : function (colNum, startRow, endRow) {
         // Give the spacer DIV an ID so we can look at it's height, etc. later.
         // When we resize this on the fly (in setStartSpace()) we'll set display back to the default
         // (inline) if necessary.
-        output.append("<DIV style='height:", startSpacerHeight, "px;overflow:hidden;",
-                        (startSpacerHeight == 0 ? "display:none;" : null), "' ",
-                        (fragment ? ">" : " ID="+ this.getID()+ "_topSpacer>"),
-                        isc.Canvas.spacerHTML(1, startSpacerHeight), 
-                      "</DIV>")
+            
+         output.append("<DIV style='width:1px;");
+         if (canResizeSpacerDivs) {
+             output.append("height:", startSpacerHeight, "px;overflow:hidden;");
+         }
+         if (startSpacerHeight == 0) output.append("display:none;");
+         output.append("' ");
+         
+         if (fragment) {
+             output.append(">");
+         } else {
+             output.append(" ID="+ this.getID()+ "_topSpacer>");
+         }
+         output.append(isc.Canvas.spacerHTML(1, startSpacerHeight), "</DIV>");
     } 
     
 	//
@@ -1814,8 +1904,9 @@ getTableHTML : function (colNum, startRow, endRow) {
     
         
         if (!autoFit && isc.Browser.isDOM) {
-            for (var colNum = startCol; colNum < endCol; colNum++) {
-                output.append("<COL WIDTH=" , (sizes[colNum] - hPad), ">");
+            
+            for (var i = 0; i < colNums.length; i++) {
+                output.append("<COL WIDTH=" , (sizes[colNums[i]] - hPad), ">");
             }
         }
     
@@ -1875,13 +1966,17 @@ getTableHTML : function (colNum, startRow, endRow) {
             valignSlot = 6, widthSlot = 7, minHeightCSS = 10, cssStart = 11, styleSlot = 18, 
             cellID = 20, divStart = 21, cellValue = 24;
 
-        var rowStart = "<TR>",
+        var rowStart = "<TR",
             rowEnd = "</TR>",
+            gt = ">",
             heightAttr = " HEIGHT=",
             valignAttr = " VALIGN=";
 
+        
+        if (isc.Browser.isMobileWebkit) rowStart += " onmousedown=\"return true;\"";
+
         // make row elements programmatically focuseable
-        if (isc.screenReader) rowStart = "<TR tabIndex=-1>";
+        if (isc.screenReader) rowStart += " tabIndex=-1";
 
         // these are used only when cells have rowSpans (only possible if getRowSpan() has been
         // defined)
@@ -1896,9 +1991,10 @@ getTableHTML : function (colNum, startRow, endRow) {
             // current row)
             cellSkipSourceRows = [];
 
-        this._cacheColumnHTML(startCol, endCol, autoFit, hPad, writeDiv);
+        this._cacheColumnHTML(colNums, autoFit, hPad, writeDiv);
 
         if (this.isPrinting && (!this._printingChunk || startRow == 0)) {
+            
             output.append(this.grid.getPrintHeaders(startCol, endCol));
         }
 
@@ -1920,14 +2016,12 @@ getTableHTML : function (colNum, startRow, endRow) {
 			var drawRecordAsSingleCell = //>Animation
                                          isAnimationRow ||   //<Animation
                                          this._drawRecordAsSingleCell(rowNum, record);
-
 			// start the table row
+            output.append(rowStart);
             if (!fragment && this.getRowElementId) {
-                output.append("<TR", (isc.screenReader ? " tabIndex=-1" : null), 
-                              " ID=", this.getRowElementId(rowNum, rowNum-startRow), ">");
-            } else {
-    			output.append(rowStart);
+                output.append(" ID=", this.getRowElementId(rowNum, rowNum-startRow));
             }
+            output.append(gt);
 
             // set per-row pieces of cell HTML
 
@@ -1996,14 +2090,14 @@ getTableHTML : function (colNum, startRow, endRow) {
             
             var singleCellSpan = drawRecordAsSingleCell ?      
                                     this._getSingleCellSpan(record,rowNum,startCol,endCol) : null;
-            
             //if (skipCount > 0) {
             //    this.logWarn("rowSpan start rows for row: " + rowNum + 
             //                 ": " + cellSkipSourceRows);
             //}
 
 			// output each cell
-			for (colNum = startCol; colNum < endCol; colNum++) {
+			for (var i = 0; i < colNums.length; i++) {
+			    colNum = colNums[i];
                 
                 var field = fields[colNum],
                     cellRecord = record;
@@ -2055,7 +2149,7 @@ getTableHTML : function (colNum, startRow, endRow) {
                         cellHTML[divStart+1] = this._$singleQuote;
                     }
                     
-                    // We'll write out the rest of the HTML, then increment colNum to jump to the
+                    // We'll write out the rest of the HTML, then increment i to jump to the
                     // end of the span
 
                     
@@ -2134,7 +2228,8 @@ getTableHTML : function (colNum, startRow, endRow) {
                     cellHTML[styleSlot] = cellStyle;
                 } else {
                     
-                    cellHTML[cssStart] = isc.Element.getStyleText(cellStyle, true);
+                    var styleText = this._getEscapedStyleText(cellStyle);
+                    cellHTML[cssStart] = styleText;
                     cellHTML[cssStart+1] = customCSSText;
             
                     
@@ -2176,6 +2271,7 @@ getTableHTML : function (colNum, startRow, endRow) {
                 // if the record has an embedded component update it's row/colNum now
                 
                 if (!fragment && cellRecord != null && cellRecord._embeddedComponents != null) {
+
                     // avoid calling this method multiple times if one record spans several
                     // cells (IE one record / row)
                     if (cellRecord._embeddedComponents[0] &&
@@ -2193,8 +2289,10 @@ getTableHTML : function (colNum, startRow, endRow) {
                 //}
 
 				if (drawRecordAsSingleCell && (colNum == singleCellSpan[0])) {
-                    
-                    colNum += singleCellSpan[1] - singleCellSpan[0];
+				    // increase the counter - well skip the rest of the colNums in the 
+				    // array
+				    
+                    i += singleCellSpan[1] - singleCellSpan[0];
                 }
 			}
 			// end the table row
@@ -2244,17 +2342,27 @@ getTableHTML : function (colNum, startRow, endRow) {
     // NOTE: setting overflow:hidden allows later code to shrink the spacer
     // without rewriting the spacer content
     if (!this.cacheDOM && !this.isPrinting) {
-        output.append("<DIV STYLE='overflow:hidden;width:1px;height:", endSpacerHeight, "px;",
-                  (endSpacerHeight == 0 ? "display:none;" : null),
-                  (fragment ? "'>" : "' ID=" + this.getID() + "_endSpacer>"),
-                  isc.Canvas.spacerHTML(1, endSpacerHeight),
-                  "</DIV>");
+ 
+        output.append("<DIV style='width:1px;");
+        if (canResizeSpacerDivs) {
+            output.append("height:", endSpacerHeight, "px;overflow:hidden;");
+        }
+        if (endSpacerHeight == 0) output.append("display:none;");
+        output.append("' ");
+         
+        if (fragment) {
+            output.append(">");
+        } else {
+            output.append(" ID="+ this.getID()+ "_endSpacer>");
+        }
+        output.append(isc.Canvas.spacerHTML(1, endSpacerHeight), "</DIV>");
+       
     }
 
 	//>DEBUG timing
     if (this.logIsDebugEnabled("gridHTML")) {
         var totalTime = (isc.timeStamp() - t0), 
-            numCells = ((endCol - startCol) * (endRow - startRow)),
+            numCells = (numCols * (endRow - startRow)),
             perCell = (totalTime / numCells),
             perSecond = (1000 / perCell);
 
@@ -2262,7 +2370,8 @@ getTableHTML : function (colNum, startRow, endRow) {
         if (perCell.toFixed != null) perCell = perCell.toFixed(2);
         if (perSecond.toFixed != null) perSecond = perSecond.toFixed(2);
         
-        this.logDebug("getTableHTML: columns " + startCol + "->" + (endCol-1) + 
+        this.logDebug("getTableHTML: columns " + (discreteCols ? colNums 
+                                                    : startCol + "->" + (endCol-1)) + 
                       ", rows " + startRow + "->" + (endRow-1) + 
                       ", time: " + totalTime + "ms (" +
                       numCells + " cells at " + 
@@ -2278,6 +2387,23 @@ getTableHTML : function (colNum, startRow, endRow) {
 	// now return the output
 	return output.release();
 },
+
+// When we write out the per cell HTML using templating, in fastCellUpdates:true mode, 
+// we write out style='<style text from css class definition>'
+// It is valid css to use single (or double) quotes in CSS style definitions in a couple of ways
+// (Examples: font-family font names including spaces, filter definitions in IE).
+// This helper method will simply convert any single-quotes to double-quotes so they don't
+// terminate the style attribute in the written out HTML.
+_escapedStyleText:{},
+_getEscapedStyleText : function (styleName) {
+    if (this._escapedStyleText[styleName] != null) return this._escapedStyleText[styleName];
+    //this.logWarn("escaping:" + styleName);
+    var styleText = isc.Element.getStyleText(styleName, true);
+
+    this._escapedStyleText[styleName] = styleText.replaceAll("'", '"');
+    return this._escapedStyleText[styleName];
+},
+
 
 // Methods to return cell alignment
 // Overridden on the gridbody class
@@ -2337,13 +2463,15 @@ _getFirstRecordStyle : function () {
             this.baseStyle);
 },
 
-_cacheColumnHTML : function (startCol, endCol, autoFit, hPad, writeDiv) {
+_cacheColumnHTML : function (colNums, autoFit, hPad, writeDiv) {
     var fields = this.fields, 
 		sizes = this._fieldWidths;
-
+    
+  
 	// compute per-column HTML
-	for (var colNum = startCol; colNum < endCol; colNum++) {
-		var field = fields[colNum];
+	for (var i = 0; i < colNums.length; i++) {
+	    var colNum = colNums[i],
+	        field = fields[colNum];
 
         field._rowSpans = null; // clear old rowSpan info
 
@@ -2540,8 +2668,14 @@ _getCellValue : function (record, rowNum, colNum) {
     // If a record has an associated component to display, add a spacer underneath the record
     // to force the contents to draw above the component.
     if (record && record._embeddedComponents) {
-        var spacerHeight = this._getExtraEmbeddedComponentHeight(record);
-        if (spacerHeight) value += "<BR>" + isc.Canvas.spacerHTML(1, spacerHeight);
+        var details = this._getExtraEmbeddedComponentHeight(record);
+        if (details.allWithin && details.extraHeight) {
+            value += "<BR>" + isc.Canvas.spacerHTML(1, details.extraHeight-this.cellHeight);
+            //isc.logWarn("In _getCellValue:  details are "+isc.echoAll(details));
+        } else if (details.extraHeight && details.extraHeight > 0) {
+            value += "<BR>" + isc.Canvas.spacerHTML(1, details.extraHeight);
+            //isc.logWarn("In _getCellValue:  details are "+isc.echoAll(details));
+        }
     }
 
     return value;
@@ -2680,27 +2814,49 @@ getRowHeight : function (record, rowNum) {
 
 updateHeightForEmbeddedComponents : function (record, rowNum, height) {    
     if (record && record._embeddedComponents) {
-        height += this._getExtraEmbeddedComponentHeight(record, rowNum);
+        var details = this._getExtraEmbeddedComponentHeight(record, rowNum);
+        if (details.allWithin && details.extraHeight > 0) {
+            height = details.extraHeight;
+            //this.logWarn("in updateHeightForEmbeddedComponents ("+this.grid+"): details are "+isc.echoAll(details)+"\nheight is "+height);
+        } else {
+            height += details.extraHeight;
+            //this.logWarn("in updateHeightForEmbeddedComponents ("+this.grid+"): details are "+isc.echoAll(details)+"\nheight is "+height);
+        }
     }
     return height;
 },
 
 _getExtraEmbeddedComponentHeight : function (record, rowNum) {
     var components = record._embeddedComponents,
-        maxComponentHeight = 0;
+        maxComponentHeight = 0,
+        allWithin = true;
+    ;
     for (var i = 0; i < components.length; i++) {
         var component = record._embeddedComponents[i];
         if (component == null) continue;
 
         // mark the component with the row it currently appears in
         if (rowNum != null) component._currentRowNum = rowNum;
-        if (component.embeddedPosition == this._$within) continue;
         
-        // expand the row so that the appears under the normal cells
-        var componentHeight = component.getVisibleHeight();
-        if (componentHeight > maxComponentHeight) maxComponentHeight = componentHeight;
+        var isWithin = (component.embeddedPosition == this._$within);
+        if (!isWithin) allWithin = false;
+
+        var tempHeight = component.getVisibleHeight();
+        var componentHeight = (isWithin ? (tempHeight > this.cellHeight ? tempHeight : 0) : tempHeight);
+        // expand the row so that the component appears under the normal cells
+        if (component._percent_height != null) {
+            component.height = component._percent_height;
+            componentHeight = this.cellHeight;
+        }
+        var origHeight = component.specifiedHeight;
+        if (isWithin && origHeight && isc.isA.String(origHeight) && origHeight.contains("%"))
+            componentHeight = 0;
+        if (componentHeight > maxComponentHeight) {
+            maxComponentHeight = componentHeight;
+        }
     } 
-    return maxComponentHeight;
+
+    return { allWithin: allWithin, extraHeight: maxComponentHeight };
 },
 
 // get the row where the cell at the given coordinates starts
@@ -2764,7 +2920,10 @@ _$cell:"cell",
 addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
 
     if (position == null) position = this._$expand;
-    
+    // if position is "expand", or fixedRowHeights is false (and the 
+    // embedded component height > specified row height) we may expand records.
+    var mayChangeRowHeight = ((position == this._$expand) || !this.fixedRowHeights);
+
     // instantiate the component if it's passed as just properties
     if (!isc.isA.Canvas(component)) {
         component.autoDraw = false;
@@ -2775,7 +2934,7 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
         component = cons.create(component);
     }
 
-    var moveOnly;
+    var moveOnly = false;
     // if addEmbeddedComponent is called twice on the same comp, remove before embedding!
     if (this._embeddedComponents && this._embeddedComponents.contains(component)) {
         // already embedded at the right spot = a no op
@@ -2786,30 +2945,29 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
         {
             return;
         }
-        // if the position is (and was) "within" we don't expect the component to modify the
-        // size of any records so we'll just move it rather than redrawing
-        // (Unless we're already marked for redraw, of course)
-        
-        if (position == component.embeddedPosition && position == this._$within) {            
+        // we can avoid a redraw if
+        // position is within, this.fixedRowHeights is true,
+        // and position is unchanged
+        // (and we're not dirty already)
+        if (position == component.embeddedPosition && !mayChangeRowHeight) {            
             moveOnly = !this.isDirty();
         }
         // third param to suppress clear / redraw - we'll take care of that
         this.removeEmbeddedComponent(component.embeddedRecord, component, true);
-    // we shouldn't need a redraw if we're not expanding a row even if the component is being
-    // added as a new child.
-    } else if (position == this._$within) {
+        
+    } else if (!mayChangeRowHeight) {
         moveOnly = !this.isDirty();
     }
 
     if (!record._embeddedComponents) record._embeddedComponents = [];
-    
+
     // Make the record hang onto the component
     record._embeddedComponents.add(component);
-    
+
     // add the component to the list of embedded components.
     if (this._embeddedComponents == null) this._embeddedComponents = [];
     this._embeddedComponents.add(component);
-    
+
     component.embeddedPosition = position;
     component.embeddedRecord = record;
 
@@ -2821,11 +2979,11 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
     component._currentColNum = colNum;
     // for frozen columns, mark the component with the id of the GridBody it's being stored in
     component._embedBody = this.getID();
-    
+
     // if position == "within" we'll handle percentage sizing and snapTo ourselves
     // unexposed flag to disable standard snapTo / percent sizing logic
     component.percentBox = "custom";
-
+    
     // add it as a child (which will force a draw, and give us a size) - hide it first so it
     // doesn't appear and then get moved into place
     // temporarily suppress adjustOverflow while we do this so we don't show huge
@@ -2846,10 +3004,9 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
     // repositioning so snapTo continues to work...
     } else {
         this.observe(component, "resized", 
-                 "observer.placeEmbeddedComponent(observed)");
+                "observer.placeEmbeddedComponent(observed)");
     }
 
-     
     // don't redraw the component when the grid redraws, otherwise we'll be redrawing embedded
     // components continually during scrolling.  NOTE: it may be that this should be the
     // default for parents that have a mixture of content and children.
@@ -2891,7 +3048,7 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
 updateEmbeddedComponentCoords : function (components, record, rowNum, colNum) {
     components.setProperty("_currentRowNum", rowNum);
 },
-	
+
 // place an embedded component over the correct row.
 // Ideally this would only be called on sort, dataChanged, etc -- currently being called
 // on every body redraw (may impact performance when incremental scrolling, for example)
@@ -2994,7 +3151,7 @@ placeEmbeddedComponent : function (component) {
     // above them is expanded by this method.
     
     
-    if (position != this._$within) {
+//    if (position != this._$within) {
         var redrawing = this.isDirty(),
             expectedRowHeight = this.getRowHeight(record,rowNum);
 
@@ -3004,13 +3161,13 @@ placeEmbeddedComponent : function (component) {
             // content to top-align properly
             this.refreshRow(rowNum);
         }
-    }
+//    }
 
     if (showing) {
-        if (position != this._$within) {
+//        if (position != this._$within) {
             var offset = this.getDrawnRowHeight(rowNum) - component.getVisibleHeight() - 1;
             component.moveTo(null, this.getRowTop(rowNum) + offset);
-        }
+//        }
         if (!component.isVisible()) {            
             if (this.shouldAnimateEmbeddedComponent(component)) {
                 component.animateShow();
@@ -4331,6 +4488,13 @@ _getDrawnRowHeights : function () {
             var oldSafari = isc.Browser.isSafari && isc.Browser.safariVersion < 500;
 
             
+            if (this.getRowSpan && this.fullRowSpans) {
+                heights[rowNum] = row.offsetHeight;
+                nonZeroHeight = true;
+                continue;
+            }
+
+            
             var checkAllCellHeights = 
                 (oldSafari &&
                     (this.fixedRowHeights == false || 
@@ -4782,77 +4946,87 @@ mouseMove : function (arg1, arg2) {
  
     //this.logWarn("row: " + rowNum + ", col: " + colNum);   
 
-    // same cell as before, so just return
-    if (rowNum == this.lastOverRow && colNum == this.lastOverCol) return false;
-
-    var returnVal,
+    // same cell as before, so no over/out events
+    if (!(rowNum == this.lastOverRow && colNum == this.lastOverCol)) {
         // If we're not over a valid column (we're too far to the right of the listGrid)
         // consider this a row change, for the purposes of restyling correctly
-        rowChanged = (rowNum != this.lastOverRow || colNum < 0);
-        
-    var hasNewCell = (rowNum >= 0 && colNum >= 0 && this.cellIsEnabled(rowNum, colNum));
-
-    // if we were previously over a valid cell, reset the style for that cell and fire
-    // cellOut / rowOut		
-    if (this.lastOverRow != null && this.lastOverCol != null) {
-
-        var lastOverRow = this.lastOverRow,
-            lastOverCol = this.lastOverCol,
-            lastOverRecord = this.getCellRecord(lastOverRow, lastOverCol);
-
-        this.lastOverRow = null;
-        this.lastOverCol = null;
-
-    	// clear last cell/row's rollover hiliting, and hover
-        // (If we changed rows, or are using cell events)
-	    if ((this.hoverByCell || rowChanged) && 
-            this.shouldShowRollOver(lastOverRow, lastOverCol)) 
-        {
+        var rowChanged = (rowNum != this.lastOverRow || colNum < 0);
             
-            this.updateRollOver(lastOverRow, lastOverCol, hasNewCell);
-
-    	    // clear any hover timer/window
-        	if (this.getCanHover() && !this.keepHoverActive) this.stopHover();
+        var hasNewCell = (rowNum >= 0 && colNum >= 0 && this.cellIsEnabled(rowNum, colNum));
+    
+        // if we were previously over a valid cell, reset the style for that cell and fire
+        // cellOut / rowOut		
+        if (this.lastOverRow != null && this.lastOverCol != null) {
+    
+            var lastOverRow = this.lastOverRow,
+                lastOverCol = this.lastOverCol,
+                lastOverRecord = this.getCellRecord(lastOverRow, lastOverCol);
+    
+            this.lastOverRow = null;
+            this.lastOverCol = null;
+    
+            // clear last cell/row's rollover hiliting, and hover
+            // (If we changed rows, or are using cell events)
+            if ((this.hoverByCell || rowChanged) && 
+                this.shouldShowRollOver(lastOverRow, lastOverCol)) 
+            {
+                
+                this.updateRollOver(lastOverRow, lastOverCol, hasNewCell);
+    
+                // clear any hover timer/window
+                if (this.getCanHover() && !this.keepHoverActive) this.stopHover();
+            }
+            
+            // support field.cellOut, cell.cellOut?
+            if (this.cellOut) {
+                this.cellOut(lastOverRecord, lastOverRow, lastOverCol);
+            }
+            if (rowChanged && this.rowOut) {
+                this.rowOut(lastOverRecord, lastOverRow, lastOverCol);
+            }
         }
-        
-    	// support field.cellOut, cell.cellOut?
-	    if (this.cellOut) {
-    		this.cellOut(lastOverRecord, lastOverRow, lastOverCol);
-	    }
-        if (rowChanged && this.rowOut) {
-            this.rowOut(lastOverRecord, lastOverRow, lastOverCol);
+    
+        // if over an enabled cell now, update the new over row/cell, and call rowOver / cellOver
+        if (hasNewCell) {
+    
+            // remember this as the last-over cell
+            // (required for styling)
+            this.lastOverRow = rowNum;
+            this.lastOverCol = colNum;
+            
+            // If we're using cell events, or changed rows, update the new "over" cell
+            if (this.hoverByCell || rowChanged) {
+            
+                // show rollover hiliting
+                if (this.shouldShowRollOver(rowNum, colNum)) {
+                    this.updateRollOver(rowNum, colNum);
+                }
+                // set hover action
+                if (this.getCanHover()) {
+                    isc.Hover.setAction(this, this._cellHover, [rowNum, colNum], this.hoverDelay);
+                }
+            }            
+    
+            // support field.cellOver, cell.cellOver?
+            if (this.cellOver) {
+                this.cellOver(this.getCellRecord(rowNum, colNum), rowNum, colNum);
+            }
+            
+            if (rowChanged && this.rowOver) {
+                this.rowOver(this.getCellRecord(rowNum, colNum), rowNum, colNum);
+            }
         }
+            
     }
-
-    // if over an enabled cell now, update the new over row/cell, and call rowOver / cellOver
-    if (hasNewCell) {
-
-        // remember this as the last-over cell
-        // (required for styling)
-	    this.lastOverRow = rowNum;
-        this.lastOverCol = colNum;
-        
-        // If we're using cell events, or changed rows, update the new "over" cell
-        if (this.hoverByCell || rowChanged) {
-        
-            // show rollover hiliting
-    	    if (this.shouldShowRollOver(rowNum, colNum)) {
-                this.updateRollOver(rowNum, colNum);
-            }
-            // set hover action
-    	    if (this.getCanHover()) {
-                isc.Hover.setAction(this, this._cellHover, [rowNum, colNum], this.hoverDelay);
-            }
-        }            
-
-        // support field.cellOver, cell.cellOver?
-	    if (this.cellOver) {
-            this.cellOver(this.getCellRecord(rowNum, colNum), rowNum, colNum);
-	    }
-        
-        if (rowChanged && this.rowOver) {
-            this.rowOver(this.getCellRecord(rowNum, colNum), rowNum, colNum);
-        }
+    
+    // cellMove / rowMove 
+    // Not currently exposed - used internally to update hovers for validation error icons
+    // in ListGrid.
+    if (this.cellMove) {
+        this.cellMove(this.getCellRecord(rowNum, colNum), rowNum, colNum);
+    }
+    if (this.rowMove) {
+        this.rowMove(this.getCellRecord(rowNum, colNum), rowNum, colNum);
     }
 },
 
@@ -4948,10 +5122,16 @@ _cellHover : function (rowNum, colNum) {
 
 _showHover : function (record, rowNum, colNum) {
     var properties = this._getHoverProperties();  
-    isc.Hover.show(this.cellHoverHTML(record, rowNum, colNum),
+    var content = this._getCellHoverComponent(record, rowNum, colNum);
+    if (!content) content = this.cellHoverHTML(record, rowNum, colNum);
+    isc.Hover.show(content,
 				   properties,
                    this.cellHoverBoundary(rowNum, colNum),
                    this.getHoverTarget());
+},
+
+_getCellHoverComponent : function (record, rowNum, colNum) {
+    return this.grid._getCellHoverComponent(record, rowNum, colNum);
 },
 
 // getHoverTarget() - returns the 'targetCanvas' passed to Hover.show() in _showHover()
@@ -4962,6 +5142,10 @@ getHoverTarget : function () {
 },
 
 cellHoverHTML : function (record, rowNum, colNum) {
+	return null;
+},
+
+getCellHoverComponent : function (record, rowNum, colNum) {
 	return null;
 },
 
@@ -5353,6 +5537,9 @@ dragMove : function () {
     this.selection.selectOnDragMove(this, rowNum, colNum);
 },
 
+dragStop : function () {
+    this.fireSelectionUpdated();
+},
 
 // Override Drag/drop snap-to-grid functionality from Canvas
 
@@ -5477,32 +5664,70 @@ getVSnapPosition : function (localCoordinate, dir) {
 //      NOTE: if using partial table rendering (showAllRows:false), this is the size for the
 //      currently visible contents of the column
 //<
-getColumnAutoSize : function (columnNum) {
+getColumnAutoSize : function (columnNum, startRow, endRow) {
     // create an offscreen Canvas to do sizing in
     var columnSizer = this._columnSizer = this._columnSizer || isc.Canvas.create({
                                top:-1000,
                                width:1, height:1,
-                               autoDraw:false
+                               autoDraw:false,
+                               _generated:true
                            });
-
-    // get HTML for a table containing only this column, written without column widths and with no
-    // text wrapping
+    
+    // get HTML for a table containing only this column, written without column widths and 
+    // with no text wrapping
     var autoFit = this.autoFit,
         wrapCells = this.wrapCells;
     
     this.autoFit = true;
     this.wrapCells = false;
-    columnSizer.contents = this.getTableHTML(columnNum);
+    
+    // pass in startRow / endRow
+    // If not explicitly specified, just use the current draw area
+    // Passing this parameter in avoids us writing a (unnecessary in this case) spacer
+    // above / below the cell values and will turn on the "fragment" logic in getTableHTML()
+    // which avoids writing out DOM IDs on the various parts.
+    if (startRow == null || endRow == null) {
+        var drawRect = this.getDrawArea();
+        startRow = drawRect[0];
+        // remember drawRect is inclusive, we want exclusive
+        endRow = drawRect[1]+1;
+    }
+    
+    columnSizer.contents = this.getTableHTML(columnNum,startRow,endRow, true);
+
     this.autoFit = autoFit;
     this.wrapCells = wrapCells;
 
     // draw the table and figure out how large it is
     columnSizer.draw();
-    var columnWidth = columnSizer.getScrollWidth();
+    var returnVal;
+    if (isc.isA.Array(columnNum)) {
+        // We're going to have to reach into the table.
+        var table,
+            nodes = columnSizer.getHandle().childNodes;
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].tagName.toLowerCase() == "table") {
+                table = nodes[i];
+                break;
+            }
+        }
+        if (table && table.rows[0]) {
+            var firstRow = table.rows[0],
+                cells = firstRow.cells;
+            returnVal = [];
+            for (var i = 0; i < cells.length; i++) {
+                returnVal[i] = cells[i].clientWidth;
+            }
+        } 
+        
+        
+    } else {
+        returnVal = columnSizer.getScrollWidth();
+    }
     //this.logWarn("columnWidth: " + columnWidth + " for table: " + columnSizer.contents);
     columnSizer.clear();
 
-    return columnWidth;
+    return returnVal;
 },
 
 // Table Cache Clearing
@@ -5522,7 +5747,7 @@ redraw : function (a,b,c,d) {
 },
 
 modifyContent : function () {
-       
+    
     // resize / place embedded components before 
     // - restoring virtual scrolling
     // - adjusting overflow    
@@ -5606,6 +5831,7 @@ modifyContent : function () {
     }
     this._lastTotalRows = totalRows;
     */
+
  
 },
 
@@ -5622,9 +5848,14 @@ setStartSpace : function (value) {
         if (height == 0) spacer.style.display = "none";
         else spacer.style.display = ""; // default (== "inline")
         
-        spacer.style.height = height + "px";
+         
+        if (this._canResizeSpacerDivs) {
+            spacer.style.height = height + "px";
+        }
         // overflow:hidden so don't have to rewrite contents if we're shrinking
-        if (!reduction) spacer.innerHTML = isc.Canvas.spacerHTML(1,height);
+        if (!reduction || !this._canResizeSpacerDivs) {
+            spacer.innerHTML = isc.Canvas.spacerHTML(1,height);
+        }
         this._markForAdjustOverflow();
     } 
     // If there was no spacer we must be in cacheDOM mode where we don't currently
@@ -5642,8 +5873,10 @@ setEndSpace : function (value) {
     if (spacer) {
         if (height == 0) spacer.style.display = "none";
         else spacer.style.display = ""; // default (== "inline")
-        spacer.style.height = height + "px";
-        if (!reduction) spacer.innerHTML = isc.Canvas.spacerHTML(1,height);
+        if (this._canResizeSpacerDivs) spacer.style.height = height + "px";
+        if (!reduction || !this._canResizeSpacerDivs) {
+            spacer.innerHTML = isc.Canvas.spacerHTML(1,height);
+        }
         this._markForAdjustOverflow();
     }
     // If there was no spacer we must be in cacheDOM mode where we don't currently
@@ -5856,6 +6089,31 @@ isc.GridRenderer._gridAPIs = {
     // @visibility external
     //<
     rowOver : "record,rowNum,colNum",
+    
+    //>	@method	gridRenderer.cellMove() ([A])
+    // Called when the mouse pointer moves within a cell
+    //
+    // @group   events    
+    // @param	record  (object)	cell record as returned by getCellRecord
+    // @param	rowNum	(number)	row number for the cell
+    // @param	colNum	(number)	column number of the cell
+    // @return	(boolean)	whether to cancel the event
+    // @visibility internal
+    //<
+    cellMove : "record,rowNum,colNum",
+
+    //>	@method	gridRenderer.rowMove() ([A])
+    // Called when the mouse pointer moves within a row
+    //
+    // @group   events    
+    // @param	record  (object)	cell record as returned by getCellRecord
+    // @param	rowNum	(number)	row number for the cell
+    // @param	colNum	(number)	column number of the cell
+    // @return	(boolean)	whether to cancel the event
+    // @visibility internal
+    //<
+    rowMove : "record,rowNum,colNum",
+    
 
     //>	@method	gridRenderer.cellContextClick() ([A])
     // Called when a cell receives a contextclick event.
@@ -6065,14 +6323,36 @@ isc.GridRenderer._gridAPIs = {
     //<    
     cellHoverHTML : "record,rowNum,colNum",
 
+    //>	@method	gridRenderer.getCellHoverComponent() ([A])
+    // StringMethod to dynamically create a Canvas-based component to show as a hover window 
+    // over the appropriate cell/record when this.canHover and this.showHover are both true and
+    // when an override of getCellHoverComponent() is present.
+    // Called when the mouse hovers over a cell.
+    //
+    // @group   events
+    // @param	record  (object)	cell record as returned by getCellRecord
+    // @param	rowNum	(number)	row number for the cell
+    // @param	colNum	(number)	column number of the cell
+    // @return	(Canvas)	a Canvas to be shown as the hover for this cell
+    // @see canHover
+    // @see showHover
+    // @visibility external
+    //<    
+    getCellHoverComponent : "record,rowNum,colNum",
+
     // selection notification
-	// --------------------------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     //>	@method	gridRenderer.selectionChanged() ([A])
     // Called when (row-based) selection changes within this grid. Note this method fires for
     // each record for which selection is modified - so when a user clicks inside a grid this
     // method will typically fire twice (once for the old record being deselected, and once for
     // the new record being selected).
+    // <P>
+    // NOTE: For updating other components based on selections or triggering selection-oriented
+    // events within an application, see the
+    // +link{dataBoundComponent.selectionUpdated,selectionUpdated} event
+    // which is likely more suitable.
     //
     // @param	record  (object)	record for which selection changed
     // @param	state   (boolean)	New selection state (true for selected, false for unselected)

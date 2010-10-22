@@ -47,11 +47,6 @@
 	internal/unused styles
 ============================================================*/
 
-/*
-
-*/
-
-
 
 /*============================================================
 	1) General
@@ -203,6 +198,7 @@
     font-family:Arial,Verdana,sans-serif; font-size:11px;
 }
 .stretchImgButtonOver {
+    font-weight:normal;
 }
 .stretchImgButtonSelectedDisabled,
 .stretchImgButtonDisabled {
@@ -254,10 +250,14 @@
 .menuSelectedOver,
 .menuDisabled,
 .menuTitleField,
+.menuTitleFieldDark,
 .menuTitleFieldSelected,
+.menuTitleFieldSelectedDark,
 .menuTitleFieldOver,
+.menuTitleFieldOverDark,
 .menuTitleFieldSelectedOver,
-.menuTitleFieldDisabled,
+.menuTitleFieldSelectedOverDark,
+.menuTitleFieldDisabled,                  
 .menuIconField,
 .menuIconFieldOver,
 .menuIconFieldSelected,
@@ -275,30 +275,46 @@
 .menuSelected {
 }
 .menuOver,
+.menuOverDark,
 .menuSelectedOver,
+.menuSelectedOverDark,
 .menuTitleFieldOver,
+.menuTitleFieldOverDark,
 .menuTitleFieldSelectedOver,
+.menuTitleFieldSelectedOverDark,
 .menuIconFieldOver,
+.menuIconFieldOverDark,
 .menuIconFieldSelectedOver,
+.menuIconFieldSelectedOverDark,
 .treeMenuSelected,
+.treeMenuSelectedDark,
 .treeMenuSelectedOver,
+.treeMenuSelectedOverDark,
 .treeMenuSelectedSelected,
 .treeMenuSelectedSelectedOver {
     background:#FFFFFF url(./images/ListGrid/row_Over.png) repeat-x scroll 0px 1px;
 }
 
 .menuTitleField,
+.menuTitleFieldDark,
 .menuTitleFieldSelected,
+.menuTitleFieldSelectedDark,
 .menuTitleFieldOver,
+.menuTitleFieldOverDark,
 .menuTitleFieldSelectedOver,
+.menuTitleFieldSelectedOverDark,
 .menuTitleFieldDisabled {
 	padding-left:4px;
 }
 
 .menuIconField,
+.menuIconFieldDark,
 .menuIconFieldOver,
+.menuIconFieldOverDark,
 .menuIconFieldSelected,
+.menuIconFieldSelectedDark,
 .menuIconFieldSelectedOver,
+.menuIconFieldSelectedOverDark,
 .menuIconFieldDisabled {
 	padding-left:4px; padding-right:4px;
 }
@@ -313,6 +329,9 @@
 .menuButtonOver,
 .menuButtonDown,
 .menuButtonDisabled,
+.menuButtonFocused,
+.menuButtonFocusedDown,
+.menuButtonFocusedOver,
 .menuButtonSelected,
 .menuButtonSelectedDown,
 .menuButtonSelectedOver,
@@ -329,6 +348,8 @@ background:#B2D7FF url(./images/cssButton/button_Over_stretch.png) repeat-x;
 }
 
 .menuButtonDown,
+.menuButtonFocusedDown,
+.menuButtonFocusedOver,
 .menuButtonSelected,
 .menuButtonSelectedDown,
 .menuButtonSelectedOver {
@@ -340,7 +361,6 @@ background:#B2D7FF url(./images/cssButton/button_Over_stretch.png) repeat-x;
     color:#AAAAAA;
     border:1px solid #A6ABB4;
 }
-
 
 /*============================================================
     4) Window
@@ -493,8 +513,6 @@ background:#B2D7FF url(./images/cssButton/button_Over_stretch.png) repeat-x;
     padding-bottom:1px;
 }
 
-
-
 /*============================================================
     7) SectionStack
 ============================================================*/
@@ -598,6 +616,13 @@ background:#B2D7FF url(./images/cssButton/button_Over_stretch.png) repeat-x;
 .pickListCell,
 .pickListCellSelected,
 .pickListCellDisabled,
+.pickListCellDark,
+.pickListCellSelectedDark,
+.tallPickListCell,
+.tallPickListCellSelected,
+.tallPickListCellDisabled,
+.tallPickListCellDark,
+.tallPickListCellSelectedDark,
 .labelAnchor,
 .labelAnchorDisabled,
 .labelAnchorError,
@@ -707,14 +732,26 @@ border-top:1px solid #abadb3;
     background-color:#FFFFFF;
 }
 
-.pickListCell {
+.pickListCell,
+.pickListCellDark,
+.tallPickListCell,
+.tallPickListCellDark {
 	color:#333333;
 }
-.pickListCellSelected {
+.pickListCellSelected,
+.pickListCellSelectedDark {
     color:#333333;
     background:#FFFFFF url(./images/Menu/menu_rollover.png) repeat-x scroll;
 }
-.pickListCellDisabled {
+
+.tallPickListCellSelected,
+.tallPickListCellSelectedDark {
+    color:#333333;
+    background-color:#B2DFEE;;
+}
+
+.pickListCellDisabled,
+.tallPickListCellDisabled {
 	color:#595959;
 	background-color:#C0C0C0;
 }
@@ -794,6 +831,7 @@ border-top:1px solid #abadb3;
 .dateChooserWeekendSelected,
 .dateChooserWeekendSelectedOver,
 .dateChooserWeekendSelectedDown,
+.dateChooserWeekendSelectedDisabled,
 .dateChooserWeekendDisabled {
     font-family:Arial,Verdana,sans-serif; font-size:11px;
     background-color:transparent;
@@ -911,6 +949,7 @@ border-top:1px solid #abadb3;
 .dateChooserWeekend,
 .dateChooserWeekendOver,
 .dateChooserWeekendSelected,
+.dateChooserWeekendSelectedDisabled,
 .dateChooserWeekendDisabled {
     border:2px solid #D6E8FF;
     background-color:#D6E8FF;
@@ -926,6 +965,7 @@ border-top:1px solid #abadb3;
 .dateChooserWeekdayDown,
 .dateChooserWeekdaySelectedDown,
 .dateChooserWeekendSelected,
+.dateChooserWeekendSelectedDisabled,
 .dateChooserWeekendSelectedOver,
 .dateChooserWeekendDown,
 .dateChooserWeekendSelectedDown {
@@ -1188,7 +1228,7 @@ border-top:1px solid #abadb3;
 	font-family:Arial,Verdana,sans-serif; font-size:11px; text-overflow:ellipsis;
 	color:#333333;
     border-bottom:1px solid;
-    border-bottom-color: #EDEDED;        
+    border-bottom-color: #EDEDED;
 }
 
 .specialCol {
@@ -1240,25 +1280,32 @@ border-top:1px solid #abadb3;
 .specialColSelected,
 .recordSummaryCellSelected,
 .recordSummaryCellSelectedDark {
-    background:#d4e8ff;
-    border-top: 1px solid #c5e0ff;
-    border-bottom: 1px solid #c5e0ff;
+    background:#d9e4f6;
+    border-top: 1px dotted #9fb7e9;
+    border-bottom: 1px dotted #9fb7e9;
 }
 .tallCellSelected,
 .tallCellSelectedDark {
-    background:#D4E8FF;
+    background:#d9e4f6;
+    border-top: 1px dotted #9fb7e9;
+    border-bottom: 1px dotted #9fb7e9;    
 }
 .cellSelectedOver,
 .cellSelectedOverDark,
 .specialColSelectedOver,
 .recordSummaryCellSelectedOver,
 .recordSummaryCellSelectedOverDark {
-    background:#A2CBFF url(images/ListGrid/row_Over_Selected.png) repeat-x bottom left scroll;
+    background:#d0dff6 url(images/ListGrid/row_Over_Selected.png) repeat-x bottom left scroll;
+    border-top: 1px dotted #9fb7e9;
+    border-bottom: 1px dotted #9fb7e9;     
 }
 .tallCellSelectedOver,
 .tallCellSelectedOverDark {
-	background-color:#A2CBFF;
+	background-color:#d0dff6;
+    border-top: 1px dotted #9fb7e9;
+    border-bottom: 1px dotted #9fb7e9;    
 }
+
 .gridSummaryCell,
 .gridSummaryCellDisabled {
     font-weight:bold;
@@ -1324,7 +1371,7 @@ border-top:1px solid #abadb3;
 .treeTallCellSelectedOverDark,
 .treeTallCellDisabled,
 .treeTallCellDisabledDark {
- border-bottom:1px solid #E1E1E1;
+
  }
 
 .treeCellDark,
@@ -1341,20 +1388,20 @@ border-top:1px solid #abadb3;
 }
 .treeCellSelected,
 .treeCellSelectedDark {
-    background:#D4E8FF;
+    background:#d9e4f6;
 
 }
 .treeTallCellSelected,
 .treeTallCellSelectedDark {
-	background-color:#D4E8FF;
+	background-color:#d9e4f6;
 }
 .treeCellSelectedOver,
 .treeCellSelectedOverDark {
-    background:#A2CBFF url(images/ListGrid/row_Over_Selected.png) repeat-x bottom left scroll;
+    background:#d0dff6 url(images/ListGrid/row_Over_Selected.png) repeat-x bottom left scroll;
 }
 .treeTallCellSelectedOver,
 .treeTallCellSelectedOverDark {
-	background-color:#A2CBFF;
+	background-color:#d0dff6;
 }
 
 
@@ -1486,7 +1533,10 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
     border-left:1px solid white; border-top:1px solid white; border-bottom:1px solid #808080;
 }
 .tabButtonLeftOver,
+.tabButtonLeftFocused,
 .tabButtonLeftSelected,
+.tabButtonLeftSelectedFocused,
+.tabButtonLeftSelectedFocusedOver,
 .tabButtonLeftSelectedOver {
     font-family:Arial,Verdana,sans-serif; font-size:11px; background-color:#D6D6D6;
     border-left:1px solid white; border-top:1px solid white; border-bottom:1px solid #808080;
@@ -1509,6 +1559,9 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 }
 .tabButtonRightOver,
 .tabButtonRightSelected,
+.tabButtonRightFocused,
+.tabButtonRightSelectedFocused,
+.tabButtonRightSelectedFocusedOver,
 .tabButtonRightSelectedOver {
     font-family:Arial,Verdana,sans-serif; font-size:11px; background-color:#D6D6D6; 
     border-top:1px solid white; border-bottom:1px solid #808080; border-right:1px solid #808080;
@@ -1533,6 +1586,9 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 }
 .tabButtonTopOver,
 .tabButtonTopSelected,
+.tabButtonTopFocused,
+.tabButtonTopSelectedFocused,
+.tabButtonTopSelectedFocusedOver,
 .tabButtonTopSelectedOver {
     font-family:Arial,Verdana,sans-serif; font-size:11px; background-color:#D6D6D6; 
     border-left:1px solid white; border-top:1px solid white; border-right:1px solid #808080;
@@ -1556,6 +1612,9 @@ IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 }
 .tabButtonBottomOver,
 .tabButtonBottomSelected,
+.tabButtonBottomFocused,
+.tabButtonBottomSelectedFocused,
+.tabButtonBottomSelectedFocusedOver,
 .tabButtonBottomSelectedOver {
     font-family:Arial,Verdana,sans-serif; font-size:11px; background-color:#D6D6D6; 
     border-left:1px solid white; border-bottom:1px solid #808080; border-right:1px solid #808080;
@@ -2090,13 +2149,13 @@ a.calMonthEventLink:active {color:blue; text-decoration:none}
 .eventWindow {
     font-family:Arial,Verdana,Bitstream Vera Sans,sans-serif; font-size: 9px;
     background-color:#EBF4FF;
-    border: 1px solid #A2CBFF;
+    border: 1px solid #d0dff6;
 }
 
 .eventWindowHeader {
     font-family:Arial,Verdana,Bitstream Vera Sans,sans-serif; font-size: 9px;
     color:#4C4C4C;
-    background-color:#A2CBFF;
+    background-color:#d0dff6;
 }
 
 .eventWindowBody {

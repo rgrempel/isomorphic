@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -218,8 +218,10 @@ _$centerCell : "<TD VALIGN=center ALIGN=center>",
 _$tileCell : "<TD BACKGROUND=",
 _$tableEnd : "</TD></TR></TABLE>",
 getInnerHTML : function () {
-    var width = this.getInnerWidth(),
-        height = this.getInnerHeight(),
+    var width = this.sizeImageToFitOverflow ? this.getOverflowedInnerWidth() 
+                                            : this.getInnerWidth(),
+        height = this.sizeImageToFitOverflow ? this.getOverflowedInnerHeight() 
+                                            : this.getInnerHeight(),
         imageType = this.imageType;
    
     // stretch: just use an <IMG> tag [default]
@@ -256,14 +258,49 @@ getInnerHTML : function () {
     return output.toString();
 },
 
+// SizeToFitOverflow:
+// If we're imageType:"stretch", and we're showing a label, the label contents may
+// introduce overflow.
+// This property can be set to cause our image to expand to fit under the overflowed label
+sizeImageToFitOverflow:false,
+getOverflowedInnerWidth : function () {
+    return this.getVisibleWidth() - this.getHMarginBorder()
+},
+
+getOverflowedInnerHeight : function () {
+    return this.getVisibleHeight() - this.getVMarginBorder()
+},
+
+
 _handleResized : function (deltaX, deltaY) {
     if (this.redrawOnResize != false || !this.isDrawn()) return;
+   
     // if we're a stretch image, we can resize the image and not redraw it
     // TODO: in fact, we can reflow automatically in the same circumstances as the Button if we
     // draw similar HTML
     var imageStyle = this.getImage(this.name).style;
-    this._assignSize(imageStyle, this._$width, this.getWidth());
-    this._assignSize(imageStyle, this._$height, this.getHeight());
+    var width = this.sizeImageToFitOverflow ? this.getOverflowedInnerWidth() :
+                this.getInnerWidth(),
+        height = this.sizeImageToFitOverflow ? this.getOverflowedInnerHeight() :
+                this.getInnerHeight();
+    
+    this._assignSize(imageStyle, this._$width, width);
+    this._assignSize(imageStyle, this._$height, height);
+},
+// 
+_labelAdjustOverflow : function () {
+    this.Super("_labelAdjustOverflow", arguments);
+    if (this.overflow != isc.Canvas.VISIBLE || !this.sizeImageToFitOverflow) return;
+
+    var image = this.getImage(this.name),
+        imageStyle = image ? image.style : null;
+    if (imageStyle == null) return;
+    var width = this.getOverflowedInnerWidth(),
+        height = this.getOverflowedInnerHeight();
+        
+    this._assignSize(imageStyle, this._$width, width);
+    this._assignSize(imageStyle, this._$height, height);
+
 },
 
 //>	@method	img.setSrc()    ([])

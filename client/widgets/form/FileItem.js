@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -59,7 +59,7 @@
 // Struts may parse the inbound request before SmartClient receives it.  If you are creating an
 // RPCManager object inside of a Struts Action and the file being uploaded is not available via
 // <code>dsRequest.getUploadedFile()</code>, this is likely to be the problem, and you should
-// use SmartClient +link{DMI} instead.
+// use SmartClient +link{dmiOverview,DMI} instead.
 // <P>
 // Server-side validation errors may be provided, including validation errors for the uploaded
 // file (such as too large or invalid content), and will be displayed in the form that

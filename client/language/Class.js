@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -385,6 +385,151 @@ isc.Class.addClassMethods({
         return true;
 	},
 
+	//> @classMethod Class.registerDupProperties() [A]
+	// A common requirement in SmartClient development is to the ability have an attribute
+	// be set to a "standard" type of object or array for every instance of a class.
+	// <P>
+	// An example might be a special subclass of TabSet which always shows a particular set
+	// of tabs.<br>
+	// In this case the most convenient approach would be to simply call 
+	// <P>
+	// <code>setProperties({  tabs: <i>[array of standard tab object]</i> });</code>
+	// <P>
+	// However the developer does not want each instance he creates to point to <b>the same</b>
+	// array of objects - instead each instance should have a separate array containing separate
+	// objects with the same set of standard attributes.
+	// <P>
+	// This method provides an easy way to handle this case. By calling
+	// +link{registerDupProperties()} the developer is notifying a class that every time
+	// a new instance is generated via a call to +link{Class.create()}, the attribute
+	// in question should be cloned onto the generated instance.
+	// <P>
+	// The <code>AutoChild</code> subsystem also respects registered properties for duplication.
+	// When +link{class.addAutoChild()} or +link{class.createAutoChild()} is called, if
+	// a property is set in the <code><i>autoChild</i>Defaults</code> block for the auto child,
+	// that property will be cloned onto the instance rather than copied over by reference if
+	// it's registered as a property for duplication via this method.
+	// <P>
+	// NOTE: This subsystem will only handle cloning simple javascript objects and arrays.
+	// If an attribute name has been registered via this method, calling 
+	// <code>addProperties()</code> on the class object and passing in a live SmartClient
+	// widget is not supported. If you need a standard SmartClient component to show up
+	// in a class we recommend you use the +link{type:AutoChild,AutoChild subsystem} to
+	// define a constructor and defaults for the widget and then set the attribute to
+	// <code>"autoChild:<i>&lt;autoChildName&gt;</i>"</code>.
+	//
+	// @param attributeName (string)
+	//    attribute name to register for duplication on instance creation for this class
+	// @param [subAttributes] (Array of string)
+	//    This parameter allows targetted support for deeper cloning.    
+	//    The issue is that for some attributes - for example sectionStack.sections, we know
+	//    certain properties will also need cloning (sectionStack section.items).
+	//    We want to use 'shallowClone()' to duplicate the objects on init rather than clone
+    //    as clone is dangerous and can lead to stack overflow errors if the target happens
+    //    to point to certain objects.
+    //    Therefore allow developers to register properties of an attr value to also be
+    //    cloned.
+    //    To use this feature a developer would pass in an array of sub-properties
+    //    as a second param (EG registerDupProperties("sections", ["items"]);
+    // @visibility dupProperties
+	//<
+	registerDupProperties : function (attributeName, subAttributes) {
+	   
+	    
+	    if (this._dupAttrs == null || this._dupAttrs._className != this.getClassName()) {
+	        if (this._dupAttrs != null) {
+	            var dupAttrs = this._dupAttrs;
+	            this._dupAttrs = this._dupAttrs.duplicate();
+	            if (dupAttrs._subAttrs != null) {
+	                this._dupAttrs._subAttrs = isc.shallowClone(dupAttrs._subAttrs);
+	            }
+	        } else {
+	            this._dupAttrs = [];
+	        }
+	        
+	        this._dupAttrs._className = this.getClassName();
+	    }
+	    if (!this._dupAttrs.contains(attributeName)) {
+	        this._dupAttrs.add(attributeName);
+	    }
+	    
+	    // support targetted deep-cloning.
+	    // (See JS Doc for subAttributes param)
+	    //
+	    // When given a sub attribute to explicitly dup, store it directly on the
+	    // registered dupAttrs array in an object of the format:
+	    // {attributeName:[ Array of sub attributes for cloning ] }
+	    if (subAttributes != null) {
+	        
+	        //this.logWarn("sub attribute! " + subAttr);
+	        
+	        var dupSubAttrs = this._dupAttrs._subAttrs || {};
+	        dupSubAttrs[attributeName] = subAttributes;
+	        
+            this._dupAttrs._subAttrs = dupSubAttrs;
+	    }
+	    
+	},
+	
+	//> @classMethod Class.isDupProperty()
+	// Returns true if the specified attribute was registered as a property for duplication
+	// at the instance level via +link{Class.registerDupProperties()}
+	// @param attributeName
+	// @visibility dupProperties
+    //<
+	isDupProperty : function (attributeName) {
+	    return this._dupAttrs != null && this._dupAttrs.contains(attributeName);
+	},
+	
+	cloneDupPropertyValue : function (attributeName, value) {
+	    
+	    // We want to warn if the property is set to a Canvas instance which we can't readily
+	    // clone.
+	    // Explicitly catch arrays and run each entry through this method to also warn in the
+	    // case where we have an array containing live canvii.
+	    
+
+	    if (isc.isA.Array(value)) {
+	        var newArr = [];
+	        for (var i = 0; i < value.length; i++) {
+	            newArr[i] = this.cloneDupPropertyValue(attributeName, value[i]);
+	        }
+	        return newArr;
+	    }
+	    
+	    if (isc.Canvas && isc.isA.Canvas(value)) {
+	        this.logWarn("Default value for property '" + attributeName 
+	            + "' is set to a live Canvas (with ID '"+value.getID()+"') at the Class or AutoChild-defaults level. "
+	            + "SmartClient cannot clone a live widget, so each instance of this "
+	            + "class may end up pointing to the same live component. "
+	            + "To avoid unpredictable behavior and suppress this warning, use the " 
+	            + "AutoChild subsystem to set up re-usable default properties for sub-components.");
+	        return value;
+	    }
+	    
+	    var clonedVal = isc.shallowClone(value);
+
+        // Support also cloning certain attribute values - see 'subAttrs' param of 
+        // registerDupProperties	    
+	    var dupArr = this._dupAttrs;
+	    if (dupArr._subAttrs != null && dupArr._subAttrs[attributeName] != null && 
+	        clonedVal != null) 
+	    {
+	        //this.logWarn("iteratin?:" + dupArr._subAttrs[attributeName]);
+	        
+	        for (var i = 0; i < dupArr._subAttrs[attributeName].length; i++) {
+	            var subAttrName = dupArr._subAttrs[attributeName][i];
+	            //this.logWarn("Name:" + subAttrName + ", val:" + clonedVal[subAttrName]);
+	            if (clonedVal[subAttrName] != null) {
+	                clonedVal[subAttrName] = isc.shallowClone(clonedVal[subAttrName]);
+	            }
+	        }
+	    }
+	    return clonedVal;
+	},
+	
+	
+	
 	//>	@classMethod Class.evaluate()
     // Evaluate a string of script and return the result.    
     // <P>
@@ -1699,6 +1844,16 @@ isc.Class.addMethods({
 
             isc.addProperties(this, A,B,C,D,E,F,G,H,I,J,K,L,M);
         }
+        
+        var classObj = this.getClass(),
+            dupProps = classObj._dupAttrs || [];
+        for (var i = 0; i < dupProps.length; i++) {
+            var prop = dupProps[i];
+            if (this[prop] == classObj._instancePrototype[prop]) 
+            {
+                this[prop] = classObj.cloneDupPropertyValue(prop, this[prop]);
+            }
+        }
 
 		// call the init() routine on the new instance
 	    this.init(A,B,C,D,E,F,G,H,I,J,K,L,M);
@@ -2488,9 +2643,10 @@ isc.Class.addMethods({
 	// @visibility external
 	//<
 	ignore : function (object, methodName) {
+        var undef;
 		// also ignore the obfuscated version if present
 		var obName = isc.__remap[methodName];
-		if (object[obName]) this.ignore(object, obName);
+		if (obName !== undef && object[obName]) this.ignore(object, obName);
 		
 		// get the name we would have squirreled the original method under
 		var saveMethodName = isc._obsPrefix+methodName;
@@ -3507,7 +3663,13 @@ isc.Class.addMethods({
                          +"' of type '"+childClassName+"' - no such class in runtime.");
             return null;
         }
-       
+        
+        dynamicDefaults = this.applyDuplicateAutoChildDefaults(
+                            childClass, 
+                            childDefaultsName, 
+                            dynamicDefaults
+                          );
+
         var child = childClass.createRaw();
         
         // autoPassthroughs: mechanism for declaring that certain properties on an autoParent
@@ -3567,6 +3729,47 @@ isc.Class.addMethods({
         
         return child;
     },
+    
+    // When creating an autoChild, clone attributes registered for duplication
+    // from the class level defaults block (or the special 'autoChildDefaults' object) and 
+    // apply cloned versions to dynamic defaults
+    // Returns dynamicDefaults passed in - may be null or a new object if the
+    // dynamicDefaults were unset originally
+    applyDuplicateAutoChildDefaults : function (childClass, childDefaultsName, dynamicDefaults) {
+          // clone attributes from class level defaults block that are registered for duplication
+        var dupProps = childClass._dupAttrs;
+        if (dupProps && dupProps.length > 0) {
+            
+            var childDefaults = this[childDefaultsName];
+            
+            if (childDefaults != null || this.autoChildDefaults != null) {
+                for (var i = 0; i < dupProps.length; i++) {
+                    var attr = dupProps[i],
+                        undef;
+                    
+                    if (childDefaults != null && childDefaults[attr] != null) {
+                    
+                        if (dynamicDefaults == null) dynamicDefaults = {};
+                        if (dynamicDefaults[attr] === undef) {
+                            dynamicDefaults[attr] = childClass.cloneDupPropertyValue(
+                                                        attr, childDefaults[attr]
+                                                    );
+                        }
+                    } else if (this.autoChildDefaults != null &&
+                                this.autoChildDefaults[attr] != null) 
+                    {
+                        if (dynamicDefaults == null) dynamicDefaults = {};
+                        if (dynamicDefaults[attr] === undef) {
+                            dynamicDefaults[attr] = childClass.cloneDupPropertyValue(
+                                                        attr, this.autoChildDefaults[attr]
+                                                    );
+                        }
+                    }
+                }
+            }
+        }
+        return dynamicDefaults;
+    },
 
     
     _completeCreationWithDefaults : function (childName, child, dynamicDefaults) {
@@ -3575,6 +3778,15 @@ isc.Class.addMethods({
         var childDefaultsName = this._getDefaultsName(childName),
             childPropertiesName = this._getPropertiesName(childName)
         ;
+        
+        // duplicate properties from the defaults to the dynamicDefaults block if necessary
+        var childClass = child.getClass();
+        
+        dynamicDefaults = this.applyDuplicateAutoChildDefaults(
+                                childClass,
+                                childDefaultsName,
+                                dynamicDefaults
+                          );
 
         child.completeCreation(
             // defaults for all named children

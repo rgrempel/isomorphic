@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -154,8 +154,8 @@ hasAdvancedCriteria : function () {
 // Returns the Criterion entered in the date field.
 // <P>
 // A Criterion with an "and" +link{type:OperatorId,operator} will be
-// returned with both a "greaterThan" and "lessThan" sub-criteria.  If either date is omitted,
-// only the "greaterThan" (from date) or "lessThan" (to date) Criterion is included.
+// returned with both a "greaterOrEqual" and "lessOrEqual" sub-criteria.  If either date is omitted,
+// only the "greaterOrEqual" (from date) or "lessOrEqual" (to date) Criterion is included.
 //
 // @return (Criterion)
 //
@@ -186,14 +186,14 @@ getCriterion : function (absolute) {
         if (hasFromValue) {
             result.criteria.add({
                 fieldName: this.name, 
-                operator: "greaterThan", 
+                operator: "greaterOrEqual", 
                 value: fromValue 
             });
         }
         if (hasToValue) {
             result.criteria.add({
                 fieldName: this.name, 
-                operator: "lessThan", 
+                operator: "lessOrEqual", 
                 value: toValue 
             });
         }
@@ -204,8 +204,8 @@ getCriterion : function (absolute) {
 
 //> @method dateRangeItem.canEditCriterion()
 // Returns true if the specified criterion contains:
-// <ul><li>A single "lessThan" or "greaterThan" criterion on this field</li>
-//     <li>An "and" type criterion containing a "lessThan" and a "greaterThan" criterion on
+// <ul><li>A single "lessOrEqual" or "greaterOrEqual" criterion on this field</li>
+//     <li>An "and" type criterion containing a "lessOrEqual" and a "greaterOrEqual" criterion on
 //         this field</li>
 // </ul>
 // @param criterion (Criterion) criterion to test
@@ -233,13 +233,15 @@ canEditCriterion : function (criterion) {
             
             // wrong operator - bail, but with a warning since this could confuse a 
             // developer
-            if (innerCriterion.operator != "greaterThan" && innerCriterion.operator != "lessThan") 
+            if (innerCriterion.operator != "greaterThan" && innerCriterion.operator != "greaterOrEqual" 
+                && innerCriterion.operator != "lessThan"
+                && innerCriterion.operator != "lessOrEqual") 
             {
                 this.logWarn("DynamicForm editing Advanced criteria. Includes criterion for " +
                     "field " +  dateField + ". A dateRange editor is showing for this field but " +
                     "the existing criteria has operator:" + innerCriterion.operator + ". DateRange " +
-                    "items can only edit criteria greaterThan or lessThan so leaving this " +
-                    "unaltered.");
+                    "items can only edit criteria greaterThan/greaterOrEqual or lessThan/lessOrEqual " +
+                    "so leaving this unaltered.");
                 return false;
             }
         }
@@ -248,12 +250,14 @@ canEditCriterion : function (criterion) {
         
     // single criterion matching to or from of range.. We support that..
     } else if (criterion.fieldName == dateField) {
-        if (criterion.operator != "greaterThan" && criterion.operator != "lessThan") {
+        if (criterion.operator != "greaterThan" && criterion.operator != "greaterOrEqual"
+            && criterion.operator != "lessThan"
+            && criterion.operator != "lessOrEqual") {
             this.logWarn("DynamicForm editing Advanced criteria. Includes criterion for " +
                 "field " +  dateField + ". A dateRange editor is showing for this field but " +
                 "the existing criteria has operator:" + criterion.operator + ". DateRange " +
-                "items can only edit criteria greaterThan or lessThan so leaving this " +
-                "unaltered.");
+                "items can only edit criteria greaterThan/greaterOrEqual or lessThan/lessOrEqual " +
+                "so leaving this unaltered.");
             return false;
         }
         return true;
@@ -264,9 +268,9 @@ canEditCriterion : function (criterion) {
 },
 
 //> @method dateRangeItem.setCriterion()
-// Applies the specified criterion to this item for editing. Applies any specified "greaterThan"
+// Applies the specified criterion to this item for editing. Applies any specified "greaterOrEqual"
 // operator criterion or sub-criterion to our +link{fromField} and any
-// specified "lessThan" operator criterion or sub-criterion to our +link{toField}.
+// specified "lessOrEqual" operator criterion or sub-criterion to our +link{toField}.
 // @param criterion (Criterion) criterion to edit
 // @group criteriaEditing
 // @visibility external
@@ -275,10 +279,14 @@ setCriterion : function (criterion) {
     var fromCrit, toCrit;
     if (criterion.operator == "and") {
         fromCrit = criterion.criteria.find("operator", "greaterThan");
+        if (!fromCrit) fromCrit = criterion.criteria.find("operator", "greaterOrEqual");
         toCrit = criterion.criteria.find("operator", "lessThan");
+        if (!toCrit) toCrit = criterion.criteria.find("operator", "lessOrEqual");
     } else {
         if (criterion.operator == "greaterThan") fromCrit = criterion;
+        else if (criterion.operator == "greaterOrEqual") fromCrit = criterion;
         else if (criterion.operator == "lessThan") toCrit = criterion;
+        else if (criterion.operator == "lessOrEqual") toCrit = criterion;
     }
 
     // just call setValue on the relevant items.
@@ -299,7 +307,11 @@ dateRangeFormDefaults: {
     margin: 0,
     padding: 0,
     itemChanged : function (item, newValue) {
-        this.creator.updateValue(this.getValuesAsCriteria());
+        var values = this.getValues(),
+            dateRange = {_constructor:"DateRange"};
+        if (values.fromField != null) dateRange.start = values.fromField;
+        if (values.toField != null) dateRange.end = values.toField;
+        this.creator.updateValue(dateRange);
     }
 }
 
@@ -371,9 +383,11 @@ isc.DateRangeItem.addMethods({
         this.toField = this.canvas.getField("toField");
         this.fromField = this.canvas.getField("fromField");
 
-        this.fromField.canvas._nextTabWidget = this.toField.canvas;
-        this.toField.canvas._previousTabWidget = this.fromField.canvas;
-        
+        if (this.allowRelativeDates) {
+            this.fromField.canvas._nextTabWidget = this.toField.canvas;
+            this.toField.canvas._previousTabWidget = this.fromField.canvas;
+        }
+
         if (this.defaultValue) {
             this.setValue(this.defaultValue);
         } else {
@@ -387,14 +401,22 @@ isc.DateRangeItem.addMethods({
 
     //> @method dateRangeItem.setValue()
     // Sets the value for this dateRangeItem.  The value parameter is a 
-    // +link{object:DateRange} object that optionally includes both start and end values.
+    // +link{object:DateRange} object that optionally includes both start and end values.  If
+    // passed null, both start and end range-values are cleared.
     // @param value (DateRange) the new value for this item
     // @visibility external
     //<
     setValue : function (value) {
-        if (value == null) return;
-        if (value.start != null) this.setFromDate(value.start);
-        if (value.end != null) this.setToDate(value.end);
+
+        var start = value ? value.start : null,
+            end = value ? value.end : null,
+            RDI = isc.RelativeDateItem;
+
+        if (!this.allowRelativeDates && RDI.isRelativeDate(start)) this.setFromDate(null);
+        else this.setFromDate(start);
+        if (!this.allowRelativeDates && RDI.isRelativeDate(end)) this.setToDate(null);
+        else this.setToDate(end);
+        this.Super("setValue", arguments);
     },
 
     //> @method dateRangeItem.getValue()
@@ -411,7 +433,7 @@ isc.DateRangeItem.addMethods({
                 this.fromField.getRelativeDate() : this.fromField.getValue(),
             toValue = isRelative && this.toField.getRelativeDate() ? 
                 this.toField.getRelativeDate() : this.toField.getValue(),
-            result = {};
+            result = {_constructor:"DateRange"};
         
         if (fromValue == null && toValue == null) return null;
         if (fromValue != null) result.start = fromValue;
@@ -421,6 +443,7 @@ isc.DateRangeItem.addMethods({
     },
 
     updateValue : function(data) {
+        // we get passed getValuesAsCriteria
         this._updateValue(data);
     }
 
@@ -475,7 +498,9 @@ headerIconProperties: {
     src: "[SKIN]/DynamicForm/DatePicker_icon.gif"
 },
 
-//> @attr headerTitle (String : "Select Date Range" : IR)
+returnCriterion: false,
+
+//> @attr dateRangeDialog.headerTitle (String : "Select Date Range" : IR)
 // The title to display in the header-bar of this Dialog.
 // 
 // @visibility external
@@ -517,9 +542,21 @@ buttonLayoutDefaults: {
     autoParent: "mainLayout"
 },
 
+clearButtonDefaults: {
+    _constructor: "IButton",
+    height: 22,
+    width: 80,
+    title: "Clear",
+    autoParent: "buttonLayout",
+    click : function () {
+        this.creator.clear();
+    }
+},
+
 okButtonDefaults: {
     _constructor: "IButton",
     height: 22,
+    width: 80,
     title: "OK",
     autoParent: "buttonLayout",
     click : function () {
@@ -530,6 +567,7 @@ okButtonDefaults: {
 cancelButtonDefaults: {
     _constructor: "IButton",
     height: 22,
+    width: 80,
     title: "Cancel",
     autoParent: "buttonLayout",
     click : function () {
@@ -537,7 +575,7 @@ cancelButtonDefaults: {
     }
 },
 
-buttonAutoChildren: ["buttonLayout", "okButton", "cancelButton"],
+buttonAutoChildren: ["buttonLayout", "clearButton", "okButton", "cancelButton"],
 
 destroyOnClose: true
 
@@ -571,8 +609,14 @@ isc.DateRangeDialog.addMethods({
         this.addItem(this.mainLayout);
     },
 
+    clear : function () {
+        this.rangeItem.setValue(null);
+    },
+
     accept : function () {
-        this.finished(this.rangeItem.getValue());
+        this.finished(
+            this.rangeItem.returnCriterion ? this.rangeItem.getCriterion() : this.rangeItem.getValue()
+        );
     },
 
     cancel : function () {
@@ -598,11 +642,17 @@ isc.DateRangeDialog.addMethods({
 isc.defineClass("MiniDateRangeItem", "StaticTextItem");
 
 isc.MiniDateRangeItem.addProperties({
+        
+//> @attr miniDateRangeItem.textBoxStyle (FormItemBaseStyle : "textItem" : IRW)
+// @include formItem.textBoxStyle
+//<
+textBoxStyle:"textItem",
+        
 clipValue: true,
 wrap: false,
-valign: "center",
 iconVAlign: "top",
-textBoxStyle: "textItem",
+height: 20,
+width: 100,
 
 //> @attr miniDateRangeItem.shouldSaveValue (boolean : true : IR)
 // Allow miniDateRangeItems' values to show up in the form's values array, or if 
@@ -670,13 +720,13 @@ pickerIconDefaults: {
 // @return (boolean) true
 // @visibility external
 //<
-allowRelativeDates: true
+allowRelativeDates: true,
 
 //> @attr miniDateRangeItem.dateDisplayFormat (DateDisplayFormat : null : IR)
 // Format for displaying dates in to the user.  
 // Defaults to the system-wide default established by +link{Date.setDefaultDisplayFormat()}.
 // <P>
-// If this attribute is unset, the display value is formatted intellegently according to the
+// If this attribute is unset, the display value is formatted intelligently according to the
 // dates involved.  For example, if both dates appear in the same month, the value will be 
 // formatted as <code>Month date1 - date2, Year</code> and, if in different months of the same
 // year, <code>Month1 date1 - Month2 date2, Year</code>.
@@ -699,6 +749,10 @@ allowRelativeDates: true
 //fromDate: "$today",
 
 
+handleClick : function () {
+    this.showRangeDialog();
+}
+
 });
 
 isc.MiniDateRangeItem.addMethods({
@@ -707,6 +761,9 @@ isc.MiniDateRangeItem.addMethods({
             {
                 fromDate: this.fromDate, 
                 toDate: this.toDate,
+                rangeItemProperties: {
+                    allowRelativeDates: this.allowRelativeDates
+                },
                 dateDisplayFormat: this.dateDisplayFormat,
                 callback: this.getID()+".rangeDialogCallback(value)"
             }
@@ -729,7 +786,7 @@ isc.MiniDateRangeItem.addMethods({
     },
 
     rangeDialogCallback : function (value) {
-        this.setValue(value);
+        this.updateValue(value);
     },
 
     //> @method miniDateRangeItem.hasAdvancedCriteria()
@@ -745,8 +802,8 @@ isc.MiniDateRangeItem.addMethods({
     // +link{miniDateRangeItem.rangeDialog}.
     // <P>
     // If both dates are entered, a Criterion with an "and" +link{type:OperatorId,operator} will be
-    // returned with both a "greaterThan" and "lessThan" sub-criteria.  If either date is omitted,
-    // only the "greaterThan" (from date) or "lessThan" (to date) Criterion is returned.
+    // returned with both a "greaterOrEqual" and "lessOrEqual" sub-criteria.  If either date is omitted,
+    // only the "greaterOrEqual" (from date) or "lessOrEqual" (to date) Criterion is returned.
     //
     // @return (Criterion)
     //
@@ -763,7 +820,16 @@ isc.MiniDateRangeItem.addMethods({
     // @visibility external
     //<
     setCriterion : function (criterion) {
-        if (this.rangeItem) this.rangeItem.setCriterion(criterion);
+        if (this.rangeItem) {
+            this.rangeItem.setCriterion(criterion);
+            var value = this.rangeItem.getValue();
+            
+            // call superclass 'setValue()' to update display and store
+            // the new DateRange value derived from the criterion passed in
+            // Pass flag to suppress updating the dateRangeItem again
+            this.setValue(value, null, true);
+        }
+        
     },
 
     //> @method miniDateRangeItem.canEditCriterion()
@@ -780,7 +846,23 @@ isc.MiniDateRangeItem.addMethods({
     // @param value (DateRange) the new value for this item
     // @visibility external
     //<
-    setValue : function (value) {
+    setValue : function (value, allowNull, fromRangeItem) {
+        // update this.fromDate / this.toDate
+        this.updateStoredDates(value);
+     
+        // update the rangeItem
+        if (!fromRangeItem) {
+            this.rangeItem.setFromDate(this.fromDate);
+            this.rangeItem.setToDate(this.toDate);
+        }
+        // this will store the value in the DynamicForm values object, and
+        // refresh to display the value
+        var newArgs = [this.getValue()];
+        this.Super("setValue", newArgs, arguments);
+    },
+    
+    updateStoredDates : function (value) {
+       
         if (value != null) {
             if (isc.DataSource.isAdvancedCriteria(value)) {
                 // value has come back as an AdvancedCriteria!
@@ -788,9 +870,9 @@ isc.MiniDateRangeItem.addMethods({
 
                 for (var i=0; i<value.criteria.length; i++) {
                     var criterion = value.criteria[i];
-                    if (criterion.operator == "greaterThan")
+                    if (criterion.operator == "greaterThan" || criterion.operator == "greaterOrEqual")
                         newValue.start = criterion.value;
-                    else if (criterion.operator == "lessThan")
+                    else if (criterion.operator == "lessThan" || criterion.operator == "lessOrEqual")
                         newValue.end = criterion.value;
                 }
                 value = newValue
@@ -802,23 +884,34 @@ isc.MiniDateRangeItem.addMethods({
             this.fromDate = null;
             this.toDate = null;
         }
-
-        this.rangeItem.setFromDate(this.fromDate);
-        this.rangeItem.setToDate(this.toDate);
-
-        var displayValue = this.mapValueToDisplay(value);
+    },
+    
+    // show the current value in our text box (called from setValue / updateValue)
+    displayValue : function (value) {
+        var displayValue = this.mapValueToDisplay(value) || "";
         this.setElementValue(displayValue, value);
 
-        this.Super("setValue", [value]);
+    },
+    
+    updateValue : function(data) {
+        // fires change handler / calls this.saveValue()
+        if (!this._updateValue(data)) return;
+        
+        // update this.startRow / this.endRow
+        this.updateStoredDates(data);
+        this.displayValue(data);
     },
 
+
     mapValueToDisplay : function (value) {
-        if (value == null) return;
-        var RDI = isc.RelativeDateItem,
-            start = (RDI.isRelativeDate(this.fromDate) ?
-                RDI.getAbsoluteDate(this.fromDate.value) : this.fromDate),
-            end = (RDI.isRelativeDate(this.toDate) ? 
-                RDI.getAbsoluteDate(this.toDate.value) : this.toDate)
+        if (value == null) return "";
+        var fromDate = value.start,
+            toDate = value.end,
+            RDI = isc.RelativeDateItem,
+            start = (RDI.isRelativeDate(fromDate) ?
+                RDI.getAbsoluteDate(fromDate.value) : fromDate),
+            end = (RDI.isRelativeDate(toDate) ? 
+                RDI.getAbsoluteDate(toDate.value) : toDate)
         ;
 
         var prompt;
@@ -847,10 +940,6 @@ isc.MiniDateRangeItem.addMethods({
     getValue : function () {
         if (!this.rangeItem) return;
         return this.rangeItem.getValue();
-    },
-
-    updateValue : function(data) {
-        this._updateValue(data);
     },
 
     // formatDate() - given a live date object, returns the formatted date string to display

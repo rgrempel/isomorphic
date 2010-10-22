@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -718,12 +718,6 @@ initWidget : function () {
 
     if (this.members == null) this.members = [];
     else if (!isc.isA.Array(this.members)) this.members = [this.members];
-
-    
-    if (this.members === this._scPrototype.members) {
-        //this.logWarn("Detected members array as instance property")
-        this.members = this.members.duplicate();
-    }
 
     // NOTE: trickiness with timing of creating members/children/peers:
     // Once we add the "members" as children or peers, Canvas code will auto-create any members
@@ -2122,6 +2116,7 @@ reflow : function (reason) {
 	if (this.isDrawn()) {
 		this._layoutIsDirty = true;
         if (this.instantRelayout) {
+            //isc.logWarn("reflowing NOW");
             this.layoutChildren(reason);
         } else {
             // pass in the current reflowCount so we don't do an extra reflow if reflowNow() is
@@ -2131,6 +2126,7 @@ reflow : function (reason) {
             var theLayout = this,
                 reflowCount = this._reflowCount;
             isc.EH._setThreadExitAction(function () {
+                //isc.logWarn("reflowing at end of thread");
                 if (!theLayout.destroyed) theLayout.reflowNow(reason, reflowCount);
             });
         }
@@ -2775,6 +2771,31 @@ _completeRemoveMembers : function (members) {
     }
 
     this.reflow(this._$membersRemoved);
+},
+
+//> @method layout.setMembers()
+// Display a new set of members in this layout. Equivalent to calling removeMembers() then
+// addMembers(). Note that the new members may include members already present, in which case
+// they will be reordered / integrated with any other new members passed into this method.
+// @param members (Array of Canvas)
+// @visibility external
+//<
+setMembers : function (members) {
+    if (members == this.members || !isc.isAn.Array(members)) return;
+    var removeMembers = [];
+    for (var i = 0; i < this.members.length; i++) {
+        if (!members.contains(this.members[i])) removeMembers.add(this.members[i]);
+    }
+    var instantRelayout = this.instantRelayout;
+    this.instantRelayout = false;
+    this.removeMembers(removeMembers, true);
+    // Note members may contain some members we already have (and shuffle order etc)
+    // addMembers should handle this.
+    
+    this.addMembers(members, 0, true);
+    this.instantRelayout = instantRelayout;
+    if (instantRelayout) this.reflow("set members");
+    
 },
 
 
@@ -3850,4 +3871,8 @@ isc.defineClass("LayoutSpacer","Canvas").addMethods({
     redraw : isc.Canvas.NO_OP,
     _hasUndrawnSize:true
 });
+
+// register 'members' as a dup-property. This means if a layout subclass instance prototype
+// has 'members' assigned it'll be duplicated (and shallow cloned) on instances.
+isc.Layout.registerDupProperties("members");
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1113,7 +1113,15 @@ isc.SelectItem.addMethods({
         if (value == null) return true;
 
         // Disallow values that aren't in the valueMap.
-        return this._valueInValueMap(value)
+        // In multi-select mode, the value could be an array of choices.
+        if (isc.isAn.Array(value)) {
+            for (var i = 0; i < value.length; i++) {
+                if (!this._valueInValueMap(value[i])) return false;
+            }
+            return true;
+        } else {
+            return this._valueInValueMap(value)
+        }
     },
 
     _valueInValueMap : function (value) {
@@ -1141,8 +1149,7 @@ isc.SelectItem.addMethods({
     
     
     // getSelectedRecord()
-    // By default this always updates the selection on the pickList to match this item's stored
-    // value. However for SelectItems there's a _localValue which gets set up before we store our
+    // For SelectItems there's a _localValue which gets set up before we store our
     // value properly.
     // This is used to allow change to occur on blur rather than just on standard 'change' event.
     //
@@ -1152,22 +1159,35 @@ isc.SelectItem.addMethods({
     // selected record rather than the newly selected record until the change handler fires and
     // stores the value out.
     getSelectedRecord : function () {
-        if (this.pickList == null || this.pickList.destroyed) this.makePickList(false);
         
+        if (this.pickList == null || this.pickList.destroyed) this.makePickList(false);
+    
         // We can't just say this.pickList.getSelectedRecord(), since the
         // value may not have been picked from a pickListClick -- instead force a selection
         // that matches our item value then retrieve the selected value.
         var undef,
             value = this._localValue;
         if (value === undef) value = this.getValue();
-        
+    
         if (this.selectItemFromValue(value)) {
             return this.pickList.getSelectedRecord();
         }
-        return null;
+
+        // if we didn't find the selectedRecord in the pickList, call 'super'
+        // this will pick up this._selectedRecord if present -- that gets set up by
+        // the fetchMissingValues code in FormItem.
+        
+        return this.Super("getSelectedRecord", arguments);
     },
 
-    // getSelectedRecords()
+    //> @method selectItem.getSelectedRecords()
+    // For a SelectItem with an +link{optionDataSource} and allowing multiple selection
+    // (+link{multiple,via multiple:true}), returns the list of currently selected records, or
+    // null if none are selected.
+    // 
+    // @return (Array of Record) the list of selected records, or null if none are selected
+    // @visibility external
+    //< 
     getSelectedRecords : function () {
         var value = this._localValue;
         this.selectItemFromValue(value);
@@ -1228,6 +1248,10 @@ isc.SelectItem.addMethods({
     // @include PickList.optionDataSource
     //<
     
+     //> @attr selectItem.textMatchStyle (TextMatchStyle : "startsWith" : IR)
+    // @include PickList.textMatchStyle
+    //<
+    
     //> @attr SelectItem.pickListFields (Array : null : IRA)
     // @include PickList.pickListFields
     // @example relatedRecords
@@ -1279,7 +1303,7 @@ isc.SelectItem.addMethods({
     //<
     
     //> @method SelectItem.getSelectedRecord()
-    // @include PickList.getSelectedRecord()
+    // @include FormItem.getSelectedRecord()
     // @visibility external
     //<
     

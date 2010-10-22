@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-05-15 (2010-05-15)
+ * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -63,6 +63,9 @@ isc.RecordEditor.addProperties({
     
     fixedRecordHeights:true,
     
+    // disable all field autoFit on a record editor - we'll size fields based on our 
+    // target grid.
+    shouldAutoFitField:function () {return false},
     
     
     // skinImgDir - used for the button images
@@ -163,7 +166,12 @@ isc.RecordEditor.addMethods({
 
     // Override 'draw()' to ensure that we're editable
     draw : function () {
-        var firstEditCell = this.findNextEditCell(0,0,1,true,true);
+        // findNextEditCell signature:
+        // rowNum, colNum, direction, stepThroughFields, checkStartingCell,
+        //          checkPastListEnd, dontCheckPastRowEnd, ignoreFocus
+        // Pass in ignoreFocus - ensures we catch any fields where canEdit is true even
+        // if the editor type is not canFocus true (Example: MiniDateRange)
+        var firstEditCell = this.findNextEditCell(0,0,1,true,true,false,true,true);
         if (firstEditCell == null) {
             this.logWarn("No editable fields in this record editor." + 
                         (this.isAFilterEditor() ? 
@@ -192,8 +200,10 @@ isc.RecordEditor.addMethods({
                         vals[field[this.fieldIdProperty]] = field.defaultValue;
                     }
                 }
-            }  
-            this.setEditValues(0, vals);
+            }
+            
+            if (this.isAFilterEditor()) this.setValuesAsCriteria(vals);
+            else this.setEditValues(0, vals);
             
             var firstEditCol = firstEditCell[1];
             // Note if we don't have any fields, this is a no-op
@@ -282,6 +292,62 @@ isc.RecordEditor.addMethods({
         else this.performSave(suppressPrompt);
     },
 
+    // setValuesAsCriteria - for when this component is acting as a filterEditor
+    // applies criteria (possibly AdvancedCriteria) to the edit form for display / modification
+    setValuesAsCriteria : function (criteria, refresh) {
+        var form = this.getEditForm();
+        if (form == null) {
+            this._initialCriteria = criteria;
+            return;
+        }
+        form.setValuesAsCriteria(criteria);
+        if (refresh) this.refreshRow(0);
+    },
+    
+    // Override makeEditForm()
+    // This method is called to initially create the edit form, and to update its items
+    // when fields are shown/hidden / incrementally rendered etc.
+    // Default implementation sets the value based on the current editValues for the row
+    // When we're acting as a filterEditor, we need to apply criteria to the form instead.
+    makeEditForm : function () {
+        var editForm = this.getEditForm(),
+            criteria;
+        if (editForm == null) {
+            criteria = this._initialCriteria;
+            
+        // If the form already exists simply pick up the current values from it and
+        // ensure they're still applied after the items have been reworked
+        } else {
+            criteria = editForm.getValuesAsCriteria();
+        }
+        this.Super("makeEditForm", arguments);
+        
+        editForm = this.getEditForm();
+        if (editForm != null) {
+            editForm.setValuesAsCriteria(criteria);
+            delete this._initialCriteria;
+        }
+    },
+    
+    // Override getEditDisplayValue()
+    // This method is called from refreshCellValue when we are newly showing an edit item,
+    // and should return the current value to display in the item.
+    // For filterEditors rely on the fact that we set the criteria directly on the DynamicForm
+    // based on the criteria applied to the grid when the form is created, and when 
+    // the criteria is changed programmatically. The values stored in the form are always
+    // up to date.
+    
+    
+    getEditDisplayValue : function (rowNum, colNum, record) {
+        if (this.isAFilterEditor() && this._editRowForm != null) {
+            var fieldName = this.getFieldName(colNum);
+            return this._editRowForm.getValue(fieldName);
+        }
+        return this.Super("getEditDisplayValue", arguments);
+    },
+
+
+
     // performFilter() - filter the source widget with the values from this widget
     // There is a problem with doing this, reported on the forums: http://forums.smartclient.com/showthread.php?t=1933
     // The problem is: if you have a datasource with a hidden field, and you programmatically 
@@ -290,8 +356,7 @@ isc.RecordEditor.addMethods({
     // values in the existing criteria for fields we don't know about.
     performFilter : function (suppressPrompt) {
         
-        var criteria = this._getFilterCriteria();
-
+        var criteria = this._getFilterCriteria(this.sourceWidget.autoFetchTextMatchStyle);
         var context = {};
         if (suppressPrompt) context.showPrompt = false;
 
@@ -305,189 +370,30 @@ isc.RecordEditor.addMethods({
         if (isc.isA.ResultSet(rs) && rs.willFetchData(criteria, context.textMatchStyle)) {            
             this.fireOnPause("performFilter", {
                 target:this.sourceWidget, 
-                methodName:"fetchData", 
-                args:[criteria, null, context]
+                methodName:"_fetchFromFilterEditor", 
+                args:[criteria, context]
             }, 
             this.fetchDelay);
         } else {
-            this.sourceWidget.fetchData(criteria, null, context);
+            this.sourceWidget._fetchFromFilterEditor(criteria, context);
         }
 
     },
 
-    _getFilterCriteria : function () {
-   
+    _getFilterCriteria : function (textMatchStyle) {
+        
+        var form = this.getEditForm();
+        if (form == null) {
+            return this._initialCriteria;
+        }
         
         // live values from the edit row form:
         
         // Note that the 'return nulls' param ensures we get entries back for fields with
         // no value so we (correctly) wipe out the value in oldCriteria
-        var newCriteria = this._editRowForm.getValuesAsCriteria(null,true);
-        var grid = this.sourceWidget,
-            data = grid.data,
-            criteria,
-            undef;
-
-        // If the old criteria is advanced, we will use a top-level "AND" to combine it
-        // with the new criteria (replacing any top level overlaps on the specified fields)
-        if (data && grid.dataSource != null && 
-            this.sourceWidget.getDataSource().isAdvancedCriteria(data.criteria))
-        {
-            
-            // deep-clone the old criteria so we can manipulate it
-            criteria = isc.clone(data.criteria);
-            // this.logWarn("performing filter -- previous, advanced criteria:" + isc.Comm.serialize(criteria));
-  
-            // If the top level criteria is not "and"
-            // - if it's a simple single criteria on one of our visible, editable fields,
-            //   replace with standard simple criteria
-            // - otherwise use a top level 'and' to combine the user-entered criteria
-            //   with whatever may have been there before (EG advanced criteria on another field
-            //   or a top level "or" type crit).
-
-            // Obviously this won't be the desired behavior for every case but it's a good
-            // default and will be documented!
-            if (criteria.operator != "and") {
-                // this.logWarn("criteria operator != 'and'");
-                
-                if (criteria.fieldName && 
-                    this.getField(criteria.fieldName) 
-                    // Special case - if a field is non editable and has some advanced
-                    // criteria associated with it, just leave it alone, regardless of our
-                    // specified value for the field.
-                    // We can translate all operators into display type vals automatically
-                    // so we may have nulled out the display value. If it's editable it
-                    // makes sense to clear it but if not treat that as a notification to
-                    // basically leave the old value be, even if our stored edit value
-                    // doesn't match it!
-                    && this.canEditCell(0, this.getFieldNum(criteria.fieldName))) 
-                {
-                    // this.logWarn("converting single field advanced criteria to simple critiera");
-                    criteria = isc.DataSource.filterCriteriaForFormValues(newCriteria);
-                    
-                // Any other non-top-level-and criteria: add a top level 'and' criteria
-                // containing our simple values and return it
-                } else {
-                    // this.logWarn("combining with advanced criteria using and operator");
-                    criteria = isc.DataSource.combineCriteria(newCriteria, criteria, "and");
-                }
-                
-            // If there's a top-level 'and' criteria in place, write over any 
-            // criteria applying to editable fields with the values the user entered and
-            // combine.
-            } else {
-                // this.logWarn("criteria operator == 'and'");
-
-                // In this case we've got a simple "and" at the top level
-                // We want to go through and replace all the fields we contain, then add
-                // any fields we missed
-                var topCriteria = criteria.criteria;
-
-                if (topCriteria == null) topCriteria = [];
-
-                this.processExistingCriteria(topCriteria);
-
-                topCriteria.removeEmpty();
-
-                if (isc.DS.isAdvancedCriteria(newCriteria)) topCriteria.add(newCriteria);
-                else {
-                    for (var fieldName in newCriteria) {
-                        // Don't explicitly apply null values to the criteria or we'll end up
-                        // with requirements that foo == null when the user actually clears a
-                        // field value.
-                        if (newCriteria[fieldName] == null) continue;
-                        
-                        if (this.logIsInfoEnabled())
-                            this.logInfo("_getFilterCriteria: adding new criteria" + this.echo(newCriteria));
-                        var operator = isc.DataSource.getCriteriaOperator(
-                                            newCriteria[fieldName],
-                                            this.sourceWidget.autoFetchTextMatchStyle
-                                       );
-                        topCriteria.add({fieldName:fieldName, operator:operator, value:newCriteria[fieldName]});
-                    }
-                }
-            }
-
-            //this.logWarn("advanced criteria (combined):\n\n" + isc.echoFull(criteria));
-
-        } else {
-
-            var oldCriteria = isc.addProperties({}, data.criteria);
-            // If we have a field with a mapped displayField, it's possible that last time we 
-            // filtered, we did so on the base field and this time we're filtering on the display
-            // field - or vice versa.  If we blindly append unknown keys from last time's criteria
-            // object, we will end up with both the base field and the display field in our 
-            // new criteria.  So, we'll firstly remove any property which is involved in a displayField
-            // mapping (as either source or target)
-            var mapped = [];
-            var items = this._editRowForm.getItems();
-            for (var i = 0; i < items.length; i++) {
-                var item = items[i];
-                if (item.displayField) {
-                    mapped.add(item.displayField);
-                }
-            }
-
-            var fieldNames = isc.DS.getCriteriaFields(newCriteria),
-                undef;
-
-            for (var key in oldCriteria) {
-                // if the field has a mapped displayField, or also appears in the newCriteria,
-                // remove it from the oldCriteria.
-                if (mapped.contains(key) || fieldNames.contains(key))
-                    oldCriteria[key] = undef;
-            }
-
-            isc.addProperties(oldCriteria, newCriteria);
-            criteria = isc.DataSource.filterCriteriaForFormValues(oldCriteria);
-        }
-        //this.logWarn("Criteria to apply (from filter editor):" + this.echoFull(criteria));
-
-        // strip off any additional outer adv-crit objects - no point having them there
-        if (criteria && criteria.criteria && criteria.criteria.length == 1) {
-            while (criteria.criteria.length == 1) {
-                var subCrit = criteria.criteria[0];
-                if (!isc.DS.isAdvancedCriteria(subCrit)) break;
-                criteria = subCrit;
-            }
-        }
-
-        if (criteria && isc.DS.isAdvancedCriteria(criteria)) {
-            if ((criteria.criteria && criteria.criteria.length == 0) || !criteria.criteria)
-                // don't return an AdvancedCriteria if there's no sub-criteria (null or empty)
-                criteria = {};
-        }
-
-        return criteria;
+        return form.getValuesAsCriteria(null, textMatchStyle);
     },
-
-    processExistingCriteria : function (topCriteria) {
-        for (var i = 0; i < topCriteria.length; i++) {
-            var innerCrit = topCriteria[i];
-
-            if (this.logIsInfoEnabled())
-                this.logInfo("processExistingCriteria: inner criteria:" + this.echo(innerCrit));
-
-            if (isc.DS.isAdvancedCriteria(innerCrit)) {
-                this.processExistingCriteria(innerCrit);
-                if (topCriteria.length = 0) {
-                    topCriteria = null;
-                    return;
-                }
-                continue;
-            }
-
-            if (innerCrit.fieldName && 
-                this.getField(innerCrit.fieldName) 
-                && this.canEditCell(0, this.getFieldNum(innerCrit.fieldName))) 
-            {
-                if (this.logIsInfoEnabled())
-                    this.logInfo("processExistingCriteria: inner criteria collides with edited val - clearing:" + innerCrit.fieldName);
-                topCriteria[i] = null;
-            }
-        }
-    },
-
+    
 
     // Add the record to the source widget's data object
     // This method is not completely functional yet - see comments within the method body
@@ -542,12 +448,11 @@ isc.RecordEditor.addMethods({
     },
 
     // A method to get the current edit-values as AdvancedCriteria
-    getValuesAsCriteria : function () {
+    getValuesAsCriteria : function (textMatchStyle) {
         var colNum = this.getEditCol(),
             fieldName = this.getEditFieldName();
-        this.setEditValue(0, colNum, this._editRowForm.getValue(fieldName));
 
-        var criteria = this._getFilterCriteria();
+        var criteria = this._getFilterCriteria(textMatchStyle);
         return criteria;
     },
     
