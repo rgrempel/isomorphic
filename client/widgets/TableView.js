@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -13,27 +13,30 @@
 
 
 //> @class TableView
-// Shows a listing of records with one or more fields from each record shown, with
+// Shows a listing of records with one or more fields from each record, with
 // built-in support for navigation and editing of lists of records.
 // <p/>
 // The TableView provides built-in controls such as +link{showNavigation,navigation arrows} and
 // shows fields from the provided records in one of several built-in +link{type:RecordLayout}s.
+// <p/>
+// NOTE: This widget is intended primarily for creating handset/phone-sized interfaces
+// and does not have an appearance in any skin other than Mobile.
 // 
 // @treeLocation Client Reference/Grids
-// @visibility tableView
+// @visibility external
 //<
 
 isc.ClassFactory.defineClass("TableView", "ListGrid");
 
 isc.TableView.addClassProperties({
 
-    //> @type TableStyle
-    // Controls the style of TableView record display
-    // @value  TableView.PLAIN    The default style which displays a list of rows
+    //> @type TableMode
+    // Controls the display mode of TableView record display
+    // @value  TableView.PLAIN    The default mode which displays a list of rows
     PLAIN:"plain",
     // @value  TableView.GROUPED  Grouped table is a set of rows embedded in a rounded rectangle
     GROUPED:"grouped",
-    // @visibility tableView
+    // @visibility external
     //<
      
     //> @type RecordLayout
@@ -51,23 +54,23 @@ isc.TableView.addClassProperties({
     //                                      +link{descriptionField, description} and
     //                                      +link{dataField, data} fields only
     SUMMARY_DATA:"summaryData",
-    // @value  TableView.SUMMARY_DATA  Show +link{titleField, title}, 
+    // @value  TableView.SUMMARY_FULL  Show +link{titleField, title}, 
     //                                      +link{descriptionField, description},
     //                                      +link{infoField, info} and
     //                                      +link{dataField, data} fields similar to the
     //                                      iPhoneOS Mail application
-    SUMMARY_FULL:"summaryData",
-    // @visibility tableView
+    SUMMARY_FULL:"summaryFull",
+    // @visibility external
     //<
      
-    //> @type NavigationStyle
-    // Controls the navigation style of records.
+    //> @type NavigationMode
+    // Controls the navigation mode of records.
     // @value  TableView.WHOLE_RECORD Clicking anywhere on the record navigates
     WHOLE_RECORD: "wholeRecord",
     // @value  TableView.NAVICON_ONLY Only clicking directly on the navigation icon
     //                                triggers navigation
     NAVICON_ONLY: "navIconOnly"
-    // @visibility tableView
+    // @visibility external
     //<
 
 });
@@ -77,40 +80,65 @@ isc.TableView.addProperties({
     //> @attr tableView.iconField  (String : "icon" : IRW)
     // This property allows the developer to specify the icon displayed next to a record.
     // Set <code>record[tableView.iconField]</code> to the URL of the desired icon to display.
+    // Only applies if +link{showIconField} is <code>true</code>.
     //
-    // @visibility tableView
+    // @visibility external
     //<
     iconField: "icon",
 
-    //>	@attr tableView.showIconfield  (boolean : true : IRW)
-    // Should an icon field be shown for each record? Only applies if +link{iconField}
-    // is specified and the record has an icon specified in the corresponding field.
+    //>	@attr tableView.showIconField  (boolean : true : IRW)
+    // Should an icon field be shown for each record? A column in the table is set
+    // aside for an icon as specified on each record in the +link{iconField}.
     //
-    // @visibility tableView
+    // @visibility external
     //<	
     showIconField: true,
     
     //> @attr tableView.titleField  (String : "title" : IRW)
     // Field to display for an individual record as the main title.
     //
-    // @visibility tableView
+    // @visibility external
     //<
     titleField: "title",
 
+    //> @attr tableView.infoField  (String : "info" : IRW)
+    // Field to display as part of individual record in "summary" +link{recordLayout}s.
+    //
+    // @visibility external
+    // @see recordLayout
+    //<
+    infoField: "info",
+
+    //> @attr tableView.dataField  (String : "data" : IRW)
+    // Field to display as part of individual record in "summary" +link{recordLayout}s.
+    //
+    // @visibility external
+    //<
+    dataField: "data",
+
+    //> @attr tableView.descriptionField  (String : "description" : IRW)
+    // Field to display as part of individual record in all +link{recordLayout}s 
+    // except "titleOnly".
+    //
+    // @visibility external
+    //<
+    descriptionField: "description",
+
     //>	@attr tableView.recordNavigationProperty  (String : "_navigate" : IRW)
     // Boolean property on each record that controls whether navigation controls are shown for
-    // that record.
+    // that record. If property is not defined on the record a navigation icon is shown
+    // if +link{showNavigation} is <code>true</code>.
     //
-    // @visibility tableView
+    // @visibility external
     //<	
     recordNavigationProperty: "_navigate",
 
-    //> @attr tableView.tableStyle  (TableStyle : "plain" : IRW)
-    // The style of the table.
+    //> @attr tableView.tableMode  (TableMode : "plain" : IRW)
+    // The display mode of the table.
     //
-    // @visibility tableView
+    // @visibility external
     //<	
-    tableStyle: isc.TableView.PLAIN,
+    tableMode: isc.TableView.PLAIN,
 
     //> @attr tableView.recordLayout (RecordLayout : "titleOnly" : IRW)
     // Sets the arrangement of data fields from the record.
@@ -120,24 +148,24 @@ isc.TableView.addProperties({
     // +link{iconField} has been configured, it too is an implicitly shown field, to the left
     // of the area controlled by RecordLayout.
     //
-    // @visibility tableView
+    // @visibility external
     //<
     recordLayout: isc.TableView.TITLE_ONLY,
 
     //> @attr tableView.navIcon (SCImgURL : "[SKINIMG]/iOS/listArrow_button.png" : IRW)
     // The navigation icon shown next to records when
-    // +link{showNavigation} is true and +link{navigationStyle} is set to
+    // +link{showNavigation} is true and +link{navigationMode} is set to
     // "navIconOny".
     //
-    // @visibility tableView
+    // @visibility external
     //<
     navIcon: "[SKINIMG]/iOS/listArrow_button.png",
     
     //> @attr tableView.wholeRecordNavIcon (SCImgURL : "[SKINIMG]/iOS/listArrow.png" : IRW)
     // The navigation icon shown next to records when +link{showNavigation}
-    // is true and +link{navigationStyle} is set to "wholeRecord".
+    // is true and +link{navigationMode} is set to "wholeRecord".
     //
-    // @visibility tableView
+    // @visibility external
     //<
     wholeRecordNavIcon: "[SKINIMG]/iOS/listArrow.png",
 
@@ -145,16 +173,109 @@ isc.TableView.addProperties({
     // Whether to show navigation controls by default on all records.  Can also be configured
     // per-record with +link{recordNavigationProperty}.
     //
-    // @visibility tableView
+    // @visibility external
     //<
     
 
-    //> @attr tableView.navigationStyle (NavigationStyle : "wholeRecord" : IRW)
-    // Set navigation style for this TableView.
+    //> @attr tableView.navigationMode (NavigationMode : "wholeRecord" : IRW)
+    // Set navigation mode for this TableView.
     //
-    // @visibility tableView
+    // @visibility external
     //<
-    navigationStyle: isc.TableView.WHOLE_RECORD,
+    navigationMode: isc.TableView.WHOLE_RECORD,
+
+    // SKINNING --------------------------------------------------
+
+    //> @attr tableView.recordTitleStyle (CSSStyle : "recordTitle" : IRW)
+    // Default style for title.
+    // @visibility external
+    //<
+    recordTitleStyle: "recordTitle",
+
+    //> @attr tableView.recordDescriptionStyle (CSSStyle : "recordDescription" : IRW)
+    // Default style for description.
+    // @visibility external
+    //<
+    recordDescriptionStyle: "recordDescription",
+
+    //> @attr tableView.recordDataStyle (CSSStyle : "recordData" : IRW)
+    // Default style for data field.
+    // @visibility external
+    //<
+    recordDataStyle: "recordData",
+
+    //> @attr tableView.recordInfoStyle (CSSStyle : "recordInfo" : IRW)
+    // Default style for info field.
+    // @visibility external
+    //<
+    recordInfoStyle: "recordInfo",
+
+    // COLUMN DEFINITIONS --------------------------------------------------
+
+    iconFieldDefaults: {
+        width: 50,
+        imageSize: 30,
+        align: "center",
+        type: "image"
+    },
+
+    titleFieldDefaults: {
+        width: "*",
+        type: "text",
+        formatCellValue : function (value, record, rowNum, colNum, grid) {
+            if (grid.formatRecord != null) {
+                return grid.formatRecord(record);
+            }
+            var title = value,
+                description = record[grid.descriptionField] || grid._$nbsp,
+                info = record[grid.infoField] || grid._$nbsp,
+                data = record[grid.dataField] || grid._$nbsp,
+                html = ""
+            ;
+
+            if (grid.recordLayout == isc.TableView.SUMMARY_INFO ||
+                grid.recordLayout == isc.TableView.SUMMARY_FULL)
+            {
+                html += "<span class='" + grid.recordInfoStyle + "'>" + 
+                        record[grid.infoField] + "</span>";
+            }
+            html += "<span class='" + grid.recordTitleStyle + "'>" + title + "</span>";
+            if (grid.recordLayout != isc.TableView.TITLE_ONLY) {
+                html += "<span class='" + grid.recordDescriptionStyle + "'>" + 
+                        description + "</span>";
+            }
+            if (grid.recordLayout == isc.TableView.SUMMARY_DATA ||
+                grid.recordLayout == isc.TableView.SUMMARY_FULL)
+            {
+                html += "<span class='" + grid.recordDataStyle + "'>" + 
+                        record[grid.dataField] + "</span>";
+            }
+            return html;
+        }
+    },
+
+    navigationFieldDefaults: {
+        name: "navigationField",
+        width: 54,
+        align: "right",
+        formatCellValue : function (value, record, rowNum, colNum, grid) {
+            if (grid.getShowNavigation(record)) {
+                var icon = isc.Img.create({
+                    autoDraw: false,
+                    autoFit: true,
+                    imageType: "normal",
+                    src: grid.getNavigationIcon(record)
+                });
+                return icon.getInnerHTML();
+            }
+            return grid._$nbsp;
+        } 
+    },
+
+    groupByFieldDefaults: {
+        // Hidden
+        showIf: "false"
+    },
 
     // DEFAULT GRID STYLING --------------------------------------------------
 
@@ -175,12 +296,14 @@ isc.TableView.addProperties({
     wrapCells: false,
     cellHeight: 44,
     alternateRecordStyles: false,
+    canCollapseGroup: false,
+    groupStartOpen: "all",
 
     
     ignoreEmptyCriteria: false
 });
 
-isc.TableView.addMethods({    
+isc.TableView.addMethods({
     
     initWidget : function () {
         this.Super("initWidget", arguments);
@@ -190,59 +313,59 @@ isc.TableView.addMethods({
         // Icon column
         if (this.showIconField) {
             this._iconCell = this.columns.length;
-            this.columns[this.columns.length] = {
-                name: this.iconField,
-                width: 50,
-                imageSize: 30,
-                align: "center",
-                type: "image"
-            };
+            this.columns[this.columns.length]
+                = isc.addProperties({name: this.iconField},
+                                    this.iconFieldDefaults,
+                                    this.iconFieldProperties);
         }
 
         // Title column
-        this.columns[this.columns.length] = {
-            name: this.titleField,
-            width: "*",
-            type: "text"
-        };
+        this.columns[this.columns.length]
+            = isc.addProperties({name: this.titleField},
+                                this.titleFieldDefaults,
+                                this.titleFieldProperties);
 
         // Navigation icon column
         this._navigateCell = this.columns.length;
-        this.columns[this.columns.length] = {
-            name: "navigateField",
-            width: 54,
-            align: "right",
-            formatCellValue : function (value, record, rowNum, colNum, grid) {
-                if (grid.getShowNavigation(record)) {
-                    var icon = isc.Img.create({
-                        autoDraw: false,
-                        autoFit: true,
-                        imageType: "normal",
-                        src: grid.getNavigationIcon(record)
-                    });
-                    return icon.getInnerHTML();
-                }
-                return "&nbsp;";
-            } 
-        };
+        this.columns[this.columns.length]
+            = isc.addProperties({},
+                                this.navigationFieldDefaults,
+                                this.navigationFieldProperties);
 
-        if (this.recordLayout == isc.TableView.TITLE_ONLY) {
+        if (this.groupByField) {
+            // Create a hidden column for each groupBy field
+            var fields;
+            if (isc.isA.Array(this.groupByField)) {
+                fields = this.groupByField;
+            } else {
+                fields = [ this.groupByField ];
+            }            
+            for (var i = 0; i < fields.length; i++) {
+                this.columns[this.columns.length]
+                    = isc.addProperties({name: fields[i]},
+                                        this.groupByFieldDefaults,
+                                        this.groupByFieldProperties);
+            }
         }
 
         this.setFields(this.columns);
+
+        // If formatRecord was passed to us as a string, convert it to a method
+        if (this.formatRecord != null && !isc.isA.Function(this.formatRecord)) 
+            isc.Func.replaceWithMethod(this, "formatRecord", "record");
     },
 
     //> @method tableView.getNavigationIcon
     // Icon to display as a NavigationIcon per record. Default behavior returns
     // +link{navIcon} or +link{wholeRecordNavIcon} depending on
-    // +link{navigationStyle} but could be overridden to customize this
+    // +link{navigationMode} but could be overridden to customize this
     // icon on a per-record basis.
     //
     // @param record (Record) the record
     // @return (Image) the image
     //<
     getNavigationIcon : function (record) {
-        return (this.navigationStyle == isc.TableView.NAVICON_ONLY 
+        return (this.navigationMode == isc.TableView.NAVICON_ONLY 
             ? this.navIcon 
             : this.wholeRecordNavIcon);
     },
@@ -257,7 +380,9 @@ isc.TableView.addMethods({
     // @return (boolean) true if navigation controls should be shown for this record
     //<
     getShowNavigation : function (record) {
-        if (record) return record[this.recordNavigationProperty];
+        if (record && record[this.recordNavigationProperty] != null) {
+            return record[this.recordNavigationProperty];
+        }
         return this.showNavigation;
     },
 
@@ -267,13 +392,13 @@ isc.TableView.addMethods({
 
     recordClick : function (viewer, record, recordNum, field, fieldNum, value, rawValue) {
         if (fieldNum != this._iconCell &&
-            fieldNum != this._nagivateCell &&
+            fieldNum != this._navigateCell &&
             this.canSelectRecord(record))
         {
             this.selectSingleRecord(record);
         }
 
-        if (fieldNum == this._navigateCell || this.navigationStyle == isc.TableView.WHOLE_RECORD) {
+        if (fieldNum == this._navigateCell || this.navigationMode == isc.TableView.WHOLE_RECORD) {
 	    if (this.recordNavigationClick) {
 		// CALLBACK API:  available variables:  "record"
 		// Convert a string callback to a function
@@ -288,17 +413,40 @@ isc.TableView.addMethods({
                 this.imageClick(record);
             }
         }
+    },
 
+    // Override grid.getBaseStyle to handle grouped styling
+    getBaseStyle : function (record, rowNum, colNum) {
+        if (this.isGrouped) {
+            var node = this.data.get(rowNum),
+                first = this.data.isFirst(node),
+                last = this.data.isLast(node)
+            ;
+            if (first && last) {
+                return (colNum == 0 ? "cellOnlyLeft"
+                                    : (colNum == this.fields.length-1 ? "cellOnlyRight"
+                                                                      : "cellOnly"));
+            } else if (first) {
+                return (colNum == 0 ? "cellTopLeft"
+                                    : (colNum == this.fields.length-1 ? "cellTopRight"
+                                                                      : "cellTop"));
+            } else if (last) {
+                return (colNum == 0 ? "cellBottomLeft"
+                                    : (colNum == this.fields.length-1 ? "cellBottomRight"
+                                                                      : "cellBottom"));
+            }
+        }
+        return this.Super("getBaseStyle", arguments);
     }
 });
 
 isc.TableView.registerStringMethods({
     //> @method tableView.recordNavigationClick
     // Executed when the user clicks on a record, or on the navigate icon for a
-    // record depending on +link{navigationStyle}.
+    // record depending on +link{navigationMode}.
     //
     // @param  record (ListGridRecord)  record clicked
-    // @visibility tableView
+    // @visibility external
     //<
     recordNavigationClick : "record",
 
@@ -307,7 +455,17 @@ isc.TableView.registerStringMethods({
     // +link{iconField} has been specified.
     //
     // @param  record (ListGridRecord)  record clicked
-    // @visibility tableView
+    // @visibility external
     //<
-    imageClick : "record"
+    imageClick : "record",
+
+    //> @method tableView.formatRecord()
+    // Formatter to apply to record display.
+    //
+    // @param  record (ListGridRecord)  record to format
+    // @return (HTML) formatted record contents
+    // @visibility external
+    //<
+    formatRecord : "record"
+
 });

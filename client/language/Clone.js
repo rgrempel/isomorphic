@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -79,12 +79,11 @@ _cloneArray : function (object) {
 },
 
 _cloneObject : function (object) {
-	var output = {},
-        refPropName = "__ref";
+	var output = {};
 	for (var key in object) {
 		var value = object[key];
         
-        if (key == refPropName) continue;
+        if (key == isc.gwtRef) continue;
 		output[key] = isc.Comm._clone(value);
 	}
 	return output;

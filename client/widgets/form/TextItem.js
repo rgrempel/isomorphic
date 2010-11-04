@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -119,6 +119,8 @@ isc.TextItem.addProperties({
     // Override redrawOnShowFormIcon - we can handle dynamically updating the item's HTML to
     // show / hide text item icons
     redrawOnShowIcon:false,
+    // setting clipValue to true ensures we resize the text box when showing/hiding icons
+    clipValue:true,
     
     // _nativeEventHandlers is a place to specify native event handlers to be applied to the
     // form item element once it has been written into the DOM (without having to override 

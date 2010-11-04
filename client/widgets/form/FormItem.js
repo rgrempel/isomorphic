@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -642,7 +642,8 @@ isc.FormItem.addProperties({
     // Note: if both <code>dateFormatter</code> and +link{formItem.timeFormatter, timeFormatter}
     // are specified on an item, Date type values will be formatted as dates using 
     // <code>dateFormatter</code>.<br>
-    // See also +link{DateItem.displayFormat} for formatting dates displayed in DateItems.
+    // See also +link{FormItem.displayFormat} and 
+    // +link{DateItem.displayFormat} for formatting dates displayed in DateItems.
     // 
 	// @group appearance
     // @visibility external
@@ -653,12 +654,52 @@ isc.FormItem.addProperties({
     // Time-format to apply to date type values within this formItem.  If specified, any
     // dates displayed in this item will be formatted as times using the appropriate format.<br>
     // Has no effect if +link{formItem.dateFormatter} is also set.<br>
-    // See also +link{TimeItem.displayFormat} for formatting values displayed in TimeItems.
+    // See also +link{FormItem.displayFormat} and
+    // +link{TimeItem.displayFormat} for formatting values displayed in TimeItems.
     // 
 	// @group appearance
     // @visibility external
 	//<
     //timeFormatter:null
+    
+    
+    //> @attr formItem.displayFormat (varies : null : [IRWA])
+    // Fields of type <code>"date"</code> or <code>"time"</code> will be edited using
+    // a +link{DateItem} or +link{TimeItem} by default.
+    // <P>
+    // However this can be overridden - for <code>canEdit:false</code> fields, a
+    // +link{StaticTextItem} is used by default, and the developer can always specify 
+    // a custom +link{formItem.editorType} as well as +link{formItem.type,data type}.
+    // <P>
+    // For fields of type <code>"date"</code>, set this property to a valid
+    // +link{dateDisplayFormat} to specify how the date should be formatted.
+    // <br>
+    // For fields of type <code>"time"</code>, set this property to a valid 
+    // +link{type:timeFormatter, timeFormatter} to specify how the time should be formatted.
+    // <br>
+    // Note that if +link{formItem.dateFormatter} or +link{formItem.timeFormatter} are specified
+    // they will take precedence over this setting.
+    // <P>
+    // If this field is of type <code>"date"</code> and is editable, the 
+    // +link{formItem.inputFormat} may be used to specify how user-edited date strings will
+    // be parsed.
+    //
+    // @see formItem.inputFormat
+    // @see formItem.dateFormatter
+    // @see formItem.timeFormatter
+    // @visibility external
+    //<
+    
+    //> @attr formItem.inputFormat (DateInputFormat : null : [IRWA])
+    // For fields of type <code>"date"</code>, if this is an editable field such as a
+    // +link{TextItem}, this property 
+    // allows you to specify the +link{DateItem.inputFormat, inputFormat} applied to the item.
+    // @see formItem.displayFormat
+    // @visibility external
+    //<
+    
+    
+    
     
     // ValueIcons
     // ---------------------------------------------------------------------------------------
@@ -3555,7 +3596,7 @@ isc.FormItem.addMethods({
         if (!this.logIsInfoEnabled(this._$deprecated)) return;
         // Keep track of which property names we've already warned about on this item.
         if (!this._warnedDeprecated) this._warnedDeprecated = {};
-        if (this._warnedDeprecated[oldPropertyName]) return;
+        if (this._warnedDeprecated[oldPropertyName] == true) return;
 
         if (version == null) version = "5.5";
         var logString = isc.SB.create();
@@ -3800,14 +3841,12 @@ isc.FormItem.addMethods({
         "</TD><TD VALIGN=",     // 0
         ,                       // 1 [v align property for icons]
         
-        
         " WIDTH=",              // 2
         ,                       // 3 [total icons width]
         " style='" + isc.Canvas._$noStyleDoublingCSS + "' class='", // 4
         ,                       // 5 Apply standard cell style to the item
-        "'><NOBR>",             // 6
-        ,                       // 7 [icons HTML]
-        "</NOBR>"
+        "'>",                   // 6
+        null                    // 7 [icons HTML]
     ],
     _$hintCellTemplate : ["</TD><TD ID='", // 0
                             ,              // 1 this._getHintCellID()
@@ -4944,6 +4983,7 @@ isc.FormItem.addMethods({
     //
     //      @return (HTML)      HTML for the icons
     //<
+    _iconsTableStart:"<table cellpadding=0 cellspacing=0 margin=0><tr>",
     getIconsHTML : function () {
         if (!this.showIcons || this.icons == null) return "";
         var hasFocus = this._hasRedrawFocus(true);
@@ -4953,17 +4993,34 @@ isc.FormItem.addMethods({
             return "";
         }
         
-        var output = isc.SB.create();
+        var output = isc.SB.create(),
+            showingIcons = false;
+        
+        // Write the icons out into a table with one cell per icon.
+        // This will ensure they reliably show up in a row horizontally without
+        // relying on <nobr> or css white-space:nowrap;
+        
         
         for (var i = 0; i < this.icons.length; i++) {
-
+            
+            
             var icon = this.icons[i];
             // don't write out the icon if it specified a showIf, which returns false
             if (!this._shouldShowIcon(icon) || this._writeIconIntoItem(icon)) continue;
-            
+
+            if (showingIcons == false) {
+                showingIcons = true;
+                output.append(this._iconsTableStart);
+            }
+    
+            output.append("<td>");
+
             var showFocused = hasFocus && this._iconShouldShowFocused(icon, true);
             output.append(this.getIconHTML(icon, null, this.iconIsDisabled(icon), !!showFocused));
+            
+            output.append("</td>");
         }
+        if (showingIcons) output.append("</table>");
         
         return output.release();
     },
@@ -5104,7 +5161,7 @@ isc.FormItem.addMethods({
                     "'",                        // 2
                       
                     
-                    " style='font-size:1px;margin-left:",     // 3
+                    " style='margin-left:",     // 3
                     ,                           // 4: icon h-space: hspace
                     "px;"
                     + (isc.Browser.isMoz ? "-moz-user-focus:" : ""),    // 5
@@ -5518,8 +5575,12 @@ isc.FormItem.addMethods({
                                         this._getIconLinkElement(previousIcon);
                                         
                     if (previousElement != null) {
-                        isc.Element.insertAdjacentHTML(previousElement, "afterEnd",
-                                        this.getIconHTML(icon, null, this.isDisabled(), focused));
+                        var iconHTML = this.getIconHTML(icon, null, this.isDisabled(), focused);
+                        // We write icons into separate cells of a table...
+                        var cellHTML = "<td>" + iconHTML + "</td>",
+                            previousCell = previousElement.parentNode;
+                        isc.Element.insertAdjacentHTML(previousCell, "afterEnd",
+                                        cellHTML);
                         // Fire _iconVisibilityChanged().  This method will handle resizing the form
                         // item element to accommodate the space taken up by the newly shown icon.
                         this._iconVisibilityChanged();                        
@@ -5573,7 +5634,19 @@ isc.FormItem.addMethods({
 
                 //this.logWarn("would remove element: " + this.echo(element) + 
                 //             " from parentNode: " + this.echo(element.parentNode));
-                isc.Element.clear(element);
+                var cell = element.parentNode,
+                    row = cell.parentNode;
+                // sanity check - the external icons are all written into a table - verify
+                // that the parent element *is* a td element
+                if (cell.tagName.toLowerCase() != "td") {
+                    isc.Element.clear(element);
+                } else {
+                    if (row.cells.length == 1) {
+                        isc.Element.clear(element.parentNode);
+                    } else {
+                        isc.Element.clear(cell);
+                    }
+                }
 
                 // Fire _iconVisibilityChanged().  This method will handle resizing the form
                 // item element to accommodate the space taken up by the newly shown icon.
@@ -5937,9 +6010,9 @@ isc.FormItem.addMethods({
             textBox = this._getTextBoxElement();
         if (textBox) {
             
-            if (shouldClip) textBox.style.width = textBoxWidth;
-            else textBox.style.minWidth = textBoxWidth;
-            textBox.style.height = textBoxHeight;
+            if (shouldClip) textBox.style.width = textBoxWidth + "px";
+            else textBox.style.minWidth = textBoxWidth + "px";
+            textBox.style.height = textBoxHeight + "px";
         }
         if (this._writeOutFocusProxy()) {
             var focusProxy = this.getFocusElement()
@@ -6293,14 +6366,29 @@ isc.FormItem.addMethods({
         // value is a date, use the specified date formatter
         
         
-        
-        if (this.dateFormatter != null && isc.isA.Date(value)) 
-            return value.toNormalDate(this.dateFormatter);
+        if (isc.isA.Date(value)) {
             
-        // If a timeFormatter is specified on the field (again regardless of type), and the
-        // value is a time, use the specified timeFormatter
-        if (this.timeFormatter != null && isc.isA.Date(value))
-            return isc.Time.toTime(value, this.timeFormatter);
+            if (this.dateFormatter != null && isc.isA.Date(value)) {
+                return value.toNormalDate(this.dateFormatter);
+            }
+                
+            // If a timeFormatter is specified on the field (again regardless of type), and the
+            // value is a time, use the specified timeFormatter
+            if (this.timeFormatter != null && isc.isA.Date(value)) {
+                return isc.Time.toTime(value, this.timeFormatter);
+            }
+            
+            // 'displayFormat' may also be specified as either a date or time formatter
+            // this expects the field to have a specified "type".
+            if (this.displayFormat != null) {
+                if (this.type == "time") {
+                    return isc.Time.toTime(value, this.displayFormat);
+                
+                } else if (this.type == "date" || this.type == "datetime") {
+                    return value.toNormalDate(this.displayFormat);
+                }
+            }
+        }
       
             
         // _normalDisplayFormatter and _shortDisplayFormatter is picked up from SimpleType
@@ -6364,6 +6452,16 @@ isc.FormItem.addMethods({
                 }
             }    
         }
+        
+        // Handle 'inputFormat' being specified for fields of type "date"
+        // This is rarely going to be required but would handle something special like
+        // the developer showing a date type field with 'editorType' explicitly set to
+        // "TextItem"
+        if ((this.type == "date" || this.type == "datetime") && this.inputFormat != null) {
+             var date = Date.parseInput(value, this.inputFormat);
+             if (date != null) value = date;
+        }
+        
         return value;
     
     },
@@ -7758,6 +7856,52 @@ isc.FormItem.addMethods({
 
         return (fieldErrors.length == 0);
     },
+    
+    //> @method formItem.setRequired()
+    // Setter to mark this formItem as +link{formItem.required}, or not required at runtime.
+    // Note that an alternative approach to updating the <code>required</code> flag directly
+    // would be to simply use a +link{ValidatorType,requiredIf} type validator.
+    // <P>
+    // Note thate this method will not re-validate this item by default or clear any 
+    // existing validation errors. If desired, this may be achieved by calling
+    // +link{formItem.validate()} or +link{dynamicForm.clearErrors()}.
+    // @param required (boolean) new +link{formItem.required} value.
+    // @visibility external
+    //<
+    setRequired : function (required) {
+        if (required == this.required) return;
+        this.required = required;
+        if (this.form == null) return;
+        
+        if (required) {
+            // getRequiredValidator defined in dataBoundComponent
+            var requiredValidator = this.form.getRequiredValidator(this);
+            this.addValidator(requiredValidator);
+        } else {
+            this.removeValidator({type:"required"});
+        }
+        // redraw the item - this'll refresh the form / refreshing the item title to
+        // show / hide the bold prefix / suffix...
+        this.redraw();
+    },
+    
+    
+    addValidator : function (validator) {
+        if (this.validators == null) this.validators = [];
+        else if (!isc.isAn.Array(this.validators)) this.validators = [this.validators];
+        
+        this.validators.add(validator);
+    },
+    
+    removeValidator : function (validator) {
+        if (this.validators == null) return;
+        if (!isc.isAn.Array(this.validators)) this.validators = [this.validators];
+        
+        // Handle being passed a properties block rather than a pointer to the
+        // live object...
+        var liveVal = this.validators.find(validator);
+        this.validators.remove(liveVal);
+    },
 
     // AutoComplete
 	// -----------------------------------------------------------------------------------------
@@ -7923,7 +8067,7 @@ isc.FormItem.addMethods({
         var completion = this._pendingCompletion,
             keyName = isc.EH.lastEvent.keyName;
         
-        if (this._completionAcceptKeys[keyName]) {
+        if (this._completionAcceptKeys[keyName] == true) {
             // if the completion is accepted, switch value to the exact letter case
             // of the completion value.
             // Note that with the exception of the "Enter" key, all completionAcceptKeys are
@@ -9150,7 +9294,7 @@ isc.FormItem.addMethods({
     //> @method formItem.setShowDisabled()
     // Setter method for +link{formItem.showDisabled}
     // @param showDisabled (boolean) new showDisabled setting
-    // @visibility external;
+    // @visibility external
     //<
     setShowDisabled : function (showDisabled) {
         this.showDisabled = showDisabled;
@@ -10394,8 +10538,8 @@ isc.FormItem.addMethods({
     },
     _$itemCellStyle:"itemCellStyle",
     propertyChanged : function (prop, val) {
-        if (this._relayoutProperties[prop]) this._requiresFormRedraw = true;
-        if (this._stylingProperties[prop]) this.updateState();
+        if (this._relayoutProperties[prop] == true) this._requiresFormRedraw = true;
+        if (this._stylingProperties[prop] == true) this.updateState();
         if (prop == this._$itemCellStyle && this.items) {
             for (var i = 0; i< this.items.length; i++) {
                 this.items[i].updateState();

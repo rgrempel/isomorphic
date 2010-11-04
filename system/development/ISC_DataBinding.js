@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-10-22/LGPL Development Only (2010-10-22)
+  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -327,13 +327,13 @@ if(this.cacheAllData){if(this.cacheResultSet){if(this.logIsInfoEnabled("cacheAll
 this.cacheData=this.testData=this.cacheResultSet.getAllRows()}}else{this.clearDeferredRequests();this.invalidateCache();this.performDSOperation("fetch")}}}
 ,isc.A.hasAllData=function isc_DataSource_hasAllData(){if(this.cacheResultSet)return this.cacheResultSet.lengthIsKnown();else return false}
 ,isc.A.convertRelativeDates=function isc_DataSource_convertRelativeDates(_1,_2,_3,_4){if(!_1)return null;if(!this.isAdvancedCriteria(_1)&&_1.operator==null){return _1}
-var _5=isc.RelativeDate,_6=isc.clone(_1);_4=_4||new Date();if(_3==null)_3=isc.DateChooser?isc.DateChooser.firstDayOfWeek:0;if(_6.criteria&&isc.isAn.Array(_6.criteria)){var _7=_6.criteria;for(var i=_7.length-1;i>=0;i--){var _9=_7[i];if(!_9){if(this.logIsInfoEnabled("relativeDates")){this.logInfo("Removing NULL subcriteria...")}
-_6.criteria.removeAt(i)}else{if(_9.criteria&&isc.isAn.Array(_9.criteria)){if(this.logIsInfoEnabled("relativeDates")){this.logInfo("Calling convertRelativeDates from convertRelativeDates "+"- data is:\n\n"+isc.echoFull(_9)+"\n\n"+"criteria is: \n\n"+isc.echoFull(_1))}
-_6.criteria[i]=this.convertRelativeDates(_9,_2,_3,_4);if(this.logIsInfoEnabled("relativeDates")){this.logInfo("Called convertRelativeDates from convertRelativeDates "+"- data is\n\n"+isc.echoFull(_6.criteria[i]))}}else{_6.criteria[i]=this.mapRelativeDate(_9,_4)}}}}else{_6=this.mapRelativeDate(_6,_4)}
-if(this.logIsInfoEnabled("relativeDates")){this.logInfo("Returning from convertRelativeDates - result is:\n\n"+isc.echoFull(_6)+"\n\n"+"original criteria is: \n\n"+isc.echoFull(_1))}
+var _5=isc.RelativeDate,_6=isc.clone(_1);_4=_4||new Date();if(_3==null)_3=isc.DateChooser?isc.DateChooser.firstDayOfWeek:0;if(_6.criteria&&isc.isAn.Array(_6.criteria)){var _7=_6.criteria;for(var i=_7.length-1;i>=0;i--){var _9=_7[i];if(!_9){if(this.logIsInfoEnabled("relativeDates")){this.logInfo("Removing NULL subcriteria...","relativeDates")}
+_6.criteria.removeAt(i)}else{if(_9.criteria&&isc.isAn.Array(_9.criteria)){if(this.logIsInfoEnabled("relativeDates")){this.logInfo("Calling convertRelativeDates from convertRelativeDates "+"- data is:\n\n"+isc.echoFull(_9)+"\n\n"+"criteria is: \n\n"+isc.echoFull(_1),"relativeDates")}
+_6.criteria[i]=this.convertRelativeDates(_9,_2,_3,_4);if(this.logIsInfoEnabled("relativeDates")){this.logInfo("Called convertRelativeDates from convertRelativeDates "+"- data is\n\n"+isc.echoFull(_6.criteria[i]),"relativeDates")}}else{_6.criteria[i]=this.mapRelativeDate(_9,_4)}}}}else{_6=this.mapRelativeDate(_6,_4)}
+if(this.logIsInfoEnabled("relativeDates")){this.logInfo("Returning from convertRelativeDates - result is:\n\n"+isc.echoFull(_6)+"\n\n"+"original criteria is: \n\n"+isc.echoFull(_1),"relativeDates")}
 return _6}
 ,isc.A.mapRelativeDate=function isc_DataSource_mapRelativeDate(_1,_2){var _3=isc.addProperties({},_1),_4,_5;_2=_2||new Date();if(_3.value&&isc.isAn.Object(_3.value)&&_3.value._constructor=="RelativeDate")
-{_5=_3.value.value;_3.value=isc.RelativeDateItem.getAbsoluteDate(_5,_2)}else{if(_3.start&&isc.isAn.Object(_3.start)&&_3.end._constructor=="RelativeDate")
+{_5=_3.value.value;_3.value=isc.RelativeDateItem.getAbsoluteDate(_5,_2)}else{if(_3.start&&isc.isAn.Object(_3.start)&&_3.start._constructor=="RelativeDate")
 {_5=_3.start.value;if(_5=="$today")_5="$startOfToday";_3.start=_4=isc.RelativeDateItem.getAbsoluteDate(_5,_2)}
 if(_3.end&&isc.isAn.Object(_3.end)&&_3.end._constructor=="RelativeDate")
 {_5=_3.end.value;if(_5=="$today")_5="$endOfToday";_3.end=isc.RelativeDateItem.getAbsoluteDate(_5,_2)}}
@@ -623,7 +623,7 @@ var _10=this.getOperationBinding(_1);_9.transport=_10.dataTransport||this.dataTr
 isc.rpc.sendRequest(_9);return}
 var _2=this.getDataFormat(_1);if(_2=="xml"){var _11=_9.spoofedResponse;if(!_11){_9.callback={target:this,method:this.$378};isc.xml.getXMLResponse(_9)}else{var _12=this;isc.Timer.setTimeout(function(){_12.$378(isc.xml.parseXML(_11),_11,{status:0,httpResponseCode:200,data:_11},_9)})}}else if(_2=="json"){_9.callback={target:this,method:this.$379};isc.rpc.sendProxied(_9)}else if(_2=="csv"){_9.callback={target:this,method:this.$69k};isc.rpc.sendProxied(_9)}else{_9.serverOutputAsString=true;_9.callback={target:this,method:this.$38a};isc.rpc.sendProxied(_9)}}
 ,isc.A.$79c=function isc_DataSource__applySparseAndNoNullUpdates(_1,_2,_3,_4){if(!this.noNullUpdates){if(!this.sparseUpdates)return;if(_2==null)return}
-for(var _5 in _1){var _6=_1[_5];if(this.noNullUpdates&&_6===null){if(_3=="add"&&this.omitNullDefaultsOnAdd==true){delete _1[_5]}else{var _7=this.getField(_5),_8;if(_7&&_7.nullReplacementValue!==_8){_1[_5]=_7.nullReplacementValue}else{var _9=isc.SimpleType.getBaseType(_7.type,this);if(_9=="integer"){_1[_5]=this.nullIntegerValue}else if(_9=="float"){_1[_5]=this.nullFloatValue}else if(_9=="date"||_9=="time"){_1[_5]=this.nullDateValue}else if(_9=="boolean"){_1[_5]=this.nullBooleanValue}else{_1[_5]=this.nullStringValue}}}}else if(this.sparseUpdates&&_3=="update"){if(_2==null)continue;var _10=_2[_5];if(_10==null&&!(_6==null))continue;if(_4!=null){var _7=_4.getField(_5);if(_7&&_7.primaryKey)continue}
+for(var _5 in _1){if(_5==isc.gwtRef)continue;var _6=_1[_5];if(this.noNullUpdates&&_6===null){if(_3=="add"&&this.omitNullDefaultsOnAdd==true){delete _1[_5]}else{var _7=this.getField(_5),_8;if(_7&&_7.nullReplacementValue!==_8){_1[_5]=_7.nullReplacementValue}else{var _9=isc.SimpleType.getBaseType(_7.type,this);if(_9=="integer"){_1[_5]=this.nullIntegerValue}else if(_9=="float"){_1[_5]=this.nullFloatValue}else if(_9=="date"||_9=="time"){_1[_5]=this.nullDateValue}else if(_9=="boolean"){_1[_5]=this.nullBooleanValue}else{_1[_5]=this.nullStringValue}}}}else if(this.sparseUpdates&&_3=="update"){if(_2==null)continue;var _10=_2[_5];if(_10==null&&!(_6==null))continue;if(_4!=null){var _7=_4.getField(_5);if(_7&&_7.primaryKey)continue}
 if(isc.isA.Date(_6)&&Date.compareDates(_6,_10)==0){delete _1[_5]}else if(isc.isAn.Array(_6)){for(var i=0;i<_6.length;i++){this.$79c(_6[i],_10[i],_3,_7==null?null:isc.DataSource.get(_7.type));var _12=0;for(var _13 in _6[i])_12++;if(_12==0)delete _6[i]}
 var _14;for(var i=0;i<_6.length;i++){if(_6[i]!=null){_14=true;break}}
 if(!_14)delete _1[_5]}else if(isc.isAn.Object(_6)){this.$79c(_6,_10,_3,_7==null?null:isc.DataSource.get(_7.type));var _12=0;for(var _13 in _6)_12++;if(_12==0)delete _1[_5]}else if(_6==_10){delete _1[_5]}}}}
@@ -831,8 +831,8 @@ return _4},min:function(_1,_2,_3){var _4,_5
 for(var i=0;i<_2.length;i++){var _7=_1[_2[i].name];if(isc.isA.Date(_7)){if(_5)return null;if(_4==null)_4=_7.duplicate();if(_7.getTime()<_4.getTime())_4=_7.duplicate()}else{if(_7==null||_7==isc.emptyString)continue;_5=true;var _8=parseFloat(_7);if(isc.isA.Number(_8)&&(_8==_7)){if(_4==null)_4=_8;else if(_4>_7)_4=_8}else{return null}}}
 return _4},multiplier:function(_1,_2,_3){var _4=0;for(var i=0;i<_2.length;i++){var _6=_1[_2[i].name],_7=parseFloat(_6);if(isc.isA.Number(_7)&&(_7==_6)){if(i==0)_4=_7;else _4=(_4*_7)}else{return null}}
 return _4}};isc.B.push(isc.A.addSearchOperator=function isc_c_DataSource_addSearchOperator(_1){if(!_1||!_1.ID){isc.logWarn("Attempted to add null search operator, or operator with no ID");return}
-if(!isc.DataSource.$57z)isc.DataSource.$57z=[];var _2=isc.DataSource.$57z;if(_2.containsProperty("ID",_1.ID)){isc.logWarn("Attempted to add existing operator "+_1.ID+" - replacing");var _3=_2.findIndex("ID",_1.ID);if(_3>=0)_2.removeAt(_3)}
-isc.DataSource.$57z.add(_1)}
+if(!isc.DataSource.$57z)isc.DataSource.$57z={};var _2=isc.DataSource.$57z,_3;if(_2[_1.ID]!==_3){isc.logWarn("Attempted to add existing operator "+_1.ID+" - replacing")}
+isc.DataSource.$57z[_1.ID]=_1}
 ,isc.A.setTypeOperators=function isc_c_DataSource_setTypeOperators(_1,_2){if(!_2)return;if(!isc.isAn.Array(_2))_2=[_2];if(!isc.DataSource.$570)isc.DataSource.$570={};isc.DataSource.$570[_1||"_all_"]=_2}
 ,isc.A.$625=function isc_c_DataSource__getNextRequestId(){return this.$628++}
 ,isc.A.getAutoTitle=function isc_c_DataSource_getAutoTitle(_1,_2){_2=_2||/[_\$]/g;if(!_1)return"";if(!isc.isA.String(_1))_1=_1.toString();var _3;_4=_1.replace(_2," ");var _4=_4.replace(/^\s+|\s+$/g,"");if(_4==_4.toUpperCase()||_4==_4.toLowerCase()){_4=_4.toLowerCase();var _5=true;_3="";for(var i=0;i<_4.length;i++){var _7=_4.substr(i,1);if(_5){_7=_7.toUpperCase();_5=false}
@@ -873,12 +873,11 @@ if(isc.isA.Function(_1))return _1(_2,_3,_4)}
 this.$71l[_1]=_2}
 );isc.B._maxIndex=isc.C+12;isc.A=isc.DataSource.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.isAdvancedCriteria=function isc_DataSource_isAdvancedCriteria(_1){return isc.DS.isAdvancedCriteria(_1,this)}
 ,isc.A.addSearchOperator=function isc_DataSource_addSearchOperator(_1,_2){if(!_1||!_1.ID){isc.logWarn("Attempted to add null search operator, or operator with no ID");return}
-if(!isc.DataSource.$57z[_1.ID]){isc.DataSource.addSearchOperator(_1)}
-if(!this.$570)this.$570={$58d:true};if(_2){for(var _3=0;_3<this.$570.length;_3++){this.$570[_3].remove(_1.ID)}
+isc.DataSource.addSearchOperator(_1);if(!this.$570)this.$570={$58d:true};if(_2){for(var _3=0;_3<this.$570.length;_3++){this.$570[_3].remove(_1.ID)}
 for(var _3=0;_3<_2.length;_3++){if(!this.$570[_2[_3]]){this.$570[_2[_3]]=[_1.ID]}
 if(!this.$570[_2[_3]].contains(_1.ID)){this.$570[_2[_3]].add(_1.ID)}}}else{if(!this.$570["_all_"]){this.$570["_all_"]=[_1.ID]}
 if(!this.$570["_all_"].contains(_1.ID)){this.$570["_all_"].add(_1.ID)}}}
-,isc.A.getSearchOperator=function isc_DataSource_getSearchOperator(_1){return isc.DataSource.$57z.find("ID",_1)}
+,isc.A.getSearchOperator=function isc_DataSource_getSearchOperator(_1){return isc.DataSource.$57z[_1]}
 ,isc.A.getTypeOperators=function isc_DataSource_getTypeOperators(_1){var _2=[];_1=_1||"text";var _3=isc.SimpleType.getType(_1);var _4=_3;if(this.$570){while(_4&&!this.$570[_4.name]){_4=isc.SimpleType.getType(_4.inheritsFrom,this)}
 if(_4&&this.$570[_4.name]){_2=this.$570[_4.name]}
 _2.addList(this.$570["_all_"]);if(!this.$570.$58d){return _2}}
@@ -895,9 +894,10 @@ return _5}
 _5[_6[_7]]=_8.titleProperty==null?_8.title:isc.Operators[_8.titleProperty]}}
 return _5}
 );isc.B._maxIndex=isc.C+8;isc.A=isc.DataSource.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.evaluateCriterion=function isc_DataSource_evaluateCriterion(_1,_2){if(_2.requiresServer==true)return true;var _3=this.getSearchOperator(_2.operator);if(_3==null){isc.logWarn("Attempted to use unknown operator "+_2.operator);return false}
-if(_2.fieldName){var _4=this.getFieldOperators(_2.fieldName);if(!_4.contains(_3.ID)){this.logWarn("Operator "+_3.ID+" is not valid for field "+_2.fieldName+". Continuing anyway.")}}
+if(this.$80m){if(_2.fieldName){var _4=this.getFieldOperators(_2.fieldName);if(!_4.contains(_3.ID)){this.logWarn("Operator "+_3.ID+" is not valid for field "+_2.fieldName+". Continuing anyway.")}}}
 return _3.condition(_2.value,_1,_2.fieldName,_2,_3,this)}
-,isc.A.recordsMatchingAdvancedFilter=function isc_DataSource_recordsMatchingAdvancedFilter(_1,_2,_3){var _4=[];this.$59u=false;this.$59v=_2.strictSQLFiltering;for(var _5=0;_5<_1.length;_5++){if(this.evaluateCriterion(_1[_5],_2)){_4.add(_1[_5])}}
+,isc.A.recordsMatchingAdvancedFilter=function isc_DataSource_recordsMatchingAdvancedFilter(_1,_2,_3){var _4=[];this.$59u=false;this.$59v=_2.strictSQLFiltering;this.$80m=true;for(var _5=0;_5<_1.length;_5++){if(this.evaluateCriterion(_1[_5],_2)){_4.add(_1[_5])}
+delete this.$80m}
 return _4}
 ,isc.A.compareAdvancedCriteria=function isc_DataSource_compareAdvancedCriteria(_1,_2,_3){var _4=this.getSearchOperator(_2.operator);if(_4!=this.getSearchOperator(_1.operator)){return-1}
 return _4.compareCriteria(_1,_2,_4,this)}
@@ -1042,7 +1042,7 @@ if(!_4)
 return isc.rpc.sendRequest(_1)}
 ,isc.A.$59w=function isc_c_RPCManager__getHostAndPort(_1){var _2=isc.Page.getProtocol(_1),_3=_1.indexOf("/",_2.length),_4=_1.substring(_2.length,_3),_5;var _6=_4.indexOf(":");if(_6!=-1){_5=_4.substring(_6+1);_4=_4.substring(0,_6)}
 return[_4,_5]}
-,isc.A.isLocalURL=function isc_c_RPCManager_isLocalURL(_1){var _2=this.$59w(_1),_3=_2[0],_4=_2[1];return(_3=="localhost"||_3==this.getWindow().location.hostname)&&_4==this.getWindow().location.port}
+,isc.A.isLocalURL=function isc_c_RPCManager_isLocalURL(_1){var _2=this.$59w(_1),_3=_2[0],_4=_2[1];if(_4==null||_4=="")_4=80;var _5=this.getWindow().location,_6=_5.hostname,_7=_5.port;if(_7==null||_7=="")_7=80;return(_3=="localhost"||_3==_6)&&_4==_7}
 ,isc.A.sendRequest=function isc_c_RPCManager_sendRequest(_1){if(_1.useHttpProxy&&!_1.isProxied)return this.sendProxied(_1);if(_1.canDropOnDelay&&this.delayingTransactions)return;_1=isc.addProperties({},_1);if(_1.suppressAutoDraw!==false)_1.suppressAutoDraw=true;_1.actionURL=isc.Page.getURL(_1.actionURL||_1.url||_1.URL||this.getActionURL());var _2=_1.transport;if(!_2){if(_1.useXmlHttpRequest!=null||this.useXmlHttpRequest!=null){if(_1.useXmlHttpRequest==null){if(this.useXmlHttpRequest!=null){_1.transport=this.useXmlHttpRequest?"xmlHttpRequest":"hiddenFrame"}else{_1.transport=this.defaultTransport}}else{_1.transport=_2=_1.useXmlHttpRequest?"xmlHttpRequest":"hiddenFrame"}}else{_1.transport=this.defaultTransport}}
 this.checkTransportAvailable(_1,(_2!=null));if(_1.useSimpleHttp==null)_1.useSimpleHttp=_1.paramsOnly;isc.addDefaults(_1,{showPrompt:this.showPrompt,promptStyle:this.promptStyle,promptCursor:this.promptCursor,useCursorTracker:this.useCursorTracker,cursorTrackerConstructor:this.cursorTrackerConstructor});_1.cursorTrackerProperties=isc.addProperties({},this.cursorTrackerDefaults,this.cursorTrackerProperties,_1.cursorTrackerProperties);if(_1.cursorTrackerProperties==null)
 _1.cursorTrackerProperties=this.cursorTrackerProperties;if(!_1.operation){_1.operation={ID:"custom",type:"rpc"}}
@@ -1551,7 +1551,7 @@ this.parentElement.setErrors(_1.errors,true);else this.setErrors(_1.errors,true)
 if(_3.clientContext){_3.willHandleError=_3.clientContext.$69t}
 if(_1.status<0&&!_3.willHandleError)
 return isc.RPCManager.$a0(_1,_3);return true},$40d:function(_1,_2,_3){if(_2.status==isc.RPCResponse.STATUS_SUCCESS){this.performingServerValidation=false;this.markForRedraw("serverValidationSuccess");this.saveData(_1.$40c,_1.$40b,true);_1.$40c=null;_1.$40b=null}else{this.setErrors(_2.errors,true)}}});if(isc.DynamicForm)isc.ClassFactory.mixInInterface("DynamicForm","EditorActionMethods");isc.$457={fetchData:function(_1,_2,_3){var _4=this.getDataSource();if(!_4){this.logWarn("Ignoring call to fetchData() on a DynamicForm with no valid dataSource");return}
-if(this.$458==null)this.$458=[];this.$458.add(_2);_3=this.buildRequest(_3,"fetch",_2);_4.fetchData(_1,{target:this,methodName:"fetchDataReply"},_3)},fetchDataReply:function(_1,_2,_3){var _4;if(isc.isAn.Array(_2)){_4=_2.get(0)}else{_4=_2}
+if(this.$458==null)this.$458=[];this.$458.add(_2);_3=this.buildRequest(_3,"fetch");_4.fetchData(_1,{target:this,methodName:"fetchDataReply"},_3)},fetchDataReply:function(_1,_2,_3){var _4;if(isc.isAn.Array(_2)){_4=_2.get(0)}else{_4=_2}
 this.editRecord(_4);var _5=this.$458.pop();if(_5)this.fireCallback(_5,"dsResponse,data,dsRequest",[_1,_2,_3])},filterData:function(_1,_2,_3){var _4=this.getDataSource();if(!_4){this.logWarn("Ignoring call to filterData() on a DynamicForm with no valid dataSource");return}
 if(this.$458==null)this.$458=[];this.$458.add(_2);_4.filterData(_1,{target:this,methodName:"fetchDataReply"},_3)}}
 if(isc.DynamicForm)isc.DynamicForm.addMethods(isc.$457)
@@ -3114,7 +3114,7 @@ isc._moduleEnd=isc._DataBinding_end=(isc.timestamp?isc.timestamp():new Date().ge
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-10-22/LGPL Development Only (2010-10-22)
+  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

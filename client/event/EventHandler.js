@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1205,7 +1205,8 @@ cancelKeyEvent : function (DOMevent) {
     
     
     if (isc.Browser.isIE || isc.Browser.isSafari) {
-        if (this._IECanSetKeyCode[DOMevent.type]) {
+        
+        if (this._IECanSetKeyCode[DOMevent.type] == true) {
             
             try {
                 DOMevent.keyCode = 0;
@@ -3289,12 +3290,34 @@ handleDragStop : function () {
         if (dragOperation == EH.DRAG_RESIZE) {
  
             if (!wasDraggingTarget) {
-				// resize the dragTarget to the size of the dragMoveTarget
-                dragTarget.setPageRect(  dragMoveTarget.getPageLeft(),
-                                         dragMoveTarget.getPageTop(),
-                                         dragMoveTarget.getWidth(),
-                                         dragMoveTarget.getHeight(),
-                                         true   );
+                if (dragMoveTarget != null) {
+                    // resize the dragTarget to the size of the dragMoveTarget
+                    dragTarget.setPageRect(  dragMoveTarget.getPageLeft(),
+                                             dragMoveTarget.getPageTop(),
+                                             dragMoveTarget.getWidth(),
+                                             dragMoveTarget.getHeight(),
+                                             true   );
+                // drag appearance "none"
+                } else {
+                    var resizeEdge = isc.EH.resizeEdge;
+                    if (resizeEdge != null) {
+                        var X = isc.EH.getX(),
+                            Y = isc.EH.getY(),
+                            lOffset = resizeEdge.contains("L") ? X- EH.dragTargetStartRect[0] : 0,
+                            tOffset = resizeEdge.contains("T") ? Y- EH.dragTargetStartRect[1] : 0;
+                            
+                        // One of "L", "R", "T", "B", "LR", etc
+                        dragTarget.setPageRect(
+                            resizeEdge.contains("L") ? X : EH.dragTargetStartRect[0],
+                            resizeEdge.contains("T") ? Y : EH.dragTargetStartRect[1],
+                            resizeEdge.contains("R") ? X - dragTarget.getPageLeft() 
+                                : EH.dragTargetStartRect[2] - lOffset,
+                            resizeEdge.contains("B") ? isc.EH.getY()-dragTarget.getPageTop()
+                                :  EH.dragTargetStartRect[3] - tOffset,
+                            true
+                        );
+                    }
+                }
             }
             
             var deltaX = dragTarget.getVisibleWidth() - EH.dragTargetStartRect[2],
@@ -3307,9 +3330,13 @@ handleDragStop : function () {
         // otherwise if a reposition operation
         } else if (dragOperation == EH.DRAG_REPOSITION) {
             if (!wasDraggingTarget) {
-				// move the target if we were moving a different drag-move target.
-                dragTarget.setPageRect(  dragMoveTarget.getPageLeft(),
-                                         dragMoveTarget.getPageTop()  );
+                if (dragMoveTarget != null) {
+                    // move the target if we were moving a different drag-move target.
+                    dragTarget.setPageRect(  dragMoveTarget.getPageLeft(),
+                                             dragMoveTarget.getPageTop()  );
+                } else {
+                    dragTarget.setPageRect(isc.EH.getX(), isc.EH.getY());
+                }
 				// and bring it to the front
 				dragTarget.bringToFront();
 			}
@@ -4017,7 +4044,7 @@ isMouseEvent : function (eventType) {
         }
     }
 
-    if (this._mouseEvents[eventType]) return true;
+    if (this._mouseEvents[eventType] == true) return true;
     // otherwise it's not a mouse event.
     return false;
 },
@@ -4044,7 +4071,7 @@ isKeyEvent : function (eventType) {
         for (var name in nativeMap) ke[name] = true;
     }
 
-    if (this._keyEvents[eventType]) return true;
+    if (this._keyEvents[eventType] == true) return true;
     // otherwise it's not a key event.
     return false;
 },

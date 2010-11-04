@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -86,7 +86,16 @@ isc.SearchForm.addMethods({
         } else {
             return this.invokeSuper(isc.SearchForm, "validate", a, b, c);
         }
+    },
+    
+    // override getEditorType() so we can default date fields to using the DateRangeItem
+    getEditorType : function (field) {
+        var type = field.type;
+        
+        if (type == "date") return "DateRangeItem";
+        return this.Super("getEditorType", arguments);
     }
+
     
 });
 

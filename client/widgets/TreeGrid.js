@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -225,8 +225,11 @@ isc.TreeGrid.addClassProperties({
 	//=	@const	TreeGrid.TREE_FIELD		default field to display a tree
 	TREE_FIELD : {name:"nodeTitle", treeField:true,
 
-    			getCellValue : function (list,record,recordNum,coNum) {
-                    if (!list.getNodeTitle) return;
+    			getCellValue : function (list,record,recordNum,colNum) {
+                    if (!list.getNodeTitle) {
+                        var fieldName = colNum == null ? null : list.getFieldName(colNum);
+                        return record == null || fieldName == null ? null : record[fieldName];
+                    }
                     return list.getNodeTitle(record,recordNum, this)
                 },
                 canFilter: false,    
@@ -2776,7 +2779,6 @@ bodyDrawing : function (body,a,b,c,d) {
 // @visibility external
 //<
 getNodeTitle : function (record, recordNum, field) {
-
     
     if (field.name && field.name != this._titleField) {
         

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -571,8 +571,6 @@ initWidget : function () {
             {name: "length", showIf: "false"}                
         ]
     });
-
-    alert(this.keyColumnTitle + " - " + this.sourceFieldColumnTitle);
 
     this.fieldKey = this.createAutoChild("fieldKey", { 
         dataSource: this.fieldKeyDS

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2081,15 +2081,23 @@ _canAnimateClip : function () {
 },
 //<Animation
 
-// EditMode setters
-// ---------------------------------------------------------------------------------------
-
-//>EditMode
+//> @method dynamicForm.setTitleOrientation () 
+// Modify this form's +link{titleOrientation} at runtime
+// @param (TitleOrientation) new default item titleOrientation
+// @group  formTitles
+// @visibility external
+// @example formLayoutTitles
+//<
 setTitleOrientation : function (orientation) {
     this.titleOrientation = orientation;
     this._itemsChanged = true;
     this.markForRedraw();
 },
+
+// EditMode setters
+// ---------------------------------------------------------------------------------------
+
+//>EditMode
 
 setNumCols : function (numCols) {
     this.numCols = numCols;
@@ -3376,8 +3384,14 @@ getFieldErrors : function (fieldName) {
         fieldName = formItem.getFieldName();
         dataPath = formItem.getDataPath();
     }
-    if (this.errors[fieldName]) return this.errors[fieldName];
-    if (dataPath != null && this.errors[dataPath]) return this.errors[dataPath];
+    var err = this.errors[fieldName];
+    if (isc.isA.String(err) || isc.isAn.Array(err)) {
+        return err;
+    }
+    if (dataPath != null) {
+        var err = this.errors[dataPath];
+        if (isc.isA.String(err) || isc.isAn.Array(err)) return err;
+    }
     return null;
 },
 

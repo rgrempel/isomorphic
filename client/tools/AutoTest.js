@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1407,7 +1407,7 @@ isc.Canvas.addMethods({
         var attrName = isc.AutoTest.locStrategyNames[childType];
         if (attrName == null) {
             var pluralName = childType;
-            if (this._locatorChildren[childType]) pluralName = this._locatorChildren[childType];
+            if (isc.isA.String(this._locatorChildren[childType])) pluralName = this._locatorChildren[childType];
             attrName = isc.AutoTest.locStrategyNames[childType] =
                         "locate" + 
                         pluralName.substring(0,1).toUpperCase() + pluralName.substring(1) +
@@ -1427,7 +1427,7 @@ isc.Canvas.addMethods({
         var attrName = isc.AutoTest.locStrategyTypes[childType];
         if (attrName == null) {
             var pluralName = childType;
-            if (this._locatorChildren[childType]) pluralName = this._locatorChildren[childType];
+            if (isc.isA.String(this._locatorChildren[childType])) pluralName = this._locatorChildren[childType];
             attrName = isc.AutoTest.locStrategyTypes[childType] =
                         "locate" + 
                         pluralName.substring(0,1).toUpperCase() + pluralName.substring(1) +
@@ -1491,7 +1491,7 @@ isc.Canvas.addMethods({
         // we have an attribute on this widget containing an array of candidates
         // (EG the children array) and a known 'locator' childType name (EG "child")
         
-        } else if (this._locatorChildren[name] != null) {
+        } else if (isc.isA.String(this._locatorChildren[name])) {
             candidates = this[this._locatorChildren[name]];
         
         // Also support the 'name' pointing directly to an attribute on this widget 

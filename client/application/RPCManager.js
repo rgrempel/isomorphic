@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1771,6 +1771,8 @@ isLocalURL : function (url) {
         host = hostAndPort[0],
         port = hostAndPort[1]
     ;
+    if (port == null || port == "") port = 80;
+    
     // NOTE: bad case: might be accessing wrath.isomorphic.com as just "wrath", in
     // which case we can't detect that wrath.isomorphic.com is actually a local URL.
     // To make this check better we might need to actually attempt an XMLHttpRequest for the
@@ -1779,8 +1781,13 @@ isLocalURL : function (url) {
     // confirmation dialog, so the best we can do is probably to try to detect whether the
     // HttpProxy servlet is installed (whether via a flag dumped by the loadISC tag or a
     // dynamic request to the server), and assume direct access if its missing
-    return (host == "localhost" || host == this.getWindow().location.hostname)
-           && port == this.getWindow().location.port
+    var liveLocation = this.getWindow().location,
+        liveHost = liveLocation.hostname,
+        livePort = liveLocation.port;
+    if (livePort == null || livePort == "") livePort = 80;
+    
+    return (host == "localhost" || host == liveHost)
+           && port == livePort
     ;
 
     // Theoretically document.domain would allow xmlHttpRequests throughout a domain,

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -89,6 +89,9 @@ chosenDate:new Date(),
 //<
 firstDayOfWeek:0,
 
+// Styling
+// ---------------------------------------------------------------------------------------
+
 //> @attr calendar.baseStyle  (CSSStyleName : "calendar" : IRW)
 // The base name for the CSS class applied to the grid cells of the day and week views
 // of the calendar. This style will have "Dark", "Over", "Selected", or "Disabled"
@@ -169,7 +172,7 @@ eventWindowStyle: "eventWindow",
 
 calMonthEventLinkStyle: "calMonthEventLink",
 
-// workday properties
+// Workday properties
 //---------------------------------------------------------------------------------------------
 
 //> @attr calendar.workdayBaseStyle (CSSStyleName : "calendarWorkday" : IR)
@@ -230,6 +233,7 @@ workdays: [1, 2, 3, 4, 5],
 //<
 scrollToWorkday: false,
 
+// Fields on Event Records
 // ---------------------------------------------------------------------------------------
 
 //> @attr calendar.nameField  (String : "name" : IR)
@@ -490,16 +494,8 @@ showOtherDays: true,
 //<
 showControlsBar: true,
 
+// Overlapping event placement
 // ---------------------------------------------------------------------------------------
-
-//> @attr calendar.invalidDateMessage (boolean : "From must be before To" : IR)
-// The message to display in the +link{eventEditor} when the 'To' date is greater than
-// the 'From' date and a save is attempted.
-//
-// @group i18nMessages
-// @visibility calendar
-//<
-invalidDateMessage: "From must be before To",
 
 //> @attr calendar.eventAutoArrange (boolean : true : IR)
 // If set to true, enables the auto-arrangement of events that share time in the calendar.  The
@@ -612,21 +608,6 @@ eventOverlapPercent: 10,
 // @visibility calendar
 //<  
 
-//>	@attr calendar.data		(List of CalendarEvent : null : IRW)
-// A List of CalendarEvent objects, specifying the data to be used to populate the
-// calendar.  
-// <p>
-// This property will typically not be explicitly specified for databound Calendars, where
-// the data is returned from the server via databound component methods such as
-// +link{fetchData()}. In this case the data objects will be set to a 
-// +link{class:ResultSet,resultSet} rather than a simple array.
-//
-// @group	data
-// @see CalendarEvent
-// @setter Calendar.setData()
-// @visibility calendar
-//<
-
 // CalendarEvent
 // ---------------------------------------------------------------------------------------
 
@@ -689,8 +670,23 @@ eventOverlapPercent: 10,
 // @visibility calendar
 //<
 
-// Fetching Data
+// Data & Fetching
 // ---------------------------------------------------------------------------------------
+
+//>	@attr calendar.data		(List of CalendarEvent : null : IRW)
+// A List of CalendarEvent objects, specifying the data to be used to populate the
+// calendar.  
+// <p>
+// This property will typically not be explicitly specified for databound Calendars, where
+// the data is returned from the server via databound component methods such as
+// +link{fetchData()}. In this case the data objects will be set to a 
+// +link{class:ResultSet,resultSet} rather than a simple array.
+//
+// @group	data
+// @see CalendarEvent
+// @setter Calendar.setData()
+// @visibility calendar
+//<
 
 //> @method calendar.fetchData()
 // @include dataBoundComponent.fetchData()
@@ -791,7 +787,7 @@ renderEventsOnDemand: true,
 
 //> @attr calendar.timelineGranularity (string : "day" : IR)
 // The granularity with which the timelineView will display events. Possible values are
-// "day" or "hour". 
+// "day", "hour" or "minute".
 // @visibility internal
 //<
 timelineGranularity: "day",
@@ -869,7 +865,7 @@ allowEventOverlap: true,
 //<
 
 // @attr calendar.sizeEventsToGrid (boolean : true : IR)
-// if true, events will be sized to the grid, even if they start and/or end at times
+// If true, events will be sized to the grid, even if they start and/or end at times
 // between grid cells.
 // @visiblity internal
 //<
@@ -977,6 +973,15 @@ addEventButtonHoverText: "Add an event",
 // @visibility calendar
 //<
 datePickerHoverText: "Choose a date",
+
+//> @attr calendar.invalidDateMessage (boolean : "From must be before To" : IR)
+// The message to display in the +link{eventEditor} when the 'To' date is greater than
+// the 'From' date and a save is attempted.
+//
+// @group i18nMessages
+// @visibility calendar
+//<
+invalidDateMessage: "From must be before To",
 
 // autochild constructors and defaults
 // ----------------------------------------------------------------------------------------
@@ -1946,16 +1951,9 @@ _prepareAutoArrangeOffsets : function (events, grid) {
             startMinutes = curr[this.startDateField].getMinutes(),
             startOffset = startMinutes % this.eventSnapGap;
         if (startOffset) {
-            // it's not on an exact boundary - round it up or down accordingly
-            if (startOffset < this.eventSnapGap / 2) {
-                startMinutes = startMinutes - startOffset;
-            } else {
-                startMinutes = startMinutes + (this.eventSnapGap - startOffset);
-                if (startMinutes == 60) {
-                    startMinutes = 0;
-                    startHours++;
-                }
-            }
+            // remove rounding logic, as this causes errors in certain boundary cases:
+            // http://forums.smartclient.com/showthread.php?t=13750
+            startMinutes = startMinutes - startOffset;           
         }
 	    if (startHours == 24) startHours = 0;
 
@@ -1963,15 +1961,14 @@ _prepareAutoArrangeOffsets : function (events, grid) {
             endMinutes = curr[this.endDateField].getMinutes(),
             endOffset = endMinutes % this.eventSnapGap;
         if (endOffset) {
-            if (endOffset < this.eventSnapGap / 2) {
-                endMinutes = endMinutes - endOffset;
-            } else {
-                endMinutes = endMinutes + (this.eventSnapGap - endOffset);
-                if (endMinutes == 60) {
-                    endMinutes = 0;
-                    endHours++;
-                }
+            // remove rounding logic, as this causes errors in certain boundary cases:
+            // http://forums.smartclient.com/showthread.php?t=13750
+            endMinutes = endMinutes + (this.eventSnapGap - endOffset);
+            if (endMinutes == 60) {
+                endMinutes = 0;
+                endHours++;
             }
+            
         }
 
         curr._eventOffset = 0;

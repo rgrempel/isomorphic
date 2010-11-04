@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -150,6 +150,7 @@ show : function (contents, properties, rect, targetCanvas) {
             this.Super("hide", arguments);
             isc.Hover.hoverCanvasHidden();
         };
+        targetCanvas.hoverCanvas = contents;
     }
 
 	// position and show hoverCanvas with contents & properties
@@ -247,7 +248,9 @@ hoverCanvasHidden : function () {
     var lhc = this.lastHoverCanvas;
     delete this.lastHoverCanvas;
     if (lhc != null) {
-        lhc.hoverHidden();
+        // call an internal method so we can auto-destroy hover components with 
+        // hoverAutoDestroy: true before calling the generic notification method
+        lhc._hoverHidden();
     }
 },
 
@@ -266,14 +269,12 @@ hide : function () {
             delete this._mouseMoveHandler;
 		}
 
-		// hide the hoverCanvas
+		// hide the hoverCanvas - if the canvas was flagged with hoverAutoDestroy: true, it
+        // is destroyed by the owning canvas at this point
 		hoverCanvas.hide();
-	
+
         if (this.showingHoverComponent) {
             if (!hoverCanvas) return;
-            //isc.logWarn("destroy()ing old component: "+hoverCanvas.getID());
-            this.hoverCanvas.markForDestroy();
-            this.hoverCanvas = null;
             delete this.hoverCanvas;
             this.showingHoverComponent = false;
         } else {

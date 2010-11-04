@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -58,6 +58,10 @@ isc.StaticTextItem.addProperties({
     // @visibility external
 	//<
 	textBoxStyle:"staticTextItem",
+	
+	// when dynamically showing/hiding icons we should be able to resize our textBox without
+	// redraw.
+	redrawOnShowIcon:false,
 
     //>	@attr	staticTextItem.outputAsHTML (boolean : false : IRW)
 	// By default HTML values in a staticTextItem will be interpreted by the browser.
