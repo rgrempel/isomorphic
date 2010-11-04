@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-10-22/LGPL Development Only (2010-10-22)
+  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -69,7 +69,7 @@ _1.setValue('driver',_5);var _6=_1.getValue('driver.serverName');if(_6=='Embedde
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-10-22/LGPL Development Only (2010-10-22)
+  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

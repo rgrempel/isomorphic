@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1031,7 +1031,7 @@ isc._EditorFlowOverrides = {
         if (this._fetchDataCallbackArr == null) this._fetchDataCallbackArr = [];
         this._fetchDataCallbackArr.add(callback); 
         
-        requestProperties = this.buildRequest(requestProperties, "fetch", callback);
+        requestProperties = this.buildRequest(requestProperties, "fetch");
         
         ds.fetchData(criteria, {target:this, methodName:"fetchDataReply"}, requestProperties);
     },

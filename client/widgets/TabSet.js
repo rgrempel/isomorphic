@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -851,12 +851,21 @@ isc.TabSet.addProperties({
 
     //>	@attr tabSet.titleEditor (AutoChild : null : R)
 	// TextItem we use to edit tab titles in this TabSet.  You can override this property 
-    // using the normal +link{groupDef:AutoChild} facilities, but you must not override the 
-    // "name" property (which must be "title")
+    // using the normal +link{groupDef:AutoChild} facilities.
     // @see canEditTabTitles
     // @see Tab.canEditTitle
     // @see TabSet.editTabTitle
     // @visibility external
+	//<
+	
+	// Explicitly call out titleEditorProperties as TextItem config so it gets 
+	// picked up in SGWT
+	//> @attr tabSet.titleEditorProperties (TextItem properties : null : IR)
+	// Properties for the auto-generated +link{tabSet.titleEditor}. This is the text item
+	// we use to edit tab titles in this tabSet.
+	// @see tabSet.titleEditor
+	// @see canEditTabTitles
+	// @visibility external
 	//<
 
     //>	@attr tabSet.titleEditorLeftOffset (Integer : null : IRW)
@@ -894,13 +903,20 @@ isc.TabSet.addProperties({
     titleEditorDefaults: {
         name: "title", type: "text", 
         showTitle: false,
-        keyPress : function (item, form, keyName) {
+        
+        handleKeyPress : function (event,eventInfo) {
+            
+            var rv = this.Super("handleKeyPress", arguments);
+            
+            var keyName = event.keyName;
+            
             if (keyName == "Escape") {
-                form.discardUpdate = true;
-                item.blurItem();
+                this.form.discardUpdate = true;
+                this.blurItem();
             } else if (keyName == "Enter") {
-                item.blurItem();
+                this.blurItem();
             }
+            return rv;
         }, 
         blur : function (form, item) {
             if (!form.discardUpdate) {
@@ -2647,7 +2663,8 @@ _editTabTitle : function (tab) {
 // Places an editor in the title of the parameter tab and allows the user to edit the title.
 // Note that this programmatic method will <b.always</b> allow editing of the specified tab's
 // title, regardless of the settings of +link{canEditTabTitles} or +link{Tab.canEditTitle}.
-// @param	tab      (Tab / ID / index)   The tab whose title should be edited
+// @param	tab      (Tab | String | integer)   The tab whose title should be edited (may be
+//   specified by ID or index)
 // @see TabSet.canEditTabTitles
 // @see Tab.canEditTitle
 // @visibility external
@@ -2655,17 +2672,25 @@ _editTabTitle : function (tab) {
 editTabTitle : function (tab) {
     tab = this.getTab(tab);
     
-    if (!isc.isA.DynamicForm(this.titleEditor)) {
-        this.titleEditor = isc.DynamicForm.create({
+    if (!isc.isA.DynamicForm(this.titleEditorForm)) {
+        var titleEditorConfig =  isc.addProperties({}, this.titleEditorDefaults, 
+                                            this.titleEditorProperties);
+        
+        titleEditorConfig.name = "title";
+        
+        this.titleEditorForm = isc.DynamicForm.create({
             autoDraw: false,
             margin: 0, padding: 0, cellPadding: 0,
             fields: [
-                isc.addProperties({}, this.titleEditorDefaults, this.titleEditorProperties)
+                titleEditorConfig
             ]
         });
+        
+        // Make the item directly available as a read-only form item (as documented)
+        this.titleEditor = this.titleEditorForm.getItem("title");
     }
         
-    var editor = this.titleEditor;
+    var editor = this.titleEditorForm;
     editor.setProperties({targetTabSet: this, targetTab: tab});
     editor.discardUpdate = false;
         
@@ -2684,7 +2709,7 @@ editTabTitle : function (tab) {
 },
 
 placeTitleEditor : function(tab) {
-    var editor = this.titleEditor;
+    var editor = this.titleEditorForm;
     if (!editor) return;
 
     var left = tab.getPageLeft() + tab.capSize,
@@ -2717,7 +2742,7 @@ placeTitleEditor : function(tab) {
 },
 
 showTitleEditor: function() {
-    var editor = this.titleEditor,
+    var editor = this.titleEditorForm,
         item = editor.getItem("title");
     editor.show();
     item.focusInItem();

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -553,9 +553,50 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         
         return [Math.max(startCol, 1), endCol];
     },
+    
+    // Have v-scrolling occur on the frozen body on mouseWheel
+    // This essentially duplicates the mouseWheel handler at the Canvas level for
+    // widgets with visible scrollbars.
+    mouseWheel : function () {
+        if (this.frozen && this.grid != null) {
+            var wheelDelta = this.ns.EH.lastEvent.wheelDelta;
+            var scrollTo = this.scrollTop + Math.round(wheelDelta * isc.Canvas.scrollWheelDelta);
+            // Scroll the main body (we'll scroll in response to that) rather than
+            // scrolling the frozen body directly.
+            this.grid.body.scrollTo(null, scrollTo);
+            return false;
+        }
+        return this.Super("mouseWheel", arguments);
+    },
+    
+    // Override _getDrawRows()
+    // Have the frozen body rely on the unfrozen body to handle drawAhead / quickDrawAhead
+    // etc and keep set of drawn rows in synch
+    _getDrawRows : function () {
+        if (this.frozen && this.grid) {
+            var grid = this.grid;
+            return grid.body._getDrawRows();
+        }
+        return this.Super("_getDrawRows", arguments);
+    },
+    
+    // doneFastScrolling: ensure *both* bodies redraw without draw-ahead direction
+    doneFastScrolling : function () {
+        // we only expect to see this fire on the unfrozen body - the frozen body doesn't
+        // show a scrollbar so won't get the thumb drag which initializes this method
+        if (!this.frozen && this.grid != null && this.grid.frozenBody != null) {
+            
+            var redrawFrozenBody = this._appliedQuickDrawAhead;
+            this.Super("doneFastScrolling", arguments);
+            if (redrawFrozenBody) {
+                this.grid.frozenBody._suppressDrawAheadDirection = true;
+                this.grid.frozenBody.markForRedraw("Done fast scrolling on unfrozen body");
+            }
+        }
+    },
 
     // observe the scroll routine of the body so we can sync up
-    scrollTo : function (left, top, cssScroll, dontReport) {
+    scrollTo : function (left, top, cssScroll) {
         if (isc._traceMarkers) arguments.__this = this;
         // Clamp the positions passed in to the edges of the viewport
         // (avoids the header from getting out of synch with the body.)
@@ -570,9 +611,14 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         }            
         var lg = this.grid;
 
-    	//this.logWarn("body.scrollTo: " + this.getStackTrace());
-        if (!dontReport) lg.bodyScrolled(left, top, this);
-        this.invokeSuper(null, "scrollTo", left,top,cssScroll, dontReport);
+        //this.logWarn("body.scrollTo: " + this.getStackTrace());
+        // dontReport when we're being called in response to bodyScrolled
+        // observation!
+        var dontReport = this._noScrollObservation;
+        if (!dontReport) lg.bodyScrolled(left, top, this.frozen);
+        
+        
+        this.invokeSuper(null, "scrollTo", left,top,cssScroll);
         
         // If the body scrolled without forcing a redraw, ensure any visible edit form 
         // items are notified that they have moved.
@@ -581,6 +627,56 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
             lg._editRowForm.itemsMoved();
         }
 
+    },
+    
+    // Override _getExtraEmbeddedComponentHeight() / upateHeightForEmbeddedComponents to
+    // respect listGrid.recordComponentHeight if specified, even if there are no
+    // embedded components for this record.
+    
+    updateHeightForEmbeddedComponents : function (record, rowNum, height) {
+  
+        if (record && !record._embeddedComponents && this.grid.showRecordComponents
+            && this.grid.recordComponentHeight != null) 
+        {
+            // Reimplementing the superClass version, except that this logic is running even
+            // when there are no embeddedComponents on the row.
+            var details = this._getExtraEmbeddedComponentHeight(record, rowNum);
+            if (details.allWithin && details.extraHeight > 0) {
+                height = details.extraHeight;
+                //this.logWarn("in updateHeightForEmbeddedComponents ("+this.grid+"): details are "+isc.echoAll(details)+"\nheight is "+height);
+            } else {
+                height += details.extraHeight;
+                //this.logWarn("in updateHeightForEmbeddedComponents ("+this.grid+"): details are "+isc.echoAll(details)+"\nheight is "+height);
+            }
+            
+            return height;
+        }
+        
+        return this.invokeSuper("GridBody", "updateHeightForEmbeddedComponents", record, rowNum, height);
+    },
+    
+    _getExtraEmbeddedComponentHeight : function (record, rowNum) {
+        var heightConfig = this.invokeSuper("GridBody", "_getExtraEmbeddedComponentHeight",
+                                        record, rowNum);
+        if (this.grid.showRecordComponents && this.grid.recordComponentHeight != null) {
+            heightConfig.extraHeight = Math.max(heightConfig.extraHeight,
+                                            this.grid.recordComponentHeight);
+        }
+        return heightConfig;
+    },
+    _writeEmbeddedComponentSpacer : function (record) {
+        if (record && this.grid && this.grid.showRecordComponents 
+            && this.grid.recordComponentHeight != null)
+        {
+            return true;
+        }
+        return this.invokeSuper("GridBody", "_writeEmbeddedComponentSpacer", record);
+    },
+
+    
+    getAvgRowHeight : function () {
+        if (this.grid) return this.grid.getAvgRowHeight(this);
+        return this.Super("getAvgRowHeight", arguments);
     },
 
     //> @method listGrid.markForRedraw()
@@ -655,7 +751,7 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         // store the new drawArea
         var newDrawArea = this.getDrawArea();
         
-
+        
         var grid = this.grid,
             drawArea = this._oldDrawArea;
 
@@ -669,7 +765,11 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         if (dataPresent && !drawArea.equals(newDrawArea)) {
             // the old and new drawAreas differ and the extents of the new data are present - 
             // fire the notification method and update the stored _oldDrawArea
-            grid._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3], this);
+            
+            
+            if (!this.frozen || reason != "scrolled") { 
+                grid._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3], this);
+            }
             this._oldDrawArea = newDrawArea;
         }
         
@@ -1120,6 +1220,9 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         return this.invokeSuper(isc.GridBody, "_cellSelectionChanged", cellList, b,c,d);
     },
     
+    // Embedded components
+    // -----------------------
+    
     // animateShow selectionCanvas / rollOverCanvas if appropriate
     shouldAnimateEmbeddedComponent : function (component) {
         var grid = this.grid;
@@ -1131,6 +1234,15 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         return false;
     },
     
+    
+    _handleEmbeddedComponentResize : function (component, deltaX, deltaY) {
+        this.Super("_handleEmbeddedComponentResize", arguments);
+        
+        // Notify the grid - allows us to update the other body if we're showing
+        // both a frozen and an unfrozen body
+        this.grid._handleEmbeddedComponentResize(this, component, deltaX, deltaY);
+    },
+
     // Override draw() to scroll to the appropriate cell if 'scrollCellIntoView' was called
 	// before the body was drawn/created
 	// Also update the edit form item rows if we're already editing.
@@ -2309,6 +2421,21 @@ isc.ListGrid.addProperties( {
     //<
     groupStartOpen:"first",
     
+    //> @attr listGrid.canCollapseGroup (Boolean : true : IR)
+    // Can a group be collapsed/expanded? When true a collapse/expand icon is shown
+    // (+link{groupIcon,groupIcon}) and clicking the icon or double-clicking the group title
+    // will collapse or expand the group.
+    //
+    // When false the group icon is not shown and double-clicking on the title does
+    // not change group state. Additionally +link{groupStartOpen,groupStartOpen} is 
+    // initialized to "all".
+    //
+    // @group grouping
+    // @see listGrid.groupBy
+    // @visibility external
+    //<
+    canCollapseGroup:true,
+
     //> @attr listGrid.groupTitleField (String : null : IR)
     // If set, causes the titles of auto-generated group nodes to appear as though they were values
     // of the designated field instead of as separate rows that span all columns.  The normal values
@@ -5785,6 +5912,14 @@ isc.ListGrid.addProperties( {
     // component and render it out into the new record. This greatly improves performance for 
     // large grids as it allows a small number of components to be created and reused rather 
     // than maintaining potentially one record component for every cell in the grid.
+    // <P>
+    // NOTE: recordComponents can have an impact on row height and therefore may require
+    // +link{listGrid.virtualScrolling}.
+    // This is not supported in conjunction with +link{ListGridField.frozen,frozen fields}.
+    // If you are using recordComponents in a listGrid with frozenFields, you can specify an
+    // explicit +link{listGrid.recordComponentHeight} to ensure every row in the grid renders
+    // tall enough to accomodate the recordComponents, and as such virtual scrolling is not
+    // required.
     //
     // @see recordComponentPosition
     // @see showRecordComponentsByCell
@@ -5855,7 +5990,7 @@ isc.ListGrid.addProperties( {
     // @visibility external
     //<
 
-    //> @attr listGrid.recordComponentPoolingMode (RecordComponentPoolingMode : "recycle" : IRWA)
+    //> @attr listGrid.recordComponentPoolingMode (RecordComponentPoolingMode : "viewport" : IRWA)
     // The method of +link{type:RecordComponentPoolingMode, component-pooling} to employ for 
     // +link{showRecordComponents,recordComponents}.
     // <P>
@@ -8334,9 +8469,15 @@ isc.ListGrid.addProperties( {
     //> @attr listGrid.canExpandRecords (boolean : false : IRWA)
     // When set to true, shows an additional field at the beginning of the field-list 
     // (respecting RTL) to allow users to expand and collapse individual records.
+    // See +link{listGrid.expandRecord()} and +link{listGrid.expansionMode} for details
+    // on record expansion.
     // <P>
     // If expanded records will be variable height,
     // you should switch on +link{listGrid.virtualScrolling, virtualScrolling}.
+    // <P>
+    // Note that expanded records are not currently supported in conjunction 
+    // with +link{listGridField.frozen,frozen fields}.
+    
     // @group expansionField
     // @visibility external
     //<
@@ -9112,7 +9253,9 @@ initWidget : function () {
     }
 
     // if we have variable record heights and virtualScrolling is unset, switch it on
-    if (this.canExpandRecords || (this.fixedRecordHeights == false && this.virtualScrolling == null)) {
+    if (this.canExpandRecords ||
+        (this.fixedRecordHeights == false && this.virtualScrolling == null)) 
+    {
         this.fixedRecordHeights = false;
         this.virtualScrolling = true;
     }
@@ -9139,6 +9282,9 @@ initWidget : function () {
         this._specifiedOverflow = this.overflow;
         this.setOverflow("visible");
     }
+
+    // default our groupStartOpen to "all" if canCollapseGroup is false
+    if (this.canCollapseGroup == false) this.groupStartOpen = "all";
 
     // store off the initial sortDirection - we'll revert to this when unsorting
     this._baseSortDirection = this.sortDirection;
@@ -12775,7 +12921,7 @@ redrawHeader : function () {
 // @example replaceStyle
 //<
 getBaseStyle : function (record, rowNum, colNum) {
-    
+
     
     if (this.canEdit == true && !this.isPrinting) {
         if (this.editFailedBaseStyle && this.cellHasErrors(rowNum, colNum))
@@ -13571,7 +13717,8 @@ _formatCellValue : function (value, record, field, rowNum, colNum) {
     // In IE, an element containing only whitespace characters (space or enter) will not show css
     // styling properly.
     
-    } else if (this._emptyCellValues[value]) {
+    
+    } else if (this._emptyCellValues[value] == true) {
         value = this._$nbsp;
 	// convert the value to a string if it's not already        
 	} else if (!isc.isA.String(value)) {
@@ -13937,14 +14084,19 @@ setShowRecordComponents : function (showRC) {
     if (this.showRecordComponents == showRC) return;
     
     this.showRecordComponents = showRC;
+    
+    // Update virutalScrolling if necessary.
+    // We'll also update virtual scrolling in createBodies() - this handles the case where
+    // we're already showing recordComponents and a grid is frozen at runtime.
+    this._updateVirtualScrollingForRecordComponents();
+    
     // suppress 'drawAllMaxCells' type behavior - we don't want to render out potentially
     // hundreds of canvases.
     if (showRC) {
         this._oldDrawAllMaxCells = this.drawAllMaxCells;
         this.drawAllMaxCells = 0;
         if (this.body != null) this.body.drawAllMaxCells = 0;
-        // enable v-s
-        this.virtualScrolling = true;
+      
         this.markForRedraw();
     } else {
         if (this._oldDrawAllMaxCells != null) {
@@ -13969,6 +14121,59 @@ setShowRecordComponents : function (showRC) {
     
 },
 
+_updateVirtualScrollingForRecordComponents : function () {
+    if (!this.showRecordComponents) {
+        if (this._rcVScroll) {
+            delete this.virtualScrolling;
+            delete this._rcVScroll;
+        }
+    
+    // Virtual scrolling:
+    // Embedded componenents can make row heights unpredictable
+    // (may not show for every row, may be 'position:"expand"', or exceed this.cellHeight 
+    // etc)
+    // Because of this we typically have to enable virtual scrolling for record components.
+    // However we don't currently support virtual scrolling with frozen fields, so
+    // don't enable it if we have frozen fields.
+    // This *may* lead to unpredictable behavior. Cases where it's ok:
+    // - if recordComonentPosition is 'within' and 
+    //   the recordComponentPosition < this.cellHeight
+    // - if recordComponentHeight is set (and truly is not exceeded by embedded components)
+    
+    } else {
+        if (this.virtualScrolling == null || this._rcVScroll) {
+            if (this.frozenFields == null) {
+                this.virtualScrolling = true;
+                this._rcVScroll = true;
+                
+            } else {
+
+                if (this.recordComponentHeight == null) {
+                    this.logWarn("This grid has frozen fields and is showing " +
+                        "recordComponents. This may lead to unpredictable row heights which " +
+                        "are not supported with frozen fields. Setting " +
+                        "listGrid.recordComponentHeight will avoid this issue.",
+                        "recordComponents"); 
+                }
+                if (this._rcVScroll) {
+                    delete this.virtualScrolling;
+                    delete this._rcVScroll;
+                }
+            }
+        }
+    }
+    
+    if (this.body && this.virtualScrolling != this.body.virtualScrolling) {
+        this.body.virtualScrolling = this.virtualScrolling;
+        if (this.frozenBody) {
+            this.frozenBody.virtualScrolling = this.virtualScrolling;
+        }
+    }
+    // No need to call 'redraw' on the body -- calling code is expected to handle this.
+},
+
+
+
 //>	@method	listGrid.getDrawArea()	(A)
 //  Returns the extents of the rows and columns current visible in this grid's viewport.
 //
@@ -13976,6 +14181,7 @@ setShowRecordComponents : function (showRC) {
 //    [startRow, endRow, startCol, endCol].
 // @visibility external
 //<
+
 getDrawArea : function () {
     if (this.body) return this.body.getDrawArea();
     
@@ -13984,8 +14190,9 @@ getDrawArea : function () {
 
 // default internal method called from GR.redraw() to prepare recordComponents (and, now, 
 // backgroundComponents) when the drawArea changes - fires LG.drawAreaChanged() if it exists
-_drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, body) {
 
+_drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, body) {
+    
     var oldDrawArea = [oldStartRow, oldEndRow, oldStartCol, oldEndCol],
         newDrawArea = this.getDrawArea(),
         removeArea = oldDrawArea.duplicate(),
@@ -14044,6 +14251,8 @@ _drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, bod
         dataPresent = (firstRecord != Array.LOADING) && (lastRecord != Array.LOADING);
 
     if (!dataPresent) return;
+    
+    this._updatingEmbeddedComponents = true;
 
     if (this.logIsInfoEnabled("recordComponentPool")) {
         this.logInfo("\n_drawAreaChanged: drawArea details: "+
@@ -14285,6 +14494,7 @@ _drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, bod
         }
     }
 
+    delete this._updatingEmbeddedComponents;
 
     this.logInfo("\n_drawAreaChanged: After additions: "+
         "\ngrid._recordComponentPool has "+
@@ -14363,6 +14573,49 @@ bodyDrawing : function (body) {
     
     if (startedQueue) isc.RPCManager.sendQueue();
     this._fetchValueMap = null;
+},
+
+
+//> @attr listGrid.recordComponentHeight (Integer : null : IRWA)
+// If +link{listGrid.showRecordComponents} is true, this attribute may be used to
+// specify a standard height for record components.
+// If specified every row in the grid will be sized tall enough to accomodate a recordComponent
+// of this size.
+// <P>
+// Note that if this property is unset, row heights will be unpredictable and 
+// +link{listGridField.frozen,freezing of columns} is not supported in this case.
+// @visibility external
+//<
+
+
+//> @method listGrid.setRecordComponentHeight()
+// Setter for the +link{listGrid.recordComponentHeight}
+// @param height (integer) recordComponent height
+// @visibility external
+//<
+setRecordComponentHeight : function (height) {
+    this.recordComponentHeight = height;
+    if (this.isDrawn()) this.markForRedraw();
+},
+
+// Override 'getAvgRowHeight()' - if recordComponentHeight is specified and we're showing
+// recordComponents, make use of it.
+getAvgRowHeight : function (body) {
+    
+    if (this.showRecordComponents && this.recordComponentHeight != null) {
+        return this.getRecordComponentRowHeight();
+    }
+    // standard behavior
+    return body.fixedRowHeights ? body.cellHeight : Math.max(body.cellHeight,body.avgRowHeight);
+    
+},
+
+_$expand:"expand",
+getRecordComponentRowHeight : function () {
+    if (this.recordComponentHeight == null) return null;
+    var pos = this.getRecordComponentPosition();
+    if (pos == this._$expand) return this.cellHeight + this.recordComponentHeight;
+    else return this.recordComponentHeight;
 },
 
 // ListGridField.optionDataSource handling
@@ -14964,6 +15217,8 @@ rowClick : function (record, recordNum, fieldNum, keyboardGenerated) {
 
 	// if the record is a group header, expand/collapse the group
 	if (record != null && record._isGroup) {
+        if (this.canCollapseGroup == false) return;
+
         // row indices are invalidated after folder toggle, so flush all edits first
         var mythis=this, myrecord=record;
         if (this.getEditRow() != null) this.saveAllEdits(null, function () {
@@ -15418,14 +15673,16 @@ getCellHoverComponent : function (record, rowNum, colNum) {
             width: defWidth,
             height: defHeight,
             overflow: "auto",
-            members: [component]
+            members: [component],
+            hoverAutoDestroy: this.hoverAutoDestroy
         });
     } else if (this.hoverMode == "details") {
         component = this.createAutoChild("expansionDetails", {
             dataSource: this.dataSource,
             fields: remainingFields,
             width: defWidth,
-            height: defHeight
+            height: defHeight,
+            hoverAutoDestroy: this.hoverAutoDestroy
         });
         component.setData(record);
     } else if (this.hoverMode == "related") {
@@ -15435,7 +15692,8 @@ getCellHoverComponent : function (record, rowNum, colNum) {
                 canEdit: false,
                 width: defWidth,
                 height: defHeight,
-                dataProperties: { context: { showPrompt: false } }
+                dataProperties: { context: { showPrompt: false } },
+                hoverAutoDestroy: this.hoverAutoDestroy
             }
         );
         component.fetchRelatedData(record, this.dataSource);
@@ -15443,7 +15701,8 @@ getCellHoverComponent : function (record, rowNum, colNum) {
         var detail = this.createAutoChild("expansionDetails", {
             dataSource: this.dataSource,
             fields: remainingFields,
-            dataProperties: { context: { showPrompt: false } }
+            dataProperties: { context: { showPrompt: false } },
+            hoverAutoDestroy: this.hoverAutoDestroy
         });
         detail.setData(record);
         var related = this.createAutoChild("expansionRelated",
@@ -15451,14 +15710,16 @@ getCellHoverComponent : function (record, rowNum, colNum) {
                 dataSource: this.getRelatedDataSource(record),
                 canEdit: false,
                 height: "100%",
-                dataProperties: { context: { showPrompt: false } }
+                dataProperties: { context: { showPrompt: false } },
+                hoverAutoDestroy: this.hoverAutoDestroy
             }
         );
 
         component = this.createAutoChild("expansionDetailRelated",
             { members: [ detail, related ],
                 width: defWidth,
-                height: defHeight
+                height: defHeight,
+                hoverAutoDestroy: this.hoverAutoDestroy
             }
         );
     }
@@ -16061,13 +16322,58 @@ scrollCellIntoView : function (rowNum, colNum, center, alwaysCenter) {
 // scrolled.
 // We have to have these no-op if the header / body are already at the same place to avoid an
 // infinite loop.
-bodyScrolled : function (left, top, body) {
-    // frozen fields: match vertical scrolling
-    for (var i = 0; i < this.bodies.length; i++) {
-        if (this.bodies[i] != this.body) {
-            this.bodies[i].scrollTo(null, top, null, true);
+bodyScrolled : function (left, top, isFrozen) {
+    
+    // Assertion
+    // the frozen body should never be clipping horizontally so if this was a
+    // scroll from the frozen body, just synch up the vertical scroll position of the
+    // unfrozen body and we're done.
+    // NOTE: There's no obvious way for the user to scroll just the frozen body but this
+    // could probably happen from interactions like keyboard events
+    
+    
+    if (isFrozen) {
+        this.body._noScrollObservation = true;
+        var frozenBody = this.frozenBody;
+        if (frozenBody._literalScroll) {
+            
+            this.body._targetRow = frozenBody._targetRow;
+            this.body._rowOffset = frozenBody._rowOffset;
+            this.body._scrollRatio = frozenBody._scrollRatio;
+            this.body._scrollToTargetRow();
+        } else {
+            this.body.scrollTo(null, top);
         }
+        delete this.body._noScrollObservation
+        
+        return;
     }
+    
+    
+    if (this.frozenBody != null) {
+        this.frozenBody._noScrollObservation = true;
+        var body = this.body,
+            frozenBody = this.frozenBody;
+        
+        // virtual scrolling: The frozen body's virtual scrolling logic
+        // (draw area etc) is all driven of the unfrozen body since that can detect
+        // cases like "quick drag scrolling" of the scrollbars.
+        // If the body is currently doing a "scrollToTargetRow", pick up the
+        // stored targetRow info from the body and scrollToTargetRow ourselves
+        
+        if (body._literalScroll) {
+            
+            frozenBody._targetRow = body._targetRow;
+            frozenBody._rowOffset = body._rowOffset;
+            frozenBody._scrollRatio = body._scrollRatio;
+            frozenBody._scrollToTargetRow();
+        } else {
+            frozenBody.scrollTo(null, top);
+        }
+        delete this.frozenBody._noScrollObservation;
+    }
+
+    
     this.syncHeaderScrolling(left, top);
     this.syncFilterEditorScrolling(left, top);
     this.syncSummaryRowScrolling(left,top);
@@ -16832,6 +17138,14 @@ showSummaryRow : function () {
             width:this.getWidth(),
             bodyOverflow:"hidden",
             
+            
+            // Make fetchValueMapData into a no-op. We copy our fields from
+            // our creator so any optionDataSources will match up meaning we can rely on
+            // the creator's fetchValueMapData / 'setValueMap()' to update our valueMap
+            // rather than having to do a second fetch against optionDataSources
+            _fetchValueMapData : function () {
+            },
+            
             // avoid showing an empty checkbox for boolean fields unless
             // they're explicitly included in the summary
             _formatBooleanFieldAsImages : function (field) {              
@@ -17004,6 +17318,13 @@ makeFilterEditor : function () {
     this.filterEditor = isc.RecordEditor.create({
         autoDraw:false,
         warnOnReusedFields:false,
+        
+        // Disable fetchValueMapData on the filterEditor entirely.
+        // If we're showing an edit item for the field it'll have an optionDataSource
+        // set on it, meaning the selectItem / comboBox etc will be responsible for issuing
+        // any fetch request against the ODS if necessary.
+        _fetchValueMapData:function () {
+        },
 
         top:this.getTop() + this.getTopMargin(),
         left:this.getLeft() + this.getLeftMargin(),
@@ -17213,12 +17534,11 @@ clearFilterValues : function () {
     this.updateFilterEditor();
 },
 
-_fetchFromFilterEditor : function (criteria, context) {
+handleFilterEditorSubmit : function (criteria, context) {
     // notification method fired when the user modifies the criteria in the filter editor
     // and hits the filter button / enter key.
-    
-    if (this.onFilterData != null && this.onFilterData(criteria) == false) return;
-    this.fetchData(criteria, null, context);
+    if (this.filterEditorSubmit != null && this.filterEditorSubmit(criteria) == false) return;
+    this.filterData(criteria, null, context);
 },
 
 
@@ -19397,9 +19717,9 @@ getEditItem : function (editField, record, editedRecord, rowNum, colNum, width, 
         var eT = item.editorType; 
         
         // for date items, use the text field rather than the 3 selects
-        if (this._dateEditorTypes[eT] || this._datetimeEditorTypes[eT] ||
+        if (this._dateEditorTypes[eT] == true || this._datetimeEditorTypes[eT] == true ||
             (editField.type == this._$date && eT == null)) {
-            item.editorType = (this._datetimeEditorTypes[eT] ? this._$datetime : this._$date);
+            item.editorType = (this._datetimeEditorTypes[eT] == true? this._$datetime : this._$date);
             item.useTextField = true;
             // This improves the appearance for this item type
             item.cellPadding = 0;
@@ -19415,14 +19735,14 @@ getEditItem : function (editField, record, editedRecord, rowNum, colNum, width, 
             if (inputFormat) item.inputFormat = inputFormat;
         }
     
-        if (this._timeEditorTypes[eT] || (editField.type == this._$time && eT == null)) {
+        if (this._timeEditorTypes[eT] == true || (editField.type == this._$time && eT == null)) {
             var displayFormat = this._getTimeFormatter(editField);
             if (displayFormat) item.displayFormat = displayFormat
         }
     
         //>PopUpTextAreaItem    
         // For pop-up textArea type editors, apply the keyPress handling code to the textArea<b></b>
-        if (this._popUpTextAreaEditorTypes[eT]) {
+        if (this._popUpTextAreaEditorTypes[eT] == true) {
             // PopUpTextAreaItems are a subclass of staticTextItems. Override the default textBoxStyle
             // to match the hack - suppress "over" styling when getting the cell style since we
             // always suppress it on the edit row once the editor is showing
@@ -19460,7 +19780,7 @@ getEditItem : function (editField, record, editedRecord, rowNum, colNum, width, 
         //<PopUpTextAreaItem
         
         // Don't show label for checkboxes by default.
-        if (this._checkboxEditorTypes[eT] || (editField.type == this._$boolean && eT == null)) {
+        if (this._checkboxEditorTypes[eT] == true || (editField.type == this._$boolean && eT == null)) {
             if (item.showLabel == null) item.showLabel = false;
             // Also verify that the item has focus on click.
             // Required for IE where focus is asynchronous and would occur after the click changed
@@ -24605,6 +24925,9 @@ setCellHeight : function (newHeight) {
 //<
 setRowHeight : function (rowNum, newHeight) {
     if (!this.body) return;
+    // keep frozen / unfrozen bodies in synch
+    if (this.frozenBody != null) this.frozenBody.setRowHeight(rowNum, newHeight);
+    
     return this.body.setRowHeight(rowNum, newHeight);
 },
 
@@ -25340,7 +25663,7 @@ getSummaryTitle : function (field) {
 setValueMap : function (fieldID, map) {
 
     this.Super("setValueMap", arguments);
-
+    
     if (this._editorShowing) {
         var fieldName, field;
         var fieldNum = this.getColNum(fieldID);
@@ -25354,6 +25677,12 @@ setValueMap : function (fieldID, map) {
             );
         }
     }
+    // If we're showing a summaryRow grid, copy the valueMap across to that so if we do
+    // something like show a max, or a mean that has a display value it'll update correctly
+    if (this.summaryRow) {
+        this.summaryRow.setValueMap(fieldID, map);
+    }
+
     if (this.isDrawn() && this.isVisible()) {
         this._markBodyForRedraw("setValueMap");
     }        
@@ -25942,6 +26271,10 @@ updateBody : function (forceRebuild) {
 
 createBodies : function () {
     if (this.body != null) return; // already created
+    
+    // Update virtual scrolling based on showRecordComponents()
+    
+    this._updateVirtualScrollingForRecordComponents();
 
 	// create the primary body and add it as a child
     this.body = this.createBody(this.ID + "_body", this.normalFields || this.fields);
@@ -26003,18 +26336,11 @@ createBody : function (ID, fields, frozen) {
     body.grid = this;
         
     body.fields = fields;
+    
+    body.frozen = frozen;
 
     body.overflow = frozen ? "hidden" : this.bodyOverflow;
-    if (frozen) {
-        // Essentially a duplication of the standard scrolling code for when scrollbars are
-        // showing. 
-        body.mouseWheel = function () {
-            var wheelDelta = this.ns.EH.lastEvent.wheelDelta;
-            var scrollTo = this.scrollTop + Math.round(wheelDelta * this.scrollWheelDelta);
-            this.scrollTo(this.getScrollLeft(), scrollTo);
-            return false;
-        } 
-    }
+    
     body.backgroundColor = this.bodyBackgroundColor;
     var bodyStyleName = this.bodyStyleName;
     if (this.alternateBodyStyleName != null && this.alternateRecordStyles) { 
@@ -26096,6 +26422,7 @@ createBody : function (ID, fields, frozen) {
 // required by the edit items (for efficiency only run this logic if we have to)
 getRowHeight : function (record,rowNum) {
     var cellHeight = this.cellHeight;
+    
     if (this.frozenFields && this.getEditRow() == rowNum) {
         var editForm = this.getEditForm(),
             items = editForm ? editForm.getItems() : [];
@@ -26313,6 +26640,15 @@ updateEmbeddedComponentZIndex : function (component) {
         component.setZIndex(tableIndex - 50);
     }
 
+},
+
+_handleEmbeddedComponentResize : function (body, component, deltaX, deltaY) {
+    // If we have frozen fields and an embeddedComponent in one body resizes vertically,
+    // refresh both the frozen and unfrozen body to ensure row heights tay in synch.
+    if (this.frozenBody != null && deltaY != null && deltaY != 0) {
+        var otherBody = (body == this.frozenBody) ? this.body : this.frozenBody;
+        otherBody.markForRedraw("Embedded component requires row resizing");
+    }
 },
 
 // Header
@@ -28944,6 +29280,7 @@ getSortField : function () {
 getUnderlyingField : function (fieldId) {
     if (!this.fields && !this.completeFields && !this.dataSource) {
         this.logWarn("fields and completeFields are null and there is no DataSource");
+        
         return null;
     }
     var item = null;
@@ -29551,6 +29888,20 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
         rowNum = (rowNum != null ? rowNum : this.getRecordIndex(record))
     ;
     body.addEmbeddedComponent(component, record, rowNum, colNum, position);
+    
+    // If we have 2 bodies, adding an embedded component to one of them will effect the
+    // height of both (the rows "span" both bodies of course and we want them to match up).
+    if (this.frozenBody != null) {
+        var otherBody = body == this.frozenBody ? this.body : this.frozenBody;
+        if (rowNum >= 0 && otherBody.isDrawn() && !otherBody.isDirty()) {
+            var expectedRowHeight = otherBody.getRowHeight(record,rowNum);
+            if (expectedRowHeight != body.getRowSize(rowNum)) {
+                
+                otherBody.markForRedraw();
+            }
+        }
+    }
+
 },
 
 //> @method listGrid.removeEmbeddedComponent() [A]
@@ -30392,7 +30743,8 @@ getGroupNodeHTML : function (node, gridBody) {
             isc.Canvas.spacerHTML((this.data.getLevel(node) - 1) * this.groupIndentSize +
             this.groupLeadingIndent, 1);
     var img = this.imgHTML(url, this.groupNodeSize, this.groupNodeSize);
-    var retStr = groupIndent + img + iconIndent + this.getGroupTitle(node);
+    var retStr = (this.canCollapseGroup ? groupIndent + img + iconIndent + this.getGroupTitle(node)
+                                        : groupIndent + iconIndent + this.getGroupTitle(node));
    
     return retStr;
     
@@ -31150,22 +31502,20 @@ isc.ListGrid.registerStringMethods({
     // @param currentCriteria (Criteria) Criteria being applied to the grid. May be null if
     //   the filter is being cleared
     // @return (Object) Values to display in the filter editor.
-    // @see listgrid.filterChanging();
     // @visibility internal
     //<
     
     updateFilterEditorValues:"criteria",
     
-    //> @method listGrid.onFilterData()
+    //> @method listGrid.filterEditorSubmit()
     // Optional notification stringMethod fired when the user performs a filter by modifying
     // the filter editor criteria. Will be fired on keypress if filterOnKeypress is true
     // otherwise when the user clicks the filter button or on enter keypress
     // @param criteria (Criteria) criteria derived from the filter editor values
     // @return (boolean) returning false will suppress the filter from occurring
-    // @visibility sgwt
+    // @visibility external
     //<
-    
-    onFilterData:"criteria"
+    filterEditorSubmit:"criteria"
 
 });
 

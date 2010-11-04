@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -362,7 +362,7 @@ isc.DateRangeItem.addMethods({
         items[0] = isc.addProperties({}, this.fromFieldDefaults, this.fromFieldProperties,
             { 
                 name: "fromField", _constructor: _constructor, baseDate: this.baseDate,
-                displayformat: this.dateDisplayFormat, inputFormat: this.dateInputFormat,
+                displayFormat: this.dateDisplayFormat, inputFormat: this.dateInputFormat,
                 title: this.fromTitle, titleOrientation: this.form.titleOrientation,
                 defaultValue: this.fromValue, 
                 useTextField: (_constructor == "DateItem" ? true : null)
@@ -371,7 +371,7 @@ isc.DateRangeItem.addMethods({
         items[1] = isc.addProperties({}, this.toFieldDefaults, this.toFieldProperties,
             {
                 name: "toField", _constructor: _constructor, baseDate: this.baseDate,
-                displayformat: this.dateDisplayFormat, inputFormat: this.dateInputFormat,
+                displayFormat: this.dateDisplayFormat, inputFormat: this.dateInputFormat,
                 title: this.toTitle, titleOrientation: this.form.titleOrientation,
                 defaultValue: this.toValue,
                 useTextField: (_constructor == "DateItem" ? true : null)
@@ -434,7 +434,6 @@ isc.DateRangeItem.addMethods({
             toValue = isRelative && this.toField.getRelativeDate() ? 
                 this.toField.getRelativeDate() : this.toField.getValue(),
             result = {_constructor:"DateRange"};
-        
         if (fromValue == null && toValue == null) return null;
         if (fromValue != null) result.start = fromValue;
         if (toValue != null) result.end = toValue;
@@ -542,43 +541,73 @@ buttonLayoutDefaults: {
     autoParent: "mainLayout"
 },
 
+//> @attr dateRangeDialog.clearButtonTitle (string : "Clear" : IR)
+// The title for the "Clear" button on this dialog.
+// @visibility external
+// @group i18nMessages
+//<
+clearButtonTitle: "Clear",
+//> @attr dateRangeDialog.clearButton (AutoChild : null : IR)
+// Button used for clearing the dialog.  Note that, since this is an AutoChild, it can be 
+// configured using clearButtonDefaults and clearButtonProperties.
+// @visibility external
+// @group i18nMessages
+//<
 clearButtonDefaults: {
     _constructor: "IButton",
     height: 22,
     width: 80,
-    title: "Clear",
     autoParent: "buttonLayout",
     click : function () {
         this.creator.clear();
     }
 },
 
+//> @attr dateRangeDialog.okButtonTitle (string : "OK" : IR)
+// The title for the "OK" button on this dialog.
+// @visibility external
+// @group i18nMessages
+//<
+okButtonTitle: "OK",
+//> @attr dateRangeDialog.okButton (AutoChild : null : IR)
+// Button used for accepting the values entered into the dialog.  Note that, since this is an 
+// AutoChild, it can be configured using okButtonDefaults and okButtonProperties.
+// @visibility external
+// @group i18nMessages
+//<
 okButtonDefaults: {
     _constructor: "IButton",
     height: 22,
     width: 80,
-    title: "OK",
     autoParent: "buttonLayout",
     click : function () {
         this.creator.accept();
     }
 },
 
+//> @attr dateRangeDialog.cancelButtonTitle (string : "Cancel" : IR)
+// The title for the "Cancel" button on this dialog.
+// @visibility external
+// @group i18nMessages
+//<
+cancelButtonTitle: "Cancel",
+//> @attr dateRangeDialog.cancelButton (AutoChild : null : IR)
+// Button used for cancelling the dialog.  Note that, since this is an AutoChild, it can be 
+// configured using cancelButtonDefaults and cancelButtonProperties.
+// @visibility external
+// @group i18nMessages
+//<
 cancelButtonDefaults: {
     _constructor: "IButton",
     height: 22,
     width: 80,
-    title: "Cancel",
     autoParent: "buttonLayout",
     click : function () {
         this.creator.cancel();
     }
 },
 
-buttonAutoChildren: ["buttonLayout", "clearButton", "okButton", "cancelButton"],
-
 destroyOnClose: true
-
 
 });
 
@@ -605,7 +634,10 @@ isc.DateRangeDialog.addMethods({
 
         this.rangeItem.canvas.numCols = 1;
 
-        this.addAutoChildren(this.buttonAutoChildren);
+        this.addAutoChild("buttonLayout");
+        this.addAutoChild("clearButton", { title: this.clearButtonTitle});
+        this.addAutoChild("okButton", { title: this.okButtonTitle});
+        this.addAutoChild("cancelButton", { title: this.cancelButtonTitle});
         this.addItem(this.mainLayout);
     },
 

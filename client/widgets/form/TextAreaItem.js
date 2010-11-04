@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -88,6 +88,9 @@ isc.TextAreaItem.addProperties({
     // Override redrawOnShowFormIcon - we can handle dynamically updating the item's HTML to
     // show / hide textArea item icons
     redrawOnShowIcon:false,
+    // setting clipValue to true ensures we resize the text box when showing/hiding icons
+    clipValue:true,
+
 
     //> @attr   textAreaItem._hasDataElement    (boolean : true : IRW)
     //      Text areas have a data element.

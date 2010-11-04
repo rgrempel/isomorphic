@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -4286,7 +4286,7 @@ supportsRequestQueuing : true,
 
                 if (!subItem) {
                     if (this.logIsInfoEnabled("relativeDates")) {
-                        this.logInfo("Removing NULL subcriteria...");
+                        this.logInfo("Removing NULL subcriteria...", "relativeDates");
                     }
                     result.criteria.removeAt(i);
                 } else {
@@ -4295,6 +4295,7 @@ supportsRequestQueuing : true,
                             this.logInfo("Calling convertRelativeDates from convertRelativeDates "+
                                 "- data is:\n\n"+isc.echoFull(subItem)+"\n\n"+
                                 "criteria is: \n\n"+isc.echoFull(criteria)
+                                ,"relativeDates"
                             );
                         }
 
@@ -4303,7 +4304,7 @@ supportsRequestQueuing : true,
 
                         if (this.logIsInfoEnabled("relativeDates")) {
                             this.logInfo("Called convertRelativeDates from convertRelativeDates "+
-                            "- data is\n\n" + isc.echoFull(result.criteria[i]));
+                            "- data is\n\n" + isc.echoFull(result.criteria[i]), "relativeDates");
                         }
                     } else {
                         result.criteria[i] = this.mapRelativeDate(subItem, baseDate);
@@ -4319,6 +4320,7 @@ supportsRequestQueuing : true,
             this.logInfo("Returning from convertRelativeDates - result is:\n\n"+
                 isc.echoFull(result)+"\n\n"+
                 "original criteria is: \n\n"+isc.echoFull(criteria)
+                ,"relativeDates"
             );
         }
 
@@ -4340,7 +4342,8 @@ supportsRequestQueuing : true,
             value = result.value.value;
             result.value = isc.RelativeDateItem.getAbsoluteDate(value, baseDate);
         } else {
-            if (result.start && isc.isAn.Object(result.start) && result.end._constructor == "RelativeDate")
+            if (result.start && isc.isAn.Object(result.start) &&
+                result.start._constructor == "RelativeDate")
             {
                 // we have a criterion with a "start" and it's a relativeDate - parse it now
                 value = result.start.value;
@@ -4348,7 +4351,8 @@ supportsRequestQueuing : true,
                 if (value == "$today") value = "$startOfToday";
                 result.start = rangeStart = isc.RelativeDateItem.getAbsoluteDate(value, baseDate);
             }
-            if (result.end && isc.isAn.Object(result.end) && result.end._constructor == "RelativeDate")
+            if (result.end && isc.isAn.Object(result.end) && 
+                result.end._constructor == "RelativeDate")
             {
                 // we have a criterion with an "end" and it's a relativeDate - convert it now
                 value = result.end.value;
@@ -4713,6 +4717,7 @@ supportsRequestQueuing : true,
 // @serverDS allowed
 // @visibility external
 //<
+
 
 // Relations
 // --------------------------------------------------------------------------------------------
@@ -5102,6 +5107,29 @@ supportsRequestQueuing : true,
 // @visibility external
 //<
 
+//> @attr dataSourceField.imageWidth (number or String: null : [IR])
+// Width of the image-content of this field.  If set as a string, represents the name of 
+// another field in the record that holds the imageWidth.  Applicable only to fields of image 
+// type or fields that use a +link{class:ViewFileItem, ViewFileItem} as an editor.
+// @serverDS allowed
+// @visibility external
+//<
+
+//> @attr dataSourceField.imageHeight (number or String: null : [IR])
+// Height of the image-content of this field.  If set as a string, represents the name of 
+// another field in the record that holds the imageHeight.  Applicable only to fields of image 
+// type or fields that use a +link{class:ViewFileItem, ViewFileItem} as an editor.
+// @serverDS allowed
+// @visibility external
+//<
+
+//> @attr dataSourceField.imageSize (number or String: null : [IR])
+// Width and height of the image-content of this field.  If set as a string, represents the 
+// name of another field in the record that holds the imageSize.  Applicable only to fields 
+// of image type or fields that use a +link{class:ViewFileItem, ViewFileItem} as an editor.
+// @serverDS allowed
+// @visibility external
+//<
 
 // Miscellaneous
 // --------------------------------------------------------------------------------------------
@@ -5397,10 +5425,10 @@ supportsRequestQueuing : true,
 //<
 
 //> @attr dataSourceField.storeWithHash (HashAlgorithm : null : IR)
-//
 // If set, causes the field to be securely hashed before saving on an "add" or "update" 
 // operation.
 //
+// @serverDS only
 // @visibility external
 //<
 
@@ -6015,7 +6043,7 @@ isc.DataSource.addMethods({
     // XML
     // ---------------------------------------------------------------------------------------
 
-    //> @method dataSource.getLegalChildTags
+    //> @method dataSource.getLegalChildTags()
     // For a DataSource that describes a DOM structure, the list of legal child elements that can
     // be contained by the element described by this DataSource.
     // <p>
@@ -9336,6 +9364,9 @@ isc.DataSource.addMethods({
             if (oldValues == null) return;
         }
         for (var key in values) {
+            
+            if (key == isc.gwtRef) continue;
+
             var value = values[key];
             if (this.noNullUpdates && value === null) {
                 if (operationType == "add" && this.omitNullDefaultsOnAdd == true) {
@@ -10150,6 +10181,12 @@ isc.DataSource.addMethods({
 //> @attr dsRequest.exportFooter (String : null : IR)
 // Optional text to appear at the end of the file.
 //
+// @visibility external
+//<
+
+//> @attr dsRequest.exportData (Array of Record : null : IR)
+// Only applies to request properties passed to +link{dataBoundComponent.exportClientData()}.
+// If specified this property contains an arbitrary set of data to be exported.
 // @visibility external
 //<
 
@@ -14627,16 +14664,17 @@ isc.DataSource.addClassMethods({
             isc.logWarn("Attempted to add null search operator, or operator with no ID");
             return;
         }
-        if (!isc.DataSource._operators) isc.DataSource._operators = [];
-        var opList = isc.DataSource._operators;
-        if (opList.containsProperty("ID", operator.ID)) {
+        if (!isc.DataSource._operators) isc.DataSource._operators = {};
+        var opList = isc.DataSource._operators,
+            undef;
+        if (opList[operator.ID] !== undef) {
             // This operator is already registered - log a warning and replace it with the
             // passed-in definition
             isc.logWarn("Attempted to add existing operator " + operator.ID + " - replacing");
-            var index = opList.findIndex("ID", operator.ID);
-            if (index >= 0) opList.removeAt(index);
+            //var index = opList.findIndex("ID", operator.ID);
+            //if (index >= 0) opList.removeAt(index);
         }
-        isc.DataSource._operators.add(operator);
+        isc.DataSource._operators[operator.ID] = operator;
     },
 
     //> @classMethod DataSource.setTypeOperators()
@@ -15217,9 +15255,11 @@ isc.DataSource.addMethods({
             isc.logWarn("Attempted to add null search operator, or operator with no ID");
             return;
         }
-        if (!isc.DataSource._operators[operator.ID]) {
-            isc.DataSource.addSearchOperator(operator);
-        }
+
+        // Register the "new" operator with the class, regardless of whether it's already 
+        // there. If it already exists, it will be replaced, which is the behavior we want.
+        isc.DataSource.addSearchOperator(operator);
+
         if (!this._typeOperators ) this._typeOperators = { _additive: true };
         if (types) {
             // First we need to remove it from whatever it's attached to right now
@@ -15255,7 +15295,7 @@ isc.DataSource.addMethods({
     // @visibility external
     //<
     getSearchOperator : function (operatorId) {
-        return isc.DataSource._operators.find("ID", operatorId); 
+        return isc.DataSource._operators[operatorId]; 
     },
 
     //> @method dataSource.getTypeOperators()
@@ -15473,11 +15513,14 @@ isc.DataSource.addMethods({
             isc.logWarn("Attempted to use unknown operator " + criterion.operator);
             return false;
         }
-        if (criterion.fieldName) {
-            var validOps = this.getFieldOperators(criterion.fieldName);
-            if (!validOps.contains(op.ID)) {
-                this.logWarn("Operator " + op.ID + " is not valid for field " + criterion.fieldName +
-                            ". Continuing anyway.");
+        
+        if (this._checkValidOps) {
+            if (criterion.fieldName) {
+                var validOps = this.getFieldOperators(criterion.fieldName);
+                if (!validOps.contains(op.ID)) {
+                    this.logWarn("Operator " + op.ID + " is not valid for field " + criterion.fieldName +
+                                ". Continuing anyway.");
+                }
             }
         }
         return op.condition(criterion.value, record, criterion.fieldName, criterion, op, this);
@@ -15495,6 +15538,9 @@ isc.DataSource.addMethods({
         // or use our own, more sophisticated (and logical) algorithms
         this._strictMode = criteria.strictSQLFiltering;
 
+        
+        this._checkValidOps = true;
+        
         for (var idx = 0; idx < data.length; idx++) {
         
             // The AdvancedCriteria system makes this very easy - just call evaluateCriterion
@@ -15503,6 +15549,7 @@ isc.DataSource.addMethods({
             if (this.evaluateCriterion(data[idx], criteria)) {
                 matches.add(data[idx]);
             }
+            delete this._checkValidOps;
         }
         
         return matches;
@@ -16295,7 +16342,6 @@ isc._initBuiltInOperators = function () {
         compareCriteria: rangeCheckComp,
         getCriterion : function (fieldName, item) {
             var result = { fieldName: fieldName, operator: this.ID };
-
             if (isc.isA.RelativeDateItem(item)) 
                 result.value = item.getRelativeDate() || item.getValue();
             else result.value = item.getValue();
@@ -16315,7 +16361,6 @@ isc._initBuiltInOperators = function () {
         compareCriteria: rangeCheckComp,
         getCriterion : function (fieldName, item) {
             var result = { fieldName: fieldName, operator: this.ID };
-
             if (isc.isA.RelativeDateItem(item))
                 result.value = item.getRelativeDate() || item.getValue();
             else result.value = item.getValue();
@@ -17141,12 +17186,12 @@ isc.defineClass("XJSONDataSource", "DataSource").addMethods({
 // Produces the following output:
 // <pre>
 // &lt;SCRIPT&gt;window.isomorphicDir='isomorphic/';&lt;/SCRIPT&gt;
-// &lt;SCRIPT SRC=isomorphic/system/development/ISC_Core.js&gt;&lt;/SCRIPT&gt;
-// &lt;SCRIPT SRC=isomorphic/system/development/ISC_Foundation.js&gt;&lt;/SCRIPT&gt;
-// &lt;SCRIPT SRC=isomorphic/system/development/ISC_Containers.js&gt;&lt;/SCRIPT&gt;
-// &lt;SCRIPT SRC=isomorphic/system/development/ISC_Grids.js&gt;&lt;/SCRIPT&gt;
-// &lt;SCRIPT SRC=isomorphic/system/development/ISC_Forms.js&gt;&lt;/SCRIPT&gt;
-// &lt;SCRIPT SRC=isomorphic/system/development/ISC_DataBinding.js&gt;&lt;/SCRIPT&gt;
+// &lt;SCRIPT SRC=isomorphic/system/modules/ISC_Core.js&gt;&lt;/SCRIPT&gt;
+// &lt;SCRIPT SRC=isomorphic/system/modules/ISC_Foundation.js&gt;&lt;/SCRIPT&gt;
+// &lt;SCRIPT SRC=isomorphic/system/modules/ISC_Containers.js&gt;&lt;/SCRIPT&gt;
+// &lt;SCRIPT SRC=isomorphic/system/modules/ISC_Grids.js&gt;&lt;/SCRIPT&gt;
+// &lt;SCRIPT SRC=isomorphic/system/modules/ISC_Forms.js&gt;&lt;/SCRIPT&gt;
+// &lt;SCRIPT SRC=isomorphic/system/modules/ISC_DataBinding.js&gt;&lt;/SCRIPT&gt;
 // &lt;SCRIPT src=isomorphic/skins/SmartClient/load_skin.js&gt;&lt;/SCRIPT&gt;
 // </pre>
 // <b><u>Tag Attributes:</u></b>

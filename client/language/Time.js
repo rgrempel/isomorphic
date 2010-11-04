@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -368,7 +368,7 @@ isc.Time.addClassMethods({
         		;
                 if (ampm) {
                     if (!this._pmStrings) this._pmStrings = {p:true, P:true, pm:true, PM:true, Pm:true};
-                    if (this._pmStrings[ampm]) {
+                    if (this._pmStrings[ampm] == true) {
                         if (hours < 12) hours += 12;
                         } else if (hours == 12) hours = 0;
                 }

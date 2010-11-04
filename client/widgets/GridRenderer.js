@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -754,26 +754,11 @@ getDrawArea : function (colNum) {
 		endRow = Math.max(totalRows - 1, 0);
     } else {
         // ordinary incremental rendering
-
-        // figure out which rows we need to draw to minimally fill the viewport
-        var visibleRows = this._getViewportFillRows();
-
-        // detect scrolling direction: true (forward), false (backward), or null (unknown)
-        vScrollForward = (this.lastScrollTop == null ? null :
-                             this.lastScrollTop < this.getScrollTop());
-
-
-        // Note: addDrawAhead will add the draw-ahead rows (rows drawn offscreen for
-        // scrolling), and clamp the ends of the drawn range to the ends of the data (ensuring
-        // we don't end up with startRow < 0, or endRow > (totalRows-1)
-        var drawAheadRange = this.addDrawAhead(visibleRows[0], visibleRows[1], 
-                                               totalRows, vScrollForward, true);
-        
-        //this.logWarn("draw range: " + this._getViewportFillRows() + 
-        //             ", after adding drawAhead:" + drawAheadRange);
-        
-        startRow = drawAheadRange[0];
-        endRow = drawAheadRange[1];
+        var rowArr = this._getDrawRows();
+        startRow = rowArr[0];
+        endRow = rowArr[1];
+        // just for logging
+        vScrollForward = rowArr[2]
 	}
 
 	// Figure out which columns to draw
@@ -812,6 +797,34 @@ getDrawArea : function (colNum) {
 
     return [startRow, endRow, startCol, endCol];
 },
+
+_getDrawRows : function () {
+
+        // figure out which rows we need to draw to minimally fill the viewport
+        var visibleRows = this._getViewportFillRows();
+
+        // detect scrolling direction: true (forward), false (backward), or null (unknown)
+        var vScrollForward = (this.lastScrollTop == null ? null :
+                             this.lastScrollTop < this.getScrollTop());
+
+        var totalRows = this.getTotalRows();
+        
+        // Note: addDrawAhead will add the draw-ahead rows (rows drawn offscreen for
+        // scrolling), and clamp the ends of the drawn range to the ends of the data (ensuring
+        // we don't end up with startRow < 0, or endRow > (totalRows-1)
+        var drawAheadRange = this.addDrawAhead(visibleRows[0], visibleRows[1], 
+                                               totalRows, vScrollForward, true);
+        
+        //this.logWarn("draw range: " + this._getViewportFillRows() + " fwd:" + vScrollForward +
+        //             ", after adding drawAhead:" + drawAheadRange);
+        
+        // just for logging - return whether we added the fwd scroll
+        drawAheadRange[2] = vScrollForward;
+        
+        return drawAheadRange;
+        
+},
+        
 
  
 
@@ -852,7 +865,7 @@ scrollToRatio : function (vertical, ratio,a,b) {
         exactRowNum = ratio * maxRow,
         rowNum = Math.floor(exactRowNum),
         rowOffset = Math.round((exactRowNum - rowNum) * this.getRowSize(rowNum));
-
+    
     
     this._targetRow = rowNum;
     this._rowOffset = rowOffset;
@@ -906,6 +919,7 @@ getViewportRatio : function (vertical,b,c,d) {
 // relative to the viewport, so that if we have to redraw, we can match user expectation by
 // placing rows where the user expects.
 _storeTargetRow : function (scrollTop, delta) {
+    
     // don't pick up a target row during the special scroll that places us on the target row
     if (this._literalScroll) return;
     
@@ -924,6 +938,7 @@ _storeTargetRow : function (scrollTop, delta) {
     var targetRow = this.getEventRow(viewportEdge),
         maxRow = this.getTotalRows()-1,
         newScrollTop = scrollTop;
+        
     if (targetRow < 0 || targetRow > maxRow) {
         this._targetRow = maxRow;
         this._rowOffset = 0;
@@ -933,7 +948,6 @@ _storeTargetRow : function (scrollTop, delta) {
         // how far into the target row the top of the viewport should be (positive means more
         // of row is scrolled offscreen)
         this._rowOffset = scrollTop - this.getRowTop(this._targetRow) + delta;
-        
         //var drawArea = this.getDrawArea();
         //if (targetRow < drawArea[0] || targetRow > drawArea[1]) {
         if (Math.abs(this._rowOffset) > this.getViewportHeight()) {
@@ -983,8 +997,11 @@ scrollTo : function (left, top, cssScroll,d) {
     if (this._isVirtualScrolling && top != null && !cssScroll) {
         var oldScrollTop = this.getScrollTop(),
             delta = top - oldScrollTop;
-        this._storeTargetRow(oldScrollTop, delta);
-        top = Math.min(top, this.getRowTop(this.getTotalRows()-1));
+
+        if (delta != 0) {
+            this._storeTargetRow(oldScrollTop, delta);
+            top = Math.min(top, this.getRowTop(this.getTotalRows()-1));
+        }
     }
 
     
@@ -992,7 +1009,7 @@ scrollTo : function (left, top, cssScroll,d) {
 
     // don't check for the need to redraw if we're already dirty.  Optimization: for
     // scroll-and-scroll-back situations, we could avoid a redraw by undirtying ourselves
-    if (this.isDirty() || this._noRedraw) return;
+    if (this.isDirty() || this._scrollFromRedraw) return;
 
 	// if we're only drawing rows near the viewport..
     var needRedraw = (this._needRowRedraw() || this._needColumnRedraw());
@@ -1567,6 +1584,8 @@ finishAnimateRowHeight : function () {
 // returns the innerHTML for the table
 // If passed a startRow / endRow, it will return just the HTML for that fragment of the table.
 getTableHTML : function (colNum, startRow, endRow, discreteCols) {
+    
+    
     if (isc._traceMarkers) arguments.__this = this;
 	//>DEBUG
 	// timing
@@ -2043,10 +2062,13 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
             var fixedRowHeight;
             if (isAnimationRow) {
                 fixedRowHeight = true;
-            } else if (this.shouldFixRowHeight != null) {
-                fixedRowHeight = (this.shouldFixRowHeight(record, rowNum) != false);
             } else {
                 fixedRowHeight = this.fixedRowHeights;
+                
+                
+                if (fixedRowHeight && this.shouldFixRowHeight != null) {
+                    fixedRowHeight = (this.shouldFixRowHeight(record, rowNum) != false);
+                }
             }
                                                  
             //this.logWarn("rowNum: " + rowNum + 
@@ -2318,13 +2340,7 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
     var endSpacerHeight = this.cacheDOM ? 0 : (this.endSpace || 0);
     // reset this._endRowSpacerHeight
     this._endRowSpacerHeight = 0;
-    if (!this.showAllRows && 
-        (tailRecords != 0 || 
-         (virtualScrolling && tailRecords == 0 && 
-          (this.overflow == "auto" || this.overflow == "scroll") )
-        )
-       )
-    {
+    if (!this.showAllRows && (tailRecords != 0 || virtualScrolling)) {
         var endRowSpacerHeight = tailRecords * this.getAvgRowHeight();
     
         
@@ -2667,7 +2683,7 @@ _getCellValue : function (record, rowNum, colNum) {
     var value = this.getCellValue(record, rowNum, colNum, this);
     // If a record has an associated component to display, add a spacer underneath the record
     // to force the contents to draw above the component.
-    if (record && record._embeddedComponents) {
+    if (this._writeEmbeddedComponentSpacer(record)) {
         var details = this._getExtraEmbeddedComponentHeight(record);
         if (details.allWithin && details.extraHeight) {
             value += "<BR>" + isc.Canvas.spacerHTML(1, details.extraHeight-this.cellHeight);
@@ -2679,6 +2695,9 @@ _getCellValue : function (record, rowNum, colNum) {
     }
 
     return value;
+},
+_writeEmbeddedComponentSpacer : function (record) {
+    return (record && record._embeddedComponents) != null;
 },
 
 getCellValue : function (record, rowNum, colNum) { 
@@ -2827,7 +2846,7 @@ updateHeightForEmbeddedComponents : function (record, rowNum, height) {
 },
 
 _getExtraEmbeddedComponentHeight : function (record, rowNum) {
-    var components = record._embeddedComponents,
+    var components = record._embeddedComponents || [],
         maxComponentHeight = 0,
         allWithin = true;
     ;
@@ -2995,17 +3014,9 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
         this.addChild(component);
         if (wasSuppressingAO == null) delete this._suppressAdjustOverflow;
     }
-
-    // if the embedded component resizes vertically, redraw so the row becomes the right size
-    if (position != this._$within) {
-        this.observe(component, "resized", 
-                 "if(deltaY!=null&&deltaY!=0)observer.markForRedraw('embedded component resized')");
-    // If positioned within the cell, respond to resized (EG adjustOverlow) by
-    // repositioning so snapTo continues to work...
-    } else {
-        this.observe(component, "resized", 
-                "observer.placeEmbeddedComponent(observed)");
-    }
+    
+    this.observe(component, "resized",
+        "observer._handleEmbeddedComponentResize(observed, deltaX, deltaY)");
 
     // don't redraw the component when the grid redraws, otherwise we'll be redrawing embedded
     // components continually during scrolling.  NOTE: it may be that this should be the
@@ -3037,6 +3048,22 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
         // redraw, which will draw the row at the new height and place the component
         this.markForRedraw("added embedded component");
     }
+},
+
+_handleEmbeddedComponentResize : function (component, deltaX, deltaY) {
+    var position = component.embeddedPosition;
+
+    // if the embedded component resizes vertically, redraw so the row becomes the right size
+    if (position != this._$within) {
+        if (deltaY!=null && deltaY!=0) this.markForRedraw('embedded component resized');
+        
+        
+    // If positioned within the cell, respond to resized (EG adjustOverlow) by
+    // repositioning so snapTo continues to work...
+    } else {
+        this.placeEmbeddedComponent(component);
+    }
+
 },
 
 // updateEmbeddedComponentCoords() called when we render out a record with an embedded component
@@ -3164,10 +3191,10 @@ placeEmbeddedComponent : function (component) {
 //    }
 
     if (showing) {
-//        if (position != this._$within) {
+        if (position != this._$within) {
             var offset = this.getDrawnRowHeight(rowNum) - component.getVisibleHeight() - 1;
             component.moveTo(null, this.getRowTop(rowNum) + offset);
-//        }
+        }
         if (!component.isVisible()) {            
             if (this.shouldAnimateEmbeddedComponent(component)) {
                 component.animateShow();
@@ -3316,6 +3343,7 @@ _placeEmbeddedComponents : function () {
     // will therefore also change the top coords of subsequent rows
     components.sortByProperty("_currentRowNum", true);
     for (var i = 0; i < components.length; i++) {
+      
         this.placeEmbeddedComponent(components[i]);
     }
 },
@@ -3784,7 +3812,7 @@ setRowHeight : function (rowNum, newHeight, record, className, shouldClip, insta
                                           (this.shouldFixRowHeight == null || 
                                            this.shouldFixRowHeight(record, rowNum) != false);
     }
-
+    
     
      var firstCell = this.getTableElement(rowNum, firstDrawnCol),
          currentSpecifiedHeight = firstCell ? parseInt(firstCell.height) : null,
@@ -3824,6 +3852,7 @@ setRowHeight : function (rowNum, newHeight, record, className, shouldClip, insta
         
     //this.logWarn("height changed for cell in row: " + rowNum +
     //             ", currentSpecifiedHeight: " + currentSpecifiedHeight +
+    //             ", shouldClip?:" + shouldClip + 
     //             " (derived from firstCell.height: " + firstCell.height + ")" +
     //             ", newHeight: " + newHeight);
 
@@ -4371,7 +4400,7 @@ getRowTop : function (rowNum) {
     
     var undrawnHeight = this._getUndrawnHeight(),
         drawnHeights = this._getDrawnRowHeights();
-        
+
     if (rowNum > this._lastDrawnRow) {
         // undrawn rows after the drawn area are treated as having fixed height
         return undrawnHeight + drawnHeights.sum() + 
@@ -4807,7 +4836,7 @@ _getViewportFillRows : function () {
 // default to a typical row height given a few lines of wrapping text
 avgRowHeight:60,
 getAvgRowHeight : function () {
-    return this.fixedRowHeights ? this.cellHeight : this.avgRowHeight;
+    return this.fixedRowHeights ? this.cellHeight : Math.max(this.cellHeight,this.avgRowHeight);
 },
 
 //>	@method	gridRenderer.getVisibleRows()
@@ -4946,6 +4975,8 @@ mouseMove : function (arg1, arg2) {
  
     //this.logWarn("row: " + rowNum + ", col: " + colNum);   
 
+    if (rowNum < 0 || colNum < 0) return;
+    
     // same cell as before, so no over/out events
     if (!(rowNum == this.lastOverRow && colNum == this.lastOverCol)) {
         // If we're not over a valid column (we're too far to the right of the listGrid)
@@ -5121,7 +5152,7 @@ _cellHover : function (rowNum, colNum) {
 },
 
 _showHover : function (record, rowNum, colNum) {
-    var properties = this._getHoverProperties();  
+    var properties = this._getHoverProperties();
     var content = this._getCellHoverComponent(record, rowNum, colNum);
     if (!content) content = this.cellHoverHTML(record, rowNum, colNum);
     isc.Hover.show(content,
@@ -5735,6 +5766,7 @@ getColumnAutoSize : function (columnNum, startRow, endRow) {
 
 // clear anything we've cached about the HTML table we draw
 redraw : function (a,b,c,d) {
+    
     this._resetEmbeddedComponents();
   
     this.invokeSuper(isc.GridRenderer, "redraw", a,b,c,d);
@@ -5756,9 +5788,9 @@ modifyContent : function () {
 
     if (this._targetRow != null) {
         
-        this._noRedraw = true;   
+        this._scrollFromRedraw = true;   
         this._scrollToTargetRow();
-        this._noRedraw = null;
+        this._scrollFromRedraw = null;
 
         // show the table element, which is drawn as hidden so we can scroll before we make it
         // visible, to prevent it showing the wrong scroll position briefly

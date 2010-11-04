@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -138,7 +138,7 @@ setEvent : function (eventType, action, fireStyle, functionName) {
 	
 	// make sure there's a slot for this eventType
     var registry = this._eventRegistry;
-	if (registry[eventType] == null) registry[eventType] = [];
+	if (!isc.isAn.Array(registry[eventType])) registry[eventType] = [];
 
 	// add the handler
 	registry[eventType].add(handler);
@@ -177,12 +177,12 @@ clearEvent : function (eventType,ID){
         // it completes
         if (this._processingEvent == eventType) {
             var reg = this._eventRegistry[eventType],
-                index = reg ? reg.findIndex(this._$ID, ID) : -1;
+                index = isc.isA.Array(reg) ? reg.findIndex(this._$ID, ID) : -1;
             if (index != -1) reg[index] = null;
 
         // Otherwise just clear out the appropriate entry.
         } else {
-            if (this._eventRegistry[eventType]) 
+            if (isc.isA.Array(this._eventRegistry[eventType])) 
                 this._eventRegistry[eventType].removeWhere(this._$ID, ID);
         }
 	}
@@ -217,7 +217,7 @@ handleEvent : function (target, eventType, eventInfo) {
 	var list = isc.Page._eventRegistry[eventType];
 
 	// if the list is empty, bail
-	if (list == null || list.length == 0) return true;
+	if (!isc.isAn.Array(list) || list.length == 0) return true;
 
     var pageEventName = this._getPageEventName(eventType);
 
@@ -288,7 +288,7 @@ handleEvent : function (target, eventType, eventInfo) {
 //									false == no events pending
 //<
 actionsArePendingForEvent : function (eventType) {
-	return (this._eventRegistry[eventType] && this._eventRegistry[eventType].length != 0);
+	return (isc.isAn.Array(this._eventRegistry[eventType]) && this._eventRegistry[eventType].length != 0);
 },
 
 

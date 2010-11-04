@@ -1170,6 +1170,37 @@ Button (also used as MenuButton base style)
     background-image:-webkit-gradient(linear, 0% 0%, 0% 100%, from(#989FA8), to(#BAC2C9), color-stop(.3,#BAC2C9));
 }
 
+/*------------------------------------------------------------
+		tableView styles
+------------------------------------------------------------*/
+.recordTitle {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.recordDescription {
+    font-weight: normal;
+    font-size: 13px;
+    color: #666666;
+    display: block;
+}
+
+.recordData {
+    font-weight: normal;
+    font-size: 13px;
+    color: #000000;
+    display: block;
+}
+
+.recordInfo {
+    font-weight: normal;
+    font-size: 13px;
+    color: #000099;
+    text-align: right;
+    float: right;
+}
+
+
 /*Tree styling*/
 /*------------------------------------------------------------
 		treeGrid.baseStyle

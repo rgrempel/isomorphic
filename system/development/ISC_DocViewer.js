@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-10-22/LGPL Development Only (2010-10-22)
+  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -305,7 +305,7 @@ var _5=isc.DocUtils.getMissingModules(this.doc)==null?null:"lightgrey";var _6=is
 if(window.location.protocol=="file:"){if(!isc.ClassViewer.examplesNotAvailableNotified&&!isc.ClassViewer.suppressExamplesNotAvailableNotify){this.logInfo("Running in client-only mode - examples not available.");isc.warn("The examples that are part of the SmartClient reference documentation"+" require the SmartClient server to be running.  You can browse"+" the documentation without the examples.  To enable examples, start"+" the server (See the Quickstart section of the Release Notes for"+" instructions).");isc.ClassViewer.examplesNotAvailableNotified=true}
 _1.updateTab(_2,_6);return}
 var _7=isc.ExampleViewer.create({autoDraw:false,height:this.exampleViewerHeight,url:this.doc.exampleConfig,showPaneContainerEdges:false,symmetricEdges:true,paneContainerProperties:{backgroundColor:"white",edgeImage:"[SKIN]/rounded/frame/FFFFFF/4.png"},tabBarProperties:{baseLineCapSize:0}});var _8=isc.SectionStack.create({visibilityMode:"multiple",autoDraw:false,sections:[{showHeader:false,expanded:true,items:[_6]},{showHeader:true,expanded:true,title:this.cName+" Example",items:[_7]}]});_1.updateTab(_2,_8)}
-,isc.A.getInheritedDocItems=function isc_ClassViewer_getInheritedDocItems(_1){if(!this.$478)this.$478={};if(this.$478[_1])return this.$478[_1];var _2=this.doc[_1]?isc.clone(this.doc[_1]):[];if(!isc.isAn.Array(_2))_2=[_2];var _3=this.cName;var _4=this.doc;while(1&&_4.showSuperProps!="false"){var _5=isc.jsdoc.getSuperClassName(_4);if(!_5||_5=="Canvas"||_5=="Class")break;var _6=isc.jsdoc.getDocItem(_5);if(!_6)break;var _7=_4=isc.jsdoc.toJS(_6);var _8=_7[_1];if(_8&&!isc.isAn.Array(_8))_8=[_8];_2.addList(_8);_3=_5}
+,isc.A.getInheritedDocItems=function isc_ClassViewer_getInheritedDocItems(_1){if(!this.$478)this.$478={};if(isc.isAn.Array(this.$478[_1]))return this.$478[_1];var _2=this.doc[_1]?isc.clone(this.doc[_1]):[];if(!isc.isAn.Array(_2))_2=[_2];var _3=this.cName;var _4=this.doc;while(1&&_4.showSuperProps!="false"){var _5=isc.jsdoc.getSuperClassName(_4);if(!_5||_5=="Canvas"||_5=="Class")break;var _6=isc.jsdoc.getDocItem(_5);if(!_6)break;var _7=_4=isc.jsdoc.toJS(_6);var _8=_7[_1];if(_8&&!isc.isAn.Array(_8))_8=[_8];_2.addList(_8);_3=_5}
 this.$478[_1]=_2;return _2}
 ,isc.A.initAPIPane=function isc_ClassViewer_initAPIPane(_1,_2,_3){var _4,_5;if(_2=="instance"){_4=this.getInheritedDocItems("attrs");_5=this.getInheritedDocItems("methods")}else{_4=this.getInheritedDocItems("classAttrs");_5=this.getInheritedDocItems("classMethods")}
 var _6={};var _7=[];if(_4){if(!isc.isAn.Array(_4))_4=[_4];for(var i=0;i<_4.length;i++){var _9=isc.jsdoc.getDocItem(_4[i]);if(!_9)continue;var _10=isc.jsdoc.toJS(_9);if(_6[_10.name])continue;_6[_10.name]=1;if(isc.isAn.Array(_10.groups))_10.groups=_10.groups[0];_7.add(_10)}}
@@ -351,8 +351,7 @@ this.$46t(_1)}
 ,isc.A.encodeHistoryID=function isc_DocViewer_encodeHistoryID(_1){return _1.replace(/\//g,"_").replace(/ /g,"-").replace(/:/g,"..")}
 ,isc.A.decodeHistoryID=function isc_DocViewer_decodeHistoryID(_1){if(_1==null||_1=="init")return null;return _1.replace(/_/g,"/").replace(/-/g," ").replace(/\.\./g,":")}
 ,isc.A.historyCallback=function isc_DocViewer_historyCallback(_1,_2){_1=this.decodeHistoryID(_1)
-if(_1==null){this.showHelpDialog();return}
-if(!isc.Page.isLoaded())return;this.noHistory=true;if(_1.startsWith("/")){var _3=this.$46u.find(_1);if(_3){this.$46w.selectRecord(_3);this.$46t(_3.ref?_3.ref:_3,true);var _4=this.noHistory;var _5=this.$46w;var _6=this.$46u.indexOf(_3);isc.Timer.setTimeout(function(){var h=isc.DocViewer.instance.noHistory;isc.DocViewer.instance.noHistory=_4;_5.selection.deselectAll();_5.selectRecord(_6);_5.scrollRecordIntoView(_6);isc.DocViewer.instance.noHistory=h},0)}}else if(_1.startsWith("search")){this.$46t("searchResults")}else{this.$46t(_1)}
+if(_1==null)return;if(!isc.Page.isLoaded())return;this.noHistory=true;if(_1.startsWith("/")){var _3=this.$46u.find(_1);if(_3){this.$46w.selectRecord(_3);this.$46t(_3.ref?_3.ref:_3,true);var _4=this.noHistory;var _5=this.$46w;var _6=this.$46u.indexOf(_3);isc.Timer.setTimeout(function(){var h=isc.DocViewer.instance.noHistory;isc.DocViewer.instance.noHistory=_4;_5.selection.deselectAll();_5.selectRecord(_6);_5.scrollRecordIntoView(_6);isc.DocViewer.instance.noHistory=h},0)}}else if(_1.startsWith("search")){this.$46t("searchResults")}else{this.$46t(_1)}
 this.noHistory=false}
 ,isc.A.$46t=function isc_DocViewer__show(_1,_2){var _3,_4=false,_5=false,_6=_1,_7=null;if(_1=="searchResults"||_1==this.searchResults){this.replaceCurrentView(this.searchResults);if(!this.noHistory&&this.trackHistory){isc.History.addHistoryEntry(this.encodeHistoryID("search="+this.searchResults.searchString))}
 return}
@@ -390,7 +389,7 @@ return _10}},this.docTreeProperties);var _12=isc.VLayout.create({ID:"leftPane",d
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-10-22/LGPL Development Only (2010-10-22)
+  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

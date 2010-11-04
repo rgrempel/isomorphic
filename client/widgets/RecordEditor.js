@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -370,12 +370,12 @@ isc.RecordEditor.addMethods({
         if (isc.isA.ResultSet(rs) && rs.willFetchData(criteria, context.textMatchStyle)) {            
             this.fireOnPause("performFilter", {
                 target:this.sourceWidget, 
-                methodName:"_fetchFromFilterEditor", 
+                methodName:"handleFilterEditorSubmit", 
                 args:[criteria, context]
             }, 
             this.fetchDelay);
         } else {
-            this.sourceWidget._fetchFromFilterEditor(criteria, context);
+            this.sourceWidget.handleFilterEditorSubmit(criteria, context);
         }
 
     },

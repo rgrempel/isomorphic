@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1156,16 +1156,12 @@ shouldUseField : function (field, ds) {
 addFieldValidators : function (fields) {
     if (fields == null) return;
 
-    var requiredValidator = {type: "required"};
-
     for (var i = 0; i < fields.length; i++) {
         var field = fields[i];
         if (field.required) {
-            var validator = isc.addProperties({}, requiredValidator),
-                message = field.requiredMessage || this.requiredMessage
-            ;
-            if (message != null) validator.errorMessage = message;
-
+            var validator = this.getRequiredValidator(field),
+                message = validator.errorMessage;
+            
             // Add validator to field
             if (!field.validators) {
                 field.validators = [validator];
@@ -1196,6 +1192,16 @@ addFieldValidators : function (fields) {
             }
         }
     }
+},
+
+getRequiredValidator : function (field) {
+    var requiredValidator = {
+            type: "required"
+        },
+        message = field.requiredMessage || this.requiredMessage;
+        
+    if (message != null) requiredValidator.errorMessage = message;
+    return requiredValidator;
 },
 
 // doc'd at ListGrid level
@@ -2289,6 +2295,14 @@ _filter : function (type, criteria, callback, requestProperties) {
     } //<!BackCompat
     
     requestProperties = this.buildRequest(requestProperties, type, callback);
+    
+    // notification method fired when the user modifies the criteria in the filter editor
+    // and hits the filter button / enter key.
+    
+    if (this.onFetchData != null) {
+        this.onFetchData(criteria, requestProperties);
+    }
+
 
     // support for dataBoundComponentField.includeFrom:<dataSourceID>.<fieldName>
     // for fields that are not in the dataSource but pick up their value from
@@ -5449,6 +5463,9 @@ getClientExportData : function (settings, callback) {
     ;
 
     if (isc.isA.Object(settings)) {
+        
+        if (settings.exportData != null) data = settings.exportData;
+        
         includeHiddenFields = settings.includeHiddenFields;
         allowedProperties = settings.allowedProperties;
         includeCollapsedNodes = settings.includeCollapsedNodes;
@@ -5702,6 +5719,8 @@ getFormattingProperties : function (field, value) {
 // see +link{dataBoundComponent.exportData, exportData} which does not include client-side 
 // formatters, but relies on both the SmartClient server and server-side DataSources.
 // @param [requestProperties] (DSRequest Properties) Request properties for the export
+//  note that specifying +link{DSRequest.exportData,exportData} on the request properties
+//  allows the developer to pass in an explicit data set to export.
 // @see dataSource.exportClientData
 // @visibility external
 //<
@@ -6944,7 +6963,18 @@ isc.Canvas.registerStringMethods({
     // @group selection
     // @visibility external
     //<    
-    selectionUpdated : "record,recordList"
+    selectionUpdated : "record,recordList",
+    
+    //> @method dataBoundComponent.onFetchData()
+    // Optional notification stringMethod fired on fetchData() or filterData()
+    // the filter editor criteria.
+    // @param criteria (Criteria) criteria passed to fetchData() / filterData()
+    // @param requestProperties (DSRequest) request config passed to the filter/fetch request 
+    // @visibility sgwt
+    //<
+    
+    onFetchData:"criteria,requestProperties"
+
 });
 
 

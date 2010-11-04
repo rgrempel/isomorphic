@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1988,7 +1988,15 @@ isc.Canvas.addProperties({
     // @group hovers
     // @see canvas.showHover
     //<
-    
+
+    //> @attr canvas.hoverAutoDestroy (boolean : null : IRW)
+    // If <code>this.showHover</code> is true and getHoverComponent() is implemented, should
+    // the hoverCanvas returned from it be automatically destroyed when it is hidden?
+    // @visibility external
+    // @group hovers
+    // @see canvas.showHover
+    //<
+
     //>	@attr	canvas.edgeMarginSize		(number : 5 : IRWA)
 	// How far into the edge of an object do we consider the "edge" for drag resize purposes?
 	// @group dragdrop
@@ -2471,7 +2479,25 @@ init : function (A,B,C,D,E,F,G,H,I,J,K,L,M) {
     
     //this.addProperties(isc.getRegisteredInstanceProperties(this.ID));
     if (isc._traceMarkers) arguments.__this = this;
-	
+
+    // Perform a one time check to see if we're creating any canvases in the <head>
+    // If so log a warning.
+    // We don't support drawing widgets outside the body at all.
+    // Creating widgets without drawing outside the body is unreliable - in some
+    // cases, even having autoDraw set to false, we will attempt to write out HTML on widget
+    // init to (EG) derive styling information.
+    
+    if (!isc.Canvas._outsideBodyCheck) {
+        if (this.getDocumentBody(true) == null) {           
+            isc.logWarn("Canvas created in a page outside the BODY tag. This is not supported. " +
+                "Isomorphic Software requires the tag to be present and all widgets be created " +
+                "and drawn inside it. Canvas details follow:\n" + 
+                isc.Log.echo(this));
+            
+        }
+        isc.Canvas._outsideBodyCheck = true;
+    }
+
 	// get a global ID so we can be called in the global scope
 	this.ns.ClassFactory.addGlobalID(this);
 
@@ -16309,6 +16335,7 @@ handleHover : function () {
     if (this.showHover) {
         var component = this.getHoverComponent ? this.getHoverComponent() : null;
         if (component != null && isc.isA.Canvas(component)) {
+            //isc.logWarn("canvas: "+this.getID()+" - showing hoverCanvas: "+this.hoverCanvas.getID());
             // getHoverComponent() returned a Canvas - we'll show that now instead of the 
             // hoverHTML in a Label but using the same positioning/sizing logic
             var hoverProperties = this._getHoverProperties();
@@ -16337,6 +16364,20 @@ updateHover : function (hoverHTML) {
     if (isc.Hover.lastHoverCanvas != this || !isc.Hover.hoverCanvas.isVisible()) return;
     if (hoverHTML == null) hoverHTML = this.getHoverHTML();
     isc.Hover.show(hoverHTML,  this._getHoverProperties(), null, this);
+},
+
+_hoverHidden : function () {
+    // if we have a local reference to the hoverCanvas, it's a canvas we've returned from 
+    // getHoverComponent, rather than the built-in label from isc.Hover.  If it's been flagged
+    // for auto-destruction on hide, do that now...
+    if (this.hoverCanvas && this.hoverCanvas.hoverAutoDestroy != false) {
+        //isc.logWarn("canvas: "+this.getID()+" - auto-destroying hoverCanvas: "+this.hoverCanvas.getID());
+        this.hoverCanvas.markForDestroy();
+        this.hoverCanvas = null;
+        delete this.hoverCanvas;
+    }
+
+    this.hoverHidden();
 },
 
 //> @method canvas.hoverHidden() (A)

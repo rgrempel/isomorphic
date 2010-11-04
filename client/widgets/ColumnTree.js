@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -226,6 +226,17 @@ isc.ColumnTree.addProperties({
     // Instance of ListGrid used to display each column of the tree.
     // @visibility external
     //<
+    
+    // column is an autoChild so columnConstructor / defaults / properties are all implied.
+    // Explicitly doc columnProperties to make this an obvious override point, and to
+    // have it be picked up by SGWT
+    //> @attr columnTree.columnProperties (ListGrid properties : null : IRA)
+    // Standard set of properties to apply to each generated +link{columnTree.column,column}
+    // in this columnTree. Developers may also override +link{columnTree.getColumnProperties()}
+    // to return dynamic properties based on the node being displayed.
+    // @visibility external
+    //<
+    
     showColumn:true,
     columnConstructor:"ListGrid",
     

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-10-22 (2010-10-22)
+ * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -32,6 +32,8 @@ isc.defineClass("HiliteRule", "HLayout");
 
 isc.HiliteRule.addProperties({
     height: 1,
+    width: "100%",
+    overflow: "visible",
 
     //> @attr hiliteRule.clause (AutoChild : null : IR)
     // AutoChild +link{class:FilterClause} displaying the +{class:FormItem, formItems} used to 
@@ -42,10 +44,10 @@ isc.HiliteRule.addProperties({
     clauseConstructor: "FilterClause",
 	
 	clauseProperties: {
-		width: "50%",
+		width: "100%",
 		fieldPickerWidth: "*",
 		operatorPickerWidth: 140,
-		valueFieldWisth: 100,
+		valueItemWidth: 130,
         excludeNonFilterableFields: false
 	},
 
@@ -58,8 +60,8 @@ isc.HiliteRule.addProperties({
     hiliteFormDefaults: {
         _constructor: "DynamicForm",
         numCols: 3,
-		colWidths: ["*", 40, "45%"],
-		width: "*",
+		colWidths: [90, 40, 80],
+		width: 210,
         items: [
             { name: "colorType", type: "SelectItem", showTitle: false, valign: "center", 
                 valueMap: { foreground: "Foreground", background: "Background" },
