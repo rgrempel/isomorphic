@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -582,6 +582,12 @@ getInnerHTML : function () {
 	// get the data to display
 	var valueList = this.getData();
 
+	//>DEBUG
+	if (this.fields == null || this.fields.length == 0) {
+		return "Note: you must define detailViewer.fields to specify what to display!";
+	}
+	//<DEBUG
+
     // If the data is a ResultSet, poke the ResultSet to fetch data and return the loading
     // message.  Note that if fetchData() is called, this isn't the codepath that causes the
     // initial fetch - see DataBoundComponent.requestVisibleRows.
@@ -594,19 +600,22 @@ getInnerHTML : function () {
         valueList.get(0);
         return this.loadingMessageHTML();
     }
-
-	if (valueList == null || (isc.isAn.Array(valueList) && valueList.getLength() == 0)) {
+    
+	if (valueList == null || (valueList.getLength && valueList.getLength() == 0)) { 
 		return this.emptyMessageHTML();
 	}
-    
-	//>DEBUG
-	if (this.fields == null || this.fields.length == 0) {
-		return "Note: you must define detailViewer.fields to specify what to display!";
-	}
-	//<DEBUG
 
 	// normalize the data into an array
 	if (!isc.isA.List(valueList)) valueList = [valueList];
+
+    // With DV, we have a situation where a failed load results in lengthIsKnown being true,
+    // but the data actually consists of a single loading marker.  The upshot of this is that
+    // the DetailViewer displays an empty record, which is probably fair enough (since the 
+    // load probably failed because the record doesn't exist).  However, if the load failed 
+    // because we're offline, we want to show that specifically, so treat it as a special case
+    if (Array.isLoading(valueList.get(0)) && this.isOffline())  {
+        return this.emptyMessageHTML();
+    }
 
 	// if there's only one item or we're supposed to show all columns together
 	if (valueList.getLength() == 1 || this.recordsPerBlock == "*") {
@@ -1127,23 +1136,30 @@ getLoadingMessage : function () {
 
 
 //>	@method	detailViewer.emptyMessageHTML()	(A)
-// Return the message to show if the list is empty. Default implementation returns a centered
-// +link{detailViewer.emptyMessage} or "&amp;nbsp;" if showEmptyMessage is false.
-//
-//		@return	(string)	HTML output
+// Return the message to show if the component has no data. Default implementation returns a 
+// centered +link{detailViewer.emptyMessage} or "&amp;nbsp;" if showEmptyMessage is false.  If
+// the component has no data because the browser is offline, we instead display the 
+// +link{dataBoundComponent.offlineMessage} or "&amp;nbsp;" if showOfflineMessage is false
+// @return	(string)	HTML output
+// @visibility offline
 //<
 emptyMessageHTML : function () {
     
-    if (!this.showEmptyMessage) return "&nbsp;";
+    if (this.isOffline()) {
+        if (!this.showOfflineMessage) return "&nbsp;";
+    } else {
+        if (!this.showEmptyMessage) return "&nbsp;";
+    }
 
 	return "<TABLE WIDTH=100%>"
 			+ "<TR><TD CLASS='" + this.emptyMessageStyle + "' ALIGN=CENTER><BR><BR>"
-			+ this.getEmptyMessage()
+			+ (this.isOffline() ? this.offlineMessage : this.getEmptyMessage())
 			+ "<\/TD><\/TR><\/TABLE>";
+            
 },
 
 //>	@method	detailViewer.loadingMessageHTML()	(A)
-//			return the message to while the data is loading
+//			return the message to display while the data is loading
 //
 //		@return	(string)	HTML output
 //<

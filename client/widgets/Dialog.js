@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -892,6 +892,20 @@ isc.addGlobal("showMessage", function (message, messageType, callback, propertie
 	if (callback) properties.callback = callback;
     
     isc.Dialog.Warn.showMessage(message, properties);
+});
+
+//> @classMethod isc.getLastDialog()
+// Returns the last-shown isc.say/ask/warn/confirm dialog.  Do not document externally.
+//<
+isc.addGlobal("getLastDialog", function () {
+    return isc.Dialog.Warn;
+});
+
+//> @classMethod isc.dismissLastDialog()
+// Dismisses the last-shown isc.say/ask/warn/confirm dialog.  Do not document externally.
+//<
+isc.addGlobal("dismissLastDialog", function () {
+    if (isc.Dialog.Warn) isc.Dialog.Warn.hide();
 });
 
 // shared with askForValue()

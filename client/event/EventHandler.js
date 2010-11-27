@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2018,6 +2018,7 @@ _handleMouseStillDown : function (timeStamp) {
 //<
 // called directly from DOM, and by other methods
 handleMouseUp : function (DOMevent, fakeEvent) {
+    
     // No-Ops in Touch environments
     // (See comments in handleMouseDown for why we do this)
     if (isc.Browser.isTouch && !fakeEvent) return;
@@ -2600,9 +2601,16 @@ focusInCanvas : function (target, isNative) {
     if (isNative) this._thread = oldThread; //<DEBUG
 },
 _focusInCanvas : function (target, isNative) {
-    //this.logWarn("_focusInCanvas. Will set this._focusCanvas");
+//    this.logWarn("_focusInCanvas. Will set this._focusCanvas to target:" 
+//    + target + ", current focus target:" + this._focusCanvas);
     // if no target, or target doesn't want focus, or target has focus already just bail
+
     if (!target || target.hasFocus || !target._canFocus() || target.isDisabled() ) return;
+    // Bail if this._focusCanvas is already pointing to the target.
+    // Normally we'd expect target.hasFocus to be set in this case but if the _focusChanged
+    // method on either the previous focus target or the new one forces a focus change, that
+    // can occur before target.hasFocus gets modified.
+    if (this._focusCanvas == target) return;
     
     // Handle the case of focus going to a masked widget
     this.checkMaskedFocus(target);
@@ -2613,8 +2621,14 @@ _focusInCanvas : function (target, isNative) {
     }
     
     // blur the previous focus item, and focus in this one
-    if (this._focusCanvas) this._focusCanvas._focusChanged(false)
+    var blurCanvas = this._focusCanvas;
     this._focusCanvas = target;
+    if (blurCanvas) blurCanvas._focusChanged(false)
+    
+    // if the blur handler forced focus into *another* widget, bail - we don't want to
+    // fire _focusChanged on a stale widget - that'd cause hasFocus to be set on that widget
+    // and be essentially stale
+    if (this._focusCanvas != target) return;
     target._focusChanged(true);
     
     // If the target is masked, update the topmask's 'maskedFocusCanvas'
@@ -4013,7 +4027,10 @@ _eventHandledNatively : function (eventType, nativeTarget, checkTargetOnly) {
     //
 	// if the event was a mouse-event in a CSS scrollbar let it be handled natively.
     if (!checkTargetOnly && isMouseEvent &&
-            this._eventOverCSSScrollbar(iscTarget, eventType, event)) return true;
+        this._eventOverCSSScrollbar(iscTarget, eventType, event)) 
+    {
+        return true;
+    }
 	// return false so isc event processing continues
 	return false;
 },
@@ -4078,6 +4095,7 @@ isKeyEvent : function (eventType) {
 
 // Did the current mouse event occur over a native CSS scrollbar?
 _eventOverCSSScrollbar : function (iscTarget, eventType, event) {
+   // this.logWarn("event over css scrollbar");
     var EH = this;
     
     		
@@ -4530,12 +4548,13 @@ _pageResize : function (polling) {
         // If the value has changed, re-run the resized handler to resize children etc.
         var newWidth = isc.Page.getWidth(window, true),
             newHeight = isc.Page.getHeight(window, true),
-            unchanged = (newWidth == this._previousInnerWidth && 
-                       newHeight == this._previousInnerHeight)
+            unchanged = (orientation ==  this.currentOrietnation) &&
+                        (newWidth == this._previousInnerWidth && 
+                         newHeight == this._previousInnerHeight)
        
         // If we're polling for content changes that introduce / hide scrollbars, 
         // re-run this method on every idle
-        if (isc.Page.pollPageSize) {        
+        if (isc.Page.pollPageSize) {
             isc.Page.setEvent(isc.EH.IDLE, this._pageResizePollMethod, isc.Page.FIRE_ONCE);
             this._previousInnerWidth = newWidth;
             this._previousInnerHeight = newHeight;

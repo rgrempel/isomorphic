@@ -89,29 +89,6 @@ isc.loadSkin = function (theWindow) {
             resizeBarClass:"Snapbar"
         });
 
-        isc.defineClass("NavBar", "HLayout").addProperties({
-            height:44,
-            styleName:"navToolbar"
-        });
-
-        isc.defineClass("NavBarHeader", "Label").addProperties({
-           styleName : "navBarHeader"
-        });
-
-        isc.defineClass("NavBarButton", "Button").addProperties({
-            baseStyle:"navButton",
-            height : 30,
-            autoFit : true
-        });
-
-        isc.defineClass("NavBarBackButton", "NavBarButton").addProperties({
-            baseStyle:"navBackButton"
-        });
-
-        isc.defineClass("NavBarForwardButton", "NavBarButton").addProperties({
-            baseStyle:"navForwardButton"
-        });
-
         if (isc.SectionItem) {
             isc.SectionItem.addProperties({
                 height:32
@@ -160,9 +137,9 @@ isc.loadSkin = function (theWindow) {
                 tallBaseStyle: "treeTallCell",
                 normalBaseStyle: "treeCell",
                 openerIconSize: 22,
-                folderIcon:"[SKIN]folder.png",
+                folderIcon:"[SKIN]folder.gif",
                 nodeIcon:"[SKIN]file.png",
-                manyItemsImage:"[SKIN]folder_file.png",
+                manyItemsImage:"[SKIN]folder_file.gif",
                 sortAscendingImage:{src:"[SKINIMG]ListGrid/sort_ascending.gif", width:7, height:7},
                 sortDescendingImage:{src:"[SKINIMG]ListGrid/sort_descending.gif", width:7, height:7}
             })
@@ -210,12 +187,6 @@ isc.loadSkin = function (theWindow) {
                 tabBarThickness:50,
                 showScrollerRollOver: false
             });
-
-            // In Netscape Navigator 4.7x, set the backgroundColor directly since the css
-            // background colors are not reliable
-            if (isc.Browser.isNav) {
-                isc.TabSet.addProperties({paneContainerDefaults:{backgroundColor:"#FFFFFF"}});
-            }
 
             isc.TabBar.addProperties({
                 leadingMargin:0,

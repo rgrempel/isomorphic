@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -467,6 +467,36 @@ dragRecategorize:false,
 // @visibility external
 //<
 duplicateDragMessage: "Duplicates not allowed",
+
+//>	@attr	dataBoundComponent.showOfflineMessage		(boolean : true : [IRW])
+// Indicates whether the text of the offlineMessage property should be displayed if no data is
+// available because we do not have a suitable offline cache
+// @visibility offline
+// @group i18n
+// @see offlineMessage
+//<
+showOfflineMessage:true,
+    
+
+//>	@attr dataBoundComponent.offlineMessage (string : "This data not available while offline" : [IRW])
+// Message to display when this DataBoundComponent attempts to load data that is not available
+// because the browser is currently offline.  Depending on the component, the message is either
+// displayed in the component's body, or in a pop-up warning dialog.
+// @example offline
+// @group i18nMessages
+// @visibility offline
+//<
+offlineMessage:"This data not available while offline",
+
+//>	@attr dataBoundComponent.offlineSaveMessage (string : "Data cannot be saved because you are not online" : [IRW])
+// Message to display when this DataBoundComponent attempts to save data while the application
+// is offline.
+// @example offline
+// @group i18nMessages
+// @visibility offline
+//<
+offlineSaveMessage:"Data cannot be saved because you are not online",
+
 
 //>	@attr	dataBoundComponent.addDropValues		(Boolean : true : IRW)
 //          Indicates whether to add "drop values" to items dropped on this component, if both 
@@ -1221,7 +1251,6 @@ getField : function (fieldId) {
     if (!this.fields) return null;
     return isc.Class.getArrayItem(fieldId, this.fields, this.fieldIdProperty);
 },
-
 
 //> @method dataBoundComponent.getFieldNum()	
 // Find the index of a currently visible field.
@@ -2347,8 +2376,10 @@ filterWithCriteria : function (criteria, operation, context) {
        filterCriteria = isc.DataSource.filterCriteriaForFormValues(criteria);
     }
     
+    filterCriteria = isc.DS.checkEmptyCriteria(filterCriteria);
+
     var dataModel = this.getData();
-	
+
     // if not already viewing a result set/tree for this operation, create one for it
     if (this.useExistingDataModel(criteria, operation, context)) {
         this.updateDataModel(filterCriteria, operation, context);
@@ -3408,11 +3439,11 @@ getHiliteCSSText : function (hilite) {
 },
 
 _hiliteIterator : [],
-addHiliteCSSText : function (record, colNum, cssText) {
+addHiliteCSSText : function (record, field, cssText) {
     if (!record) return cssText;
 
     var hiliteCount = record[this.hiliteMarker],
-        field = this.getField(colNum);
+        field = this.getField(field);
 
     if (!field || !field._hilites) return cssText;
 
@@ -3984,13 +4015,13 @@ updateDataViaDataSource : function(record, ds, updateProperties, sourceWidget) {
 
 //> IDocument
 // Helper to add a record if it is not a duplicate, or if duplicates are allowed.
-// There are four distinct different types of dup-checking we need to do:
+// There are five distinct different types of dup-checking we need to do:
 // 1. Source DS is the same as target DS, and it has a primary key
 // 2. Source DS is the same as target DS, and it does not have a primary key
 // 3. Source and target DS are different, and there is a foreignKey relationship from the
 //    target to the source
-// 4. Source and target DS are different with no FK relationship, or one or the other of the 
-//    grids is not bound to a DS at all
+// 4. Source and target DS are different with no FK relationship
+// 5. one or the other of the grids is not bound to a DS at all
 //
 // For case (1), if at least one of the PK fields is a sequence, we can allow the update.  If 
 // we have no sequence field in the keys, we need to perform a check on PKs and forbid the
@@ -3999,13 +4030,15 @@ updateDataViaDataSource : function(record, ds, updateProperties, sourceWidget) {
 // However, the application code may have overridden drop() and changed the dropped 
 // record so that it has unique keys - eg, popped up a dialog asking for a new product code.
 //
-// For cases (2) and (4), we compare every field in the record (minus properties that ListGrid 
+// For cases (2) and (5), we compare every field in the record (minus properties that ListGrid 
 // might have scribbled on, such as _selection_*).  If we get an exact match on every field, 
 // that's a duplicate; otherwise, it's OK.  We may have to visit the server for this check.
 //
 // For case (3), we check if the target list, filtered as it currently is, already contains a 
 // record with the same value(s) in its foreignKey field(s) as the record we're proposing to add.
 // We may have to visit the server for this check.
+//
+// For case 4, we perform a PK check.
 //
 // Note that this function will work for both ListGrids and TreeGrids; (or indeed for any component
 // whose data model is List, Tree, ResultSet or ResultTree); the "folder" parameter
@@ -4023,17 +4056,19 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
         
     if (ds) pks = ds.getPrimaryKeyFields();
 
-    // If the source and target datasource are the same, and we have a PK, and at least one of
-    // the PK fields is a sequence, we don't need to check for duplicates because we can assume 
-    // the server arranges for a unique value as part of the create process.  This is the only 
-    // circumstance in which we have a dataSource but don't need to check the server.  Note that
-    // this special case code is duplicated in _isDuplicateOnClient() because that method is 
-    // called from other places.
+    // If we have a target datasource and we have a PK, and at least one of the PK fields is 
+    // a sequence, we don't need to check for duplicates because we can assume the server 
+    // arranges for a unique value as part of the create process.  This is the only
+    // circumstance in which we have a dataSource but don't need to check the server.  Note
+    // that this special case code is duplicated in _isDuplicateOnClient() because that method 
+    // is called from other places.
     //
     // Note that we do this special check even before the simple check on this.preventDuplicates
     // because we need special key handling in this circumstance, even if the duplicate check 
     // was going to pass anyway because we haven't set preventDuplicates.
-    if (ds && ds == sourceDS) {
+    //
+    
+    if (ds) {
         var proceed;
         if (pks && isc.firstKey(pks) != null) {
             for (var field in pks) {
@@ -4138,8 +4173,12 @@ _addIfNotDuplicate : function (record, sourceDS, sourceWidget, foreignKeys, inde
                     // Source DS and target DS are different but related via a foreign key
                     criteria = isc.addProperties({}, this.data.getCriteria());
                     isc.addProperties(criteria, foreignKeys);
+                } else if (ds && pks && isc.firstKey(pks) != null) {
+                    // Target DS exists and has PKs defined, but either there is no source DS, or the 
+                    // source DS is different.  Report duplicate if there is a PK collision
+                    criteria = isc.applyMask(record, pks);
                 } else {
-                    // Source DS and target DS are different and unrelated
+                    // Either the target grid is not bound to a DS, or the target DS has no PKs
                     criteria = this.getCleanRecordData(record);
                 }
                 isc.Log.logDebug("Incrementing dup query count: was " + 
@@ -4235,8 +4274,13 @@ _isDuplicateOnClient : function (record, sourceDS, foreignKeys) {
             }
         }
         isc.addProperties(criteria, foreignKeys);
+    } else if (ds && pks && isc.firstKey(pks) != null) {
+        // Target DS exists and has PKs defined, but either there is no source DS, or the 
+        // source DS is different.  Report duplicate if there is a PK collision
+        
+        criteria = isc.applyMask(record, pks);
     } else {
-        // Source DS and target DS are different and unrelated
+        // Either the target grid is not bound to a DS, or the target DS has no PKs
         criteria = this.getCleanRecordData(record);
     }
 
@@ -5200,7 +5244,7 @@ getTitleField : function () {
 //<
 getRecordHiliteCSSText : function (record, cssText, field) {
     cssText = this.addObjectHilites(record, cssText, field);
-    cssText = this.addHiliteCSSText(record, this.getFieldNum(field), cssText);
+    cssText = this.addHiliteCSSText(record, field, cssText);
     return cssText;
 },
 
@@ -5710,6 +5754,57 @@ getFormattingProperties : function (field, value) {
     }
 },
 
+//>	@object	ExportSettings
+//	Properties describing settings for a data export.  
+//	@see DataBoundComponent.exportClientData
+//	@visibility external
+//<
+
+//>	@type	ExportOutputType
+// The output type (format) to use for a data export.
+// @value	"csv"    Export in CSV (Comma Separated Values) format. Note that the separator
+//                   does not have to be a comma, despite the name - see 
+//                   +link{exportSettings.delimiter}
+// @value	"json"   Export in JSON (JavaScript Object Notation) format.  Note that this 
+//                   format is not supported for purely client-specified requests, for
+//                   security reasons.
+// @value	"xml"    Export in XML format
+// @value	"xls"    Export in Microsoft Excel 97 format
+// @value   "ooxml"  Export in Microsoft Excel 2007 format (also called "xlsx")
+//	@visibility external
+//<
+
+//>	@type	ExportLineBreakStyle
+// The type of line breaks to use for a data export.
+// @value	"unix"    UNIX-style line breaks (LF only)
+// @value	"mac"     Apple Mac-style line breaks (CR only)
+// @value	"dos"     DOS/Windows-style line breaks (CR and LF)
+// @value	"default" The server's default line break style
+//	@visibility external
+//<
+
+//> @attr exportSettings.outputType (ExportOutputType : null : IRW)
+// The output type of the export.
+// @visibility external 
+//<    
+
+//> @attr exportSettings.lineBreakStyle (ExportLineBreakStyle : null : IRW)
+// The line break style to use for the export.
+// @visibility external 
+//<    
+
+//> @attr exportSettings.delimiter (String : "," : IRW)
+// The character to use as a separator for output styles that require separators
+// @visibility external 
+//<    
+
+//> @attr exportSettings.columnOrder (Array of String : null : IRW)
+// A list of field names to export.  If provided, this property controls both which fields to
+// export, and the order in which to export them.
+// @visibility external 
+//<    
+
+
 //> @method dataBoundComponent.exportClientData()
 // Exports this component's data with client-side formatters applied, so is suitable for direct
 // display to users.  This feature requires the SmartClient server, but does not rely on any
@@ -5718,14 +5813,17 @@ getFormattingProperties : function (field, value) {
 // To export unformatted data from this component's dataSource, 
 // see +link{dataBoundComponent.exportData, exportData} which does not include client-side 
 // formatters, but relies on both the SmartClient server and server-side DataSources.
-// @param [requestProperties] (DSRequest Properties) Request properties for the export
-//  note that specifying +link{DSRequest.exportData,exportData} on the request properties
+// @param [requestProperties] (DSRequest Properties) Request properties for the export.
+//  Note that specifying +link{DSRequest.exportData,exportData} on the request properties
 //  allows the developer to pass in an explicit data set to export.
+// @param [exportSettings] (ExportSettings) Optional settings for the export.
 // @see dataSource.exportClientData
 // @visibility external
 //<
-exportClientData : function (requestProperties) {
-    this.getClientExportData(requestProperties, 
+exportClientData : function (requestProperties, exportSettings) {
+    var workProperties = isc.addProperties({}, requestProperties);
+    workProperties.exportSettings = exportSettings;
+    this.getClientExportData(workProperties, 
         this.getID()+".exportClientDataReply(data,context)");
     return;
 },
@@ -5745,10 +5843,12 @@ exportClientDataReply : function (data, context) {
         downloadToNewWindow: (exportDisplay == "window"),
         download_filename: (exportDisplay == "window" ? fileName : null)
     };
+    
+    var settings = context.exportSettings ? context.exportSettings : {};
 
     isc.DMI.callBuiltin({
         methodName: "downloadClientExport",
-        arguments: [ data, format, fileName, exportDisplay ],
+        arguments: [ data, format, fileName, exportDisplay, settings ],
         requestParams: serverProps
     });
 
@@ -5981,7 +6081,7 @@ validateFieldAndDependencies : function (field, validators, newValue, record, op
         if (depField.name != fieldName  && depField.dataPath != fieldName &&
             this.isFieldDependentOnOtherField(depField, fieldName)) 
         {
-            fieldResult = this.validateField (depField, depField.validators,
+            fieldResult = this.validateField(depField, depField.validators,
                                               record[depField.name], record, options);
             if (fieldResult != null ) {
                 if (fieldResult.errors != null) {
@@ -6003,6 +6103,15 @@ validateFieldAndDependencies : function (field, validators, newValue, record, op
     return (validated ? result : null);
 },
 
+
+//>	@attr dataBoundComponent.unknownErrorMessage (string : "Invalid value" : [IRW])
+// For databound components that support editing, the error message for a failed validator
+// that does not specify its own errorMessage.
+// @group validation, i18nMessages
+// @visibility external
+//<
+unknownErrorMessage : "Invalid value",
+
 _$typeValidators: ["isInteger", "isFloat", "isBoolean", "isString"],
 
 //> @method dataBoundComponent.validateField() (A)
@@ -6013,11 +6122,12 @@ _$typeValidators: ["isInteger", "isFloat", "isBoolean", "isString"],
 // @param  value      (any)       Value to be validated
 // @param  record     (object)    pointer to the record object
 // @param  options    (object)    options object to control the validation process
-//                  in the format {dontValidatorNullValue: true/false,
+//                  in the format {dontValidateNullValue: true/false,
 //                                 typeValidationsOnly: true/false,
 //                                 unknownErrorMessage: value or null,
 //                                 changing: true/false,
-//                                 serverValidationMode: "full"/"partial"}
+//                                 serverValidationMode: "full"/"partial",
+//                                 skipServerValidation: true/false}
 // @return (object) null if no validation was performed, or validation result object
 //                  in the format {valid: true/false,
 //                                 errors: null or {fieldName: ["error", ..], ...}
@@ -6103,8 +6213,12 @@ validateField : function (field, validators, value, record, options) {
             isc.Validator.performAction(isValid, field, validator, this);
             if (!isValid) {
                 var errorMessage = isc.Validator.getErrorMessage(validator);
-                if (errorMessage == null && options && options.unknownErrorMessage) {
-                    errorMessage = options.unknownErrorMessage;
+                if (errorMessage == null) {
+                    if (options && options.unknownErrorMessage) {
+                        errorMessage = options.unknownErrorMessage;
+                    } else {
+                        errorMessage = this.unknownErrorMessage;
+                    }
                 }
                 errors.add(errorMessage);
 
@@ -6127,7 +6241,7 @@ validateField : function (field, validators, value, record, options) {
     }
 
     // Process server-side validators
-    if (needsServerValidation) {
+    if (needsServerValidation && (!options || options.skipServerValidation != true)) {
         // If field or form has stopOnError set, we must show prompt for synchronous operation
         forceShowPrompt = this._resolveStopOnError(forceShowPrompt, field.stopOnError,
                                                    this.stopOnError);
@@ -6413,6 +6527,18 @@ setFieldCanEdit : function (fieldName, canEdit) {
         field.canEdit = canEdit;
         this.redraw();
     }
+},
+
+//> @method dataBoundComponent.isOffline()
+// Returns true if the component's current data model is marked as offline.  This does not 
+// necessarily mean that the component has no data; it may have data that was supplied from
+// the +link{class:Offline,offline cache}.
+// @return (boolean) Offline if true
+// @visibility offline
+//<
+isOffline : function () {
+    if (this.data && this.data._offline) return true;
+    return false;
 }
 
 

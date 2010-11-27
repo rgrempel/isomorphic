@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -76,12 +76,16 @@ isc.Canvas.addMethods({
     
     // create a ResultTree dataModel based on the component's current config
     createResultTree : function (criteria, callback, requestProperties, type) {
-        // The callback is passed in from fetchData() so should be fired when the server
-        // responds with the requested nodes.
-        this._initialFetchCallback = callback;
+        
 
         if (type == null) type = "fetch";
         if ( requestProperties == null ) requestProperties = {};
+        // The callback is passed in from fetchData() so should be fired when the server
+        // responds with the requested nodes. Hang it onto the request directly so it fires
+        // only when that request returns
+        if (requestProperties.clientContext == null) requestProperties.clientContext = {};
+        requestProperties.clientContext._initialFetchCallback = callback;
+        var context = requestProperties.clientContext
         
         // By default when filterData is called the callback passed in is stored as the
         // afterFlowCallback for the request.
@@ -89,9 +93,9 @@ isc.Canvas.addMethods({
         // If this wasn't passed in explicitly look it up on the request.
         
         if (requestProperties.afterFlowCallback != null) {
-            if (this._initialFetchCallback == null) {
-                this._initialFetchCallback = requestProperties.afterFlowCallback;
-            } else if (this._initialFetchCallback != requestProperties.afterFlowCallback) {
+            if (context._initialFetchCallback == null) {
+                context._initialFetchCallback = requestProperties.afterFlowCallback;
+            } else if (context._initialFetchCallback != requestProperties.afterFlowCallback) {
                 
                 this.logWarn("createResultTree called with request.afterFlowCallback:" + 
                     this.echo(requestProperties.afterFlowCallback) + 
@@ -131,12 +135,14 @@ isc.Canvas.addMethods({
         return isc.ClassFactory.getClass(resultTreeClass).create(tree);
     },
     _fireFetchCallback : function (dsResponse,data,dsRequest) {
+        var callback = dsRequest.clientContext ? dsRequest.clientContext._initialFetchCallback 
+                            : null;
         // callback fired whenever we get new data from the server.
         // use this to fire the callback passed into fetchData if there was one (and then
         // drop that callback so we don't fire it repeatedly as the user opens child-nodes etc)
-        if (this._initialFetchCallback) {
-            this.fireCallback(this._initialFetchCallback, "dsResponse,data,dsRequest", arguments);
-            delete this._initialFetchCallback;
+        if (callback) {
+            this.fireCallback(callback, "dsResponse,data,dsRequest", arguments);
+            delete dsRequest.clientContext._initialFetchCallback;
         }
     }
 });
@@ -523,6 +529,11 @@ isc.EditorActionMethods.addInterfaceMethods({
                        " for the DataSource class.  " +
                        "If this was intended to be a native HTML form submission, set the " +
                        "canSubmit property to true on this form.");
+            return;
+        }
+
+        if (isc.Offline && isc.Offline.isOffline() && !this.dataSource.clientOnly) {
+            isc.warn(this.offlineSaveMessage);
             return;
         }
        
@@ -1037,6 +1048,15 @@ isc._EditorFlowOverrides = {
     },
     
     fetchDataReply : function (response, data, request) {
+    
+        if (data == null || isc.isAn.emptyObject(data) || 
+                (isc.isAn.Array(data) && data.getLength() == 0))
+        {
+            if (response.status == isc.RPCResponse.STATUS_OFFLINE) {
+                isc.say(this.offlineMessage);
+            }
+        }
+    
         var record;
         if (isc.isAn.Array(data)) {
             record = data.get(0);    

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -114,8 +114,8 @@ isc.NativeScrollbar.addProperties({
         showCustomScrollbars:false,
         
         // Respond to a user scrolling this scrollbar by scrolling our scroll target
-        _handleCSSScroll : function (waited, fromFocus) {
-            this.Super("_handleCSSScroll", arguments);
+        _handleCSSScroll : function (waited, fromFocus, a,b,c) {
+            this.invokeSuper(isc.Canvas, "_handleCSSScroll", waited, fromFocus, a,b,c);
             
             if (isc.Browser.isMoz && !waited && (fromFocus ||  isc.Browser.geckoVersion < 20030312))
             {

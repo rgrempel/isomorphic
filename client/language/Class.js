@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1121,7 +1121,8 @@ isc.Class.addClassMethods({
             return;
         }
         // clear single item
-        if (!isc.isAn.Array(protoList)) {
+        if (!protoList.__isArray) {
+            
             superCalls[methodName] = null;
         } else {
             // shorten array, then remove if zero length
@@ -1137,7 +1138,11 @@ isc.Class.addClassMethods({
             superCalls[methodName] = newProto;
         } else {
             if (isc.isAn.Array(protoList)) protoList.add(newProto);
-            else superCalls[methodName] = [protoList, newProto];
+            else {
+                superCalls[methodName] = [protoList, newProto];
+                
+                superCalls[methodName].__isArray = true;
+            }
         }
     },
 
@@ -1671,15 +1676,18 @@ isc.Class.addClassMethods({
     getArrayItem : function (id, array, idProperty) {
         if (array == null) return null;
 
-        // String: assume id property of section descriptor object
-        if (isc.isA.String(id)) return array.find(idProperty || this._$ID, id);
+        
+
+        // Number: assume index.  
+        if (isc.isA.Number(id)) return array[id];
 
         // Object: return unchanged
         if (isc.isAn.Object(id)) return id;
 
-        // Number: assume index
-        if (isc.isA.Number(id)) return array[id];
-    
+        // String: assume id property of section descriptor object
+        if (isc.isA.String(id)) return array.find(idProperty || this._$ID, id);
+
+
         // otherwise invalid
         return null;
     },

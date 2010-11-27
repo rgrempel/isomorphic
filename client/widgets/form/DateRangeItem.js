@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -918,6 +918,11 @@ isc.MiniDateRangeItem.addMethods({
         }
     },
     
+    saveValue : function () {
+        this.Super("saveValue", arguments);
+        this.updateStoredDates(this._value);
+    },
+    
     // show the current value in our text box (called from setValue / updateValue)
     displayValue : function (value) {
         var displayValue = this.mapValueToDisplay(value) || "";
@@ -929,8 +934,6 @@ isc.MiniDateRangeItem.addMethods({
         // fires change handler / calls this.saveValue()
         if (!this._updateValue(data)) return;
         
-        // update this.startRow / this.endRow
-        this.updateStoredDates(data);
         this.displayValue(data);
     },
 

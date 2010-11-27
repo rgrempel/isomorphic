@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -136,40 +136,57 @@ isc.PickListMenu.addMethods({
         if (record != null) this.itemClick(record);
         
     },
+    headerClick : function (fieldNum, header) {
+        var rv = this.Super("headerClick", arguments);
+        var field = this.getField(fieldNum);
+        // check if the checkbox column header was clicked
+        if (this.isCheckboxField(field) && this.allowMultiSelect) {
+            this.multiSelectChanged();
+        }
+        return rv;
+    },
+    
+    multiSelectChanged : function () {
+        var formItem = this.formItem,
+            fieldName = formItem.getValueFieldName(),
+            sel = this.getSelection(),
+            values = [];
+            
+         for (var i = 0; i < sel.length; i++) {
+             var currSel = sel[i];
+             values.add(currSel[fieldName]);    
+         }       
+         formItem.pickValue(values);
+    },
     
     // 'pick' the selected value on click.  Matches Windows ComboBox behavior
     itemClick : function (record) {
-        var formItem = this.formItem,
-            fieldName = formItem.getValueFieldName();            
-
         if (this.allowMultiSelect) {
-             var sel = this.getSelection();
-             var values = [];
-             for (var i = 0; i < sel.length; i++) {
-                 var currSel = sel[i];
-                 values.add(currSel[fieldName]);    
-             }       
-             formItem.pickValue(values);
-         } else {
-         	 var value = record[fieldName];
-             formItem.pickValue(value);
-         }
+            this.multiSelectChanged();
+        } else {
+            var formItem = this.formItem,
+                fieldName = formItem.getValueFieldName();       
+         	var value = record[fieldName];
+            formItem.pickValue(value);
+        }
     },
 
-    hide : function (a,b,c,d) {         
+    hide : function (a,b,c,d) {
+        var isVisible = this.isVisible() && this.isDrawn();
+        
         this.invokeSuper(isc.PickListMenu, "hide", a,b,c,d);        
         // If we're being hidden as part of a formItem.destroy(), this.formItem will have been 
         // cleared out.
         if (!this.formItem) return;
         
         // put focus back in the item if this was a modal pickList 	 
-        if (this.showModal) this.formItem.focusInItem();
+        if (isVisible && this.showModal) this.formItem.focusInItem();
                  
         // Clear out the showingPickList flag
         this.formItem._showingPickList = null;                 
         
         // fire a notification for observing / overriding the pick list being hidden
-        this.formItem._pickListHidden();
+        if (isVisible) this.formItem._pickListHidden();
         
         
         delete this.formItem._showOnFilter;
@@ -1664,6 +1681,9 @@ isc.PickList.addInterfaceMethods({
         if (this.defaultToFirstOption && this.getValue() == null && startRow == 0) {
             this.setToDefaultValue();
         }
+         // helper - if we're currently showing a data value and we just loaded the associated
+        // display value, display it.
+        this._updateDisplayValueForNewData();
 
         if (this.dataArrived) this.dataArrived(startRow,endRow,data);
     },

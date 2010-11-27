@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -38,7 +38,7 @@
 // approximately 5MB.
 //
 // @treeLocation Client Reference/Data Binding
-// @visibility external
+// @visibility offline
 //<
 
 var Offline = {
@@ -126,10 +126,8 @@ var Offline = {
     
     maxResponsesToPersist: 100,
     
-    // Set this flag to cause Offline to use userData persistence rather than HTML5 localStorage
-    // in versions of Internet Explorer from 8 onwards, so that you can debug that IE-specific 
-    // storage feature without having to do so in an ancient browser with no developer tools
-    userDataPersistenceInIE8: false,
+    
+    userDataPersistenceInIE8: true,
     
     localStorageType : function () {
         if (window.localStorage) {
@@ -203,9 +201,7 @@ var Offline = {
         }
     },
 
-    // clearCacheNatively removes all entries from the offline cache, using native, storage-
-    // specific techniques that do not rely on the integrity of the isc metrics and priority
-    // queue.  It is a good way to definitively clear the decks.
+    
     clearCacheNatively : function () {
         // userData is nearly always a special case...
         if (this.localStorageType() == this.USERDATA_PERSISTENCE) {
@@ -638,14 +634,17 @@ var Offline = {
         storedKeyBytes = 1 * storedKeyBytes;
         storedValueBytes = 1 * storedValueBytes;
         var pqText = this.get(this.priorityQueueKey);
+        var overhead = this.countKey.length + this.keyKey.length + this.valueKey.length +
+                             countLen + keyLen + valueLen;
+        var pqLength = pqText == null ? 0 : pqText.length + 
+                                (this.KEY_PREFIX + this.priorityQueueKey).length;
         return {
             storedEntries: storedEntries,
             storedKeyBytes: storedKeyBytes,
             storedValueBytes: storedValueBytes,
-            metricsOverhead: this.countKey.length + this.keyKey.length + this.valueKey.length +
-                             countLen + keyLen + valueLen,
-            priorityQueue: pqText == null ? 0 : pqText.length + 
-                                (this.KEY_PREFIX + this.priorityQueueKey).length
+            metricsOverhead: overhead,
+            priorityQueue: pqLength,
+            total: storedKeyBytes + storedValueBytes + overhead + pqLength
         }
     },
     
@@ -718,11 +717,147 @@ var Offline = {
             returnValue;
         // using raw eval() because SmartClient might not be available
         eval('returnValue = ' + value);
+        if (returnValue) returnValue.fromOfflineCache = true;
         return returnValue;
     },
     serialize : function (obj) {
         return isc.Comm.serialize(obj, false);
+    },
+    
+    // Offline storage browser
+    // ---------------------------------------------------------------------------------------
+    showStorageInfo : function () {
+        if (!this.storageBrowser) {
+            if (isc.Offline.localStorageType() == isc.Offline.USERDATA_PERSISTENCE) {
+                isc.Timer.setTimeout(function () {
+                isc.say("WARNING:  This browser uses an old storage mechanism that does not " +
+                        "permit arbitrary key/value pair storage.  This means we have to " +
+                        "store extra management data, with the upshot that the metrics reported " +
+                        "for 'priority queue' and 'overhead' are indicative, but not accurate");
+                }, 0);
+            }
+            this.metricsDF = isc.DynamicForm.create({
+                width: "100%",
+                numCols: 6,
+                fields: [
+                    {name: "storedEntries", title: "No. entries", disabled: true},
+                    {name: "storedKeyBytes", title: "Used by keys", disabled: true},
+                    {name: "storedValueBytes", title: "Used by values", disabled: true},
+                    {name: "priorityQueue", title: "Used by Priority Queue", disabled: true},
+                    {name: "metricsOverhead", title: "Metrics overhead", disabled: true},
+                    {name: "total", title: "Total Bytes", disabled: true}
+                ]
+            });
+            this.storageLG = isc.ListGrid.create({
+                width: "100%",
+                height: "*",
+                canRemoveRecords: true,
+                removeData: function (record) {
+                    isc.ask("Remove this entry?", function (value) {
+                        if (value) {
+                            isc.Offline.remove(record.key);
+                            isc.Offline.refreshStorageInfo();
+                        }
+                    });
+                },
+                rowDoubleClick: function(record) {
+                    isc.Offline.createStorageEditorWindow();
+                    isc.Offline.storageEditorWindow.show();
+                    isc.Offline.storageEditor.editRecord(record);
+                },
+                fields: [
+                    {name: "key", width: "25%", title: "Key"},
+                    {name: "value", title: "Value"}
+                ]
+            });
+            this.storageBrowser = isc.Window.create({
+                autoCenter: true,
+                canDragResize: true,
+                width: Math.floor(isc.Page.getWidth() * 0.5),
+                height: Math.floor(isc.Page.getHeight() * 0.5),
+                title: "Offline Storage",
+                items: [
+                    this.metricsDF,
+                    this.storageLG,
+                    isc.HLayout.create({
+                        width: "100%", height: 1,
+                        members: [
+                            isc.LayoutSpacer.create({width: "*"}),
+                            isc.Button.create({
+                                title: "Add Entry",
+                                click: function () {
+                                    isc.Offline.createStorageEditorWindow();
+                                    isc.Offline.storageEditorWindow.show();
+                                    isc.Offline.storageEditor.editNewRecord();
+                                }
+                            })
+                        ]
+                    })
+                ]
+            });
+        }
+        
+        this.storageBrowser.show();
+        this.refreshStorageInfo();
+    },
+
+    createStorageEditorWindow : function () {
+        if (!isc.Offline.storageEditorWindow) {
+            isc.Offline.storageEditor = isc.DynamicForm.create({
+                fields: [
+                    {name: "key", title: "Key", editorType: "TextAreaItem", width: 400},
+                    {name: "value", title: "Value", editorType: "TextAreaItem", width: 400},
+                    {name: "saveButton", type: "button", title: "Save", click: function () {
+                        var form = isc.Offline.storageEditor;
+                        if (form.saveOperationType == "update" &&
+                                form.getValue("key") != form.getOldValue("key")) 
+                        {
+                            isc.ask("Key has changed - this will create a new entry. " +
+                                    "Do you want to retain the old entry as well? (if " + 
+                                    "you answer 'No', it will be removed", 
+                                    function (value) {
+                                        if (value === false) {
+                                            isc.Offline.remove(form.getOldValue("key"));
+                                        }
+                                        if (value != null) {
+                                            isc.Offline.put(form.getValue("key"), 
+                                                            form.getValue("value"));
+                                            isc.Offline.storageEditorWindow.hide();
+                                            isc.Offline.refreshStorageInfo();
+                                        }
+                                    });
+                        } else {
+                            isc.Offline.put(form.getValue("key"), form.getValue("value"));
+                            isc.Offline.storageEditorWindow.hide();
+                            isc.Offline.refreshStorageInfo();
+                        }
+                    }}
+                ]
+            });
+            isc.Offline.storageEditorWindow = isc.Window.create({
+                bodyProperties: { margin: 5 },
+                title: "Edit Offline Storage Entry",
+                isModal: true,
+                autoCenter: true,
+                height: 280,
+                width: 480,
+                items: [
+                    isc.Offline.storageEditor
+                ]
+            });
+        }
+    },
+    
+    refreshStorageInfo : function () {
+        this.metricsDF.editRecord(isc.Offline.getStorageMetrics());
+        var dataObj = isc.Offline.getCacheContents();
+        var data = [];
+        for (var key in dataObj) {
+            data.add({key: key, value: dataObj[key]});
+        }
+        this.storageLG.setData(data);
     }
+
 };
 
 var UserDataPersistence = {
@@ -1086,15 +1221,7 @@ isc.addProperties(isc.Offline, {
 
 });
 
-// Serialization support
-// ---------------------------------------------------------------------------------------
-// This code is from the SmartClient serializer - I've just stolen it and refactored it to 
-// strip out the class system, API docs and any dependency on other SmartClient facilities.  
-// Where this wasn't possible (for example, the serializer depends heavily on "isA" functions),
-// I have factored across the necessary from wherever it exists in SmartClient into this 
-// class.  This seemed like the only quick way to obtain a robust, dependency-free serializer 
-// that serializes according to what the Isomorphic server is expecting to see (in terms of 
-// Dates, for example)
+
 isc.OfflineJSONEncoder = {
 
 _serialize_remember : function (objRefs, object, path) {

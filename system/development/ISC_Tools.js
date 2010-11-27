@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
+  Version SC_SNAPSHOT-2010-11-26/LGPL Development Only (2010-11-26)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -276,8 +276,8 @@ this.$70d=null}
 this.$70b={top:isc.Canvas.create(isc.addProperties(_4,{snapTo:"T",snapEdge:"B",width:"100%",height:2})),left:isc.Canvas.create(isc.addProperties(_4,{snapTo:"L",snapEdge:"R",width:2,height:"100%"})),bottom:isc.Canvas.create(isc.addProperties(_4,{snapTo:"B",snapEdge:"T",width:"100%",height:2})),right:isc.Canvas.create(isc.addProperties(_4,{snapTo:"R",snapEdge:"L",width:2,height:"100%"}))}
 this.$f0=isc.Class.create()}
 ,isc.A.$70e=function isc_c_SelectionOutline__createLabel(){if(this.$70j){this.$70b.label=this.$70j;return}
-this.$70j=this.$70b.label=isc.Label.create({autoDraw:true,top:-100,left:-100,autoFit:true,padding:2,wrap:false,isMouseTransparent:true,backgroundColor:this.labelBackgroundColor,opacity:this.labelOpacity,snapTo:this.labelSnapTo,snapEdge:this.labelSnapEdge,snapOffsetTop:this.labelSnapOffset,mouseOver:function(){if(this.$701){isc.Timer.clear(this.$71a);isc.SelectionOutline.$70h();this.$701=false}else{var _1=this;this.$71b=isc.Timer.setTimeout(function(){_1.$71c()},300)}},mouseOut:function(){if(this.$71b){isc.Timer.clear(this.$71b);delete this.$71b}},$71c:function(){isc.Timer.clear(this.$71a);this.$701=true;this.animateMove(null,(this.getPageTop()+this.getVisibleHeight())-
-isc.SelectionOutline.labelSnapOffset,200);this.$71a=isc.Timer.setTimeout(function(){isc.SelectionOutline.$70h();if(isc.SelectionOutline.$70b.label){isc.SelectionOutline.$70b.label.$701=false}},3000)}})}
+this.$70j=this.$70b.label=isc.Label.create({autoDraw:true,top:-100,left:-100,autoFit:true,autoFitDirection:"both",padding:2,wrap:false,isMouseTransparent:true,backgroundColor:this.labelBackgroundColor,opacity:this.labelOpacity,snapTo:this.labelSnapTo,snapEdge:this.labelSnapEdge,snapOffsetTop:this.labelSnapOffset,mouseOver:function(){if(this.$701){isc.Timer.clear(this.$71a);isc.SelectionOutline.$70h();this.$701=false}else{var _1=this;this.$71b=isc.Timer.setTimeout(function(){_1.$71c()},300)}},mouseOut:function(){if(this.$71b){isc.Timer.clear(this.$71b);delete this.$71b}},$71c:function(){isc.Timer.clear(this.$71a);this.$701=true;this.animateMove(null,(this.getPageTop()+this.getVisibleHeight())-
+isc.SelectionOutline.labelSnapOffset,null,200);this.$71a=isc.Timer.setTimeout(function(){isc.SelectionOutline.$70h();if(isc.SelectionOutline.$70b.label){isc.SelectionOutline.$70b.label.$701=false}},3000)}})}
 ,isc.A.$71o=function isc_c_SelectionOutline__resizeOutline(){this.logInfo("Resizing selected object "+this.$70d,"selectionOutline");this.$71p()}
 ,isc.A.$70h=function isc_c_SelectionOutline__moveOutline(){this.logInfo("Moving selected object "+this.$70d,"selectionOutline");this.$71p()}
 ,isc.A.$71p=function isc_c_SelectionOutline__refreshOutline(){if(!this.$70d||this.$70d.destroyed||this.$70d.destroying)return;this.$70b.top.resizeTo(this.$70d.getVisibleWidth(),this.$70b.top.height);this.$70b.bottom.resizeTo(this.$70d.getVisibleWidth(),this.$70b.bottom.height);this.$70b.left.resizeTo(this.$70b.left.width,this.$70d.getVisibleHeight());this.$70b.right.resizeTo(this.$70b.right.width,this.$70d.getVisibleHeight());var _1=isc.isA.Canvas(this.$70d);for(var _2 in this.$70b){var _3=this.$70b[_2];if(_3==null)continue;if(_1){isc.Canvas.snapToEdge(this.$70d,_3.snapTo,_3,_3.snapEdge,this.$70d)}else{isc.Canvas.snapToEdge(this.$70d.getPageRect(),_3.snapTo,_3,_3.snapEdge)}}
@@ -353,7 +353,7 @@ if(!isc.TTreePalette)isc.defineClass("TTreePalette","TreePalette");if(!isc.TEdit
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
+  Version SC_SNAPSHOT-2010-11-26/LGPL Development Only (2010-11-26)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

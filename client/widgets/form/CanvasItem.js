@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -166,7 +166,12 @@ isc.CanvasItem.addMethods({
         // getDynamicDefaults() which would allow dynamic customization of the canvas autoChild
         // when it's auto-created.
         if (this.createCanvas != null) {
+            var canvas = this.canvas;
             this.canvas = this.fireCallback("createCanvas");
+            // if this.createCanvas existed but returned nothing, hang onto our original
+            // canvas object
+            // It could just modify it in place and we should allow that
+            if (this.canvas == null) this.canvas = canvas;
         }
         
         //>DEBUG
@@ -316,8 +321,8 @@ isc.CanvasItem.addMethods({
         var containerHandle = this.containerWidget.getClipHandle(),
             spacerParent = isc.Element.get(this.getID() + "_spacerParent");
             
-        var left = isc.Element._getLeftOffsetFromElement(spacerParent, containerHandle),
-            top = isc.Element._getTopOffsetFromElement(spacerParent, containerHandle);
+        var left = isc.Element.getLeftOffset(spacerParent, containerHandle),
+            top = isc.Element.getTopOffset(spacerParent, containerHandle);
 
         // this.logWarn("placing Canvas at: " + [left, top]);
 

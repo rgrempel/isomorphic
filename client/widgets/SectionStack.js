@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -969,8 +969,9 @@ isc.SectionStack.addMethods({
                 continue;
             }
 
-            // header - if we're just expanding, but the section is hidden, show it.
-            if (((showSection && section.showHeader) || expandSection) && section.hidden) {
+            // If section.showSection is true and the section isn't visible, show it
+            // (whether we're expanding or showing)
+            if (section.showSection && section.hidden && (showSection || expandSection)) {
                 itemsToShow.add(section);
                 section.hidden = false;
             }
@@ -1406,10 +1407,22 @@ isc.SectionStack.addMethods({
     },
     
     getSectionCursor : function (sectionHeader) {
+        var cursor;
         var config = this.getSectionConfig(sectionHeader);
-        if (config == null) return isc.Canvas.DEFAULT;
-        if (config.cursor) return config.cursor;
-        return config.canCollapse == false ? isc.Canvas.DEFAULT : isc.Canvas.HAND;
+        if (config == null) cursor = isc.Canvas.DEFAULT;
+        else if (config.cursor) cursor = config.cursor;
+        else {
+            if (config.canCollapse != false) {
+                cursor = isc.Canvas.HAND;
+            
+            } else if (this.canRorderSections && config.canReorder != false) {
+                cursor = "move";
+            } else {
+                cursor = isc.Canvas.DEFAULT;
+            }
+        }
+        return cursor;
+
     },
 
     // For a given member, return the closest resizeable member _before_ us in the members
@@ -1783,17 +1796,14 @@ isc.defineClass("SectionHeader", "Label").addMethods(isc._commonHeaderProps,
 
         // if the section cannot be collapsed, or SectionStack.showExpandControls: false, don't
         // show the expand/collapse icons and allow clicks anywhere to expand and collapse
-        if (!this.canCollapse || (this._hasLayout() && this.getSectionStack().showExpandControls == false))
+        if (!this.canCollapse || (this._hasLayout() && this.getSectionStack() && 
+            this.getSectionStack().showExpandControls == false))
         {
             this.icon = null;
             this.showIconState = false;
         }
-        // sections may be rendered outside of true sectionStacks
-        // (for example in SectionItems)
-        if (this.getSectionStack().getSectionCursor != null) {
-            var cursor = this.getSectionStack().getSectionCursor(this);
-            this.setCursor(cursor);
-        }
+        this.setCursor(this.getCurrentCursor());
+        
         this.invokeSuper(isc.SectionHeader, "draw", a,b,c,d);
 
         this.addControls();
@@ -1808,6 +1818,15 @@ isc.defineClass("SectionHeader", "Label").addMethods(isc._commonHeaderProps,
             this.addChild(this.headerLayout);
             this.allowContentAndChildren = true;
         }
+    },
+    getCurrentCursor : function () {
+        var cursor = this.cursor;
+        // sections may be rendered outside of true sectionStacks
+        // (for example in SectionItems)
+        if (this.getSectionStack() && this.getSectionStack().getSectionCursor != null) {
+            cursor = this.getSectionStack().getSectionCursor(this);
+        }
+        return cursor;
     }
     
 });
@@ -1881,7 +1900,8 @@ isc.defineClass("ImgSectionHeader", "HLayout").addMethods({
 
         // if the section cannot be collapsed, or SectionStack.showExpandControls: false, don't
         // show the expand/collapse icons and allow clicks anywhere to expand and collapse
-        if (!this.canCollapse || (this._hasLayout() && this.getSectionStack().showExpandControls == false))
+        if (!this.canCollapse || (this._hasLayout() && this.getSectionStack() &&
+            this.getSectionStack().showExpandControls == false))
         {
             props.icon = null;
             props.showIconState = false;
@@ -1893,15 +1913,10 @@ isc.defineClass("ImgSectionHeader", "HLayout").addMethods({
         props.canDrop = this.canDrop;
         props.dragTarget = this;
         
+        var cursor = this.getCurrentCursor();
+        this.setCursor(cursor);
+        props.cursor = cursor;
         
-        // sections may be rendered outside of true sectionStacks
-        // (for example in SectionItems)
-        if (this.getSectionStack().getSectionCursor != null) {
-          
-            var cursor = this.getSectionStack().getSectionCursor(this);
-            props.cursor = cursor;
-            this.setCursor(cursor);
-        }
         
         this.addAutoChild("background", props, isc.StretchImgButton);
 
@@ -1913,6 +1928,15 @@ isc.defineClass("ImgSectionHeader", "HLayout").addMethods({
         this.background.sendToBack();
 
         this.invokeSuper(isc.ImgSectionHeader, "draw", a,b,c,d);
+    },
+    getCurrentCursor : function () {
+        var cursor = this.cursor;
+        // sections may be rendered outside of true sectionStacks
+        // (for example in SectionItems)
+        if (this.getSectionStack() && this.getSectionStack().getSectionCursor != null) {
+            cursor = this.getSectionStack().getSectionCursor(this);
+        }
+        return cursor;
     },
     
     // Override getPrintHTML to just return the title HTML with the appropriate styling

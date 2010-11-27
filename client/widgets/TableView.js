@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -186,25 +186,25 @@ isc.TableView.addProperties({
 
     // SKINNING --------------------------------------------------
 
-    //> @attr tableView.recordTitleStyle (CSSStyle : "recordTitle" : IRW)
+    //> @attr tableView.recordTitleStyle (CSSStyleName : "recordTitle" : IRW)
     // Default style for title.
     // @visibility external
     //<
     recordTitleStyle: "recordTitle",
 
-    //> @attr tableView.recordDescriptionStyle (CSSStyle : "recordDescription" : IRW)
+    //> @attr tableView.recordDescriptionStyle (CSSStyleName : "recordDescription" : IRW)
     // Default style for description.
     // @visibility external
     //<
     recordDescriptionStyle: "recordDescription",
 
-    //> @attr tableView.recordDataStyle (CSSStyle : "recordData" : IRW)
+    //> @attr tableView.recordDataStyle (CSSStyleName : "recordData" : IRW)
     // Default style for data field.
     // @visibility external
     //<
     recordDataStyle: "recordData",
 
-    //> @attr tableView.recordInfoStyle (CSSStyle : "recordInfo" : IRW)
+    //> @attr tableView.recordInfoStyle (CSSStyleName : "recordInfo" : IRW)
     // Default style for info field.
     // @visibility external
     //<
@@ -220,24 +220,26 @@ isc.TableView.addProperties({
     },
 
     titleFieldDefaults: {
+        name: "TVtitleField",
         width: "*",
         type: "text",
         formatCellValue : function (value, record, rowNum, colNum, grid) {
+            // Defer to user-provided record formatter if provided
             if (grid.formatRecord != null) {
                 return grid.formatRecord(record);
             }
-            var title = value,
-                description = record[grid.descriptionField] || grid._$nbsp,
-                info = record[grid.infoField] || grid._$nbsp,
-                data = record[grid.dataField] || grid._$nbsp,
+
+            var title = grid._getFormattedFieldValue(record, grid.titleField),
+                description = grid._getFormattedFieldValue(record, grid.descriptionField),
+                info = grid._getFormattedFieldValue(record, grid.infoField),
+                data = grid._getFormattedFieldValue(record, grid.dataField),
                 html = ""
             ;
-
             if (grid.recordLayout == isc.TableView.SUMMARY_INFO ||
                 grid.recordLayout == isc.TableView.SUMMARY_FULL)
             {
                 html += "<span class='" + grid.recordInfoStyle + "'>" + 
-                        record[grid.infoField] + "</span>";
+                        info + "</span>";
             }
             html += "<span class='" + grid.recordTitleStyle + "'>" + title + "</span>";
             if (grid.recordLayout != isc.TableView.TITLE_ONLY) {
@@ -248,14 +250,14 @@ isc.TableView.addProperties({
                 grid.recordLayout == isc.TableView.SUMMARY_FULL)
             {
                 html += "<span class='" + grid.recordDataStyle + "'>" + 
-                        record[grid.dataField] + "</span>";
+                        data + "</span>";
             }
             return html;
         }
     },
 
     navigationFieldDefaults: {
-        name: "navigationField",
+        name: "TVnavigationField",
         width: 54,
         align: "right",
         formatCellValue : function (value, record, rowNum, colNum, grid) {
@@ -308,32 +310,65 @@ isc.TableView.addMethods({
     initWidget : function () {
         this.Super("initWidget", arguments);
 
-        this.columns = [];
+        // Holds fieldName->colNum mapping to optimize value formatting calls
+        this._colIndexes = {};
+
+        // If formatRecord was passed to us as a string, convert it to a method
+        if (this.formatRecord != null && !isc.isA.Function(this.formatRecord)) 
+            isc.Func.replaceWithMethod(this, "formatRecord", "record");
+    },
+
+    // Override to hide any user-defined fields and to add table view display fields
+    setFields : function(newFields) {
+        this.invokeSuper(isc.TableView, "setFields", this._defineTableFields(newFields));
+    },
+
+    // Hide any pre-defined fields, add table view display fields, and create
+    // fields for undefined groupBy fields.
+    _defineTableFields : function (baseFields) {
+        var columns = baseFields || [];
+
+        // Hide all pre-defined fields
+        for (var i = 0; i < columns.length; i++) {
+            columns[i].showIf = "false";
+        }
+
+        // Setup display fields
 
         // Icon column
         if (this.showIconField) {
-            this._iconCell = this.columns.length;
-            this.columns[this.columns.length]
+            var existingColumn = columns.find(this.fieldIdProperty, this.iconField);
+            if (existingColumn) columns.remove(existingColumn);
+
+            this._iconCell = columns.length;
+            columns[columns.length]
                 = isc.addProperties({name: this.iconField},
                                     this.iconFieldDefaults,
                                     this.iconFieldProperties);
         }
 
         // Title column
-        this.columns[this.columns.length]
-            = isc.addProperties({name: this.titleField},
+        var existingColumn = columns.find(this.fieldIdProperty, this.titleFieldDefaults.name);
+        if (existingColumn) columns.remove(existingColumn);
+
+        columns[columns.length]
+            = isc.addProperties({}, //{name: this.titleField},
                                 this.titleFieldDefaults,
                                 this.titleFieldProperties);
 
         // Navigation icon column
-        this._navigateCell = this.columns.length;
-        this.columns[this.columns.length]
+        var existingColumn = columns.find(this.fieldIdProperty, this.navigationFieldDefaults.name);
+        if (existingColumn) columns.remove(existingColumn);
+
+        this._navigateCell = columns.length;
+        columns[columns.length]
             = isc.addProperties({},
                                 this.navigationFieldDefaults,
                                 this.navigationFieldProperties);
 
         if (this.groupByField) {
-            // Create a hidden column for each groupBy field
+            // Create a hidden column for each groupBy field if not
+            // already user-defined. 
             var fields;
             if (isc.isA.Array(this.groupByField)) {
                 fields = this.groupByField;
@@ -341,18 +376,40 @@ isc.TableView.addMethods({
                 fields = [ this.groupByField ];
             }            
             for (var i = 0; i < fields.length; i++) {
-                this.columns[this.columns.length]
-                    = isc.addProperties({name: fields[i]},
-                                        this.groupByFieldDefaults,
-                                        this.groupByFieldProperties);
+                var field = columns.find(this.fieldIdProperty, fields[i]);
+                if (field) {
+                    // Apply specific properties
+                    isc.addProperties(field, 
+                                      this.groupByFieldDefaults,
+                                      this.groupByFieldProperties);
+                } else {
+                    // Define groupBy field
+                    columns[columns.length]
+                        = isc.addProperties({name: fields[i]},
+                                            this.groupByFieldDefaults,
+                                            this.groupByFieldProperties);
+                }
             }
         }
 
-        this.setFields(this.columns);
+        return columns;
+    },
 
-        // If formatRecord was passed to us as a string, convert it to a method
-        if (this.formatRecord != null && !isc.isA.Function(this.formatRecord)) 
-            isc.Func.replaceWithMethod(this, "formatRecord", "record");
+    // Get formatted value for a field
+    _getFormattedFieldValue : function (record, fieldName) {
+        var value = record[fieldName] || this._$nbsp,
+            colNum = this._colIndexes[fieldName],
+            undef
+        ;
+        if (colNum == null || colNum == undef) {
+            colNum = isc.Class.getArrayItemIndex(fieldName, this.getAllFields(),
+                                                 this.fieldIdProperty);
+            this._colIndexes[fieldName] = colNum;
+        }
+        if (colNum >= 0) {
+            value = this.getFormattedValue(record, fieldName, value);
+        }
+        return value;
     },
 
     //> @method tableView.getNavigationIcon

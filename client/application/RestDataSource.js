@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -370,8 +370,8 @@ isc.RestDataSource.addProperties({
     init : function () {
         this.recordXPath = this.recordXPath || 
                 (this.dataFormat == "xml" ? this.xmlRecordXPath : this.jsonRecordXPath);
-        this.jsonPrefix = "//isc_JSONResponseStart-->";
-        this.jsonSuffix = "//isc_JSONResponseEnd";
+        this.jsonPrefix = this.jsonPrefix || "//isc_JSONResponseStart-->";
+        this.jsonSuffix = this.jsonSuffix || "//isc_JSONResponseEnd";
         return this.Super("init", arguments);
     },
     

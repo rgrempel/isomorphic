@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -935,6 +935,9 @@ isc.DateItem.addMethods({
             }
         }
         delete this._suppressUpdates;
+        
+        // bail if the value hasn't changed
+        if (this.compareValues(date, this._value) == true) return false;
         
         // now fire the default handlers:
         if (this.handleChange(date, this._value) == false) return;

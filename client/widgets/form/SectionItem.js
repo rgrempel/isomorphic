@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -116,7 +116,12 @@ isc.SectionItem.addMethods({
                  layout: this,
                  height: this.height,
                  canCollapse:this.canCollapse,
-                 canDrag: false
+                 canDrag: false,
+                 getCurrentCursor : function () {
+                     // support specifying cursor directly on the formItem
+                     if (this.canvasItem && this.canvasItem.cursor != null) return this.canvasItem.cursor;
+                     return  this.canCollapse == false ? isc.Canvas.DEFAULT : isc.Canvas.HAND;
+                 }
             };
             
         if (this.baseStyle != null) attributes.baseStyle = this.baseStyle;

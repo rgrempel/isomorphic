@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -361,15 +361,21 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // when addUnknownValues is false, don't allow values that have no valid completions to
     // become this item's value, trigger change()/changed() or be saved to the form
     _updateValue : function (value, forceSave) {
-        if (this.addUnknownValues || forceSave) return this.Super("_updateValue", arguments);
-
+        
         // when a value is selected, the element value is changed to show the display value.
         // We will receive change notifications for this (eg onblur) but this should not be
         // considered a change to the underlying value of the FormItem
-        var elementValue = this.getElementValue();
-        if (value == elementValue && this.mapValueToDisplay(this.getValue()) == elementValue) {
-            return;
-        }
+        var elementValue = this.getElementValue(),
+            unchanged = (value == elementValue && this.mapValueToDisplay(this.getValue()) == elementValue);
+            
+        // _displayValueModified - this implies the user changed the value
+        // by typing into the text box rather than picking a value from the
+        // pickList.
+        this._displayValueModified = (!unchanged && !this._valuePicked);
+        
+        if (this.addUnknownValues || forceSave) return this.Super("_updateValue", arguments);
+
+        if (unchanged) return;
 
         var displayValue = this.mapValueToDisplay(value);
         //this.logWarn("_updateValue: value: " + value + " has display value: " + displayValue);
@@ -796,6 +802,10 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
     // a value that's not currently loaded in the pickList dataSet, we show the display value
     // rather than the underlying data value.
     setValue : function (newValue, a,b,c,d) {
+        
+        // if 'setValue' is called - drop the "displayValueModified" flag
+        this._displayValueModified = false;
+        
         this._programmaticSetValue = true;
         this.invokeSuper(isc.ComboBoxItem, "setValue", newValue, a,b,c,d);
         delete this._programmaticSetValue;
@@ -824,8 +834,16 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
 
     // Override getCriteriaFieldName - if we have a displayField and no currently selected 
     // record, return the displayField name; otherwise, just return the item name
+    // The concept here is that the user can type a partial displayField value and we'd want
+    // to perform searches etc based on that field.
+    // However - do check the _displayValueModified flag too -- if this is false then
+    // a programmatic setValue() may have been called -- in this case we'll only
+    // have a selectedRecord if one's been loaded from the dataSource (may be pending that fetch)
+    // but we still want to consider the value a "data" value, not a displayField value.
     getCriteriaFieldName : function () {
-        if (this.displayField && !this.getSelectedRecord()) return this.displayField;
+        
+        var showingDisplayValue = this._displayValueModified && !this.getSelectedRecord();
+        if (this.displayField && showingDisplayValue) return this.displayField;
         // Note: DO NOT CALL Super.getCriteriaFieldName() - we subclass TextItem which returns
         // displayField if set
         return this.criteriaField || this.getFieldName();

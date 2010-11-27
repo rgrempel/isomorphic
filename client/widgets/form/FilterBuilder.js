@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -390,12 +390,12 @@ buildValueItemList : function (field, operator) {
         editorType = this.creator.getEditorType(fieldName, operator.ID);
         if (editorType != null) baseFieldType = editorType;
     }
-
     if (valueType == "valueSet") {  
         return;  // XXX - For now, we can't cope with these
 
     // a value of the same type as the field
     } else if (valueType == "fieldType" || valueType == "custom")  {
+
         editorType = null;
         if (valueType == "custom" && operator && operator.editorType) {
             editorType = operator.editorType;
@@ -584,6 +584,8 @@ getCriterion : function () {
     ;
 
     if (isc.isA.String(operator)) operator = this.getSearchOperator(operator);
+    
+    if (operator == null) return;
 
     if (operator.getCriterion && isc.isA.Function(operator.getCriterion)) {
         if (valueField) {
@@ -591,7 +593,6 @@ getCriterion : function () {
         } else {
             var startCriterion = operator.getCriterion(fieldName, startField),
                 endCriterion = operator.getCriterion(fieldName, endField);
-            
             criterion.fieldName = startCriterion.fieldName;
             criterion.operator = startCriterion.operator;
             delete criterion.value;

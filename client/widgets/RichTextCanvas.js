@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1690,6 +1690,13 @@ isc.RichTextCanvas.addMethods({
     //<
     underlineSelection : function () {
         this._execCommand("underline");
+    },
+    
+    //>@method  RichTextCanvas.strikethroughSelection
+    //  Toggle whether the current text selection is strikethrough or not
+    //<
+    strikethroughSelection : function () {
+        this._execCommand("strikethrough");
     },
     
     //>@method  RichTextCanvas.showClipboardDisabledError
