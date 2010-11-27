@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1990,8 +1990,12 @@ isc.Canvas.addProperties({
     //<
 
     //> @attr canvas.hoverAutoDestroy (boolean : null : IRW)
-    // If <code>this.showHover</code> is true and getHoverComponent() is implemented, should
+    // If <code>this.showHover</code> is true and +link{getHoverComponent()} is implemented, should
     // the hoverCanvas returned from it be automatically destroyed when it is hidden?
+    // <P>
+    // The default of null indicates that the component <b>will</b> be automatically
+    // destroyed.  Set to false to prevent this.
+    //
     // @visibility external
     // @group hovers
     // @see canvas.showHover
@@ -3274,20 +3278,40 @@ draw : function (showing) {
         this.predrawPeers();
         
     }
- 
     
-    if (isc.Browser.isIE && this.fixIEOpacity && !this.masterElement) {
-        //this.logWarn("checking for parent opacity");
+    
+    var fixOpacity = (isc.Browser.isIE && this.fixIEOpacity && !this.masterElement),
+        cacheOffsetCoords = isc.Element.cacheOffsetCoords;
+    
+    if (this.position == isc.Canvas.RELATIVE) {
+        this.cacheOffsetCoords = false;
+        cacheOffsetCoords = false;
+    }
+    
+    if (fixOpacity || cacheOffsetCoords) {
+        
         var parent = this.parentElement;
         while (parent) {
-            if (parent.opacity != null && parent.opacity != 100) {
-                //this.logWarn("opacity set on parent: " + parent);
-                this.setOpacity(100, null, true);
-                break;
+            if (fixOpacity) {
+                if (parent.opacity != null && parent.opacity != 100) {
+                    //this.logWarn("opacity set on parent: " + parent);
+                    this.setOpacity(100, null, true);
+                    fixOpacity = false;
+                    if (!cacheOffsetCoords) break;
+                }
+            }
+            if (cacheOffsetCoords) {
+                if (parent.position == isc.Canvas.RELATIVE) {
+                    this.cacheOffsetCoords = false;
+                    cacheOffsetCoords = false;
+                    if (!fixOpacity) break;
+                }
             }
             parent = parent.parentElement;
         }
     }
+    
+    if (cacheOffsetCoords) this.cacheOffsetCoords = true;
     
     // if this.htmlElement and this.matchElement are set, resize the canvas to fit the
     // target element before drawing
@@ -3389,11 +3413,16 @@ draw : function (showing) {
    
     
    
+    
+    // set up the _currentlyVisible flag so we fire visibilityChanged at the right times.
+    // (That notification is suppressed while we're undrawn)
+    this._currentlyVisible = this.isVisible();
     // At this point we've written out the HTML into the DOM.
     // If the widget is visible, call show() on it; certain widgets override show() to do
     // perform miscellaneous tasks associated with displaying the widget - we would want to
     // perform these when the widget is drawn, too
-    if (!showing && this.isVisible()) this.show();
+    
+    if (!showing && this._currentlyVisible) this.show();
     // for uses like Canvas.draw().moveTo(...)
     
     
@@ -4701,32 +4730,10 @@ _$eventProxy : "eventProxy",
 _updateInnerHTML : function () {
     var wasPrinting = this.isPrinting;    
     this.isPrinting = false;
+
 	var innerHTML = this._getInnerHTML();
-    
+    this.getHandle().innerHTML = innerHTML;
 
-    // NOTE: Moz also supports assigning to innerHTML, but this is about 10% faster
-    if (isc.Browser.isMoz) {
-
-        var element = this.getHandle();
-
-        // wipe out the current contents
-        while (element.hasChildNodes()) element.removeChild(element.firstChild);
-
-        var range = element.ownerDocument.createRange();
-        // select all of this element's contents (which is empty)
-        range.selectNodeContents(element);
-        // and collapse the range to an insertion point, which is where we'll put the new
-        // HTML.  
-        
-        range.collapse(true);
- 
-        // create new contents of the element
-        var fragment = range.createContextualFragment(innerHTML);
-        element.appendChild(fragment);
-
-    } else {
-        this.getHandle().innerHTML = innerHTML;
-    }
     this.isPrinting = wasPrinting;
 },
 
@@ -5054,6 +5061,9 @@ clear : function (dontReport) {
 	// and note that we're no longer drawn
 	this.setDrawnState(isc.Canvas.UNDRAWN);
     
+    
+	this._$leftCoords = this._$topCoords = null;
+	
     delete this._clearing;
 },
 
@@ -8500,18 +8510,34 @@ setPageRect : function (left, top, width, height, resizeOnly) {
 //      SmartClient parent element, in pixels.  Value returned is distance from outside of 
 //      this widget's border/margins (if any) to inside of parent's handle.
 //		
+// @param [ancestor] (Canvas) Ancestor canvas to check against. If not passed, always checks against
+//  this canvas' direct parent.
 //		@group	positioning
 //
 //		@return	(number)	SmartClient canvas left coordinate
 //<
-getCanvasLeft : function () {
+getCanvasLeft : function (ancestor) {
+    if (ancestor != null) {
+        if (!ancestor.contains(this, false)) {
+            this.logWarn("getCanvasTop passed ancestor:" + ancestor +
+                ". This is not an ancestor of this component - ignoring");
+            ancestor = this.parentElement;
+        }
+    } else {
+        ancestor = this.parentElement;
+    }
 
     // See "Widget Positioning and Sizing Methods" comment for a discussion of coordinate systems 
     // in DOM and ISC
     
     // If we haven't been drawn yet, return the specified coordinate
-    if (!this.isDrawn()) {
-        if (this.position == isc.Canvas.RELATIVE) {
+    if (!this.isDrawn() ||
+        // In Moz, if the widget has been hidden using 'display:none', just return the 
+        // specified position
+        
+        (isc.Browser.isMoz && this._isDisplayNone()))
+    {
+        if (!this.isDrawn() && this.position == isc.Canvas.RELATIVE) {
             //>DEBUG technically, an absolutely positioned widget would also have this problem
             // if placed within an element that served as an offsetParent (eg, an absolutely
             // positioned DIV), but that scenario is very unlikely and if we catch it then this
@@ -8522,17 +8548,19 @@ getCanvasLeft : function () {
                          "calculated until the widget has drawn - returning estimated position");
             //<DEBUG
         }    
-        return this.left;
+        
+        var left = this.left,
+            pe = this.parentElement;
+        while (ancestor != pe) {
+            left += pe.left;
+            pe = pe.parentElement;
+        }
+        
+        return left;
     }
-    
-    // In Moz, if the widget has been hidden using 'display:none', just return the 
-    // specified position
-    
-    if (isc.Browser.isMoz && this._isDisplayNone()) return this.left;
-
-    // fall through to getLeftOffsetFromElement (passing in the parent canvas if there is one)
-    var parent = this.parentElement,
-        returnVal = this._getLeftOffsetFromElement(parent == null ? null : parent.getHandle());
+   
+    // fall through to getLeftOffset (passing in the parent canvas if there is one)
+    var returnVal = this.getLeftOffset(ancestor);
 
     
 
@@ -8547,6 +8575,7 @@ getCanvasLeft : function () {
 //<
 getPageLeft : function () {
     if (isc._traceMarkers) arguments.__this = this;
+
     var handle = this.getClipHandle();
 
     
@@ -8587,56 +8616,37 @@ getPageLeft : function () {
     }
 
     
-    if (isc.Browser.isMoz) {
-        if (this.useClientRectAPI && isc.Browser.geckoVersion > 20071109 && 
-            handle.getBoundingClientRect != null) 
-        {
-            var left = handle.getBoundingClientRect().left;
-            // boundingClientRect returns position inside margins, and coords are relative to
-            // viewport rather than page
-            left -= this.getLeftMargin();
-            left += isc.Page.getScrollLeft();
-            return left;
-        } else if ((this.useBoxObjectAPI || 
-                    (this.useBoxObjectAPISelectively && isc._useBoxShortcut)) &&
-                   isc.Browser.geckoVersion > 20061010 && 
-                   !isc.Browser.isCamino && document.getBoxObjectFor != null) 
-        {
-            
-            var box = this.getDocument().getBoxObjectFor(handle);
-            if (box) {
-                var left = box.x - this.getLeftMargin(),
-                    parent = this.parentElement;
-                while (parent) {
-                    left += parent.getScrollLeft();
-                    parent = parent.parentElement;
-                }
-            }
-        }
+    if (this.useClientRectAPI && handle.getBou7ndingClientRect != null) {
+        var left = handle.getBoundingClientRect().left;
+        // boundingClientRect returns position inside margins, and coords are relative to
+        // viewport rather than page
+        left -= this.getLeftMargin();
+        left += isc.Page.getScrollLeft();
+        return left;
+        
     }
-
-    // If we are drawn use _getLeftOffsetFromElement().
     
-    return this._getLeftOffsetFromElement()
+
+
+    // If we are drawn use getLeftOffset().
+    
+    return this.getLeftOffset();
 },
 
 
-useClientRectAPI:true,
+useClientRectAPI:(isc.Browser.isMoz && isc.Browser.geckoVersion > 20071109),
 useBoxObjectAPI:false,
 useBoxObjectAPISelectively:true,
 
     
-// _getLeftOffsetFromElement(targetElement)
+// getLeftOffset(targetElement)
 //
 // DOM Only method to return our absolute position within a DOM parent element
 // If no target parent element is passed, we return page level position.
 //
-_getLeftOffsetFromElement : function (targetElement) {
+getLeftOffset : function (targetElement) {
 
-    // if we're not passed an element, determine the offset from the top level HTML element.
-    if (targetElement == null) targetElement = this.getDocumentBody();
-    
-    var left = this.ns.Element._getLeftOffsetFromElement(this.getClipHandle(), targetElement, this.isRTL());
+    var left = this.ns.Element.getOffset(isc.Canvas.LEFT, this, targetElement, this.isRTL(), true);
 
     
     
@@ -8650,34 +8660,51 @@ _getLeftOffsetFromElement : function (targetElement) {
 //      widget's border/margins (if any) to inside of parent's handle (top of content, not page
 //      coordinate of widget, so does not change when the widget is scrolled).
 //		
+// @param [ancestor] (Canvas) Ancestor canvas to check against. If not passed, always checks against
+//  this canvas' direct parent.
 //		@group	positioning
 //
 //		@return	(number)	SmartClient canvas top coordinate
 //<
-getCanvasTop : function () {
+getCanvasTop : function (ancestor) {
+    if (ancestor != null) {
+        if (!ancestor.contains(this, false)) {
+            this.logWarn("getCanvasTop passed ancestor:" + ancestor +
+                ". This is not an ancestor of this component - ignoring");
+            ancestor = this.parentElement;
+        }
+    } else {
+        ancestor = this.parentElement;
+    }
 
     // See "Widget Positioning and Sizing Methods" comment for a discussion of coordinate systems 
     // in DOM and ISC
 
-    if (!this.isDrawn()) {
+    if (!this.isDrawn() ||
+        // In Moz, if the widget has been hidden using 'display:none', just return the 
+        // specified position
+        
+        (isc.Browser.isMoz && this._isDisplayNone())) 
+    {
         //>DEBUG
-        if (this.position == isc.Canvas.RELATIVE) {
+        if (!this.isDrawn() && this.position == isc.Canvas.RELATIVE) {
             this.logWarn("getCanvasTop(): Called on undrawn relatively-position widget '" +
                          this.getID() + "'.  The drawn coordinates can not be reliably " +
                          "calculated until the widget has drawn - returning estimated position");
         } //<DEBUG
 
-        return this.top;
+        var top = this.top,
+            pe = this.parentElement;
+        while (ancestor != pe) {
+            top += pe.top;
+            pe = pe.parentElement;
+        }
+        
+        return top;
     }        
     
-    // In Moz, if the widget has been hidden using 'display:none', just return the 
-    // specified position
-    
-    if (isc.Browser.isMoz && this._isDisplayNone()) return this.top;
-    
-    // fall through to getTopOffsetFromElement (passing in the parent canvas if there is one)
-    var returnVal = this._getTopOffsetFromElement(this.parentElement == null ? 
-                                                  null : this.parentElement.getHandle());
+    // fall through to getTopOffset (passing in the parent canvas if there is one)
+    var returnVal = this.getTopOffset(ancestor);
 
     
 
@@ -8724,46 +8751,27 @@ getPageTop : function () {
     }
 
     
-    if (isc.Browser.isMoz) {
-        if (this.useClientRectAPI && isc.Browser.geckoVersion > 20071109 && 
-            handle.getBoundingClientRect != null) 
-        {
-            var top = handle.getBoundingClientRect().top;
-            // boundingClientRect returns position inside margins, and coords are relative to
-            // viewport rather than page
-            top -= this.getTopMargin();
-            top += isc.Page.getScrollTop();
-            return top;
-            
-        } else if ((this.useBoxObjectAPI || 
-                    (this.useBoxObjectAPISelectively && isc._useBoxShortcut)) &&
-                   isc.Browser.geckoVersion > 20061010 && 
-                   !isc.Browser.isCamino && document.getBoxObjectFor != null) 
-        {
-            //this.logWarn("using shortcut for top");
-            var box = this.getDocument().getBoxObjectFor(handle);
-            if (box) {
-                var top = box.y - this.getTopMargin(),
-                    parent = this.parentElement;
-                while (parent) {
-                    top += parent.getScrollTop();
-                    parent = parent.parentElement;
-                }
-            }
-        }
+    if (this.useClientRectAPI && handle.getBoundingClientRect != null) {
+        var top = handle.getBoundingClientRect().top;
+        // boundingClientRect returns position inside margins, and coords are relative to
+        // viewport rather than page
+        top -= this.getTopMargin();
+        top += isc.Page.getScrollTop();
+        return top;
+        
     }
+        
 
-    return this._getTopOffsetFromElement();
+
+    return this.getTopOffset();
     
 },
 
 // Return our absolute position within a DOM parent element.
 // If no target parent element is passed, we return page level position.
-_getTopOffsetFromElement : function (targetElement) {
-    // if we're not passed an element, determine the offset from the top level HTML element.
-    if (targetElement == null) targetElement = this.getDocumentBody();
+getTopOffset : function (targetElement) {
 
-    var top = this.ns.Element._getTopOffsetFromElement(this.getClipHandle(), targetElement);
+    var top = this.ns.Element.getOffset(isc.Canvas.TOP, this, targetElement, null, true);
 
     
     
@@ -8911,6 +8919,10 @@ setMargin : function (margin) {
     // adjustOverflow - since this will change our handle-size
     
     this.adjustOverflow("setMargin");
+    
+    
+    this.innerSizeChanged("Margin thickness changed");
+
 },
 
 //>	@method canvas.getMargin()
@@ -8982,10 +8994,10 @@ _calculateMargins : function () {
         bottomPeers = attachedPeers.bottom;
         leftPeers = attachedPeers.left;
         rightPeers = attachedPeers.right;                        
-        if ((!topPeers || topPeers.length == 0) && 
-            (!bottomPeers || bottomPeers.length == 0) && 
-            (!leftPeers || leftPeers.length == 0) && 
-            (!rightPeers || rightPeers.length == 0)) hasAPs = false;   
+        if ((topPeers == null || topPeers.length == 0) && 
+            (bottomPeers == null || bottomPeers.length == 0) && 
+            (leftPeers == null || leftPeers.length == 0) && 
+            (rightPeers == null || rightPeers.length == 0)) hasAPs = false;   
     }
     if (!this._edgesAsPeer() && !hasAPs) return this._calculateNormalMargins();
     
@@ -9703,11 +9715,13 @@ containsPoint : function (x, y, withinViewport) {
 //                                              just our drawn area
 //      @param  [ignoreWidgets]  (canvas)    If passed ignore widget(s), do not check whether 
 //                                          those widgets occludes this one.
+//      @param [upToParent] (Canvas) If passed, only check for siblings occluding the
+//              component up as far as the specified parent widget.
 //
 //		@return	(boolean)	true if this object contains the specified point; false otherwise
 //<
 
-visibleAtPoint : function (x, y, withinViewport, ignoreWidgets) {
+visibleAtPoint : function (x, y, withinViewport, ignoreWidgets, upToParent) {
     if (isc._traceMarkers) arguments.__this = this;
 
     
@@ -9724,7 +9738,7 @@ visibleAtPoint : function (x, y, withinViewport, ignoreWidgets) {
     // are positioned over the point and have a higher z-index than this widget.
     var currentWidget = this;
     
-    while (currentWidget != null) {
+    while (currentWidget != null && currentWidget != upToParent) {
         var siblings = (currentWidget.parentElement != null ? 
                         currentWidget.parentElement.children : 
                         isc.Canvas._topCanvii);
@@ -10431,16 +10445,19 @@ getVisibleHeight : function (recalc) {
         // This ensures that when animateHide() / animateShow()ing members of a layout the reflow
         // respects tha actual space taken up by the member during the animation rather than being
         // off by up to one scrollbarSize
-        var animationInfo = this.isAnimating(this._$show) ? this.$showAnimationInfo :
-                            this.isAnimating(this._$hide) ? this.$hideAnimationInfo : null;
-        if (animationInfo != null && animationInfo._vertical && this.hscrollOn) {
-            var sbDelta = 0;
-            if (this.hscrollbar && this.hscrollbar.visibility == isc.Canvas.HIDDEN) {
-                sbDelta = this.getScrollbarSize();
-            } else {
-                sbDelta = this.getScrollbarSize() - this.getScrollbarSize();
+        
+        if (this.isAnimating()) {
+            var animationInfo = this.isAnimating(this._$show) ? this.$showAnimationInfo :
+                                this.isAnimating(this._$hide) ? this.$hideAnimationInfo : null;
+            if (animationInfo != null && animationInfo._vertical && this.hscrollOn) {
+                var sbDelta = 0;
+                if (this.hscrollbar && this.hscrollbar.visibility == isc.Canvas.HIDDEN) {
+                    sbDelta = this.getScrollbarSize();
+                } else {
+                    sbDelta = this.getScrollbarSize() - this.getScrollbarSize();
+                }
+                return Math.max(this.getHeight() - sbDelta,1);
             }
-            return Math.max(this.getHeight() - sbDelta,1);
         }
         //<Animation
         // overflow is Hidden, Auto, Scroll, CLIP_V, or Ignore.
@@ -10584,6 +10601,9 @@ _completeMoveBy : function () {
 //  Default implementation is to call parentElement.childMoved()
 //<
 moved : function (deltaX, deltaY) {
+    
+    
+    this._$leftCoords = this._$topCoords = null;
 //!DONTOBFUSCATE  (we want observers to be able to pick up the passed values)
 },
 
@@ -10591,6 +10611,9 @@ moved : function (deltaX, deltaY) {
 // This notifies the children that they will have been repositioned in terms of page 
 // coordinates.
 parentMoved : function (parent, deltaX, deltaY) { 
+    
+    
+    this._$leftCoords = this._$topCoords = null;
     // fire recursively through our children
     this._fireParentMoved(parent, deltaX, deltaY); 
 },
@@ -11363,6 +11386,10 @@ resized : function (deltaX, deltaY) {},
 // Used to resize children and peers with snapTo:true and percent sizing
 // Also resizes widgets for which this is the percentSource - handled by observation 
 innerSizeChanged : function (reason) {
+    
+    
+    this._childrenCoordsChanged();
+    
     this.layoutChildren(reason);
     var peers = this.peers;
     if (peers) {
@@ -13703,24 +13730,70 @@ _scrolled : function () {
     // (EG: update styling on list grid rows as the user scrolls with the mouse-wheel)
     
     if (!isc.EH._handlingMouseMove) {
+        
+        // We only want to fire a mouse move if we are the current mouse target or a parent 
+        // of it.
+        // This avoids cases where the mouse isn't over us, or some non child is occluding us
+        // like an external drag-target.
+        
+        // Determine the target for the mouse move event based on event.target or
+        // event.lastMoveTarget for non-mouse events.
         var lastEvent = isc.EH.lastEvent,
-            currentlyOver = (lastEvent.eventType == isc.EH.MOUSE_MOVE ? lastEvent.target : 
-                                                                        isc.EH.lastMoveTarget);
-        if (currentlyOver != null) {
-            // We only want to fire a mouse move if we are the current mouse target (or a parent of it)
+            isMouseEvent = isc.EH.isMouseEvent(lastEvent.eventType)
+            currentlyOver =  isMouseEvent ? lastEvent.target : isc.EH.lastMoveTarget;
             
+        if (currentlyOver != null) {
             if (!this.contains(currentlyOver, true)) currentlyOver = null;
-            else if (lastEvent.eventType != isc.EH.MOUSE_MOVE && 
-                     !currentlyOver.visibleAtPoint(isc.EH.getX(), isc.EH.getY(), false)) 
-            {
-                 currentlyOver = null; 
+            
+            // If this was a mouse event, assume the reported target on the event is accurate
+            //
+            // Otherwise we're relying on the captured lastMoveTarget which was updated
+            // last time mouseMove fired.
+            // This may be out of date due to a scroll shifting the target out from under
+            // the mouse -- will only happen if the lastMoveTarget is a child of the
+            // widget that was scrolled (us).
+            // In this case, check visibleAtPoint() to ensure the mouse is still over the 
+            // target. Pass this component in as the "upToParent" to make the method more
+            // efficient. This asserts that the mouse is over our viewport somewhere - a 
+            // reasonable assumption since it was at the last mouseMove, and our scroll may
+            // shift our childrens' page coords but won't change ours.
+            
+            
+            else if (!isMouseEvent && currentlyOver != this) {
+                var offsetX = this.getOffsetX(),
+                    offsetY = this.getOffsetY();
+                    
+                if (!currentlyOver.visibleAtPoint(isc.EH.getX(), isc.EH.getY(), 
+                    false, null, this)) 
+                {
+                    currentlyOver = null; 
+                }
             }
     
             
-             if (currentlyOver != null) isc.EH._handleMouseMove(null, isc.EH.lastEvent);
+            if (currentlyOver != null) {
+                isc.EH._handleMouseMove(null, isc.EH.lastEvent);
+            }
         }
     }
+    this._childrenCoordsChanged();
+    
     if (this.scrolled) this.scrolled();
+},
+
+
+_childrenCoordsChanged : function () {
+    if (!isc.Element.cacheOffsetCoords) return;
+    
+    var children = this.children;
+    if (children != null && children.length > 0) {
+        for (var i = 0; i < children.length; i++) {
+            // clear offsetCoordinate cache
+            children[i]._$leftCoords = children[i]._$topCoords = null;
+            children[i]._childrenCoordsChanged();
+
+        }
+    }
 },
 
 //>	@method	canvas.scrollToPercent()   ([])
@@ -14116,20 +14189,24 @@ _sizeBackMask : function () {
 //<
 
 getTextDirection : function () {
+    if (this._textDirection) return this._textDirection;
+
 	// start off by looking in this object
 	var target = this;
 		
 	// while the target exists
 	while (target) {
 	    // if the is not enabled, return false
-		if (target.textDirection != null) return target.textDirection;
+		if (target.textDirection != null) {
+            return (this._textDirection = target.textDirection);
+        }
 		// otherwise look up the parent chain
 		target = target.parentElement;
 		// and if an eventProxy is defined, use that instead of the parentElement
 		if (target && target.eventProxy) target = target.eventProxy;
 	}
 	// if no widget specified a textDirection, use the Page.textDirection
-	return isc.Page.getTextDirection();
+	return (this._textDirection = isc.Page.getTextDirection());
 },
 
 //> @method canvas.isRTL()
@@ -14258,7 +14335,7 @@ setVisibility : function (newVisibility) {
 	}
 
     // notify children that visibility changed
-    if (this.children) this.children.map("parentVisibilityChanged", newVisibility);
+    if (this.children) this.children.map("parentVisibilityChanged", newVisibility, this);
 
     if (this.parentElement) this.parentElement.childVisibilityChanged(this, newVisibility);
     
@@ -14266,11 +14343,29 @@ setVisibility : function (newVisibility) {
     // If we have a 'focusProxy' make sure it has the appropriate visibility
     if (this._useFocusProxy) this._updateFocusProxyVisibility();
     //<FocusProxy
+    
+    this._visibilityChanged();
+},
+
+// Fires the visibilityChanged notification if appropriate
+// documented in registerStringMethods
+_visibilityChanged : function () {
+    if (!this.isDrawn()) return;
+    // Set a flag tracking this.isVisible() so we only fire when 
+    // the actual visibility to the user changes.
+    // This flag is always re-initialized on draw()
+    var visible = this.isVisible();
+    if (visible != this._currentlyVisible) {
+        this._currentlyVisible = visible;
+        if (this.visibilityChanged != null) {
+            this.visibilityChanged(this.isVisible());
+        }
+    }
 },
 
 // tell our children some parent's visibility changed
-parentVisibilityChanged : function (newVisibility) {
-    if (this.children) this.children.map("parentVisibilityChanged", newVisibility);
+parentVisibilityChanged : function (newVisibility, parent) {
+    if (this.children) this.children.map("parentVisibilityChanged", newVisibility, parent);
 
     
     this._updateHandleDisplay();
@@ -14281,6 +14376,10 @@ parentVisibilityChanged : function (newVisibility) {
 
     // If we have a 'focusProxy', make sure it has the appropriate visibility
     if (this._useFocusProxy) this._updateFocusProxyVisibility();
+    
+    // this._visibilityChanged() verifies that this.isVisible() actually changed
+    // minor optimization: this can only happen if the parent was a visibility ancestor of this widget
+    if (parent._isVisibilityAncestorOf(this)) this._visibilityChanged();
 },
 
 // notification that a child's visibility changed
@@ -14341,6 +14440,9 @@ _updateHandleDisplay : function () {
         this._visibleDisplayStyle = handle.display;
         this._setToDisplayNone = true;
         handle.display = this._$none;
+        
+        
+        this._$leftCoords = this._$topCoords = null;
         
     } else if (this.isVisible() && this._setToDisplayNone) {
         // if the display property had a value other than the empty string when it was in
@@ -16320,6 +16422,30 @@ getCanHover : function () {
     return this.canHover;
 },
 
+//> @attr canvas.showHoverComponents (boolean : false : IRWA)
+// When set to true, shows a widget hovering at the mouse point instead of the builtin
+// hover label.  Override +link{canvas.getHoverComponent, getHoverComponent} to provide the
+// Canvas to show as the hoverComponent.
+// @group hoverComponents
+// @visibility external
+//<
+
+//> @method canvas.getHoverComponent()
+// When +link{showHoverComponents} is true, this method is called to get the component to show
+// as a hover for this Canvas.  There is no default implementation of this method, so you need
+// to override it with an implementation that returns a Canvas that suits your needs.
+// <P>
+// By default, components returned by <code>getHoverComponent()</code> will not be
+// automatically destroyed when the hover is hidden.  To enforce this, set
+// +link{canvas.hoverAutoDestroy} to true on the returned component.
+//
+// @return (Canvas | Canvas Properties) the component to show as a hover
+// @group hoverComponents
+// @visibility external
+//<
+getHoverComponent : function () {
+},
+
 //> @method canvas.handleHover() (A)
 // Handler fired on a delay when the user hovers the mouse over this hover-target.
 // Default implementation will fire <code>this.hover()</code> (if defined), and handle 
@@ -16333,7 +16459,7 @@ getCanHover : function () {
 handleHover : function () {
     if (this.hover && this.hover() == false) return;
     if (this.showHover) {
-        var component = this.getHoverComponent ? this.getHoverComponent() : null;
+        var component = this.showHoverComponents && this.getHoverComponent ? this.getHoverComponent() : null;
         if (component != null && isc.isA.Canvas(component)) {
             //isc.logWarn("canvas: "+this.getID()+" - showing hoverCanvas: "+this.hoverCanvas.getID());
             // getHoverComponent() returned a Canvas - we'll show that now instead of the 
@@ -16349,6 +16475,8 @@ handleHover : function () {
         }
     }
 },
+
+
 
 //> @method canvas.updateHover() (A)
 // If this canvas is currently showing a hover (see +link{canvas.handleHover}), this method
@@ -16455,6 +16583,10 @@ setStyleName : function (newStyle) {
 
     this._cachedBorderSize = null;
     this._cachedPadding = null;
+   
+    
+    this._childrenCoordsChanged();
+    
 
     if (newStyle) {
         this.styleName = newStyle;
@@ -19904,7 +20036,27 @@ isc.Canvas.registerStringMethods({
     // @return (boolean) return false to cancel default drop handling
     // @visibility sgwt
     //<
-    onDrop:""
+    onDrop:"",
+    
+    //> @method canvas.visibilityChanged()
+    // Notification  fired when this canvas becomes visible or hidden to the user.
+    // Note - this method is fired when the +link{isVisible()} state of this 
+    // component changes. It may be fired in response an explicit call to +link{show()} 
+    // or +link{hide()} or +link{setVisibility()}, or in response to a parent component 
+    // being shown or hidden when this widgets +link{canvas.visibility} is set to "inherit".
+    // <P>
+    // Note that a call to +link{show()} or +link{hide()} will not <b>always</b> fire this
+    // notification. If this widget has a hidden parent, show or hide would change this 
+    // components +link{canvas.visibility} property, and may update the CSS visibility attribute
+    // of the drawn handle in the DOM, but would not actually hide or reveal the component to
+    // the user and as such the notification would not fire.
+    // <P>
+    // Note also that this notification will only be fired for components which have been 
+    // +link{canvas.draw(),drawn}.
+    // @param isVisible (boolean) whether the canvas is visible to the user
+    // @visibility external
+    //<
+    visibilityChanged:"isVisible"
     
     
 });

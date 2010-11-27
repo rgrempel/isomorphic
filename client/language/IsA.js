@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -66,6 +66,8 @@ Function.prototype.__nativeType = 1;
 
 // add methods to determine the type of various simple objects
 isc.addMethods(isc.isA, {
+    useTypeOf : isc.Browser.isMoz || isc.Browser.isSafari,
+
 	//>	@classMethod isA.emptyString()
 	//
 	//	Is <code>object</code> the empty string?<br><br>
@@ -111,8 +113,18 @@ isc.addMethods(isc.isA, {
     _$String :"String",
 	Object : function (object) {
         if (object == null) return false;
+
         
         if (isc.Browser.isIE && typeof object == this._$function) return false;
+
+        
+        if (this.useTypeOf) {
+            var objType = typeof object;
+            return (objType == "object" || objType == "array" || objType == "date" ||
+            
+                    (isc.Browser.isMoz && objType == "function" && isc.isA.RegularExpression(object)));
+        }   
+        
         if (object.constructor && object.constructor.__nativeType != null) {
             var type = object.constructor.__nativeType;
             if (type == 1) {
@@ -131,10 +143,7 @@ isc.addMethods(isc.isA, {
         if (typeof object == this._$object) {
             if (isc.Browser.isIE && isc.isA.Function(object)) return false;
             else return true;
-        } else {
-            if (isc.Browser.isMoz && isc.isA.RegularExpression(object)) return true;
-            else return false;
-        }
+        } else return false;
     },
     
 	//>	@classMethod isA.emptyObject()
@@ -184,8 +193,15 @@ isc.addMethods(isc.isA, {
     // ==========================================================================================
 	String : function (object) {
         if (object == null) return false;
+
         
-        if (typeof object == this._$function) return false;
+        if (this.useTypeOf) {
+            return typeof object == "string" || 
+                (object.Class != null && object.Class == this._$String);
+        }
+
+        
+        //if (typeof object == this._$function) return false;
         if (object.constructor && object.constructor.__nativeType != null) {
             return object.constructor.__nativeType == 4;
         }
@@ -209,6 +225,10 @@ isc.addMethods(isc.isA, {
 	//<
 	Array : function (object) {
         if (object == null) return false;
+
+        
+        if (this.useTypeOf && typeof object == "array") return true;
+
         
         if (typeof object == this._$function) return false;
         if (object.constructor && object.constructor.__nativeType != null) {
@@ -260,6 +280,15 @@ isc.addMethods(isc.isA, {
 	//<
 	Number : function (object) {
         if (object == null) return false;
+        
+        
+        if (this.useTypeOf && typeof object == "number") {
+            // it's a number, now check if it's a valid number
+            return !isNaN(object) && 
+                object != Number.POSITIVE_INFINITY && 
+                object != Number.NEGATIVE_INFINITY;
+        }
+
         if (object.constructor && object.constructor.__nativeType != null) {
             if (object.constructor.__nativeType != 5) return false;
         } else {

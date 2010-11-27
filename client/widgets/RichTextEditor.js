@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -148,6 +148,7 @@ isc.RichTextEditor.addProperties({
     boldSelectionDefaults : {title:"<b>B</b>", prompt:"Make selection bold"},
     italicSelectionDefaults : {title:"<i>I</i>", prompt:"Make selection italic"},
     underlineSelectionDefaults : {title:"<u>U</u>", prompt:"Make selection underlined"},
+    strikethroughSelectionDefaults : {title:"<del>S</del>", prompt:"Strike through selection"},
 
     // Font Control Config --------------------------------------
     

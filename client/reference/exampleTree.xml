@@ -1166,16 +1166,30 @@ isc.ExampleTree.create({
                                 tabs:[
                                     {
                                         canEdit:"false",
-                                        dataSource:"supplyCategory",
-                                        name:"supplyCategory"
+                                        doEval:"true",
+                                        title:"customerOrders",
+                                        url:"grids/data/customerOrders.js"
                                     },
                                     {
                                         canEdit:"false",
-                                        dataSource:"supplyItem",
-                                        name:"supplyItem"
+                                        doEval:"true",
+                                        title:"customerOrderMessages",
+                                        url:"grids/data/customerOrderMessages.js"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        doEval:"true",
+                                        title:"orderDS",
+                                        url:"grids/ds/orderDS.ds.js"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        doEval:"true",
+                                        title:"orderMessagesDS",
+                                        url:"grids/ds/orderMessagesDS.ds.js"
                                     }
                                 ],
-                                description:" \n        In this grid of Supply Categories, you can hover over a row to see a hovering grid \n        containing the list of Supply Items applicable to the Category under the mouse.\n        "
+                                description:" \n        In this grid of Customer Orders, you can hover over a row to see a list of messages\n        attached to the order.  This gives you a quick preview of discussion about the order,\n        without the need to leave the list of orders.\n        <P>\n        In a complete application, clicking the order would lead to a detail screen showing the\n        full order details and the ability to add to the discussion.\n        "
                             },
                             {
                                 id:"hoverDetails",
@@ -3816,7 +3830,7 @@ isc.ExampleTree.create({
                                     {
                                         canEdit:"false",
                                         dataSource:"ormDataSource_country",
-                                        name:"country"
+                                        name:"ormDataSource_country"
                                     },
                                     {
                                         canEdit:"false",
@@ -3837,8 +3851,59 @@ isc.ExampleTree.create({
                                         url:"serverExamples/other/ormDataSource/Country.hbm.xml"
                                     }
                                 ],
-                                descriptionHeight:"200",
-                                description:"\n            This example shows an entirely custom DataSource that connects SmartClient Server to\n            Hibernate (note that this is just an example of the principles involved - SmartClient \n            Server's built-in Hibernate support is considerably more sophisticated than the \n            simple adapter shown here).  It is created by extending <code>BasicDataSource</code>\n            and implementing the four core CRUD methods.  In this case, we connect DataSource\n            requests to Hibernate <code>Criteria</code> queries and the <code>saveOrUpdate</code>  \n            method.<p>\n            This implementation, though simple, is fully functional and could be used unchanged\n            in a real application.  It supports all four CRUD operations, plus data pagination,\n            server-side sorting and filtering, client cache synchronization, and of course it \n            is actually persisting the data to a real database.  Creating an equivalent adapter \n            for Toplink or Ibatis or some other ORM solution would be a fairly simple matter of \n            replacing the Hibernate-specific code in this example with the equivalent specifics \n            from the other ORM system.\n            <p>\n            As with the other custom DataSource examples, note how the <code>ORMDataSource.java</code> \n            code deals entirely in native Java objects - even entirely custom DataSources benefit\n            from SmartClient Server's robust and comprehensive Javascript<->Java translation.\n            "
+                                descriptionHeight:"220",
+                                description:"\n            This example shows an entirely custom DataSource that connects SmartClient Server to\n            Hibernate. It is very simple implementation created by extending <code>BasicDataSource</code>\n            and implementing the four core CRUD methods. In this case, single DataSource\n            implementation handles single Hibernate entity. Features like data pagination, server-side sorting\n            and filtering are not implemented here.<p>\n            Creating an equivalent adapter for Toplink or Ibatis or some other ORM solution would\n            be a fairly simple matter of replacing the Hibernate-specific code in this example\n            with the equivalent specifics from the other ORM system.\n            <p>\n            As with the other custom DataSource examples, note how the <code>ORMDataSource.java</code> \n            code deals entirely in native Java objects - even entirely custom DataSources benefit\n            from SmartClient Server's robust and comprehensive Javascript<->Java translation.\n            "
+                            },
+                            {
+                                icon:"[ISO_DOCS_SKIN]/images/iconexperience/objects_exchange.png",
+                                id:"reusableORMDataSource",
+                                jsURL:"serverExamples/other/reusableORMDataSource/reusableORMDataSource.js",
+                                requiresModules:"SCServer",
+                                title:"Reusable ORM DataSource",
+                                tabs:[
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"reusableORMDataSource_supplyItem",
+                                        name:"employee"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        dataSource:"reusableORMDataSource_country",
+                                        name:"country"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        doEval:"false",
+                                        title:"ReusableORMDataSource.java",
+                                        url:"serverExamples/other/reusableORMDataSource/ReusableORMDataSource.java"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        doEval:"false",
+                                        title:"SupplyItemORM.java",
+                                        url:"serverExamples/other/reusableORMDataSource/SupplyItemORM.java"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        doEval:"false",
+                                        title:"SupplyItemORM.hbm.xml",
+                                        url:"serverExamples/other/reusableORMDataSource/SupplyItemORM.hbm.xml"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        doEval:"false",
+                                        title:"Country.java",
+                                        url:"serverExamples/other/reusableORMDataSource/Country.java"
+                                    },
+                                    {
+                                        canEdit:"false",
+                                        doEval:"false",
+                                        title:"Country.hbm.xml",
+                                        url:"serverExamples/other/reusableORMDataSource/Country.hbm.xml"
+                                    }
+                                ],
+                                descriptionHeight:"220",
+                                description:"\n            This example shows an entirely custom DataSource that connects SmartClient Server to\n            Hibernate (note that this is just an example of the principles involved - SmartClient\n            Server's built-in Hibernate support is considerably more sophisticated than the\n            simple adapter shown here).  It is created by extending <code>BasicDataSource</code>\n            and implementing the four core CRUD methods.  In this case, we connect DataSource\n            requests to Hibernate <code>Criteria</code> queries and the <code>saveOrUpdate</code>\n            method.<p>\n            This implementation, though simple, is fully functional and could be used unchanged\n            in a real application.  It supports all four CRUD operations, plus data pagination,\n            server-side sorting and filtering, client cache synchronization, and of course it\n            is actually persisting the data to a real database. In this case, single DataSource\n            implementation handles two different entities using reflrection.\n            Note that it is simplified version of built-in connector which handles AdvancedCriteria\n            filtering.<p>\n            As with the other custom DataSource examples, note how the <code>ORMDataSource.java</code>\n            code deals entirely in native Java objects - even entirely custom DataSources benefit\n            from SmartClient Server's robust and comprehensive Javascript<->Java translation.\n            "
                             }
                         ]
                     },

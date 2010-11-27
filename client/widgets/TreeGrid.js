@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -865,6 +865,12 @@ isc.TreeGrid.addProperties({
     // by adding caching logic to the Tree when calculating where the continuation lines should
     // appear if this is a problem.
     showFullConnectors:true,
+    
+    //> @attr treeGrid.showOpener (boolean : true : [IRW])
+    // Should the an opener icon be displayed next to folder nodes?
+    // @visibility external
+    //<
+    showOpener:true,
 
     //>	@attr	treeGrid.openerImage        (SCImgURL : "[SKIN]opener.gif" : [IR])
     // The base filename of the opener icon for the folder node when 'showConnectors' is false
@@ -959,6 +965,18 @@ isc.TreeGrid.addProperties({
     //      @visibility external
     //<
 	connectorImage:"[SKIN]connector.gif",
+
+    //>	@attr	treeGrid.offlineNodeMessage   (String : "This data not available while offline" : [IRW])
+    // For TreeGrids with loadDataOnDemand: true, a message to show the user if an attempt is 
+    // made to open a folder, and thus load that node's children, while we are offline and 
+    // there is no offline cache of that data.  The message will be presented to the user in 
+    // in a pop-up dialog box.
+    // 
+    // @visibility offline
+    // @group offline, i18n
+    // @see dataBoundComponent.offlineMessage
+    //<
+    offlineNodeMessage: "This data not available while offline",
     
     // Disble groupBy for TreeGrids altogether - we're already showing data-derived hierarchy!
     canGroupBy: false,
@@ -1083,6 +1101,11 @@ deriveVisibleFields : function (a,b,c,d) {
 },
 
 getEmptyMessage : function () {
+
+    if (this.isOffline()) {
+        return this.offlineMessage;
+    }
+    
     // can't just check for data != null because ListGrid initWidget sets data to [] if unset
     // and we must make sure we have a tree.
     if (isc.isA.Tree(this.data) && this.data.getLoadState(this.data.getRoot()) == isc.Tree.LOADING) 
@@ -2947,7 +2970,8 @@ _indentHTML : function (numPixels) {
 },
 
 //>	@method	treeGrid.getOpenIcon()	(A)
-// Get the appropriate open/close opener icon for a node.
+// Get the appropriate open/close opener icon for a node. Returns null if +link{showOpener} is
+// set to false.
 //
 // @param	node (TreeNode)	tree node in question
 // @return	(URL)		URL for the icon to show the node's open state
@@ -2955,6 +2979,7 @@ _indentHTML : function (numPixels) {
 // @visibility external
 //<
 getOpenIcon : function (record) {
+    if (this.showOpener == false) return null;
     if (!this.data) return null;
 	if (isc.isA.Number(record)) record = this.data.get(record);
     if (record == null) return null;

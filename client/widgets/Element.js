@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -452,8 +452,8 @@ _getPositionedChildrenRight : function (element) {
 
 getElementRect : function (element) {
     var body = this.getDocumentBody(),
-        left = this._getLeftOffsetFromElement(element, body), 
-        top = this._getTopOffsetFromElement(element, body);
+        left = this.getLeftOffset(element, body), 
+        top = this.getTopOffset(element, body);
 
     var width = 0, height = 0;
     if (element.style && element.style.overflow == "visible") {
@@ -970,21 +970,21 @@ getOffsetTop : function (element) {
 
 },
 
-// _getLeftOffsetFromElement(element, targetElement, rtl)
+// getLeftOffset(element, targetElement, rtl)
 //
 // DOM Only method to return the absolute (offset) position for some element within some other 
 // DOM parent element.  We will return this value from the outside of any border / margin on
 // the child to the inside of the ancestor element.
 //
 
-_getLeftOffsetFromElement : function (element, targetElement, rtl) {
-    return this._getOffsetFromElement(isc.Canvas.LEFT, element, targetElement, rtl);
+getLeftOffset : function (element, targetElement, rtl, canvasArgs) {
+    return this.getOffset(isc.Canvas.LEFT, element, targetElement, rtl, canvasArgs);
 },
 
 // Return the absolute position of an element within a DOM parent element.
 // If no target parent element is passed, we return page level position.
-_getTopOffsetFromElement : function (element, targetElement) {
-    return this._getOffsetFromElement(isc.Canvas.TOP, element, targetElement);
+getTopOffset : function (element, targetElement, canvasArgs) {
+    return this.getOffset(isc.Canvas.TOP, element, targetElement, null, canvasArgs);
 },
 
 
@@ -993,8 +993,43 @@ _$borderTopWidth : isc.Browser.isMoz ? "border-top-width" : "borderTopWidth",
 _$marginLeft : isc.Browser.isMoz ? "margin-left" : "marginLeft",
 _$marginTop : isc.Browser.isMoz ? "margin-top" : "marginTop",
 _$none:"none",
-_getOffsetFromElement : function (dir, element, targetElement, rtl) {
+
+
+cacheCount:0,
+uncachedCount:0,
+_$leftCoords : "_$leftCoords",
+_$topCoords : "_$topCoords",
+
+// cacheOffestCoordinates: If set we will cache calculated offsets between SmartClient
+// ancestor/descendent components.
+// This improves performance on repeated lookups during (EG) drag/drop, etc
+
+cacheOffsetCoords:true,
+getOffset : function (dir, sourceElement, origTargetElement, rtl, canvasArgs) {
+    var sourceIsCanvas = canvasArgs || isc.isA.Canvas(sourceElement),
+        targetIsCanvas = canvasArgs || origTargetElement == null || isc.isA.Canvas(origTargetElement);
+
+    var cacheCoords = sourceIsCanvas && targetIsCanvas && this.cacheOffsetCoords && 
+                        (sourceElement.cacheOffsetCoords != false);
+    var coordCacheName = (dir == isc.Canvas.LEFT) ? this._$leftCoords : this._$topCoords;
+    if (cacheCoords && sourceElement[coordCacheName] != null) {
+        var cachedCoord = sourceElement[coordCacheName][origTargetElement ? origTargetElement.ID : this._$none];
+        if (cachedCoord != null) {
+            this.cacheCount++;
+            return cachedCoord;
+        }
+    }
+    this.uncachedCount++;
+
+    var element = sourceIsCanvas ? sourceElement.getClipHandle() : sourceElement;
+    var targetElement;
+
+    // if we're not passed an element, determine the offset from the top level HTML element.
+    if (origTargetElement == null) targetElement = this.getDocumentBody();
     
+    else if (targetIsCanvas) targetElement = origTargetElement.getHandle();
+    else targetElement = origTargetElement;
+
     //!DONTCOMBINE
     //>DEBUG
     if (targetElement == null || element == null) {
@@ -1022,7 +1057,6 @@ _getOffsetFromElement : function (dir, element, targetElement, rtl) {
         isLeft = (dir == isc.Canvas.LEFT),
         borderWidthProp = (isLeft ? this._$borderLeftWidth : this._$borderTopWidth),
         marginProp = (isLeft ? this._$marginLeft : this._$marginTop);
-  
 
     if (!isLeft) rtl = false;
     else if (rtl == null) rtl = (isc.Page.getTextDirection() == isc.Canvas.RTL);
@@ -1036,8 +1070,8 @@ _getOffsetFromElement : function (dir, element, targetElement, rtl) {
         // Add the currentNode's offsetLeft - left w.r.t. its offsetParent
         var subOffset = (isLeft ? this.ns.Element.getOffsetLeft(currentNode) :
                             this.ns.Element.getOffsetTop(currentNode));
-        offset += subOffset;                            
-
+        offset += subOffset;
+    
         // The offsetLeft/top value is relative to the content of the parent's element - so if
         // the parent is scrolled, and we want the floating position of this element within
         // it's parent we have to deduct the scrollLeft of the parent to page coordinate 
@@ -1122,6 +1156,12 @@ _getOffsetFromElement : function (dir, element, targetElement, rtl) {
         offset -= (isLeft ? this.ns.Element.getOffsetLeft(targetElement) :
                             this.ns.Element.getOffsetTop(targetElement));                  
     }
+
+    if (cacheCoords) {
+        var coordCache = sourceElement[coordCacheName] = sourceElement[coordCacheName] || {};
+        coordCache[origTargetElement ? origTargetElement.ID : this._$none] = offset;
+    }
+
     //this.logWarn("iterations: " + iterations);
     return offset;
 },

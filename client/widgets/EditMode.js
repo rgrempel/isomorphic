@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -243,6 +243,9 @@ isc.Canvas.addProperties({
         // ---------------------------------------------------------------------------------------
         // standard context menu items plus the ability to add "editMenuItems" on the master
         showContextMenu : function () {
+        
+            if (!this.editContext) return;
+        
             var edited = this.masterElement,
                 menuItems;
 
@@ -631,6 +634,9 @@ isc.Canvas.addProperties({
     },
 
     completeItemDrop : function (paletteNode) {
+        
+        if (!this.editContext) return;
+        
         var nodeType = paletteNode.className || paletteNode.type;
         var clazz = isc.ClassFactory.getClass(nodeType);
         if (clazz && isc.isA.FormItem(clazz)) {
@@ -2528,6 +2534,9 @@ canAdd : function (type) {
 },
 
 setEditorType : function (item, editorType) {
+
+    if (!item.editContext) return;
+
     var tree = item.editContext.data,
         parent = tree.getParent(item.editNode),
         index = tree.getChildren(parent).indexOf(item.editNode),

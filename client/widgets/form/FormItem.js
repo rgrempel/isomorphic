@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -808,13 +808,18 @@ isc.FormItem.addProperties({
     //<
     // Handles values for the form item.  Also handles writing the item's HTML by default.
     
-    //> @attr formItem.containerWidget  (Canvas : null : R)
-	// A pointer to this formItem's "ContainerWidget".  This is the widget that handles writing
-    // the HTML for the FormItem into the DOM.  By default this will be the DynamicForm 
-    // widget containing this form item.
-    // 
-    // @visibility internal
-    //<    
+    //> @attr formItem.containerWidget  (Canvas : null : RA)
+    // A Read-Only pointer to the SmartClient canvas that holds this form item. In most cases this
+    // will be the +link{formItem.form,DynamicForm} containing the item but in some cases
+    // editable components handle writing out form items directly. An example of this
+    // is +link{group:editing,Grid Editing} - when a listGrid shows per-field editors, the
+    // <code>containerWidget</code> for each item will be the listGrid.
+    // <P>
+    // Note that even if the <code>containerWidget</code> is not a DynamicForm, a DynamicForm
+    // will still exist for the item (available as +link{formItem.form}), allowing access
+    // to standard APIs such as +link{dynamicForm.getValues()}
+    // @visibility external
+    //<
     
 
     // RelationItem
@@ -6940,7 +6945,9 @@ isc.FormItem.addMethods({
             var context = isc.addProperties(
                 {},
                 this.optionFilterContext,
-                {showPrompt:false, clientContext:{dataValue:newValue}}
+                {showPrompt:false, clientContext:{dataValue:newValue},
+                 componentId:this.containerWidget.getID(), 
+                 componentContext:this.getFieldName() }
             );
             
             var undef;
@@ -7890,12 +7897,18 @@ isc.FormItem.addMethods({
         if (this.validators == null) this.validators = [];
         else if (!isc.isAn.Array(this.validators)) this.validators = [this.validators];
         
+        if (this.validators._typeValidators) {
+            this.validators = this.validators.duplicate();
+        }
         this.validators.add(validator);
     },
     
     removeValidator : function (validator) {
         if (this.validators == null) return;
         if (!isc.isAn.Array(this.validators)) this.validators = [this.validators];
+        if (this.validators._typeValidators) {
+            this.validators = this.validators.duplicate();
+        }
         
         // Handle being passed a properties block rather than a pointer to the
         // live object...
@@ -10301,7 +10314,7 @@ isc.FormItem.addMethods({
         }
         
         // Determine offsetLeft wrt containing widget
-        return isc.Element._getLeftOffsetFromElement(iconElement, this.containerWidget.getClipHandle());
+        return isc.Element.getLeftOffset(iconElement, this.containerWidget.getClipHandle());
     },
     
     // Methods to get the rendered position of the form item.
@@ -10432,7 +10445,7 @@ isc.FormItem.addMethods({
         }
         
         // Determine offsetTop wrt containing widget
-        return isc.Element._getTopOffsetFromElement(iconElement, this.containerWidget.getClipHandle());
+        return isc.Element.getTopOffset(iconElement, this.containerWidget.getClipHandle());
     },
     
     //> @method formItem.getPageLeft()

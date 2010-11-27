@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -553,11 +553,24 @@ loadChildrenReply : function (dsResponse, data, request) {
     // if we're returned an error handle it as if we were returned no data, then
     // call the standard RPCManager error handling code
     if (dsResponse.status < 0) newNodes = null;
+
+    // if we're returned the STATUS_OFFLINE condition, handle it as an empty dataset
+    if (dsResponse.status == isc.RPCResponse.STATUS_OFFLINE) {
+        newNodes = [];
+        if (parentNode != null && !this.isRoot(parentNode)) {
+            isc.say(window[request.componentId].offlineNodeMessage);
+        }
+    }
         
 
     if (newNodes == null || newNodes.length == 0) {
         // no new nodes, mark parentNode as loaded
-        this.setLoadState(parentNode, isc.Tree.LOADED);
+        if (dsResponse.status == isc.RPCResponse.STATUS_OFFLINE) {
+            this.setLoadState(parentNode, isc.Tree.UNLOADED);
+            this.delayCall("closeFolder", [parentNode], 0);
+        } else {
+            this.setLoadState(parentNode, isc.Tree.LOADED);
+        }
         
         if (newNodes == null) {
             if (dsResponse.status < 0) {
@@ -592,12 +605,18 @@ loadChildrenReply : function (dsResponse, data, request) {
         // we're dealing with a mixed bag of parents and children, any number of levels deep.  In
         // this case we assume a unique id across all tree nodes, as opposed to just one level, and
         // run a linking algorithm that can handle the nodes in any order.
-        this.linkNodes(newNodes,
-                       relationship.idField,
-                       relationship.parentIdField,
-                       relationship.rootValue,
-                       relationship.isFolderProperty,
-                       parentNode);
+        
+        if (dsResponse.status == isc.RPCResponse.STATUS_OFFLINE) {
+            this.setLoadState(parentNode, isc.Tree.UNLOADED);
+            this.delayCall("closeFolder", [parentNode], 0);
+        } else {
+            this.linkNodes(newNodes,
+                           relationship.idField,
+                           relationship.parentIdField,
+                           relationship.rootValue,
+                           relationship.isFolderProperty,
+                           parentNode);
+        }
     }
     
     // Fire any callback passed to 'loadChildren' in the scope of this tree.

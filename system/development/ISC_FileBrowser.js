@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
+  Version SC_SNAPSHOT-2010-11-26/LGPL Development Only (2010-11-26)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -122,7 +122,7 @@ isc.DMI.callBuiltin({methodName:"saveFile",arguments:[this.$48v(this.currentDir,
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-11-04/LGPL Development Only (2010-11-04)
+  Version SC_SNAPSHOT-2010-11-26/LGPL Development Only (2010-11-26)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

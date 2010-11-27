@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -116,8 +116,10 @@ isc.Menu.addClassProperties({
 
 isc.Menu.addProperties({
 
-	//>	@attr	menu.data		(Array of MenuItem : null : IRW)
+    //>	@attr	menu.data		(Array of MenuItem | Tree : null : IRW)
 	// An array of menuItem objects, specifying the menu items this menu should show.
+	// Data may also be set to a +link{Tree} in which case a hierarchy of menus and
+	// submenus will automatically be generated to match the tree structure.
 	// @group	data
     // @visibility external
     // @example fullMenu

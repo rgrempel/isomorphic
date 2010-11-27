@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -902,41 +902,7 @@ isc.TabSet.addProperties({
     
     titleEditorDefaults: {
         name: "title", type: "text", 
-        showTitle: false,
-        
-        handleKeyPress : function (event,eventInfo) {
-            
-            var rv = this.Super("handleKeyPress", arguments);
-            
-            var keyName = event.keyName;
-            
-            if (keyName == "Escape") {
-                this.form.discardUpdate = true;
-                this.blurItem();
-            } else if (keyName == "Enter") {
-                this.blurItem();
-            }
-            return rv;
-        }, 
-        blur : function (form, item) {
-            if (!form.discardUpdate) {
-                var oldValue = form.getOldValue("title"),
-                    newValue = form.getValue("title");
-                if (oldValue == newValue) return;
-                if (isc.isA.Function(form.targetTabSet.titleChanged)) {
-                    if (this.fireCallback(
-                        form.targetTabSet.titleChanged,
-                        "newTitle, oldTitle, tab", 
-                        [   newValue, oldValue, form.targetTab ]
-                    ) === false) 
-                    {
-                        return;
-                    }
-                }
-                form.targetTabSet.setTabTitle(form.targetTab, newValue);
-            }
-            form.hide();
-        }
+        showTitle: false
     }
 });
 
@@ -1592,7 +1558,9 @@ removeTabs : function (tabs, dontDestroy) {
         var pane = tabObject.pane;
         if (pane && pane.parentElement == this.paneContainer) {
             this.paneContainer.removeChild(pane);
-            if (!dontDestroy && this.destroyPanes !== false) pane.destroy();
+            if (!dontDestroy && this.destroyPanes !== false) {
+                pane.destroy();
+            }
         }
         
         // remove the tab button
@@ -2423,19 +2391,9 @@ _showTab : function (tab) {
 //<
 
 _tabSelected : function (tab) {
-    
     // fire handler (fire it first so it has an opportunity to alter the tab, eg add a pane on
     // the fly)
 
-    // Initially there was no need to check against our currently selected tabNum as
-    // this method should only fire when the tab-bar button is actually 
-    // changing from deselected to selected state. However, to support iPhone style
-    // tabs it is important to allow tab reselection. For example, on the "more" tab
-    // selecting it again causes any subtab showing to be closed and the subtab select
-    // list re-shown. This setting, however, causes all selections to be received
-    // twice due to the TabBar/Toolbar design - we drop the second call except for
-    // the "more" tab.
-    
     var cancelSelection;
     
     var currentTabObject = this.getSelectedTab(),
@@ -2443,15 +2401,23 @@ _tabSelected : function (tab) {
         tabNum = this._tabBar.getButtonNumber(tab),
         tabObject = this.getTabObject(tabNum),
         tabDeselected = (currentTabObject != null) && (tabObject != currentTabObject);
+        
 
-    if (currentTabNum == tabNum &&
-        (!this.showMoreTab || !this.tabBar.isShowingMoreTab() || tabObject != this.moreTab))
-    {
-        // If the target tab is not yet drawn this is most likely the initial
-        // draw and tab selection. We don't want to abort that selection.
-        if (tab.pane && tab.pane.isDrawn()) return;
+    // currentTabNum may already be set to the tab being selected, before this
+    // method has run.
+    // This can occur on initial selection when tab is added/drawn and
+    // on selection due to other tab being removed.
+    // Therefore store another flag "_selectedTabObj" to indicate we've actually run
+    // our tabSelected handlers and shown the pane.
+    // If this flag is set to the tab passed in, no-op.
+    
+    var isMoreTab = this.showMoreTab && this.tabBar.isShowingMoreTab() && tabObject == this.moreTab;
+    if (!isMoreTab) {
+        if (tabObject == this._selectedTabObj) return;
+        this._selectedTabObj = tabObject;
     }
-
+    
+    
     if (tabDeselected && !this._suppressTabSelectedHandlers) {
         // fire deselected and selected handlers.
         // Note: If this is the first time the thing is drawn we'll have tabSelected being
@@ -2539,7 +2505,15 @@ _tabSelected : function (tab) {
     var tabSet = this;
     tb.scrollTabIntoView(tabNum, null, this.animateTabScrolling, 
         function() {
-            tabSet.placeTitleEditor(tab);
+            // If the tab title editor form is showing for this item we may have
+            // delayed actually drawing the form pending the animation completing
+            // in this case show when the animation completes.
+            if (tabSet.titleEditorForm != null
+                && tabSet.titleEditorForm._hiddenPendingAnimation)
+            {
+                tabSet.placeTitleEditor(tabSet.titleEditorForm.targetTab);
+            }
+            
             if (isc.isA.Function(tabSet.tabScrolledIntoView)) tabSet.tabScrolledIntoView();
         });
 },
@@ -2673,8 +2647,25 @@ editTabTitle : function (tab) {
     tab = this.getTab(tab);
     
     if (!isc.isA.DynamicForm(this.titleEditorForm)) {
-        var titleEditorConfig =  isc.addProperties({}, this.titleEditorDefaults, 
-                                            this.titleEditorProperties);
+        var titleEditorConfig =  isc.addProperties(
+                {}, this.titleEditorDefaults, 
+                this.titleEditorProperties, {
+                     handleKeyPress : function (event,eventInfo) {
+                        
+                        var rv = this.Super("handleKeyPress", arguments);
+                        
+                        var keyName = event.keyName;
+                        
+                        if (keyName == "Escape") {
+                            this.form.targetTabSet.cancelTabTitleEditing();
+                        } else if (keyName == "Enter") {
+                            this.form.targetTabSet.saveTabTitle();
+                        }
+                        return rv;
+                    }
+                }
+        );
+        
         
         titleEditorConfig.name = "title";
         
@@ -2692,7 +2683,6 @@ editTabTitle : function (tab) {
         
     var editor = this.titleEditorForm;
     editor.setProperties({targetTabSet: this, targetTab: tab});
-    editor.discardUpdate = false;
         
     var item = editor.getItem("title");
     var title = tab.title;
@@ -2704,15 +2694,68 @@ editTabTitle : function (tab) {
         this.showTitleEditor();
     } else {
         editor._hiddenPendingAnimation = true;
+    }  
+},
+
+//> @method tabSet.cancelTabTitleEditing()
+// If the user is currently editing a tab title (see +link{tabSet.canEditTabTitles}), dismiss
+// the editor and discard the edit value entered by the user.
+// @visibility external
+//<
+// We'll fire this from standard end edit event (Escape keypress) too
+cancelTabTitleEditing : function () {
+    if (this.titleEditorForm != null) {
+        this.clearTitleEditorForm();
     }
-    
+},
+
+//> @method tabSet.saveTabTitle()
+// If the user is currently editing a tab title (see +link{tabSet.canEditTabTitles}), save
+// the edited tab title and hide the editor.
+// @visibility external
+//<
+// Also fired internally from standard end edit event (click outside / enter keypress);
+saveTabTitle : function () {
+    if (this.titleEditorForm != null && this.titleEditorForm.isVisible() 
+        && this.titleEditorForm.isDrawn()) 
+    {
+        var form = this.titleEditorForm,
+            tab = form.targetTab,
+            newTitle = form.getValue("title");
+        if (newTitle != tab.title && (this.titleChanged != null)) {
+            if (this.fireCallback(
+                    this.titleChanged,
+                    "newTitle, oldTitle, tab", 
+                    [newTitle, tab.title,tab]
+                ) == false) 
+            {
+                return;
+            }
+        }
+        this.setTabTitle(form.targetTab, newTitle);
+    }
+    this.clearTitleEditorForm();
+},
+
+clearTitleEditorForm : function () {
+    if (this.titleEditorForm == null) return;
+    this.titleEditorForm.clear();
+    if (this.titleEditorForm._titleEditClickEvent != null) {
+        isc.Page.clearEvent(this._titleEditClickEvent);
+        delete this._titleEditClickEvent;
+    }
 },
 
 placeTitleEditor : function(tab) {
     var editor = this.titleEditorForm;
     if (!editor) return;
-
-    var left = tab.getPageLeft() + tab.capSize,
+    
+    // the editor will be a peer of the TabSet (shares the same parentElement)
+    // The tab is a child of the TabBar
+    // so left top should be tab left/top within the tabBar + tabBar left + tabBar border/margin
+    
+    var left = this.tabBar.getLeft() + this.tabBar.getLeftMargin() - this.tabBar.getScrollLeft()
+            + this.tabBar.getLeftBorderSize() + tab.getLeft() + tab.capSize,
         width = tab.getVisibleWidth() - tab.capSize * 2;
         
     if (this.titleEditorLeftOffset) {
@@ -2727,7 +2770,8 @@ placeTitleEditor : function(tab) {
     var item = editor.getItem("title");
     item.setWidth(width);
     
-    var top = tab.getPageTop();
+    var top = this.tabBar.getTop() + this.tabBar.getTopMargin() - this.tabBar.getScrollTop()
+                + this.tabBar.getTopBorderSize() + tab.getTop();
     if (this.titleEditorTopOffset) {
         top += this.titleEditorTopOffset;
     }
@@ -2744,9 +2788,64 @@ placeTitleEditor : function(tab) {
 showTitleEditor: function() {
     var editor = this.titleEditorForm,
         item = editor.getItem("title");
-    editor.show();
+        
+    // make the editor a peer so it moves with us.
+    // This will also handle showing / hiding / clearing / drawing with us - however
+    // we'll also need to clear up the click-outside event on clear/hide so we'll
+    // explicitly cancel title editing when we hide / clear instead of relying on this.
+    if (editor.masterElement != this) {
+        
+        editor._moveWithMaster = true;
+        editor._resizeWithMaster = false;
+        editor._showWithMaster = false;
+        this.addPeer(editor);
+        
+    } else {
+        editor.draw();
+    }
     item.focusInItem();
     item.delayCall("selectValue", [], 100);
+    
+    // Save edits on click outside title editor
+    
+    if (this._titleEditClickEvent == null) {
+        var tabSet = this;
+        function mouseDownHandler () {
+            if (!tabSet.destroyed) {
+                tabSet._clickOutsideDuringTitleEdit();
+            }
+        }
+        this._titleEditClickEvent = isc.Page.setEvent("mouseDown", mouseDownHandler);
+    }
+},
+
+_clickOutsideDuringTitleEdit : function () {
+    if (isc.EH.getTarget() == this.titleEditorForm) return;
+    this.saveTabTitle();
+},
+
+// On clear / hide / parent visibility change cancel title editing
+
+// Clear is called recursively so this'll pick up parents clearing too
+clear : function (a,b,c,d) {
+    if (this.titleEditorForm != null && this.titleEditorForm.isDrawn()) {
+        this.cancelTitleEditing();
+    }
+    this.invokeSuper("TabSet", "clear", a,b,c,d);
+},
+
+setVisibility : function (newVisibility, a,b,c,d) {
+    this.invokeSuper("TabSet", "setVisibility", newVisibility, a,b,c,d);
+    if (!this.isVisible() && this.titleEditorForm != null && this.titleEditorForm.isDrawn()) {
+        this.cancelTitleEditing();
+    }
+},
+
+parentVisibilityChanged : function (newVisibility, a,b,c,d) {
+    this.invokeSuper("TabSet", "parentVisibilityChanged", newVisibility, a,b,c,d);
+     if (!this.isVisible() && this.titleEditorForm != null && this.titleEditorForm.isDrawn()) {
+        this.cancelTitleEditing();
+    }
 }
 
 });

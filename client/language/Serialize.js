@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -520,7 +520,17 @@ _serializeObject : function (object, objPath, objRefs, prefix) {
 		// convert the key to a string
 		var keyStr = key.toString();
 		// and if it isn't a simple identifier, quote it
-		if (!isc.Comm._simpleIdentifierRE.test(keyStr) || this.strictQuoting) keyStr = '"' + keyStr + '"';
+		if (!isc.Comm._simpleIdentifierRE.test(keyStr) || this.strictQuoting) {
+            if (keyStr.contains('"')) {
+                if (keyStr.contains("'")) {
+                    keyStr = '"' + this.convertToEncodedQuotes(keyStr) + '"';
+                } else {
+                    keyStr = "'" + keyStr + "'";
+                }
+            } else {
+                keyStr = '"' + keyStr + '"';
+            }
+        }
     
         var objPath = isc.JSONEncoder._serialize_addToPath(objPath, key);
         var serializedValue;
@@ -561,5 +571,17 @@ _serializeObject : function (object, objPath, objRefs, prefix) {
 
 	// and return the output
 	return output;
+},
+
+// Converts a string so that embedded ' and " characters are converted to the HTML encodings
+// &apos; and &quot;  Only used if a key string contains both ' and " (otherwise, we just 
+// quote it using the symbol that isn't contained in the key name)
+convertToEncodedQuotes : function (string) {
+    return string.replace(String._doubleQuoteRegex, "&quot;").
+                  replace(String._singleQuoteRegex, "&apos;");
+},
+convertFromEncodedQuotes : function (string) {
+    return string.replace(new RegExp("&quot;", "g"), '"').
+                  replace(new RegExp("&apos;", "g"), "'");
 }
 });

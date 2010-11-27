@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -449,11 +449,11 @@ isc.RPCRequest.addClassMethods({
 // <p>
 // <var class="smartclient">
 // The params value can also be specified as a componentID or component instance that provides
-// a method getValues() that returns an Object literal.  SmartClient components
-// +link{class:DynamicForm}, +link{class:ValuesManager} are two such classes.  Lastly, you may
-// specify the ID of a native form element (retrievable via getElementById()) and the params
-// will be populated from there.  If there is an error resolving your params directive, it will
-// be logged to the Developer Console.
+// a method getValues() that returns an Object containing parameter names and values.
+// SmartClient components +link{class:DynamicForm}, +link{class:ValuesManager} are two such
+// classes.  Lastly, you may specify the ID of a native form element (retrievable via
+// getElementById()) and the params will be populated from there.  If there is an error
+// resolving your params directive, it will be logged to the Developer Console.
 // </var>
 // <p>
 // Note: The params are submitted once per http transaction.  If you are using 
@@ -1070,7 +1070,7 @@ errorCodes : {
     // 
     // @see class:RPCRequest
     // @group statusCodes
-    // @visibility external
+    // @visibility offline
     //<
     STATUS_OFFLINE: 1,
 
@@ -4602,7 +4602,7 @@ isc.InstantDataApp.addMethods({
 // mechanism.  See +link{group:featuresCustomPersistence,this overview} of which features apply
 // when using a custom persistence mechanism and how best to leverage those features.
 //
-// @title Integrating the SmartClient Server framework with custom Java persistence logic
+// @title Custom Server DataSources
 // @treeLocation Concepts
 // @visibility external
 //<

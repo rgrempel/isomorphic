@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -712,7 +712,8 @@ isEmpty : function () {
     return !this.lengthIsKnown() || this.getLength() <= 0;
 },
 canSortOnClient : function () { 
-    return this.shouldUseClientSorting() && (this.allMatchingRowsCached()||isc.isOffline()); 
+    return this.shouldUseClientSorting() && (this.allMatchingRowsCached()||
+					(isc.Offline && isc.Offline.isOffline())); 
 },
 canFilterOnClient : function () { return this.shouldUseClientFiltering() && this.allRowsCached() },
 
@@ -1102,14 +1103,12 @@ _fetchRemoteData : function () {
 //<
 _requestIndex:0,
 fetchRemoteData : function (serverCriteria, startRow, endRow) {
-    //>Offline
-    if (isc.isOffline()) {
+    if (isc.Offline.isOffline()) {
         // save a marker that we have offline records so we can invalidateCache() when
-        // we go online
+        // we go online, but continue the fetch anyway because there may be a suitable 
+        // response in the Offline cache
         this.haveOfflineRecords = true;
-        return;
     }
-    //<Offline
 
     this._requestIndex += 1;
     var clientContext;

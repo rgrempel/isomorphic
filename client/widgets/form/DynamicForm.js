@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -871,8 +871,9 @@ isc.DynamicForm.addProperties({
     // The error message for a failed validator that does not specify its own errorMessage.
     // @group validation, i18nMessages
     // @visibility external
-    //<                                       
-	unknownErrorMessage : "Invalid value",
+    //<
+    // Inherited from DBC
+//	unknownErrorMessage : "Invalid value",
 
     //> @attr dynamicForm.validateOnExit (boolean : false : IRW)
     // If true, form items will be validated when each item's "editorExit" handler is fired
@@ -2765,10 +2766,10 @@ getValuesAsCriteria : function (advanced, textMatchStyle, returnNulls) {
     
     var criteria = this._getMappedCriteriaValues(true, textMatchStyle);
     baseCriteria.criteria.addList(criteria);
-    return baseCriteria;
     
+    // don't return non-sensical criteria (advanced crit with no sub-crit)
+    return isc.DS.checkEmptyCriteria(baseCriteria) || {};    
 },
-
 
 // _getMappedCriteriaValues()
 // Pick up the criteria field name and criteria value for each item in the form.
@@ -5848,13 +5849,15 @@ setFocus : function (hasFocus) {
         var item = this.getFocusSubItem();
         if (item == null) {
             var items = this.getItems();
-            for (var i = 0; i < items.length; i++) {
-                var testItem = items[i];
-                if (testItem._canFocus() && testItem.isDrawn() && 
-                    testItem.isVisible() && !testItem.isDisabled()) 
-                {
-                    item = testItem;
-                    break;
+            if (items != null) {
+                for (var i = 0; i < items.length; i++) {
+                    var testItem = items[i];
+                    if (testItem._canFocus() && testItem.isDrawn() && 
+                        testItem.isVisible() && !testItem.isDisabled()) 
+                    {
+                        item = testItem;
+                        break;
+                    }
                 }
             }
         }

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -366,20 +366,12 @@ emptyCellValue:"&nbsp;",
 // @visibility external
 //<
 
-//>	@attr	gridRenderer.showOfflineMessage		(boolean : true : [IRW])
-// Indicates whether the text of the offlineMessage property should be displayed if no data is
-// available because we do not have a suitable offline cache
-//      @visibility external
-//      @group  emptyMessage
-//      @see	offlineMessage
-//<
-
 //>	@attr	gridRenderer.offlineMessage		(string : null : IRW)
 // The string to display in the body of a listGrid with an empty data array, if
 // showOfflineMessage is true and the data array is empty because we are offline and there
 // is no suitable offline cache
 // @group emptyMessage, i18nMessages
-// @visibility external
+// @visibility offline
 //      @see	showOfflineMessage
 //      @see    offlineMessageStyle
 //<
@@ -610,13 +602,14 @@ getEmptyMessage : function () {
 
 //>	@method	gridRenderer.getOfflineMessage()	([A])
 //		@group	drawing
-//			return the text for the offline message
+//			return the text for the offline message.  The default implementation returns the
+//          value of the containing Grid's offlineMessage property;
 //			you can ovveride this function if your data has additional semantics
 //				(eg: initial conditions, loading, filtering, etc)
-//		@return	(string)	empty message
+//		@return	(string)	offline message
 //<
 getOfflineMessage : function () {
-	return this.offlineMessage;
+	return this.grid.offlineMessage;
 },
 
 // Drawing
@@ -1458,7 +1451,6 @@ _rowShowComplete : function () {
 _$none:"none",
 animateRowHeight : function (rowNum, toHeight, callback, speed, duration, effect, 
                              slideIn, fromListGrid) {
- 
     // If we're not drawn, no need to try to animate since this is a visual update only
     if (!this.isDrawn()) {
         if (callback) {
@@ -1581,10 +1573,24 @@ finishAnimateRowHeight : function () {
 
 //<Animation
 
+// When printing we need to write out embedded components' printHTML directly in our table HTML
+_getPrintChildren : function () {
+    return this._embeddedComponents;
+},
+
+
+// returns the tableHTML for printing.
+// Used direclty by ListGrid.getPrintHTML()
+
+getTablePrintHTML : function (colNum, startRow, endRow, discreteCols, asyncCallback) {
+    return this.getTableHTML(colNum, startRow, endRow, discreteCols, asyncCallback);
+},
+
 // returns the innerHTML for the table
 // If passed a startRow / endRow, it will return just the HTML for that fragment of the table.
-getTableHTML : function (colNum, startRow, endRow, discreteCols) {
-    
+// asyncCallback / isAsync is required for printing only. This allows us to handle the
+// embedded components generating their printHTML asynchronously
+getTableHTML : function (colNum, startRow, endRow, discreteCols, asyncCallback, isAsync) {
     
     if (isc._traceMarkers) arguments.__this = this;
 	//>DEBUG
@@ -1602,6 +1608,50 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
         }
         return this._showEmptyMessage();
     }
+    
+    // If we're printing and we have embedded components we need to get their printHTML
+    // and plug it into the cells directly
+    if (this.isPrinting && (!this._printingChunk || startRow == 0)) {
+        
+        var printComponents = this._getPrintChildren();
+        
+        if (printComponents != null && printComponents.length > 0) {
+            
+            for (var i = 0; i < printComponents.length; i++) {
+                var component = printComponents[i];
+                if (component._gridBodyPrintHTML != null) continue;
+                var printComponentContext = {
+                        component:component,
+                        colNum:colNum, startRow:startRow, endRow:endRow, descreteCols:discreteCols,
+                        asyncCallback:asyncCallback
+                    };
+                // this.logWarn("calling getPrintHTML on embedded component:" + printComponents[i]);
+                var printCHTML = printComponents[i].getPrintHTML(
+                                    this.printProperties,
+                                    asyncCallback == null ? null 
+                                        : {target:this, methodName:"gotComponentPrintHTML", 
+                                            context:printComponentContext}
+                                 );
+                if (printCHTML != null) {
+                    component._gridBodyPrintHTML = printCHTML;
+                } else {
+                    // If the printComponent generates its printHTML asynchronously, 
+                    // we will be notified and fire the gotComponentPrintHTML() method
+                    // when that returns, at which point we'll re-run this method, skipping
+                    // the component(s) for which we already have HTML and ultimately firing
+                    // the asyncCallback.
+//                    this.logWarn("GR.getTableHTML() - getPrintHTML for component:" +
+//                        component + " went asynchronous", "printing");
+                    return null;
+                }
+            }
+        }
+        
+        // at this point we've generated HTML for all our print components and stored it
+        // We'll write it directly into the cells / rows below.
+    }
+        
+    
 
     var fragment = (startRow != null && endRow != null),
         rangeStart = startRow != null ? startRow : 0,
@@ -1852,7 +1902,7 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
          if (startSpacerHeight == 0) output.append("display:none;");
          output.append("' ");
          
-         if (fragment) {
+         if (fragment || this.isPrinting) {
              output.append(">");
          } else {
              output.append(" ID="+ this.getID()+ "_topSpacer>");
@@ -1872,7 +1922,7 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
         output.append(
             
             "<TABLE BORDER=0", widthHTML, 
-            (!fragment ? " ID=" + this.getTableElementId() : null),
+            ((!fragment && !this.isPrinting) ? " ID=" + this.getTableElementId() : null),
             (this.tableStyle && isc.Browser.isDOM ? 
              " CLASS='" + this.tableStyle + this._$singleQuote : isc._emptyString),
             " CELLSPACING=" , this.cellSpacing,	
@@ -1972,7 +2022,7 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
         // [17] normal: close STYLE attribute, start CLASS attribute
         cellHTML[17] = this.fastCellUpdates ? "' " : "' CLASS=";
         // [18] cell style (when not using fastCellUpdates)
-        if (!fragment && this.getCellElementId) cellHTML[19] = " ID=";
+        if (!fragment && !this.isPrinting && this.getCellElementId) cellHTML[19] = " ID=";
         // [20] cellID (per cell, optional)
         // [21] DIV start to force correct cellHeight, if necessary (per table)
         // [22] rest of DIV to force column width if writeDiv (per column)
@@ -2037,7 +2087,7 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
                                          this._drawRecordAsSingleCell(rowNum, record);
 			// start the table row
             output.append(rowStart);
-            if (!fragment && this.getRowElementId) {
+            if (!fragment && !this.isPrinting  && this.getRowElementId) {
                 output.append(" ID=", this.getRowElementId(rowNum, rowNum-startRow));
             }
             output.append(gt);
@@ -2279,6 +2329,8 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
                     }
 
                 } else    //<Animation
+                
+                
                 cellHTML[cellValue] = this._getCellValue(record, rowNum, colNum);
                 
                 // don't write out cell element id's for fragments - it's possible that we'd
@@ -2319,6 +2371,22 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
 			}
 			// end the table row
 			output.append(rowEnd);
+			
+			// If we're printing and there are embedded components that span the entire row,
+			// write them into a separate cell
+			
+			if (this.isPrinting && record._embeddedComponents != null) {
+			    var ecs = record._embeddedComponents;
+			    for (var ecIndex = 0; ecIndex < ecs.length; ecIndex++) {
+			        var ec = ecs[ecIndex];
+			        if (ec._currentColNum == null && ec._gridBodyPrintHTML != null) {
+			            output.append(rowStart, gt, '<td colspan="',numCols,'">', 
+			                ec._gridBodyPrintHTML, "</td>", rowEnd);
+			            delete ec._gridBodyPrintHTML;
+			        }
+			    }
+			}
+			
             //>Animation
             // Skip the rows between animationStartRow and animationEndRow, since they'll be
             // written into a single row
@@ -2366,7 +2434,7 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
         if (endSpacerHeight == 0) output.append("display:none;");
         output.append("' ");
          
-        if (fragment) {
+        if (fragment || this.isPrinting) {
             output.append(">");
         } else {
             output.append(" ID="+ this.getID()+ "_endSpacer>");
@@ -2399,10 +2467,41 @@ getTableHTML : function (colNum, startRow, endRow, discreteCols) {
                       "gridHTML"); 
     }
 	//<DEBUG
+	
+	var result = output.release();
+
+	if (isAsync) {
+	    if (asyncCallback != null) {
+	        this.fireCallback(asyncCallback, "HTML,callback", [result,asyncCallback]);
+	    }
+	    return null;
+	}
     
 	// now return the output
-	return output.release();
+	return result;
 },
+
+
+// When printing, we call 'getPrintHTML()' on each embedded component.
+// This method may run asynchronously.
+// This callback is fired when this happens. It stores the print HTML on the component
+// temporarily and calls 'getTableHTML()' passing in the callback we were passed.
+gotComponentPrintHTML : function (HTML, callback) {
+    
+    var context = callback.context,
+        component = context.component;
+        
+    if (context.asyncCallback == null) {
+        return;
+    }
+        
+    component._gridBodyPrintHTML = HTML;
+    
+    
+    return this.getTableHTML(context.colNum, context.startRow, context.endRow,
+        context.discreteCols, context.asyncCallback, true);
+},
+
 
 // When we write out the per cell HTML using templating, in fastCellUpdates:true mode, 
 // we write out style='<style text from css class definition>'
@@ -2675,22 +2774,52 @@ findColNum : function (record) {
 },
 
 
-
-// NOTE!! the contents of this method are duplicated in TreeGrid.js for speed.  If you edit
-// this, make corresponding changes to TreeGrid.js
+_$divStart:"<div>", _$divEnd:"</div>",
 _getCellValue : function (record, rowNum, colNum) { 
     //!DONTCOMBINE
     var value = this.getCellValue(record, rowNum, colNum, this);
     // If a record has an associated component to display, add a spacer underneath the record
     // to force the contents to draw above the component.
-    if (this._writeEmbeddedComponentSpacer(record)) {
+    if (!this.isPrinting && this._writeEmbeddedComponentSpacer(record)) {
         var details = this._getExtraEmbeddedComponentHeight(record);
-        if (details.allWithin && details.extraHeight) {
-            value += "<BR>" + isc.Canvas.spacerHTML(1, details.extraHeight-this.cellHeight);
-            //isc.logWarn("In _getCellValue:  details are "+isc.echoAll(details));
+        if (details.allWithin) {
+            if (details.extraHeight && (details.extraHeight > this.cellHeight)) {
+                value = [value, 
+                        // Enclose the spacer in a div. This makes it a block level element
+                        // (Forces it to appear on a new line), without requiring an explicit
+                        // <br> which can further increase the height if the content of the
+                        // cell included a block level element
+                            this._$divStart, 
+                            isc.Canvas.spacerHTML(1, details.extraHeight-this.cellHeight),
+                            this._$divEnd].join(isc.emptyString);
+                        
+                //isc.logWarn("In _getCellValue:  details are "+isc.echoAll(details));
+            }
         } else if (details.extraHeight && details.extraHeight > 0) {
-            value += "<BR>" + isc.Canvas.spacerHTML(1, details.extraHeight);
+            value = [value,
+                    this._$divStart,
+                    isc.Canvas.spacerHTML(1, details.extraHeight),
+                    this._$divEnd].join(isc.emptyString);
+                    
             //isc.logWarn("In _getCellValue:  details are "+isc.echoAll(details));
+        }
+        
+    // write embedded components right into cells if printing...
+    } else if (record && record._embeddedComponents != null) {
+        var components = record._embeddedComponents || [];
+        for (var i = 0; i < components.length; i++) {
+            var component = record._embeddedComponents[i];
+            if (component == null) continue;
+            if (component._currentColNum != colNum) continue;
+            
+            var isWithin = (component.embeddedPosition == this._$within);
+            
+            var cPrintHTML = component._gridBodyPrintHTML;
+            if (cPrintHTML != null) {
+                value += isWithin ? this._$divStart + cPrintHTML + this._$divEnd : cPrintHTML;
+                // clean that property up as we go
+                delete component._gridBodyPrintHTML;
+            }
         }
     }
 
@@ -2831,7 +2960,8 @@ getRowHeight : function (record, rowNum) {
     return height;
 },
 
-updateHeightForEmbeddedComponents : function (record, rowNum, height) {    
+updateHeightForEmbeddedComponents : function (record, rowNum, height) {
+    
     if (record && record._embeddedComponents) {
         var details = this._getExtraEmbeddedComponentHeight(record, rowNum);
         if (details.allWithin && details.extraHeight > 0) {
@@ -2848,11 +2978,15 @@ updateHeightForEmbeddedComponents : function (record, rowNum, height) {
 _getExtraEmbeddedComponentHeight : function (record, rowNum) {
     var components = record._embeddedComponents || [],
         maxComponentHeight = 0,
-        allWithin = true;
+        allWithin = true,
+        isPrinting = this.isPrinting
     ;
+    
     for (var i = 0; i < components.length; i++) {
         var component = record._embeddedComponents[i];
-        if (component == null) continue;
+        // when printing, we write colspanning components into a separate row
+        
+        if (isPrinting) continue;
 
         // mark the component with the row it currently appears in
         if (rowNum != null) component._currentRowNum = rowNum;
@@ -3098,7 +3232,8 @@ placeEmbeddedComponent : function (component) {
         width = (colNum != null && colNum >= 0) ? this.getColumnWidth(colNum) : 
             Math.min(this.getInnerWidth() + this.getScrollLeft(), this._fieldWidths.sum()) ;
         
-            
+//    this.logInfo("Placing embeddded component " + component + ", row/col:" + [rowNum,colNum]
+//            + ", top/left cell origin:" + [topOrigin,leftOrigin],    "embeddedComponents");    
     if (position == this._$within) {
         // Respect "snapTo" if specified
         // *Note: we are suppressing standard canvas percent sizing and snap-to behavior
@@ -3850,11 +3985,11 @@ setRowHeight : function (rowNum, newHeight, record, className, shouldClip, insta
     var numericHeight = isc.isA.Number(newHeight);
     if (numericHeight && newHeight <=0) newHeight = shouldClip ? 0 : 1;
         
-    //this.logWarn("height changed for cell in row: " + rowNum +
-    //             ", currentSpecifiedHeight: " + currentSpecifiedHeight +
-    //             ", shouldClip?:" + shouldClip + 
-    //             " (derived from firstCell.height: " + firstCell.height + ")" +
-    //             ", newHeight: " + newHeight);
+//    this.logWarn("height changed for cell in row: " + rowNum +
+//                 ", currentSpecifiedHeight: " + currentSpecifiedHeight +
+//                 ", shouldClip?:" + shouldClip + 
+//                 " (derived from firstCell.height: " + firstCell.height + ")" +
+//                 ", newHeight: " + newHeight);
 
     var currentRow = this.getTableElement(rowNum);
     if (newHeight == 0 && shouldClip) {
@@ -5784,7 +5919,9 @@ modifyContent : function () {
     // - restoring virtual scrolling
     // - adjusting overflow    
     // Both of these need to know the drawn heights of rows (including E.C's)
-    this._placeEmbeddedComponents();
+    // If we're performing an animated show/hide of row, don't attempt to place embedded
+    // components until it completes
+    if (!this._animatedShowStartRow) this._placeEmbeddedComponents();
 
     if (this._targetRow != null) {
         

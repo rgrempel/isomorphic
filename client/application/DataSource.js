@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -826,8 +826,9 @@ isc.defineClass("DataSource");
 //    &lt;inherits name="com.smartgwtee.SmartGwtEE"/&gt;
 //    &lt;inherits name="com.smartgwtee.tools.Tools"/&gt;
 //    </pre>
-//    <b>NOTE:</b> if you were previously using SmartGWT LGPL, <b>remove</b> the import of
-//    'com.smartgwt.SmartGWT'.
+//    <b>NOTE:</b> if you were previously using SmartGWT LGPL, <b>remove</b> the
+//    &lt;inherit&gt; of 'com.smartgwt.SmartGWT' and ensure the &lt;inherit&gt; of
+//    'com.smartgwt.tools.SmartGwtTools' appears <b>before</b> the imports above.
 // <li>modify the bootstrap HTML file (<i>modulename</i>.html) to set the isomorphicDir:
 //    <pre>
 //    &lt;script&gt;
@@ -875,7 +876,8 @@ isc.defineClass("DataSource");
 // </tr><tr>
 // 	<td>Client-side error about attempting to use "iscServer" request without server installed</td>
 // 	<td>Wrong imports in <i>moduleName</i>.gwt.xml</td>
-// 	<td>See correct imports above, note <b>remove</b> com.smartgwt.SmartGWT import</td>
+// 	<td>See correct imports above, note <b>remove</b> com.smartgwt.SmartGWT import and be sure
+//      imports are in the correct order</td>
 // </tr><tr>
 // 	<td>Missing images or failure to load page</td>
 // 	<td>Didn't set isomorphicDir in .html bootstrap file</td>
@@ -2750,7 +2752,25 @@ isc.DataSource.addClassMethods({
 		}
 		return filterValues;
 	},
-    
+
+    checkEmptyCriteria : function (criteria) {
+        if (criteria.criteria) {
+            if (criteria.criteria.length == 0 ) return null;
+
+            for (var i=criteria.criteria.length; i>=0; i--) {
+                var subCrit = criteria.criteria[i];
+                if (subCrit && subCrit.criteria) {
+                    var crit = this.checkEmptyCriteria(subCrit);
+                    if (crit) criteria.criteria[i] = crit;
+                    else criteria.criteria.removeAt(i);
+                }
+            }
+        }
+
+        if (criteria.criteria && criteria.criteria.length == 0) return null;
+
+        return criteria
+    },    
         
     //> @classAttr DataSource.serializeTimeAsDatetime (boolean : false : IRA)
     // Specifies how time field values should be serialized when being sent to the server for
@@ -2971,6 +2991,12 @@ isc.DataSource.addClassMethods({
     },
     
     
+    //> @classAttr DataSource.offlineMessage  (string : "This data not available while offline" : IRW)
+    // A message returned by a DataSource when it is returning an empty dataset for a fetch
+    // because the browser is currently offline and there is no suitable cached offline response.
+    // @group i18nMessages
+    // @visibility offline
+    //<
     offlineMessage: "This data not available while offline"
 
 
@@ -3534,6 +3560,17 @@ isc.DataSource.addProperties({
     // @visibility xmlBinding
     //<
 
+    
+    //> @attr dataSource.useOfflineStorage (boolean : null : IRW)
+    // Whether we store server responses for this DataSource into 
+    // +link{class:Offline,browser-based offline storage}, and then use those stored responses
+    // at a later time if we are offline (ie, the application cannot connect to the server).  
+    // Note that by default we do NOT use offline storage for a dataSource.
+    // @serverDS allowed
+    // @visibility offline
+    //<
+
+
 
 // whether to transform XML responses to JS automatically, such that the client-side DSResponse
 // is a JS object (whether the transform was performed on client or server is intended to be an
@@ -3915,7 +3952,7 @@ supportsRequestQueuing : true,
     // <li><b>Hibernate:</b><code> hibernate.autoJoinTransactions</code></li>
     // <li><b>SQL:</b> There is one setting per configured database connection (+link{dbName,dbName}).
     // For example, the setting for the default MySQL connection is 
-    // <code> sql.mysql.autoJoinTransactions</code></li>
+    // <code> sql.Mysql.autoJoinTransactions</code></li>
     // </ul>
     // If the setting is not defined at the DataSource-type level, we use the system global 
     // default, which is defined in <code>server.properties</code> as 
@@ -4020,19 +4057,18 @@ supportsRequestQueuing : true,
     // ----------------------------------------------------------------------------------------
 
     //> @attr dataSource.cacheAllData (Boolean : null : IRW)
-    // Set this property to true to have a DataSource fetch all of it's data client-side on the 
+    // Set this property to true to have a DataSource fetch all of its data client-side on the 
     // first fetch request.  However, unlike a +link{clientOnly} DataSource, this DataSource 
     // will still save changes normally, sending remote requests.
     // <P>
     // You can manually set this attribute after initialization by calling 
-    // +link{setCacheAllData} and setting +link{autoCacheAllData}:true causes a DataSource to 
-    // automatically switch to <code>cacheAllData:true</> when a fetch results in the entire 
-    // dataset being brought client-side.
+    // +link{setCacheAllData}; setting +link{autoCacheAllData}:true causes a DataSource to 
+    // automatically switch to <code>cacheAllData:true</code> when a fetch results in the
+    // entire dataset being brought client-side.
     // <P>
     // To cause automatic cache updates, you can set +link{cacheMaxAge} to a number of seconds
     // and once data has been client-side for that length of time, the next fetch causes the
     // cache to be dropped and a new cache retrieved.
-    // 
     //
     // @setter setCacheAllData
     // @group clientData
@@ -4373,6 +4409,7 @@ supportsRequestQueuing : true,
     // @visibility external
     //<
     autoConvertRelativeDates: true
+
 });
 
 //> @type ValueMap
@@ -4510,6 +4547,36 @@ supportsRequestQueuing : true,
 
 //> @attr dataSourceField.length               (number : null : [IR])
 // Maximum number of characters allowed.  Applicable only to fields of text type.
+// <P>
+// <b>NOTE:</b> For DataSources of type "sql", this property has a bearing on the type of 
+// column we use when the underlying table is created by a DataSource 
+// +link{group:sqlDataSource,import} in the +link{group:adminConsole,Admin Console}.  Below 
+// a certain length (which is database-specific, see below), we use standard <code>VARCHAR</code>
+// columns; above that length, we use an alternate strategy (again, database-specific).  For 
+// these long fields, we sometimes also generate different SQL for "update" and "add" 
+// operations, using JDBC "?" replacement parameters rather than embedding values directly in 
+// the generated SQL; whether or not this is done depends entirely on what the underlying 
+// database product and/or JDBC driver will allow.
+// <P><br>
+// <b>Table of field length limits for supported databases:</b><p>
+// <table style="font-size:10px;text-align:center;border:1px solid black;">
+// <tr><td style="color:white;background-color:black;"><b>Database product</b></td>
+//     <td style="color:white;background-color:black;"><b>VARCHAR limit *</b></td>
+//     <td style="color:white;background-color:black;"><b>Type used above limit</b></td></tr>
+// <tr><td>HSQLDB</td><td>None</td><td>-</td></tr>
+// <tr><td>IBM DB2</td><td>4000</td><td>CLOB</td></tr>
+// <tr><td> Microsoft SQL Server </td><td>8000</td><td>TEXT</td></tr>
+// <tr><td>MySQL</td><td> 255 / 65535 / 16M </td><td> TEXT / MEDIUMTEXT / LONGTEXT ** </td></tr>
+// <tr><td>Oracle</td><td>4000</td><td>CLOB</td></tr>
+// <tr><td>PostgreSQL</td><td>4000</td><td>TEXT</td></tr>
+// </table><br>
+// <b>*</b> The "VARCHAR limit" referred to here is a limit used by the SmartClient Server; it
+// is not necessarily imposed by the database.  For example, DB2's VARCHAR limit is not 4000
+// characters; it actually varies from about 4K to about 32K, depending on how the server has 
+// been configured.<p>
+// <b>**</b> MySQL has a limit of 255 characters for VARCHAR, 65,535 characters for TEXT and 
+// 16,777,215 for MEDIUMTEXT; therefore, with that one product, we have three thresholds for a 
+// change in storage type.
 // @group dataType
 // @serverDS allowed
 // @visibility external
@@ -5412,7 +5479,7 @@ supportsRequestQueuing : true,
 // @serverDS allowed
 // @visibility external
 //<
-
+    
 
 // ---------------------------------------------------------------------------------------
 // client-side only sorting (canSortClientOnly)
@@ -6358,14 +6425,13 @@ isc.DataSource.addMethods({
         this.applySendExtraFields(dsRequest);
 
         // offline handling may mean we never send this request
-        if (this.fulfilledFromOffline(dsRequest)) return { dataProtocol:"clientCustom" };
+        if (!this.clientOnly) {
+            if (this.fulfilledFromOffline(dsRequest)) return { dataProtocol:"clientCustom" };
 
-        var transformedData = this.transformRequest(dsRequest);
-        // correct the common error of returning the dsRequest itself incorrectly, which is
-        // never right since the dsRequest contains various widgets and other data
-        // inappropriate to send to the server.
-        if (transformedData !== dsRequest) {
-            dsRequest.data = transformedData;
+            // Save a copy of the unconverted DSRequest onto itself, for later use as a key in the
+            // the isc.Offline cache.  See the comments near the call to convertRelativeDates() in 
+            // DataSource.sendDSRequest() for details of why we do this.
+            dsRequest.unconvertedDSRequest = isc.shallowClone(dsRequest);
         }
 
         if (this.autoConvertRelativeDates == true) {
@@ -6376,12 +6442,20 @@ isc.DataSource.addMethods({
                     "- data is\n\n"+isc.echoFull(transformedData));
             }
 
-            transformedData = this.convertRelativeDates(transformedData);
+            var data = this.convertRelativeDates(dsRequest.data);
 
             if (this.logIsInfoEnabled("relativeDates")) {
                 this.logInfo("Called convertRelativeDates from getServiceInputs "+
                     "- data is\n\n"+isc.echoFull(transformedData));
             }
+            dsRequest.data = data;
+        }
+
+        var transformedData = this.transformRequest(dsRequest);
+        // correct the common error of returning the dsRequest itself incorrectly, which is
+        // never right since the dsRequest contains various widgets and other data
+        // inappropriate to send to the server.
+        if (transformedData !== dsRequest) {
             dsRequest.data = transformedData;
         }
 
@@ -6498,6 +6572,10 @@ isc.DataSource.addMethods({
     
     addDefaultCriteria : function (dsRequest, operationBinding) {
         var defaultCriteria = operationBinding.defaultCriteria || this.defaultCriteria;
+        
+        // nothing to do if there's no defaultCriteria
+        if (!defaultCriteria) return;
+        
         defaultCriteria = isc.addProperties({}, defaultCriteria);
         if (defaultCriteria && dsRequest.operationType == "fetch") {
             if (this.isAdvancedCriteria(dsRequest.data)) {
@@ -6513,7 +6591,10 @@ isc.DataSource.addMethods({
                     if (fieldNames.contains(key)) delete defaultCriteria[key];
                 }
             }
-            dsRequest.data = isc.DataSource.combineCriteria(dsRequest.data, defaultCriteria, "and", null, true);
+            // nothing to do if all defaultCriteria were removed (because they're already used!)
+            if (isc.getValues(defaultCriteria).length > 0) {
+                dsRequest.data = isc.DataSource.combineCriteria(dsRequest.data, defaultCriteria, "and", null, true);
+            }
         }
     },
     
@@ -8415,10 +8496,17 @@ isc.DataSource.addMethods({
         // and not any provider-specific format.  This allows custom data protocols to use the
         // offline system transparently, and skips the maximum amount of work when using
         // offline response (eg, no parsing WSDL responses again)
-        if (this.useOfflineStorage && dsResponse.status == 0) {
+        if (this.useOfflineStorage && dsResponse.status == 0 && !this.clientOnly) {
             isc.DataSource.cacheResponse(dsRequest, dsResponse);
-            if (isc.Offline) {
-                isc.Offline.storeResponse(dsRequest, dsResponse);
+            // It's a waste of time to re-stash a response that came from Offline (and it also
+            // leads to a misleading timestamp on the response - it effectively becomes a 
+            // last-accessed timestamp rather than a stored timestamp)
+            if (isc.Offline && !dsResponse.fromOfflineCache) {
+                if (dsRequest.unconvertedDSRequest) {
+                    isc.Offline.storeResponse(dsRequest.unconvertedDSRequest, dsResponse);
+                } else {
+                    isc.Offline.storeResponse(dsRequest, dsResponse);
+                }
             }
         }
         
@@ -8428,6 +8516,12 @@ isc.DataSource.addMethods({
                 dsRequest.resultSet._offline = true;
             } else {
                 dsRequest.resultSet._offline = false;
+            }
+        } else if (dsRequest && dsRequest.resultTree) {
+            if (dsResponse.status == isc.RPCResponse.STATUS_OFFLINE) {
+                dsRequest.resultTree._offline = true;
+            } else {
+                dsRequest.resultTree._offline = false;
             }
         }
         //<Offline
@@ -9020,6 +9114,10 @@ isc.DataSource.addMethods({
     // @visibility external
     //<
     addData : function (newRecord, callback, requestProperties) {
+        if (isc.Offline && isc.Offline.isOffline() && this.contactsServer()) {
+            isc.logWarn("Data cannot be saved because you are not online");
+            return;
+        }
         this.performDSOperation("add", newRecord, callback, requestProperties);
     },
 
@@ -9035,6 +9133,10 @@ isc.DataSource.addMethods({
     // @visibility external
     //<
     updateData : function (updatedRecord, callback, requestProperties) {
+        if (isc.Offline && isc.Offline.isOffline() && this.contactsServer()) {
+            isc.logWarn("Data cannot be saved because you are not online");
+            return;
+        }
         this.performDSOperation("update", updatedRecord, callback, requestProperties);
     },
 
@@ -9051,6 +9153,10 @@ isc.DataSource.addMethods({
     // @visibility external
     //<
     removeData : function (recordKeys, callback, requestProperties) {
+        if (isc.Offline && isc.Offline.isOffline() && this.contactsServer()) {
+            isc.logWarn("Data cannot be saved because you are not online");
+            return;
+        }
         // if passed a full record, trim it down to primaryKeys.
         // This will avoid problems where additional properties such as _selected etc 
         // are present on the record
@@ -9058,6 +9164,10 @@ isc.DataSource.addMethods({
         var keyFields = this.getPrimaryKeyFields(),
             recordKeys = isc.applyMask(recordKeys, keyFields);
         this.performDSOperation("remove", recordKeys, callback, requestProperties);
+    },
+    
+    contactsServer : function () {
+        return !this.clientOnly && this.dataProtocol != "clientCustom"
     },
 
     //> @method dataSource.validateData()
@@ -9161,7 +9271,7 @@ isc.DataSource.addMethods({
                 this.logError("DataSource: "+this.ID+
                           ": attempt to use DataSource of type iscServer without SmartClient Server option."+
                           " Please either set clientOnly: true for one-time fetch against"+
-                          " dataURL/testFileName or upgrade to SmartClient Pro or SmartClient Enterprise");
+                          " dataURL/testFileName or upgrade to SmartClient Pro, Power or Enterprise");
                 return;
             }
             // have dataURL or testFileName, default to clientOnly mode automatically
@@ -9225,8 +9335,9 @@ isc.DataSource.addMethods({
 
         if (dataFormat == "iscServer") {
             this._storeCustomRequest(dsRequest);
-
-            var data = this.transformRequest(dsRequest);
+            
+            
+            dsRequest.unconvertedDSRequest = isc.shallowClone(dsRequest);
 
             if (this.autoConvertRelativeDates == true) {
                 // convert any relative dates in criteria into absolute dates so the server
@@ -9236,7 +9347,7 @@ isc.DataSource.addMethods({
                         "- data is\n\n"+isc.echoFull(data));
                 }
                 
-                data = this.convertRelativeDates(data);
+                var data = this.convertRelativeDates(dsRequest.data);
 
                 if (this.logIsInfoEnabled("relativeDates")) {
                     this.logInfo("Called convertRelativeDates from sendDSRequest "+
@@ -9245,6 +9356,8 @@ isc.DataSource.addMethods({
 
                 dsRequest.data = data;
             }
+
+            var data = this.transformRequest(dsRequest);
 
             // If this is a clientCustom operation we're done
             // (protocol can be set dynamically in the transformRequest method)
@@ -9434,26 +9547,54 @@ isc.DataSource.addMethods({
             }
         }
     },
+
+    //> @method DataSource.useOfflineResponse()
+    // Override point to allow application code to suppress use of a particular offline
+    // response.  For example, application code may wish to examine the response's 
+    // +link{DSResponse.offlineTimestamp,offlineTimestamp} to make a decision about whether
+    // the response is too stale to be useful.
+    // <p>
+    // This is an application override point only; there is no default implementation.
+    //
+    // @param dsRequest (DSRequest) The dsRequest object
+    // @param dsResponse (DSResponse) The corresponding dsResponse object returned from 
+    //                                offline cache
+    // @return (boolean) true to allow this response to be used, false to prevent it
+    // @visibility offline
+    //<
+    
     
 
     
     fulfilledFromOffline : function (dsRequest) {
+        var cachedRequest = dsRequest.unconvertedDSRequest ? 
+                            dsRequest.unconvertedDSRequest : dsRequest;
         if (this.useOfflineStorage && isc.Offline) {
             var requestString = dsRequest.dataSource + "." + dsRequest.operationType;
             if (isc.Offline.isOffline()) {
-                var dsResponse = isc.Offline.getResponse(dsRequest);
+                var dsResponse = isc.Offline.getResponse(cachedRequest);
                 this.logInfo("currently offline, for request: " + requestString + 
                              " found cached response: " + this.echoLeaf(dsResponse), 
                              "offline"); 
+                if (this.useOfflineResponse && !this.useOfflineResponse(cachedRequest, dsResponse)) {
+                    this.logInfo("User-written useOfflineResponse() method returned false; " +
+                                 "not using cached response", "offline");
+                    dsResponse = null;
+                }
                 this.processOfflineResponse(dsRequest, dsResponse);
                 // whether there's a cached response or not, we're done
                 return true;
-            } else if (dsRequest.useOfflineCache || dsRequest.useOfflineCacheOnly) {
-                var dsResponse = isc.Offline.getResponse(dsRequest);
+            } else if (cachedRequest.useOfflineCache || cachedRequest.useOfflineCacheOnly) {
+                var dsResponse = isc.Offline.getResponse(cachedRequest);
                 if (dsResponse != null) {
                     // found a cached response, return it
                     this.logInfo("request: " + requestString + 
                                  ", returning cached offline response", "offline"); 
+                    if (this.useOfflineResponse && !this.useOfflineResponse(cachedRequest, dsResponse)) {
+                        this.logInfo("User-written useOfflineResponse() method returned false; " +
+                                     "not using cached response", "offline");
+                        dsResponse = null;
+                    }
                     this.processOfflineResponse(dsRequest, dsResponse);
                     return true;
                 } else if (dsRequest.useOfflineCacheOnly) {
@@ -9471,11 +9612,12 @@ isc.DataSource.addMethods({
     },
 
     processOfflineResponse : function (dsRequest, dsResponse) {
-        // NOTE you get this response if the network's not available but also if you set
+        // NOTE you get this response if the network is not available but also if you set
         // useOfflineCacheOnly and no cached response is available
         if (!dsResponse) dsResponse = {
             status: isc.RPCResponse.STATUS_OFFLINE,
-            data: isc.DataSource.offlineMessage
+            data: isc.DataSource.offlineMessage,
+            clientContext: dsRequest.clientContext
         };
         dsResponse.isCachedResponse = true;
         // this injects the cached response into the processing chain right at the point
@@ -9640,6 +9782,21 @@ isc.DataSource.addMethods({
 // <code>cacheTimestamp</code> set.
 // 
 // @group cacheSync
+//<
+
+//> @attr dsResponse.offlineTimestamp (number : null : R)
+// Timestamp (millisecond value) to indicate when this dsResponse was cached in 
+// +link{class:Offline,offline storage}.  Not applicable if the response has never been 
+// stored offline.
+// 
+// @visibility offline
+//<
+
+//> @attr dsResponse.fromOfflineCache (boolean : null : R)
+// If set, indicates that this response came from the offline cache, not the server.  This 
+// flag is the only reliable way for application code to determine the source of a response.
+// 
+// @visibility offline
 //<
 
 // --------------------------------------------------------------------------------------------
@@ -10025,6 +10182,9 @@ isc.DataSource.addMethods({
 // so <code>dsRequest.headerData</code> is typically populated by
 // +link{dataSource.transformRequest()}, or, for data that applies to every request sent to the
 // server, by +link{webService.getHeaderData()}.
+// <P>
+// Note that this only applies to SOAP headers. General HTTP headers for requests may be
+// modified using +link{RPCRequst.httpHeaders}.
 //
 // @visibility xmlBinding
 //<
@@ -11261,6 +11421,7 @@ isc.DataSource.addMethods({
 // the client.  For instance: <p>
 // <code>&lt;whereClause&gt;($defaultWhereClause) AND confidential = '0'&lt;/whereClause&gt;</code>.
 //
+// @treeLocation Client Reference/Data Binding/DataSource
 // @title Custom Querying Overview
 // @visibility customSQL
 //<
@@ -12298,6 +12459,7 @@ isc.DataSource.addMethods({
     // @visibility external
     //<
     getField : function (fieldName) {
+        if (isc.isAn.Object(fieldName)) fieldName = fieldName.name;
         var fields = this.getFields();
         return fields ? fields[fieldName] : null;
     },
@@ -13179,7 +13341,6 @@ isc.DataSource.addMethods({
                 // type of this DataSource.
                 if (!field.type) field.type = this.ID;
             }
-
             isc.SimpleType.addTypeDefaults(field, this);
             this._addFieldValidators(field);
         }
@@ -14713,7 +14874,7 @@ isc.DataSource.addClassMethods({
     // <li> if there is any use of mixed case, camelCaps convention is assumed, and the field name
     //      is split into separate words based on 1) everywhere an uppercase letter appears after a
     //      lowercase letter 2) everywhere a series of uppercase letters ends.  Letter case will
-    //      not be modified, with the exception that the first word will have it's first letter 
+    //      not be modified, with the exception that the first word will have its first letter 
     //      capitalized.  Example: useHTTPProxy -> "Use HTTP Proxy"
     // </ul>
     //
@@ -15015,6 +15176,22 @@ isc.DataSource.addClassMethods({
             if (propertyName == "validators" && localField.validators != null && 
                 dsField.validators != localField.validators) 
             {
+                // If the parent field is using the shared, default validator set and
+                // the child field is not of the same base SimpleType as the parent 
+                // field, do not inherit the validators.  This prevents us inheriting
+                // inappropriate validators in certain common use cases (such as when
+                // we have a DS that autoDerives its schema from a SQL table, and then
+                // overrides certain fields to be type "boolean" rather than the 
+                // discovered type, which will often be "integer" because SQL has no 
+                // native boolean type)
+                if (dsField.validators._typeValidators) {
+                    if (isc.SimpleType.getBaseType(localField.type) != 
+                        isc.SimpleType.getBaseType(dsField.type))
+                    {
+                        continue;
+                    }
+                }
+                
                 for (var i =0; i < dsField.validators.length; i++) {
                     var dsValidator = dsField.validators[i];
                     //this.logWarn("comparing validators in field: " + field.name);

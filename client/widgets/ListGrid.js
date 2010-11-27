@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -199,6 +199,9 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
     
     // adjustOverflow() - overridden to support 'autoFitData' behavior
     adjustOverflow : function (reason, a,b,c,d) {
+        // we call 'getDelta' from this method which can fall back through to 'adjustOverflow'
+        // Avoid infinite looping if we hit this case.
+        if (this._calculatingDelta) return;
         
         // If we're showing the loading message, avoid auto-fitting at all.
         // When the data returns we'll be resized and we don't want to flash to another size
@@ -391,8 +394,10 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
             }
 
             // Calculate the delta with our current size.
+            this._calculatingDelta = true;
             dY = this.getDelta(this._$height, height, this.getHeight());            
             dX = this.getDelta(this._$width, width, this.getWidth());
+            delete this._calculatingDelta;
             
             // If necessary resize to accommodate content!
             if (dY != null || dX != null) this.resizeBy(dX, dY, null, null, true);
@@ -500,6 +505,168 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         this.grid.bodyDrawing(this);
         return this.Super("getInnerHTML", arguments);
     },
+    
+    // ------------------------------------------------------
+    //
+    // PrintHTML
+    // This needs some tweaking to handle the following:
+    // - printHTML can be generated asynchronously in 2 ways:
+    //  - if number of rows exceeds printMaxRows we use timers to break up the HTML generation
+    //  - if we have embeddedComponents fetching their printHTML may also be asynchronous
+    //
+    // In either case, 'getTableHTML()' will be fired more than once, asynchronously.
+    // In the case of async embedded component printHTML generation, this is the standard
+    // mechanism - see 'gotComponentPrintHTML' in GridRenderer.
+    // In the case of splitting the printing into chunks, the _printingChunk
+    // flag will be set and startRow/endRow will be shifted, then getTableHTML will be called
+    // on a timer, repeatedly until all the rows' HTML is generated.
+    //
+    // We need to fire the 'prepareForPrinting' and 'donePrinting' methods on the ListGrid
+    // around each of these blocks - this is required as the ListGrid relies on the body to
+    // handle generating header HTML and if there are frozen fields, HTML from the frozen
+    // body, and does so by setting various flags on the GR body which'll be read by
+    // getTableHTML()
+    //
+    
+    getTablePrintHTML : function (context) {
+        // context contains startRow, endRow, callback, printProperties, printWidths
+        var startRow = context.startRow,
+            endRow = context.endRow,
+            totalRows = endRow != null ? (endRow - startRow) : this.getTotalRows(),
+            maxRows = this.printMaxRows,
+            printWidths = context.printWidths,
+            printProps = context.printProps;
+            
+        var asyncPrintCallback = {
+            target:this,
+            methodName:"gotTablePrintHTML",
+            printContext:context,
+            printCallback:context.callback
+        }
+        
+        context.callback = asyncPrintCallback;
+        
+        if (maxRows < totalRows) {
+            this.logDebug("get table print html - breaking HTML into chunks", "printing");
+            if (startRow == null) startRow = context.startRow = 0;
+            if (endRow == null) endRow = context.endRow = this.getTotalRows();
+            this.getPrintHTMLChunk(context);
+            
+            return null;
+        }
+        
+        // No chunks - can only be asynchronous due to getTableHTML directly going asynch
+        // to get embeddedComponentHTML
+        var suspendPrintingContext = this.grid._prepareForPrinting(printWidths, printProps);
+            
+        var printHTML = this.getTableHTML(null, startRow, endRow, null, asyncPrintCallback);
+       
+        // restore settings
+        this.grid._donePrinting(suspendPrintingContext);
+        return printHTML;
+    },
+    
+    gotTablePrintHTML : function (HTML, asyncCallback) {
+        var callback = asyncCallback.printCallback;
+        if (callback) {
+            this.fireCallback(callback, "HTML,callback", [HTML,callback]);
+        }
+    },
+    
+    // This is called repeatedly, asynchronously for each "chunk"
+    // The first chunk may include fetches for component tableHTML so can also be asynchonous
+    // itself.
+    getPrintHTMLChunk : function (context) {
+        
+        var suspendPrintingContext = this.grid._prepareForPrinting(context.printWidths);
+        // printing chunk flag - used by the GR to avoid writing out the outer table tags for each
+        // chunk.
+        this._printingChunk = true;
+        
+        // Second flag to indicate we are printing chunks. This is used only by
+        // gotComponentPrintHTML() to reset the _printingChunk flag before calling
+        // getTableHTML
+        this._gettingPrintChunkHTML = true;
+        
+        var startRow = context.startRow, 
+            endRow = context.endRow, 
+            maxRows = this.printMaxRows, 
+            callback = context.callback;
+    
+        this.currentPrintProperties = context.printProps;
+            
+        if (!context.html) context.html = [];
+    
+        var chunkEndRow = context.chunkEndRow = Math.min(endRow, (startRow + maxRows)),
+            chunkHTML = this.getTableHTML(null, startRow, chunkEndRow, null, 
+                {target:this, methodName:"gotPrintChunkHTML",
+                    printContext:context, printCallback:context.callback
+                });
+            
+        // restore settings
+        this.grid._donePrinting(suspendPrintingContext);
+        this._printingChunk = false;
+        
+        // chunkHTML will only be null if getTableHTML went asynchronous - can happen on the
+        // first chunk while retrieving embedded componentHTML
+        if (chunkHTML != null) {
+            delete this._gettingPrintChunkHTML;
+            this.gotPrintChunkHTML(chunkHTML, {printContext:context});
+        }
+    },
+    gotPrintChunkHTML : function (HTML, callback) {
+        var context = callback.printContext,
+            startRow = context.startRow,
+            endRow = context.endRow,
+            chunkEndRow = context.chunkEndRow,
+            maxRows = this.printMaxRows,
+            gotHTMLCallback = context.callback;
+            
+        context.html.add(HTML);        
+        
+        if (chunkEndRow < endRow) {
+            context.startRow = chunkEndRow;
+            return this.delayCall("getPrintHTMLChunk", [context], 0);
+        }
+    
+        if (gotHTMLCallback != null) {
+            var html = context.html.join(isc.emptyString);
+            this.fireCallback(gotHTMLCallback, "HTML,callback", [html,gotHTMLCallback]);
+        }
+    },
+    
+    // In GridRenderer.getTableHTML(), when printing, we generate all embedded components'
+    // print HTML up front, then slot it into the actual HTML for the table.
+    // component printHTML may be asynchronously generated in which case this callback is
+    // fired when we have the component HTML - default implementation re-runs getTableHTML
+    // which now recognizes it's got component HTML and continues to get the actual table
+    // HTML then fire the async callback.
+    // Overridden to call 'prepareForPrinting()' on the grid and reset the '_printingChunk'
+    // flag if necessary
+    gotComponentPrintHTML : function (HTML, callback) {
+        
+        var asyncCallback = callback.context.asyncCallback,
+            context = asyncCallback.printContext;
+            
+        var printWidths = context.printWidths;
+            
+        var suspendPrintingContext = this.grid._prepareForPrinting(printWidths);
+        if (this._gettingPrintChunkHTML) {
+            this._printingChunk = true;
+        }
+        
+        var HTML = this.Super("gotComponentPrintHTML", arguments);
+        if (this._printingChunk) delete this._printingChunk;
+        
+        if (HTML != null) {
+            delete this._gettingPrintChunkHTML;
+        } else {
+            this.grid._donePrinting(suspendPrintingContext);
+        }
+        
+    },
+    
+    // --------------------------------------
     
     // cellAlignment - override to account for the fact that with frozen fields, body 
     // colNum may be offset from ListGrid colNum
@@ -652,11 +819,11 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
             return height;
         }
         
-        return this.invokeSuper("GridBody", "updateHeightForEmbeddedComponents", record, rowNum, height);
+        return this.invokeSuper(isc.GridBody, "updateHeightForEmbeddedComponents", record, rowNum, height);
     },
     
     _getExtraEmbeddedComponentHeight : function (record, rowNum) {
-        var heightConfig = this.invokeSuper("GridBody", "_getExtraEmbeddedComponentHeight",
+        var heightConfig = this.invokeSuper(isc.GridBody, "_getExtraEmbeddedComponentHeight",
                                         record, rowNum);
         if (this.grid.showRecordComponents && this.grid.recordComponentHeight != null) {
             heightConfig.extraHeight = Math.max(heightConfig.extraHeight,
@@ -670,7 +837,7 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         {
             return true;
         }
-        return this.invokeSuper("GridBody", "_writeEmbeddedComponentSpacer", record);
+        return this.invokeSuper(isc.GridBody, "_writeEmbeddedComponentSpacer", record);
     },
 
     
@@ -787,7 +954,7 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
             
             // Fire the method to notify form items that they have been drawn() / redrawn()
             // or cleared()
-                        
+            
             lg._editItemsDrawingNotification(null, true, this);
             
             /*
@@ -1267,8 +1434,9 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         // If we are showing any edit form items, notify them that they have been written
         // into the DOM.
         
-        if (lg._editRowForm) lg._editItemsDrawingNotification(null, null, this);
-        
+        if (lg._editRowForm) {
+            lg._editItemsDrawingNotification(null, null, this);
+        }
         // Tell the form to update its values (setItemValues())
         // (do this after the items have been notified that they're drawn to ensure items'
         // element values are set)
@@ -1593,6 +1761,9 @@ isc.ListGrid.addClassProperties({
         "quickDrawAheadRatio",
         "scrollRedrawDelay",
         
+        // printing
+        "printMaxRows",
+        
         //>Animation
         // If we're doing a speed rather than duration based row animation allow the cap to
         // be specified on the ListGrid / TreeGrid
@@ -1627,6 +1798,10 @@ isc.ListGrid.addClassProperties({
         "showEmptyMessage",
         "emptyMessageStyle",
         "emptyMessageTableStyle",    
+
+    	// offline message
+        "showOfflineMessage",
+        "offlineMessageStyle",
         
         // special presentation of records
         "singleCellValueProperty",
@@ -1803,7 +1978,14 @@ isc.ListGrid.addClassMethods({
     makeBodyMethods : function (methodNames) {
         var funcTemplate = this._funcTemplate;
         if (funcTemplate == null) {
-            funcTemplate = this._funcTemplate = [,"return this.grid.",,"(",,")"];
+            funcTemplate = this._funcTemplate = [
+                ,
+                
+                
+                "this.grid._passthroughBody = this;" + 
+                "var returnVal = this.grid.",,"(",,");" +
+                "this.grid._passthroughBody=null;" +
+                "return returnVal;"];
         }
 
         var methods = {};
@@ -1828,14 +2010,17 @@ isc.ListGrid.addClassMethods({
             funcTemplate[2] = methodName;
             funcTemplate[4] = argString;
             var functionText = funcTemplate.join(isc.emptyString);
+            
             //this.logWarn("for method: " + methodName + " with argString :"  + argString +  
             //             " function text is: " + functionText);
-			methods[methodName] = 
+
+            methods[methodName] = 
                 new Function(argString, functionText);
 		}
         
         return methods;
     },
+    
   
     classInit : function () {
     	// create functions to have methods on the ListGrid's body call methods on the ListGrid
@@ -1845,6 +2030,8 @@ isc.ListGrid.addClassMethods({
 
     	// make certain grid methods appear on the LV for convenience, so you don't have to go
     	// this.body.someGridMethod()
+    	
+    	
         this.addMethods(isc.ClassFactory.makePassthroughMethods(
             this._lv2GridMethods, "body"));
 
@@ -1870,21 +2057,35 @@ isc.ListGrid.addClassMethods({
     	// overrides of methods where we want to call the original GridRenderer implementation
     	// as Super.
         var passBackMethods = {},
-            funcTemplate = ["if(this.body.__orig_",,")return this.body.__orig_",,"(",,")"],
+            funcTemplate = [
+                ,
+                // _passthroughBody is set up by the body function that called back up the
+                // the grid method - if present, we use it to ensure we call the original
+                // implementation on the correct body.
+                "var _passthroughBody = this._passthroughBody || this.body;" +
+                "if(_passthroughBody.__orig_",,")return _passthroughBody.__orig_",,"(",,")"],
             origPrefix  = "__orig_",
             gridProto = isc.GridRenderer.getPrototype();
         for (var i = 0; i < gridAPIs.length; i++) {
             var methodName = gridAPIs[i],
                 argString = isc.GridRenderer.getArgString(methodName);
             if (isc.ListGrid.getInstanceProperty(methodName) == null) {
-                funcTemplate[1] = funcTemplate[3] = methodName;
-                funcTemplate[5] = argString
+                 
+                if (isc.contains(argString, "colNum")) {
+                    // if there's a colNum argument, map it to the field index in the body
+                    
+                    funcTemplate[0] = "if (colNum != null && colNum >= 0) colNum = this.getLocalFieldNum(colNum);"
+                } else {
+                    funcTemplate[0] = null;
+                }
+                funcTemplate[2] = funcTemplate[4] = methodName;
+                funcTemplate[6] = argString
                 
                 passBackMethods[methodName] = new Function(argString, 
                     funcTemplate.join(isc.emptyString));
-                	// XXX this would also work, but imposes another Super call penalty, and is
-                	// odd (call to Super from outside of the object)
-                	//"return this.body.Super('" + methodName + "', arguments);");
+                // XXX this would also work, but imposes another Super call penalty, and is
+                // odd (call to Super from outside of the object)
+                //"return this.body.Super('" + methodName + "', arguments);");
             }
         	
             gridProto[origPrefix + methodName] = gridProto[methodName];
@@ -4595,6 +4796,7 @@ isc.ListGrid.addProperties( {
     //                              - the rowNum being edited [<code>item.rowNum</code>]
     // @param   value   (any)         The new value of the form item
     // @param   oldValue    (any)     The previous value of the form item
+    // @return (Boolean) The change may be cancelled <var class="SmartClient">by returning false</var>
     // @see listGridField.changed()
     // @see listGrid.cellChanged()
     // @group editing
@@ -5625,8 +5827,8 @@ isc.ListGrid.addProperties( {
         if (field._iconHTML) return field._iconHTML;
         
         field._iconHTML = isc.Canvas.imgHTML(field.cellIcon || field.icon, 
-                                             field.iconWidth || field.iconSize,
-                                             field.iconHeight || field.iconSize);
+                                             field.iconWidth || field.iconSize || grid.imageSize,
+                                             field.iconHeight || field.iconSize || grid.imageSize);
         return field._iconHTML;
     },
 
@@ -6439,21 +6641,6 @@ isc.ListGrid.addProperties( {
 	//<
     loadingDataMessage : "${loadingImage}&nbsp;Loading data...",
 
-    //>	@attr listGrid.showOfflineMessage (boolean : true : [IRW])
-    // @include gridRenderer.showOfflineMessage
-    //<
-	showOfflineMessage:true,
-    
-	//>	@attr listGrid.offlineMessage (string : "This data not available while offline" : [IRW])
-    // @include gridRenderer.emptyMessage
-    // @example emptyGrid
-	//<
-	offlineMessage:"This data not available while offline",
-
-    //>Offline
-    offlineDataMessage : "Data is offline...",
-    //<Offline
-
 	//>	@attr listGrid.loadingDataMessageStyle (CSSStyleName : "loadingDataMessage" : [IRW])
     // The CSS style name applied to the loadingDataMessage string if displayed.
     // @group emptyMessage
@@ -6471,10 +6658,6 @@ isc.ListGrid.addProperties( {
     // @visibility external
 	//<
 	loadingMessage:"&nbsp;",	
-
-    //>Offline
-    offlineMessage:"Record offline...",    
-    //<Offline
 
     // Separator / Single Cell rows
     // ---------------------------------------------------------------------------------------
@@ -6739,6 +6922,13 @@ isc.ListGrid.addProperties( {
     // @visibility external
     //<
     removeIcon:"[SKIN]/actions/remove.png",
+    
+    //> @attr listGrid.removeIconSize (Number : 16 : IRW)
+    // Default width and height of +link{removeIcon,remove icons} for this ListGrid.
+    //
+    // @visibility external
+    //<
+    removeIconSize: 16,
     
     //> @attr listGrid.animateRemoveRecord (boolean : true : IRW)
     // When +link{ListGrid.canRemoveRecords} is enabled, should records be animated out of view
@@ -9311,19 +9501,17 @@ _setUpDragProperties : function () {
 
 getEmptyMessage : function () { 
     if (isc.ResultSet && isc.isA.ResultSet(this.data) && !this.data.lengthIsKnown()) {
-        //>Offline
-        if (isc.isOffline()) {
-            return this.offlineDataMessage;
-        } else {
-        //<Offline
+        if (isc.Offline && isc.Offline.isOffline()) {
+            return this.offlineMessage;
+        }
         return this.loadingDataMessage.evalDynamicString(this, {
             loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
                                        isc.Canvas.loadingImageSize, 
                                        isc.Canvas.loadingImageSize)
-            });
-        //>Offline
-        }
-        //<Offline
+        });
+    }
+    if (this.isOffline()) {
+        return this.offlineMessage;
     }
     return this.emptyMessage.evalDynamicString(this, {
         loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
@@ -9364,12 +9552,6 @@ isEmpty : function () {
     }
 },
 
-isOffline : function () {
-    if (this.data && this.data._offline) return true;
-    return false;
-},
-
-
 //>	@attr listGrid.preserveEditsOnSetData (boolean : null : IRWA)
 // By default any edit values in an editable ListGrid are dropped when 'setData()' is called, 
 // as previous edits are almost certainly obsoleted by the new data-set.
@@ -9390,7 +9572,6 @@ isOffline : function () {
 //		@param	newData		(List of ListGridRecord)	data to show in the list
 //<
 setData : function (newData) {
-    
 	// if the current data and the newData are the same, bail
 	//	(this also handles the case that both are null)
 	if (this.data == newData) return;
@@ -10450,7 +10631,7 @@ dataChanged : function (type, originalRecord, rowNum, updateData, filterChanged)
     
     if (this._markForRegroup && !this._savingEdits) {
         this._markForRegroup = false;
-        this._lastStoredSelectedState = this.getSelectedState();
+        this._lastStoredSelectedState = this.getSelectedState(true);
         this.regroup();
         if (this._lastStoredSelectedState) {
             this.setSelectedState(this._lastStoredSelectedState);
@@ -11377,6 +11558,7 @@ setFields : function (newFields) {
             if (removeField.name == null) removeField.name = "_removeField";
             if (removeField.title == null) removeField.title = this.removeFieldTitle;
             if (removeField.cellIcon == null) removeField.cellIcon = this.removeIcon;
+            if (removeField.iconSize == null) removeField.iconSize = this.removeIconSize;
             if (removeFieldNum == -1) {
                 this.completeFields.add(removeField);
             }
@@ -11640,15 +11822,26 @@ filterByEditor : function () {
 // when showField() is called on the field, that method can return true and allow the field
 // to show.
 bindToDataSource : function (fields, componentIsDetail, a,b,c,d) {
+    var numericFieldName = false;
+
     var completeFields = this.invokeSuper(isc.ListGrid, "bindToDataSource", 
                                           fields, componentIsDetail, a,b,c,d);
     if (this.showDetailFields && completeFields != null) {
         for (var i = 0; i < completeFields.length; i++) {
-            if (completeFields[i].showIf == null && completeFields[i].detail == true) {
-                completeFields[i].showIf = this._$false;
+            var field = completeFields[i];
+            if (field.showIf == null && field.detail == true) {
+                field.showIf = this._$false;
             }
+            
+            if (isc.isA.Number(parseInt(field.name)) && 
+                parseInt(field.name).toString() == field.name) 
+            {
+                numericFieldName = true;
+            }
+            field._isFieldObject = true;
         }
     }
+    this._noNumericFields = !numericFieldName;
     return completeFields;
 },
 
@@ -11849,19 +12042,22 @@ getCheckboxFieldPosition : function () {
 // @visibility external
 // @return (listGridSelectedState) current state of this grid's selection
 //<
-getSelectedState : function () {
+getSelectedState : function (supressWarnings) {
     if (!this.selection) return null;
     if (!this.dataSource || 
         isc.isAn.emptyObject(this.getDataSource().getPrimaryKeyFields())) 
     {
-        this.logWarn("can't getSelectedState without a DataSource " +
-                     "with a primary key field set");
+        if (!supressWarnings) {
+            
+            this.logWarn("can't getSelectedState without a DataSource " +
+                         "with a primary key field set");
+        }
         return null;
     }
-    
+
     var selection = this.selection.getSelection() || [],
         selectedState = [];
-    
+
     // store primary keys only.  Works only with a DataSource
     for (var i = 0; i < selection.length; i++) {
         selectedState[i] = this.getPrimaryKeys(selection[i]);
@@ -12030,7 +12226,7 @@ setSortState : function (state) {
 //<    
 getViewState : function (returnObject) {
     var state = {
-        selected:this.getSelectedState(),
+        selected:this.getSelectedState(true),
         field:this.getFieldState(),
         sort:this.getSortState()
     };
@@ -13121,21 +13317,21 @@ getCellValue : function (record, recordNum, fieldNum, gridBody) {
             return this.getNewRecordRowCellValue();
         }
         record = this._getEditValues(recordNum, fieldNum);
-    }
+    } else {
+        // Special cases:
+        // if it's a separator row, return a horizontal rule
+        
+        if (record[this.isSeparatorProperty]) return this._$HR;
     
-    // Special cases:
-    // if it's a separator row, return a horizontal rule
-    
-    if (record && record[this.isSeparatorProperty]) return this._$HR;
-    
-    // group controller node - write out the groupNodeHTML
-    if (record && record._isGroup) {
-        // if we have a groupTitleField, return empty string for all fields that  
-        // aren't the groupTitleField
-        if (this.groupTitleField && this.fields[fieldNum].name != this.groupTitleField) {
-            return " ";    
-        } else {
-            return this.getGroupNodeHTML(record, gridBody);
+        // group controller node - write out the groupNodeHTML
+        if (record._isGroup) {
+            // if we have a groupTitleField, return empty string for all fields that  
+            // aren't the groupTitleField
+            if (this.groupTitleField && this.fields[fieldNum].name != this.groupTitleField) {
+                return " ";    
+            } else {
+                return this.getGroupNodeHTML(record, gridBody);
+            }
         }
     }
 
@@ -13176,7 +13372,6 @@ getCellValue : function (record, recordNum, fieldNum, gridBody) {
     var icon,
         iconOnly = this.showValueIconOnly(field),
         isEditCell;
-
 	if (record != null) {
         
         
@@ -13187,16 +13382,7 @@ getCellValue : function (record, recordNum, fieldNum, gridBody) {
 		if (Array.isLoading(record)) {
             
             if (!isc.Browser.isSafari || fieldNum == 0) {
-                // interpret the LOADING marker differently for offline mode
-                //>Offline
-                if (isc.isOffline()) { 
-                    return this.offlineMessage;
-                } else {
-                //<Offline
-                    return this.loadingMessage;
-                //>Offline
-                }
-                //<Offline
+                return this.loadingMessage;
             }
             return "&nbsp;";
         }
@@ -13218,16 +13404,16 @@ getCellValue : function (record, recordNum, fieldNum, gridBody) {
                       this.canEditCell(recordNum, fieldNum));
 
 
-        if (isEditCell) {        
-           value = this.getEditItemCellValue(record, recordNum, fieldNum);
+        if (isEditCell) {
+            value = this.getEditItemCellValue(record, recordNum, fieldNum);
         // Checking for this._editorShowing would mean that when changing edit cell, 
         // hideInlineEditor would render the row with no inactive editors, and they
         // wouldn't get shown again on showEditForm for the new cell without another
         // row-refresh
         } else if (this._showInactiveEditor(fieldNum) && this.canEditCell(recordNum,fieldNum)) {
-           value = this.getInactiveEditorCellValue(record, recordNum, fieldNum);
-           // set isEditCell -- this will suppress the standard 'valueIcon' stuff
-           isEditCell = true;
+            value = this.getInactiveEditorCellValue(record, recordNum, fieldNum);
+            // set isEditCell -- this will suppress the standard 'valueIcon' stuff
+            isEditCell = true;
         } else {
 
         	// get the value according to the field specification
@@ -13297,7 +13483,6 @@ getCellValue : function (record, recordNum, fieldNum, gridBody) {
         
         if (icon != null) {                 
             iconHTML = this.getValueIconHTML(icon, field);
-            
         }
 
         if (iconOnly) {
@@ -13717,12 +13902,11 @@ _formatCellValue : function (value, record, field, rowNum, colNum) {
     // In IE, an element containing only whitespace characters (space or enter) will not show css
     // styling properly.
     
-    
     } else if (this._emptyCellValues[value] == true) {
         value = this._$nbsp;
+
 	// convert the value to a string if it's not already        
 	} else if (!isc.isA.String(value)) {
-        
         value = isc.iscToLocaleString(value);
     }
     // hook for final processing of the display value that is applied to the actual display
@@ -13794,7 +13978,7 @@ getEditItemCellValue : function (record, rowNum, colNum) {
     if (!body._drawnEditItems.contains(item)) {
         body._drawnEditItems.add(item);
     }
-
+    
     return HTML;
 },
 
@@ -13876,7 +14060,6 @@ getEditorPlaceholderHTML : function (editorType, value, record, rowNum, colNum) 
 // drawn, cleared or redrawn.
 
 _editItemsDrawingNotification : function (item, fireMoved, gr) {
-    
     var items;
     if (item) items = [item];
     else {
@@ -14083,6 +14266,19 @@ getCellBooleanProperty : function (property, recordNum, fieldNum, recordProperty
 setShowRecordComponents : function (showRC) {
     if (this.showRecordComponents == showRC) return;
     
+    
+    if (showRC) {
+        if (this.animateFolders) {
+            this._animateFoldersWithoutRC = true
+            this.animateFolders = false;
+        }
+    } else {
+        if (this._animateFoldersWithoutRC) {
+            this.animateFolders = true;
+            delete this._animateFoldersWithoutRC;
+        }
+    }
+    
     this.showRecordComponents = showRC;
     
     // Update virutalScrolling if necessary.
@@ -14251,6 +14447,13 @@ _drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, bod
         dataPresent = (firstRecord != Array.LOADING) && (lastRecord != Array.LOADING);
 
     if (!dataPresent) return;
+    
+    // If we're performing a show/hide row height animation, bail.
+    // In this case the HTML in the body won't match the set of records in our data set
+    // so we can't update / place embedded components properly
+    if (body._animatedShowStartRow !=  null) {
+        return;
+    }
     
     this._updatingEmbeddedComponents = true;
 
@@ -14996,16 +15199,52 @@ printHeaderStyle:"printHeader",
 
 getPrintHeaders : function (startCol, endCol) {
     var output = isc.SB.create();
-    output.append("<TR>");
+    
     var defaultAlign = (this.isRTL() ? isc.Canvas.LEFT : isc.Canvas.RIGHT);
+
+    var currentSpan, spanFieldCount,
+        spanHTML = (this.headerSpans == null ? null : []),
+        headerHTML = [];
+        
+    var cellStartHTML = ["<TD CLASS=", (this.printHeaderStyle || this.headerBaseStyle),
+                         " ALIGN="].join("");
+                         
+    // If we're writing out header spans, we'll write two rows of cells
+    // Just iterate through the fields once, then assemble the HTML and return it.
 	for (var colNum = startCol; colNum < endCol; colNum++) {
-        var field = this.body.fields[colNum];
-        var align = field.align || defaultAlign;
-        output.append("<TD CLASS=", (this.printHeaderStyle || this.headerBaseStyle), 
-                       " ALIGN=", align, ">",
-                      this.getHeaderButtonTitle(field.masterIndex), "</TD>");
+	    var field = this.body.fields[colNum];
+        if (this.headerSpans != null) {
+            if (currentSpan == null) {
+                currentSpan = this.headerSpans[0];
+                spanFieldCount = 1;
+            } else {
+                if (!currentSpan.fields.contains(field[this.fieldIdProperty])) {
+                    spanHTML.addList([cellStartHTML, "center colspan=", spanFieldCount, ">",
+                                        currentSpan.title, "</TD>"]);
+                    currentSpan = this.headerSpans[this.headerSpans.indexOf(currentSpan)+1];
+                    spanFieldCount = 1;
+                } else {
+                    spanFieldCount++;
+                }
+            }
+        }
+        
+	    var align = field.align || defaultAlign;
+        headerHTML.addList([cellStartHTML, align, ">",
+                            this.getHeaderButtonTitle(field.masterIndex), "</TD>"]);
     }
-    output.append("</TR>");
+    
+    // if we're showing header spans we need to generate the actual HTML for the last
+    // spanning cell and slot in a row for all the spanning cells.
+    if (currentSpan != null) {
+         spanHTML.addList([cellStartHTML, "center colspan=", spanFieldCount, ">",
+                            currentSpan.title, "</TD>"]);
+         output.append("<TR>", spanHTML.join(""), "</TR>");
+    }
+    
+    // Output the standard header row
+    output.append("<TR>", headerHTML.join(""), "</TR>");
+    
     return output.toString();
 },
 
@@ -15041,34 +15280,26 @@ getPrintHTML : function (printProperties, callback) {
         }        
     }
     
+    // Printing of the body can "go asynchronous" in 2 ways
+    // If we have embedded components, retriving their print HTML may be asynchronous
+    // If we're attempting to print more than <this.printMaxRows> rows at a time we force
+    // the HTML creation to be asynchronous to avoid any script-running-slowly notifications.
+    
+    
     
     var printWidths = isc.Canvas.applyStretchResizePolicy(this.fields.getProperty("width"), 
                                                 printProps.width || isc.Page.getWidth());
     
-    var totalRows = endRow != null ? (endRow - startRow) : this.getTotalRows(),
-        maxRows = this.printMaxRows;        
-    
-    if (maxRows < totalRows) {
-        if (startRow == null) startRow = 0;
-        if (endRow == null) endRow = this.getTotalRows();     
-        this.getPrintHTMLChunk(
-            {startRow:startRow, endRow:endRow, maxRows:maxRows, callback:callback,
-                printWidths:printWidths, printProps:printProps}
-        );
-        
-        return null;
-    }
+    // getTablePrintHTML() - implemented at the GridBody level.
+    // If it goes asynchronous it'll fire the callback and return null - otherwise it'll
+    // return print HTML
+    return body.getTablePrintHTML({startRow:startRow, endRow:endRow, callback:callback,
+                                     printWidths:printWidths, printProps:printProps});
 
-    var suspendPrintingContext = this._prepareForPrinting(printWidths, printProps);
-    
-    var printHTML = body.getTableHTML(null, startRow, endRow);
-    // restore settings
-    this._donePrinting(suspendPrintingContext);
-
- 
-    return printHTML;
 },
 
+// This is run before getting the body tableHTML for printing
+// If printing HTML in chunks it'll be run repeatedly for each chunk!
 _prepareForPrinting : function (printWidths, printProperties) {
     
     this.isPrinting = this.body.isPrinting = true;
@@ -15139,43 +15370,6 @@ _donePrinting : function (context) {
 //<
 // Note that this means getPrintHTML() is frequently asynchronous for ListGrids
 printMaxRows:100,
-getPrintHTMLChunk : function (context) {
-    
-    var suspendPrintingContext = this._prepareForPrinting(context.printWidths);
-    // printing chunk flag - used by the GR to avoid writing out the outer table tags for each
-    // chunk.
-    this.body._printingChunk = true;
-    
-    var startRow = context.startRow, 
-        endRow = context.endRow, 
-        maxRows = context.maxRows, 
-        callback = context.callback;
-
-    this.currentPrintProperties = context.printProps;
-        
-    if (!context.html) context.html = [];
-
-    var chunkEndRow = Math.min(endRow, (startRow + maxRows)),
-        chunkHTML = this.body.getTableHTML(null, startRow, chunkEndRow);
-
-    context.html.add(chunkHTML);        
-
-    // restore settings
-    this._donePrinting(suspendPrintingContext);
-    this.body._printingChunk = false;
-    
-    if (chunkEndRow < endRow) {
-        context.startRow = chunkEndRow;
-        return this.delayCall("getPrintHTMLChunk", [context], 0);
-    }
-
-    if (callback) {
-        var html = context.html.join(isc.emptyString);
-        this.fireCallback(callback, "HTML,callback", [html,callback]);
-    }
-
-},
-
 
 
 // Event Handling
@@ -15624,20 +15818,23 @@ _getCellHoverComponent : function (record, rowNum, colNum) {
 },
 
 //> @method listGrid.getCellHoverComponent()
-// Gets the embedded-component to show as a given record's hoverComponent.  This 
-// component is then shown instead of the standard Hover-text.
+// When +link{showHoverComponents} is set, this method is called to get the component to show
+// as a hover for the current cell.
 // <P>
 // By default, this method returns one of a set of builtin components, according to the 
 // value of +link{type:HoverMode, listGrid.hoverMode}.  You can override this method 
-// to return any component you wish to provide as a hoverComponent.
-// 
+// to return any component you wish to provide as a hoverComponent, or invoke the superclass
+// method to have the default hover component generated, then further customize it.
+// <P>
+// By default, components returned by <code>getCellHoverComponent()</code> will be
+// automatically destroyed when the hover is hidden.  To preven this, set
+// +link{canvas.hoverAutoDestroy} to false on the returned component.
+//
 // @param record (ListGridRecord) record to get the hoverComponent for
 // @return (Canvas | Canvas Properties) the component to show as a hover
 // @group hoverComponents
 // @visibility external
 //<
-// override getCellHoverComponent() to do exactly that, returning some component other than
-// those provided by default
 defaultCellHoverComponentWidth: 300,
 defaultCellHoverComponentHeight: 150,
 getCellHoverComponent : function (record, rowNum, colNum) {
@@ -16518,7 +16715,6 @@ clearLastHilite : function () {
 
 	// clear the pointer to the last row hilited via keyboard navigation
     this.body._lastHiliteRow = null;
-
     var rowToClear = this.body.lastOverRow;
 	if (isc.isA.Number(rowToClear)) {
         delete this.body.lastOverRow;
@@ -16733,6 +16929,20 @@ setShowGridSummary : function (showGridSummary) {
         this.showSummaryRow();
     } else {
         this.clearSummaryRow();
+    }
+},
+
+//> @method listGrid.recalculateSummaries()
+// Recalculates values displayed in the +link{listGrid.showGridSummary,grid summary} and
+// +link{listGrid.showGroupSummary,group summary rows}.
+// @visibility external
+//<
+recalculateSummaries : function () {
+    if (this.showGridSummary && this.summaryRow != null) {
+        this.summaryRow.recalculateSummaries();
+    }
+    if (this.showGroupSummary) {
+        this.refreshGroupSummary();
     }
 },
 
@@ -17413,9 +17623,16 @@ getFilterEditorType : function (field) {
     var filterEditorConfig = isc.addProperties ({}, field,
                                                  {canEdit:field.canFilter !== false,
                                                   length:null});
+    
+    // the _constructor property can come from XML -> JS conversion, and matches the 
+    // XML tag name for the field element.
+    // Don't attempt to use this to determine DynamicForm editor type - it's likely to be
+    // ListGridField or similar which shouldn't effect the generated form item type.
+    if (filterEditorConfig._constructor != null) delete filterEditorConfig._constructor;
     if (field.filterEditorType != null) filterEditorConfig.editorType = field.filterEditorType;
     isc.addProperties(filterEditorConfig, field.filterEditorProperties);
-    return isc.DynamicForm.getEditorType(filterEditorConfig, this);
+    var type = isc.DynamicForm.getEditorType(filterEditorConfig, this);
+    return type;
     
 },
 
@@ -18606,6 +18823,14 @@ _showEditForm : function (rowNum, colNum, forceRedraw) {
                      (this.body.getTableElement(rowNum) == null)));
     
     var showInactiveEditors = this._alwaysShowEditors();
+    
+    // If we're showing embedded component(s) for the row force a redraw
+    // This'll place them properly
+    
+    var record = this.getCellRecord(rowNum,colNum);
+    if (record && record._embeddedComponents != null && record._embeddedComponents.length > 0) {
+        forceRedraw = true;
+    }
                   
     
     if (forceRedraw || newRow || this.body.isDirty() ||
@@ -18822,10 +19047,20 @@ hideInlineEditor : function (focusInBody, suppressCMHide) {
     }
     
     
+    
+    // If we're showing embedded component(s) for the row force a redraw
+    // This'll place them properly
+    
+    var record = this.getCellRecord(editRow,editField),
+        forceRedraw = false;
+    if (record && record._embeddedComponents != null && record._embeddedComponents.length > 0) {
+        forceRedraw = true;
+    }
+    
     if (!this.body.isDirty() && (!this.bodyLayout || !this.bodyLayout.isDirty()) &&
         !this.isDirty()) 
     {
-        if (editRow >= this.getTotalRows()) {
+        if (forceRedraw || editRow >= this.getTotalRows()) {
             var widget = this.bodyLayout || this.body;
             widget.markForRedraw("Editor Hidden");
         } else {            
@@ -19004,6 +19239,11 @@ makeEditForm : function (rowNum, colNum) {
                     props = this.getEditItem(editField, record, editedRecord,
                                             rowNum, editColNum, widths[i], true);
                 liveItem.setProperties(props);
+                if (this.getField(fieldName).frozen) {
+                    liveItem.containerWidget = this.frozenBody;
+                } else {
+                    liveItem.containerWidget = this.body;
+                }
             }
             
         } else {
@@ -19681,7 +19921,6 @@ getEditItem : function (editField, record, editedRecord, rowNum, colNum, width, 
         // the DynamicForm managing the form's values.
         item.containerWidget = editField.frozen ? this.frozenBody : this.body;
         
-        
         item.grid = this;
         
         // validateOnChange: validation of edits is performed by the grid, not the editForm.
@@ -19824,7 +20063,7 @@ _editFormItem_focusInItem : function () {
 // helper to return the editItem name for some cell
 getEditorName : function (rowNum, editField, returnDataPath) {
     // accept a colNum or a field object
-    if (isc.isA.Number(editField)) editField = this.getField(editField);
+    editField = this.getField(editField);
     if (!editField) return null;
     if (returnDataPath && editField.dataPath) return editField.dataPath;
     return editField[this.fieldIdProperty];
@@ -20502,7 +20741,7 @@ setEditValues : function (rowNum, editValues, suppressDisplay) {
     
     var oldEditValues, changedFields, addedRow = true;
     if (!suppressDisplay) {
-
+        
         var record = this.getCellRecord(rowNum, colNum);
         if (record == null) record = {};
         else addedRow = false;
@@ -20513,7 +20752,8 @@ setEditValues : function (rowNum, editValues, suppressDisplay) {
         changedFields = isc.addProperties({}, oldEditValues);
         for (var i in changedFields) {
             changedFields[i] = record[i];
-        } 
+        }
+        
         isc.addProperties(changedFields, editValues);
         
         // At this point changedFields will be a mapping of the new edit display values for
@@ -20774,6 +21014,7 @@ setEditValue : function (rowNum, colNum, newValue, suppressDisplay, suppressChan
 	// store the new edit value 
     
     var changed = this._storeEditValue(rowNum, colNum, fieldName, newValue, suppressChange);
+    
 	// only proceed if there was a change 
     if (!changed) return;
     
@@ -20802,7 +21043,6 @@ setEditValue : function (rowNum, colNum, newValue, suppressDisplay, suppressChan
                 displayValue = newValue;
             }
         }
-        
         this.setEditValue(rowNum, field.displayField, displayValue, suppressDisplay, true);
     }
     // If we're not supposed to update the display we're done.
@@ -21946,6 +22186,7 @@ storeUpdatedEditorValue : function (suppressChange) {
         
         // Convert undefined to explicit null so we actually clear out the value
         // for the field if appropriate.
+
         var undefined;
         if (value === undefined) value = null;
         this.setEditValue(editRow, editCol, value, true, suppressChange);
@@ -22324,11 +22565,10 @@ _saveAndHideEditor : function (editCompletionEvent) {
         this.saveEdits(editCompletionEvent, saveCallback);
     } else {
     
-    	// update the locally stored edit info with the new value for the appropriate field
-	    // Note - this will fire the 'editorChange()' handler if the value has changed.
         var fieldName = this.getFieldName(colNum);
-        this.setEditValue(rowNum, colNum, newValue);
-        // If auto-validate is true, validate now
+        
+        // Note: no need to call 'storeUpdatedEditorValue()'here
+        // this has already been handled by getEditValue() above
         var validateNow = !cancelling && this._validationEnabled() && 
                           (this.shouldValidateByCell(rowNum, colNum, editCompletionEvent) ||
                            this.shouldValidateByRow(rowNum, colNum, editCompletionEvent));
@@ -22733,7 +22973,7 @@ _canFocusInEditor : function (rowNum, colNum) {
         editForm = this._editRowForm,
         editItem = editForm ? editForm.getItem(fieldName) : null;
     if (editItem) return editItem._canFocus();
-    
+  
     var field = this.getField(fieldName);
     if (field.canFocus != null) return field.canFocus;
     var editorType = this.getEditorType(field, this.getEditedRecord(rowNum));
@@ -22936,6 +23176,7 @@ discardEdits : function (rowNum, colNum, dontHideEditor, editCompletionEvent) {
 // Last parameter 'validateOnly' is used internally to avoid actually saving if validation
 // succeeds - just return true to indicate success
 
+
 saveEdits : function (editCompletionEvent, callback, rowNum, colNum, validateOnly) {
     
 	// Since this is being exposed as a public method (allowing saving while leaving
@@ -22997,11 +23238,17 @@ saveEdits : function (editCompletionEvent, callback, rowNum, colNum, validateOnl
                       ", oldValues: " + this.echo(oldValues), "gridEdit");
     } //<DEBUG
 
+    
+    var haveChanges = this.recordHasChanges(rowNum, colNum, false);
+
     // perform validation on the edited row before saving
     // NOTE: we always save, and validate the whole row, even if saveByCell is true
     // as saveByCell really governs when the save is kicked off rather than what is
     // to be saved.
     if (this._validationEnabled()) {
+        
+        this._skipServerValidation = (validateOnly || haveChanges);
+
         var validationFailed;
         if (this.useCellRecords) {
             validationFailed = !this.validateCell(rowNum, colNum);
@@ -23009,15 +23256,14 @@ saveEdits : function (editCompletionEvent, callback, rowNum, colNum, validateOnl
             validationFailed = !this.validateRow(rowNum);
         }
         if (validationFailed) {
-        	if (!validateOnly) this._editFailedCallback(editInfo, callback);
+            if (!validateOnly) this._editFailedCallback(editInfo, callback);
             return false;
         }
     }
     // If we're only validating return true here to indicate that validation passed.
     if (validateOnly) return true;
 
-    
-    if (!this.recordHasChanges(rowNum, colNum, false)) {
+    if (!haveChanges) {
         this.logInfo("saveEdits: no actual change, not saving", "gridEdit");
         // Don't hang onto the empty edit values for the row
         this._clearEditValues(editValuesID, colNum);        
@@ -23045,9 +23291,16 @@ saveEdits : function (editCompletionEvent, callback, rowNum, colNum, validateOnl
     newValues = isc.addProperties({}, newValues);
 
 	// call the 'saveEditedValues' method to actually perform the save.
-    this.saveEditedValues(rowNum, colNum, newValues, oldValues, 
+    var attempted = this.saveEditedValues(rowNum, colNum, newValues, oldValues, 
                           editValuesID, editCompletionEvent, callback);
-        
+    
+    // If saveEditedValues() returns explicit false, we abandoned the save attempt because 
+    // we're offline at the moment
+    if (attempted === false) {
+        this._editFailedCallback(editInfo, callback);
+        return false;
+    }
+    
 	// return true to indicate we're (attempting to) save the value
 	// (If we're saving to the server, this does not indicate success, the server could still
 	// give validation errors back to the asynchronous callback function - don't fire
@@ -23143,7 +23396,7 @@ cellHasChanges : function (rowNum, colNum, checkEditor) {
     if (rowNum == null || colNum == null) return false;
     var field = this.getField(colNum),
         dataPath = field ? field.dataPath : null,
-        fieldName = isc.isA.String(colNum) ? colNum : this.getEditorName(rowNum, colNum),
+        fieldName = this.getEditorName(rowNum, colNum),
         newValues = (checkEditor ? this.getEditValues(rowNum, colNum) 
                                  : this._getEditValues(rowNum, colNum));
     // No new edit values - therefore no changes
@@ -23408,6 +23661,12 @@ saveEditedValues : function (rowNum, colNum, newValues, oldValues,
 
 	// if there's no dataSource, immediately commit changes locally
     if (this.shouldSaveLocally()) return this._saveLocally(editInfo, saveCallback);
+    
+    // If we're offline, forbid the save
+    if (isc.Offline && isc.Offline.isOffline() && !this.dataSource.clientOnly) {
+        isc.warn(this.offlineSaveMessage);
+        return false;
+    }
 
 	// otherwise, submit change to server, and wait until it returns without error to commit
     var callback = this.getID() + "._updateRecordReply(dsResponse, dsRequest)",
@@ -24178,14 +24437,20 @@ validateFieldValue : function (newValue, oldValue, record, field, rowNum, colNum
 
         var fieldResult,
             editedRecord = this.getEditedRecord(rowNum,colNum),
-            allErrors = null
+            allErrors = null,
+            options = {rowNum: rowNum}
         ;
+        
+        if (this._skipServerValidation == true) {
+            options.skipServerValidation = true;
+            this._skipServerValidation = null;
+        }
         if (processDependencies) {
             fieldResult = this.validateFieldAndDependencies(field, validators, newValue, 
-                                            editedRecord, {rowNum: rowNum});
+                                            editedRecord, options);
         } else {
-            fieldResult = this.validateField (field, validators, newValue, 
-                                            editedRecord, {rowNum: rowNum});
+            fieldResult = this.validateField(field, validators, newValue, 
+                                            editedRecord, options);
         }
 
         if (fieldResult != null) {
@@ -24296,7 +24561,7 @@ rowHasErrors : function (rowNum, colNum) {
 // As with rowHasErrors, the rowNum can be an editValuesID as well as a rowNum
 
 cellHasErrors : function (rowNum, fieldID) {
-    var fieldName = (isc.isA.String(fieldID) ? fieldID : this.getEditorName(rowNum, fieldID)),
+    var fieldName = this.getEditorName(rowNum, fieldID),
         editData = this.getEditSession(rowNum, fieldID),
         errors = editData ? editData._validationErrors : null;
         
@@ -24719,6 +24984,11 @@ removeRecord : function (rowNum, record) {
     // (This not removing nodes in closed parent folders for example)    
     if (record == null || rowNum == null || rowNum == -1 || !this.data) return;
     
+    if (isc.Offline && isc.Offline.isOffline() && this.dataSource && !this.dataSource.clientOnly) {
+        isc.warn(this.offlineSaveMessage);
+        return;
+    }
+    
     // animating record removal
     // If we're animating the record removal, we want to remove the data before starting the
     // animation. This ensures the record gets successfully cleared (not guaranteed in the case
@@ -24730,6 +25000,12 @@ removeRecord : function (rowNum, record) {
                               this.body &&
                               rowNum >= this.body._firstDrawnRow && 
                               rowNum <= this.body._lastDrawnRow;
+   
+    // Don't attempt to animate remove rows with embedded components. Since the components
+    // won't be clipped by the animation it'll look funky.
+    if (record._embeddedComponents && record._embeddedComponents.length > 0) {
+        animateRemoveRecord = false;
+    }
     
     if (animateRemoveRecord) {
         this._suppressRedrawOnDataChanged = true;
@@ -25547,7 +25823,7 @@ getSpecifiedField : function (fieldID) {
         return null;
     
     } else if (isc.isA.String(fieldID)) return fields.find(this.fieldIdProperty, fieldID);
-     else return (fields[fieldID]);
+    else return (fields[fieldID]);
 },
 
 
@@ -25573,7 +25849,29 @@ getFieldName : function (fieldNum) {
 //		@return	(ListGridField)	field definition
 //      @visibility external
 //<
-// NOTE: implemented on Canvas
+
+getField : function (id) {
+    if (this.fields == null || id == null) return null;
+
+    var field;
+
+    if (this._noNumericFields) {
+        field = this.fields[id];
+        if (field != null) return field;
+    } else {
+        // Number: assume index.  
+        if (isc.isA.Number(id)) return this.fields[id];
+    }
+
+    // Object: return unchanged
+    if (id._isFieldObject || isc.isAn.Object(id)) return id;
+
+    // String: assume id property of section descriptor object
+    if (isc.isA.String(id)) return this.fields.find(this.fieldIdProperty, id);
+
+    // otherwise invalid
+    return null;
+},
 
 //>	@method	listGrid.getFieldNum()	(A)
 //		Given a field or field id, return it's index in the fields array
@@ -25975,6 +26273,7 @@ rebuildForFreeze : function (forceRebuild) {
     }
     
     this.endEditing();
+    
     this.deriveVisibleFields();
 
     // NOTE: will destroy old header and re-create.  Always happens for any change in fields
@@ -26104,7 +26403,9 @@ getFieldHeaderButton : function (fieldNum) {
 getLocalFieldNum : function (colNum) {
     if (!this.frozenFields) return colNum;
 
-    var offset = this.freezeLeft() ? this.frozenFields.length : 0;
+    var offset;
+    
+    offset = this.frozenFields.length;
 
     // if column is in main body, subtract number of frozen fields if fields are frozen on left
     if (!this.fieldIsFrozen(colNum)) return colNum - offset;
@@ -27909,7 +28210,7 @@ remapEditFieldsForFreeze : function () {
             var field = this.fields[item.colNum];
             
             if (field.frozen) item.containerWidget = this.frozenBody;
-            else item.containerWidget = this.body;                                                                    
+            else item.containerWidget = this.body;
         }
     }
 },
@@ -28633,14 +28934,13 @@ getHeaderContextMenuItems : function (fieldNum) {
             needSeparator = true;
         }
         if (this.canMultiSort) {
-            if (!field) {
-                menuItems.add({
-                    title: this.configureSortText,
-                    click: "menu.grid.askForSort();"
-                });
-                needSeparator = true;
-            }
+            menuItems.add({
+                title: this.configureSortText,
+                click: "menu.grid.askForSort();"
+            });
+            needSeparator = true;
             if (!field || this.isSortField(field[this.fieldIdProperty])) {
+              
                 menuItems.add({
                     title: field ? this.clearSortFieldText : this.clearAllSortingText,
                     field: field,
@@ -29213,14 +29513,14 @@ sort : function (sortFieldNum, sortDirection) {
             }
         }
     }
-
     // if sortFieldNum is still null, no fields are sortable and we should bail
     if (sortFieldNum == null) return false;
 
     var sortField = this.getField(sortFieldNum);
     // if we can't sort by the specified field, bail!    
-    if (sortField == null || this._canSort(sortField) == false) return;
-
+    if (sortField == null || this._canSort(sortField) == false) {
+        return;
+    }
     if (sortDirection == null) {
         // default to the sortField or overall grid sort direction
         sortDirection = (sortField.sortDirection != null ? 
@@ -29235,7 +29535,6 @@ sort : function (sortFieldNum, sortDirection) {
             direction: Array.shouldSortAscending(sortDirection) ? "ascending" : "descending"
         }
     ;
-
     return this.setSort([specifier]);
 },
 
@@ -30742,7 +31041,7 @@ getGroupNodeHTML : function (node, gridBody) {
         groupIndent = 
             isc.Canvas.spacerHTML((this.data.getLevel(node) - 1) * this.groupIndentSize +
             this.groupLeadingIndent, 1);
-    var img = this.imgHTML(url, this.groupNodeSize, this.groupNodeSize);
+    var img = this.imgHTML(url, this.groupIconSize, this.groupIconSize);
     var retStr = (this.canCollapseGroup ? groupIndent + img + iconIndent + this.getGroupTitle(node)
                                         : groupIndent + iconIndent + this.getGroupTitle(node));
    
@@ -30829,7 +31128,7 @@ _addRecordToGroup : function (record, setGroupTitles, openFolders) {
 // @visibility external
 //<
 ungroup : function () {
-    this._lastStoredSelectedState = this.getSelectedState();
+    this._lastStoredSelectedState = this.getSelectedState(true);
 	this.groupBy(null);
 },
 
@@ -30929,6 +31228,7 @@ _addBodyPassthroughMethods : function (body) {
 
     var body2LGMethods = {},
         methodNames = isc.getKeys(isc.ListGrid._passthroughMethods);
+        
     for (var i = 0; i < methodNames.length; i++) {
         var methodName = methodNames[i],
             methodOnListGrid = this[methodName];
@@ -31508,7 +31808,8 @@ isc.ListGrid.registerStringMethods({
     updateFilterEditorValues:"criteria",
     
     //> @method listGrid.filterEditorSubmit()
-    // Optional notification stringMethod fired when the user performs a filter by modifying
+    // Optional notification <var class="SmartClient">stringMethod </var> fired when the 
+    // user performs a filter by modifying
     // the filter editor criteria. Will be fired on keypress if filterOnKeypress is true
     // otherwise when the user clicks the filter button or on enter keypress
     // @param criteria (Criteria) criteria derived from the filter editor values

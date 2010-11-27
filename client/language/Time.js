@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -68,7 +68,9 @@ isc.Time.addClassProperties({
         } else if (isc.isA.String(offset)) {
             var HM = offset.split(":");
             hours = HM[0];
+            // If the string starts with "-", hours and minutes will be negative
             var negative = hours && hours.startsWith("-");
+            if (negative) hours = hours.substring(1);
             minutes = HM[1];
             
             hours = (negative ? -1 : 1) * parseInt(hours,10);
@@ -393,10 +395,10 @@ isc.Time.addClassMethods({
         var date = new Date();
         
         if (hoursOffset == null) {
-            hoursOffset = this.getUTCHoursDisplayOffset(date);
+            hoursOffset = UTCTime ? 0 : this.getUTCHoursDisplayOffset(date);
         }
         if (minutesOffset == null) {
-            minutesOffset = this.getUTCMinutesDisplayOffset(date);
+            minutesOffset = UTCTime ? 0 : this.getUTCMinutesDisplayOffset(date);
         }
 
         // NOTE: we're creating UTC time -- any offset indicates the offset for the timezone

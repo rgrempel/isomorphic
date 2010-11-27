@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -78,10 +78,13 @@ isc.ValuesManager.addProperties({
     //<
     //members : null,    
     
-    //>	@attr	valuesManager.unknownErrorMessage	(string : "Invalid value" : [IRW])
-    // @include DynamicForm.unknownErrorMessage
+    //>	@attr	valuesManager.unknownErrorMessage	(string : null : [IRW])
+    // The error message for a failed validator that does not specify its own errorMessage.
+    // <P>
+    // If unset this value will be derived from the default 
+    // +link{dataBoundComponent.unknownErrorMessage} when the valuesManager is initialized.
     //<
-	unknownErrorMessage : "Invalid value"
+	unknownErrorMessage : null
     
     //> @attr valuesManager.disableValidation   (boolean : null : [IRWA])
     // @include DynamicForm.disableValidation
@@ -95,6 +98,10 @@ isc.ValuesManager.addMethods({
     init : function () {
         // get a global ID so we can be called in the global scope
         this.ns.ClassFactory.addGlobalID(this);
+        
+        if (this.unknownErrorMessage == null) {
+            this.unknownErrorMessage = isc.Canvas.getPrototype().unknownErrorMessage;
+        }
         
         if (this.dataSource) this.bindToDataSource(this.dataSource);
 
@@ -1323,6 +1330,54 @@ isc.ValuesManager.addMethods({
     	return this._oldValues;
     },
     
+    //> @method valuesManager.getOldValues()
+    // @include dynamicForm.getOldValues()
+    //<
+    getOldValues : function () {
+        var oldValues = {};
+        isc.addProperties(oldValues, this._oldValues);
+        return oldValues;
+    },
+    
+    
+    //> @method valuesManager.getChangedValues()
+    // @include dynamicForm.getChangedValues()
+    // @see getOldValues()
+    // @visibility external
+    //<
+    
+    getChangedValues : function () {
+        var values = this.getValues(),
+            oldValues = this._oldValues, 
+            changed = false,
+            changedVals = {};
+        
+        if (!isc.isAn.Object(oldValues)) oldValues = {};
+        
+        for (var prop in values) {
+            // ignore functions
+            if (isc.isA.Function(values[prop])) continue;
+            
+            // Use compareValues to compare old and new values
+            // This will catch cases such as Dates where an '==' comparison is
+            // not sufficient.
+            // Note: If we have a form item use item.compareValues() in case it has been overridden
+            var item = this.getItem(prop);
+            if (item != null) {
+                changed = !item.compareValues(values[prop], oldValues[prop]);
+            } else {
+                changed = !isc.DynamicForm.compareValues(values[prop], oldValues[prop]);
+            }
+            // no need to keep going once we've found a difference
+            // unless we've been asked to return the changed values
+            if (changed) {
+                changedVals[prop] = values[prop];
+            }
+        }
+        
+        return changedVals
+    },
+
     _cloneValues : function (storedValues, values, dataPath) {
  
         var refPropName = "__ref";   

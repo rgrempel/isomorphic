@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -259,7 +259,7 @@ _jsDecimalSymbol : ".",
 //<
 
 
-toLocalizedString : function(decimalPrecision, decimalSymbol, groupingSymbol, negativeSymbol) {
+toLocalizedString : function (decimalPrecision, decimalSymbol, groupingSymbol, negativeSymbol) {
     var roundedValue = !decimalPrecision ? this : Math.round(this * Math.pow(10, decimalPrecision)) / Math.pow(10, decimalPrecision);
     var absNum = Math.abs(roundedValue), // remove sign for now; deal with it at the very end of this method
         wholeNum = Math.floor(absNum), // whole part of the number (no decimal)
@@ -286,7 +286,8 @@ toLocalizedString : function(decimalPrecision, decimalSymbol, groupingSymbol, ne
 //            decimalString = (absNum-wholeNum).toString().substring(2); // drops the leading "0."
 //  So using this alternate approach - just split the toString() on the decimal point
 //  and take the decimal part
-            decimalString = absNum.toString().split(this._jsDecimalSymbol)[1];
+            var absString = absNum.toString();
+            decimalString = absString.substring(absString.indexOf(this._jsDecimalSymbol)+1);
         }
     }
 

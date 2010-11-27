@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-04 (2010-11-04)
+ * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1439,7 +1439,9 @@ isc.SelectItem.addMethods({
         this.Super("setValueMap", arguments);
         if (this._clientPickListData) delete this._clientPickListData;
         if (this.hasPickList()) {
-            if (this.pickList.isVisible()) this.pickList.hide();
+            if (this.pickList.isVisible() && this.pickList.isDrawn()) {
+                this.pickList.hide();
+            }
             // clear the 'formItem' property on the pickList - ensures it will have its data
             // reset when it is next shown.     
             delete this.pickList.formItem;
