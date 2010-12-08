@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -37,8 +37,11 @@
 // of storage available is dictated by the browser, and varies from approximately 500KB to 
 // approximately 5MB.
 //
+// @example offlineSupport
+// @example offlinePrefs
 // @treeLocation Client Reference/Data Binding
-// @visibility offline
+// @group offlineGroup
+// @visibility external
 //<
 
 var Offline = {
@@ -51,17 +54,18 @@ var Offline = {
 	// Returns true if the current browser session is offline (ie, not connected to a network).
 	// If an online/offline state has been set explicitly (see +link{Offline.goOffline()} and 
 	// +link{Offline.goOnline}), the explicitly-set state will be returned.  Otherwise, the 
-	// offline state as reported by the browser will be returned.
+	// offline state as reported by the browser will be returned.  See 
+    // +link{useNativeOfflineDetection,useNativeOfflineDetection} for important notes on 
+    // browser detection of offline state.
 	//
 	// @see Offline.goOffline() 
 	// @see Offline.goOnline() 
-	// @see Offline.usenativeOfflineDetection()
-	// @visibility offline
+	// @see Offline.useNativeOfflineDetection()
+	// @visibility external
 	//<
     isOffline : function () {
 		// If the explicit offline flag is set (ie, not null), use it in preference to whatever
-		// the browser reports - older browsers don't really know whether they are offline or 
-		// not; this lets the user override it
+		// the browser reports
 		if (this.explicitOffline !== null) return this.explicitOffline;
         // Working via a local var so it can be flipped in the debugger for ease of testing
         var offline = window.navigator.onLine ? false : true;
@@ -71,12 +75,11 @@ var Offline = {
 	//>	@classMethod	Offline.goOffline()	
 	// Explicitly sets this session into offline mode.  This setting will override whatever 
 	// state the browser reports.  This allows users to manually set an application into 
-	// offline or online state, which may be important with older browsers that are not capable
-	// of reliably detecting whether or not they are offline. 
+	// offline or online state.
 	// 
 	// @see Offline.goOnline() 
-	// @see Offline.usenativeOfflineDetection()
-	// @visibility offline
+	// @see Offline.useNativeOfflineDetection()
+	// @visibility external
 	//<
 	goOffline : function () {
 		this.explicitOffline = true;
@@ -85,12 +88,11 @@ var Offline = {
 	//>	@classMethod	Offline.goOnline()	
 	// Explicitly sets this session into online mode.  This setting will override whatever 
 	// state the browser reports.  This allows users to manually set an application into 
-	// offline or online state, which may be important with older browsers that are not capable
-	// of reliably detecting whether or not they are offline. 
+	// offline or online state.
 	// 
 	// @see Offline.goOffline() 
-	// @see Offline.usenativeOfflineDetection()
-	// @visibility offline
+	// @see Offline.useNativeOfflineDetection()
+	// @visibility external
 	//<
 	goOnline : function () {
 		this.explicitOffline = false;
@@ -99,12 +101,20 @@ var Offline = {
 	//>	@classMethod	Offline.useNativeOfflineDetection()	
 	// Tells the Offline system to query the browser for the current online/offline state.
 	// Calling this method switches off the explicit offline mode setting switched on by 
-	// calling +link{Offline.goOnline()} or +link{Offline.goOffline()}.  Be aware that some 
-	// older browsers are not capable of reliably detecting whether or not they are offline. 
+	// calling +link{Offline.goOnline()} or +link{Offline.goOffline()}.
+    // <p>
+    // It is important to note that browsers vary quite considerably in their ability to 
+    // detect that they are offline.  Many older browsers simply can't do it; HTML5 browsers
+    // expose the <code>navigator.onLine</code> property, but each browser's implementation 
+    // is different.  Some browsers have a manual "Work Offline" mode which allows the user 
+    // to make the decision, and SmartClient provides an equivalent mechanism with the 
+    // <code>goOffline</code> and <code>goOnline</code> methods.  Generally speaking, these 
+    // methods are more reliable than allowing the browser to decide whether your application
+    // is offline.
 	// 
 	// @see Offline.goOnline() 
 	// @see Offline.goOffline()
-	// @visibility offline
+	// @visibility external
 	//<
 	useNativeOfflineDetection : function () {
 		this.explicitOffline = null;
@@ -298,7 +308,7 @@ var Offline = {
     //                                   discarding the oldest entry if there is insufficient
     //                                   space to store the value
 	// @see Offline.get() 
-	// @visibility offline
+	// @visibility external
 	//<
     put : function (key, value, recycleEntries) {
         var ts = new Date().getTime();
@@ -406,7 +416,7 @@ var Offline = {
     // @param key              (String)  The key to retrieve a value for
     // @return The value mapped to the passed in key, or null if no such key exists
 	// @see Offline.put() 
-	// @visibility offline
+	// @visibility external
 	//<
     get : function (key) {
         var ts = new Date().getTime(),
@@ -443,7 +453,7 @@ var Offline = {
     // @param key              (String)  The key to remove
 	// @see Offline.put() 
 	// @see Offline.get() 
-	// @visibility offline
+	// @visibility external
 	//<
     remove : function (key, skipPriorityQueueUpdate) {
         this.logWarn("Removing item for key: " + key);

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -972,8 +972,8 @@ isc.TreeGrid.addProperties({
     // there is no offline cache of that data.  The message will be presented to the user in 
     // in a pop-up dialog box.
     // 
-    // @visibility offline
-    // @group offline, i18n
+    // @visibility external
+    // @group offlineGroup, i18nMessages
     // @see dataBoundComponent.offlineMessage
     //<
     offlineNodeMessage: "This data not available while offline",

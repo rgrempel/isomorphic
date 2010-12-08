@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -32,6 +32,10 @@ isc.ClassFactory.defineClass("Canvas");
 // properties (so that iterating up the inheritance chain would not be required) but that would
 // slow down init time, and isA.Canvas is 99% of the critical path usage anyway
 isc.isA.Canvas = function (object) { return (object != null && object._isA_Canvas); }
+
+isc.Canvas.neverUseFilters = window.isc_neverUseFilters;
+isc.Canvas.skipFilterNone = window.isc_skipFilterNone;
+isc.Canvas.neverUseOpacityFilter = window.isc_neverUseOpacityFilter;
 
 // define groups for documentation purposes
 
@@ -437,7 +441,7 @@ isc.Canvas.addClassProperties({
     // presidence over the attributes specified in the CSS class.
     // Use this central string to clear out 
     // - margin, border, padding, bg color, filter, background-image
-    _$noStyleDoublingCSS:(!isc.Browser.isIE ? "margin:0px;border:0px;padding:0px;background-image:none;background-color:transparent;" 
+    _$noStyleDoublingCSS:(!isc.Browser.isIE || isc.Canvas.neverUseFilters || isc.Canvas.skipFilterNone ? "margin:0px;border:0px;padding:0px;background-image:none;background-color:transparent;" 
                         // Also explicitly clear filter in IE
                           : "margin:0px;border:0px;padding:0px;background-color:transparent;filter:none;background-image:none;"),
     
@@ -1392,7 +1396,9 @@ isc.Canvas.addProperties({
     // with content without creating unnecessary scrolling.
     // <P>
     // The <code>showCustomScrollbars</code> setting is typically overridden in load_skin.js in
-    // order to change the default for all SmartClient components at once, like so:
+    // order to change the default for all SmartClient components at once.
+    // This may be achieved via the static +link{Canvas.setShowCustomScrollbars()} method or
+    // via a simple addProperties block, like so:
     // <pre>
     //     isc.Canvas.addProperties({ showCustomScrollbars:false });
     // </pre>
@@ -5967,14 +5973,18 @@ getTagStart : function (dontConcat) {
   
        divHTML[55] = (this.border ? ";BORDER:" + this.border : null);
         if (isc.Browser.isIE) {
-            divHTML[56] = (opacity == null ? null :
-                   ";filter:progid:DXImageTransform.Microsoft.Alpha(opacity="+opacity+")");
+            if (!isc.Canvas.neverUseFilters) {
+                if (!isc.Canvas.neverUseOpacityFilter) {
+                    divHTML[56] = (opacity == null ? null :
+                           ";filter:progid:DXImageTransform.Microsoft.Alpha(opacity="+opacity+")");
+                }
 
-            
-            if (this._avoidRedrawFlash) {
-                divHTML[57] = ";filter:progid:DXImageTransform.Microsoft.iris(irisStyle=circle)"
-            } else {
-                divHTML[57] = null;
+                
+                if (this._avoidRedrawFlash) {
+                    divHTML[57] = ";filter:progid:DXImageTransform.Microsoft.iris(irisStyle=circle)"
+                } else {
+                    divHTML[57] = null;
+                }
             }
         } else {
             if (opacity != null) {
@@ -10593,6 +10603,9 @@ _completeMoveBy : function () {
     
     
     // call the observable moved method
+    
+    
+    this._$leftCoords = this._$topCoords = null;
     this.moved(deltaX, deltaY);
 },
 
@@ -10602,8 +10615,6 @@ _completeMoveBy : function () {
 //<
 moved : function (deltaX, deltaY) {
     
-    
-    this._$leftCoords = this._$topCoords = null;
 //!DONTOBFUSCATE  (we want observers to be able to pick up the passed values)
 },
 
@@ -13739,7 +13750,7 @@ _scrolled : function () {
         // Determine the target for the mouse move event based on event.target or
         // event.lastMoveTarget for non-mouse events.
         var lastEvent = isc.EH.lastEvent,
-            isMouseEvent = isc.EH.isMouseEvent(lastEvent.eventType)
+            isMouseEvent = isc.EH.isMouseEvent(lastEvent.eventType),
             currentlyOver =  isMouseEvent ? lastEvent.target : isc.EH.lastMoveTarget;
             
         if (currentlyOver != null) {
@@ -16179,9 +16190,11 @@ setOpacity : function (newOpacity, animating, forceFilter) {
             else this.getStyleHandle().opacity = opacity;
             
         } else if (isc.Browser.isIE) {
-            // Using proprietary Microsoft filters to achieve opacity
-            this.getStyleHandle().filter = (this.opacity == null ? "" :
-                    "progid:DXImageTransform.Microsoft.Alpha(opacity="+this.opacity+")");
+            if (!isc.Canvas.neverUseFilters && !isc.Canvas.neverUseOpacityFilter) {
+                // Using proprietary Microsoft filters to achieve opacity
+                this.getStyleHandle().filter = (this.opacity == null ? "" :
+                        "progid:DXImageTransform.Microsoft.Alpha(opacity="+this.opacity+")");
+            }
 
             
             
@@ -18686,6 +18699,22 @@ getImgURL : function (src, imgDir, instance) {
 	return URL;
 },
 
+//> @classMethod Canvas.setShowCustomScrollbars()
+// Whether to use the browser's native scrollbars or SmartClient-based scrollbars by default
+// for all canvases.
+// <P>
+// This method changes the default value of +link{canvas.showCustomScrollbars}.
+// @param showCustomScrollbars (boolean) whether to show custom (SmartClient-based) scrollbars
+//   rather than css-scrollbars by default.
+// @visibility external
+//<
+// This is just an equivalent to calling isc.Canvas.addProperties({showCustomScrollbars:true});
+// Useful to have as a static setter for SGWT.
+setShowCustomScrollbars : function (showCS) {
+    isc.Canvas.addProperties({showCustomScrollbars:showCS});
+    
+},
+
 // Printing
 // --------------------------------------------------------
 
@@ -19048,7 +19077,7 @@ _fixPNG : function (instance) {
 	var fix = isc.Browser.isIE && isc.Browser.minorVersion >= 5.5 && 
 //                (isc.Browser.version < 7 || this.opacity == null) &&
                 isc.Browser.isWin &&
-                this.neverUsePNGWorkaround != true;
+                (!isc.Canvas.neverUseFilters && this.neverUsePNGWorkaround != true);
     // if we have an instance with _fixPNG returning false, respect it
     if (fix && instance && instance._fixPNG && !instance._fixPNG()) {
         fix = false;

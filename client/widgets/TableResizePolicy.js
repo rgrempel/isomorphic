@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -84,16 +84,16 @@ applyTableResizePolicy : function (items, totalWidth, totalHeight,
             var requiredCols = itemCols;
             if (itemCols == "*") requiredCols = 1;
 
-			// add another column for a separate cell for left/right oriented titles
+            // add another column for a separate cell for left/right oriented titles
             // NOTE: extra cells not added for top or bottom-oriented titles
             var orientation = item.getTitleOrientation();
             if (item.showTitle &&
-				(orientation == isc.Canvas.LEFT || orientation == isc.Canvas.RIGHT)) 
+                (orientation == isc.Canvas.LEFT || orientation == isc.Canvas.RIGHT)) 
             {
                 // NOTE: we assume colSpan * and showTitle:true means at least two columns
-                requiredCols += 1;
-				if (itemCols != "*") itemCols += 1;
-			}
+                requiredCols += (item.getTitleColSpan() || 1);
+                if (itemCols != "*") itemCols += (item.getTitleColSpan() || 1);
+            }
 
             var startRow = (item.isStartRow ? item.isStartRow() : item.startRow),
                 endRow = (item.isEndRow ? item.isEndRow() : item.endRow);

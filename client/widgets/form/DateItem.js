@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -856,8 +856,11 @@ isc.DateItem.addMethods({
             }
             
             // If value hasn't actually changed, stop here
-            if (value == this.getValue()) return;
-
+            if (value == this.getValue()) {
+                delete this._suppressUpdates;
+                return;
+            }
+            
             // If enforceDate is true and we're showing an invalid date error, clear it unless
             // we still have an invalid date
             if (this.enforceDate) {

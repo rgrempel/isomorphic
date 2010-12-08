@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -375,8 +375,11 @@ isc.Browser.isUnix = (!isc.Browser.isMac &&! isc.Browser.isWin);
 //<
 // Theoretically Android is also supported.
 
+isc.Browser.isAndroid = navigator.userAgent.indexOf("Android") > -1;
 
-isc.Browser.isMobileWebkit = isc.Browser.isSafari && navigator.userAgent.indexOf(" Mobile/") > -1;	
+
+isc.Browser.isMobileWebkit = (isc.Browser.isSafari && navigator.userAgent.indexOf(" Mobile/") > -1
+    || isc.Browser.isAndroid && navigator.userAgent.indexOf(" Mobile ") > -1);
 
 // intended for general mobile changes (performance, etc)
 isc.Browser.isMobile = (isc.Browser.isMobileWebkit);

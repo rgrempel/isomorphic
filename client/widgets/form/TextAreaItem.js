@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -387,8 +387,18 @@ isc.TextAreaItem.addMethods({
             "' ");
     },
     
+    //> @attr TextAreaItem.minHeight (integer : 16 : IRW)
+    // Minimum valid height for this TextAreaItem in px. If the specified +link{TextAreaItem.height}
+    // is less than this value, the text area will still render at this height.
+    // @visibility external
+    //<
+    minHeight:16,
+    
     // helper to return the content of the "style" tag in the text box / data element
     getElementCSSText : function (width, height) {
+        
+        if (isc.isA.Number(width) && width <= 0) width = 1;
+        if (isc.isA.Number(height) && height < this.minHeight) height = this.minHeight;
     
         return isc.StringBuffer.concat(
             // Ensure there's no margin(helps with sizing and v-alignment with icons)

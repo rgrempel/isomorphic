@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2100,6 +2100,7 @@ parentResized : function () {
 
 // stop centering if we are moved other than by the autoCentering code itself
 moved : function () {
+    this.Super("moved", arguments);
     if (this.isDrawn() && !this._centering) this.autoCenter = false;
 },
 

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -119,7 +119,7 @@ isc.defineClass("DataSource");
 // @value "remove"   Remove (delete) an existing record
 // @value "validate" Run server-side validation for "add" or "update" without actually
 //                   performing the operation
-// @value "custom"   Perform some arbitrary custom logic
+// @value "custom"   Perform some arbitrary custom logic that is not a CRUD operation
 //
 // @visibility external
 //<
@@ -276,7 +276,7 @@ isc.defineClass("DataSource");
 // compatibility.  For example, if you omit the META tag approach, documents saved by the user
 // using the browser save function may not render correctly when subsequently read from disk
 // because HTTP headers are not available in that context.  And conversely not providing the
-// HTTP header can result in application servings applying their own default and incorrect
+// HTTP header can result in application servers applying their own default and incorrect
 // content encoding.
 // <p>
 // If you're using a given character encoding pervasively in your pages, you can also configure
@@ -388,77 +388,6 @@ isc.defineClass("DataSource");
 // +explorerExample{changeLocales,Localization example}.
 // To create a new locale, modify the i18nMessages structure in an existing locale file.
 // <p>
-// <u><b>DataSource localization</b></u>
-// <p>
-// DataSources can be created in +link{group:dataSourceDeclaration,several ways}.  DataSources
-// created directly in JavaScript can be internationalized via the techniques described above.
-// DataSources which are declared in XML (.ds.xml files) and are read by the ISC server, which
-// are normally loaded into a .jsp page via the <code>&lt;isomorphic:loadDS&gt;</code> JSP tag,
-// can instead be loaded and interpreted as .jsp files via the technique described below.  This
-// allows JSTL and other JSP tags to be used to internationalize the titles and validation
-// error messages in XML DataSources.
-// <P>
-// For example, given the following DataSource located in /shared/ds/supplyItem.ds.xml:
-// <pre>
-// &lt;DataSource&gt;
-//     &lt;fields&gt;
-//         &lt;field name="itemName"&gt;
-//             &lt;title&gt;Item Name&lt;/title&gt;
-//             &lt;validators&gt;
-//                 &lt;Validator type="lengthRange" max="40"&gt;
-//                     &lt;errorMessage&gt;Must be 40 characters or less.&lt;/errorMessage&gt;
-//                 &lt;/Validator&gt;
-//             &lt;/validators&gt;
-//         &lt;/field&gt;
-//     &lt;/fields&gt;
-// &lt;/DataSource&gt;
-// </pre>
-// To localize the title and validator error string of the <code>itemName</code> field 
-// via the same JSTL strategy we've been using, first add the following to your web.xml to
-// allow DataSource files to be interpreted as JSPs:
-// <pre>
-// &lt;jsp-config&gt;
-//     &lt;jsp-property-group&gt;
-//       &lt;url-pattern&gt;/shared/ds/*&lt;/url-pattern&gt;
-//     &lt;/jsp-property-group&gt;     
-// &lt;/jsp-config&gt;
-// </pre>
-// Next change the DataSource definition as follows:
-// <pre>
-// &lt;!--
-// &lt;%@ taglib prefix="fmt" uri="/WEB-INF/fmt.tld" %&gt;
-// --&gt;
-// &lt;DataSource xmlns:fmt="urn:jsptld:/WEB-INF/fmt.tld"&gt;
-//     &lt;fields&gt;
-//         &lt;field name="itemName"&gt;
-//             &lt;title&gt;&lt;fmt:message key="itemTitle"&gt;&lt;/title&gt;
-//             &lt;validators&gt;
-//                 &lt;Validator type="lengthRange" max="40"&gt;
-//                     &lt;errorMessage&gt;&lt;fmt:message key="itemLengthRangeValidator"/&gt;&lt;/errorMessage&gt;
-//                 &lt;/Validator&gt;
-//             &lt;/validators&gt;
-//         &lt;/field&gt;
-//     &lt;/fields&gt;
-// &lt;/DataSource&gt;
-// </pre>
-// Note that the XML comment around the taglib declaration is intentional.  It is there to make
-// sure the JSP parser sees the tag library declaration, while the file remains valid XML.
-// If you need to use multiple JSP tag libraries to achieve your goals, simply add additional
-// taglib declarations inside the XML comment and be sure to register the tag namespace in the
-// DataSource tag via <code>xmlns:tagName</code> as done above for the <code>fmt</code>
-// namespace. Instead of using the <code>&lt;isomorphic:loadDS&gt;</code> JSP tag to load this
-// DataSource, you would load it as follows in your JSP:
-// <pre>
-// &lt;SCRIPT&gt;
-// &lt;isomorphic:XML&gt;
-// &lt;jsp:include page="/shared/ds/supplyItem.ds.xml"&gt;&lt;/jsp:include&gt;
-// &lt;/isomorphic:XML&gt;
-// &lt;/SCRIPT&gt;
-// </pre> 
-// This makes it possible to internationalize field titles as well as validation error messages
-// for built-in validators.  To internationalize custom server-side validation errors, simply
-// provide internationalized strings when calling <code>DSResponse.setErrorReport()</code> to
-// report validation errors (see the JavaDoc for that documentation).
 // <p>
 // <u><b>Support for Right-to-Left (RTL) languages</b></u>
 // <P>
@@ -473,7 +402,11 @@ isc.defineClass("DataSource");
 // If you need production-quality RTL support for your application, visit the<a
 // href="http://forums.smartclient.com">SmartClient forums</a> for details of 
 // known limitations.
-// <P>
+// <p>
+// <u><b>DataSource localization</b></u>
+// <p>
+// Please see the separate article on +link{group:dataSourceLocalization,DataSource Localization}
+// <p>
 // <u><b>Image, CSS localization</b></u>
 // <p>
 // Most SmartClient components use a mixture of text, CSS and images to render.  If you wish to
@@ -524,6 +457,107 @@ isc.defineClass("DataSource");
 // </ul>
 // @treeLocation Concepts
 // @title Internationalization and Localization (i18n,l10n)
+// @visibility external
+//<
+
+//> @groupDef dataSourceLocalization
+// <var class="smartclient">
+// DataSources can be created in +link{group:dataSourceDeclaration,several ways}.
+// DataSources created directly in JavaScript can be 
+// internationalized via the techniques described in the main +link{group:i18n,i18n article}.
+// </var>
+// DataSources which are declared in XML (.ds.xml files) and are read by the SmartClient 
+// server, which are normally loaded <var class="smartclient">into a .jsp page via the 
+// <code>&lt;isomorphic:loadDS&gt;</code> JSP tag,</var>
+// <var class="smartgwt">by the <code>DataSourceLoader</code> servlet,</var> can instead be 
+// loaded and interpreted as .jsp files via the technique described below.  This allows JSTL
+// and other JSP tags to be used to internationalize the titles and validation error messages 
+// in XML DataSources.
+// <P>
+// For example, given the following DataSource located in /shared/ds/supplyItem.ds.xml:
+// <pre>
+// &lt;DataSource&gt;
+//     &lt;fields&gt;
+//         &lt;field name="itemName"&gt;
+//             &lt;title&gt;Item Name&lt;/title&gt;
+//             &lt;validators&gt;
+//                 &lt;Validator type="lengthRange" max="40"&gt;
+//                     &lt;errorMessage&gt;Must be 40 characters or less.&lt;/errorMessage&gt;
+//                 &lt;/Validator&gt;
+//             &lt;/validators&gt;
+//         &lt;/field&gt;
+//     &lt;/fields&gt;
+// &lt;/DataSource&gt;
+// </pre>
+// To localize the title and validator error string of the <code>itemName</code> field 
+// via standard JSTL tags, first add the following to your web.xml to allow DataSource files to
+// be interpreted as JSPs:
+// <pre>
+// &lt;jsp-config&gt;
+//     &lt;jsp-property-group&gt;
+//       &lt;url-pattern&gt;/shared/ds/*&lt;/url-pattern&gt;
+//     &lt;/jsp-property-group&gt;     
+// &lt;/jsp-config&gt;
+// </pre>
+// Next change the DataSource definition as follows:
+// <pre>
+// &lt;!--
+// &lt;%@ taglib prefix="fmt" uri="/WEB-INF/fmt.tld" %&gt;
+// --&gt;
+// &lt;DataSource xmlns:fmt="urn:jsptld:/WEB-INF/fmt.tld"&gt;
+//     &lt;fields&gt;
+//         &lt;field name="itemName"&gt;
+//             &lt;title&gt;&lt;fmt:message key="itemTitle"&gt;&lt;/title&gt;
+//             &lt;validators&gt;
+//                 &lt;Validator type="lengthRange" max="40"&gt;
+//                     &lt;errorMessage&gt;&lt;fmt:message key="itemLengthRangeValidator"/&gt;&lt;/errorMessage&gt;
+//                 &lt;/Validator&gt;
+//             &lt;/validators&gt;
+//         &lt;/field&gt;
+//     &lt;/fields&gt;
+// &lt;/DataSource&gt;
+// </pre>
+// Note that the XML comment around the taglib declaration is intentional.  It is there to make
+// sure the JSP parser sees the tag library declaration, while the file remains valid XML.
+// If you need to use multiple JSP tag libraries to achieve your goals, simply add additional
+// taglib declarations inside the XML comment and be sure to register the tag namespace in the
+// DataSource tag via <code>xmlns:tagName</code> as done above for the <code>fmt</code>
+// namespace. 
+// <var class="smartclient">
+// Instead of using the <code>&lt;isomorphic:loadDS&gt;</code> JSP tag to load this
+// DataSource, you would load it as follows in your JSP:
+// <pre>
+// &lt;SCRIPT&gt;
+// &lt;isomorphic:XML&gt;
+// &lt;jsp:include page="/shared/ds/supplyItem.ds.xml"&gt;&lt;/jsp:include&gt;
+// &lt;/isomorphic:XML&gt;
+// &lt;/SCRIPT&gt;
+// </pre> 
+// </var>
+// <var class="smartgwt">
+// Instead of using the <code>DataSourceLoader</code> servlet to load this DataSource, you
+// should create a JSP that uses SmartGWT Server's XML conversion tag to return Javascript
+// DataSource definitions to the browser (exactly like <code>DataSourceLoader</code> does):
+// Using this example as a base, just add a <code>jsp:include</code> line for each of your
+// DataSources that requires i18n support:
+// <pre>
+// &lt;%@ taglib uri="/WEB-INF/iscTaglib.xml" prefix="isomorphic" %&gt;
+// &lt;isomorphic:XML&gt;
+// &lt;jsp:include page="/shared/ds/supplyItem.ds.xml"&gt;&lt;/jsp:include&gt;
+// &lt;/isomorphic:XML&gt;
+// </pre>
+// You then refer to this JSP in a <code>&lt;script src=...&gt;</code> tag, in place of 
+// the <code>DataSourceLoader</code> reference:
+// <p><code>
+// &lt;script src=dataSourceLoader.jsp&gt;&lt;/script&gt;
+// </code><p>
+// </var>
+// This makes it possible to internationalize field titles as well as validation error messages
+// for built-in validators.  To internationalize custom server-side validation errors, simply
+// provide internationalized strings when calling <code>DSResponse.setErrorReport()</code> to
+// report validation errors (see the JavaDoc for that documentation).
+// @treeLocation Concepts
+// @title DataSource Localization
 // @visibility external
 //<
 
@@ -2994,8 +3028,8 @@ isc.DataSource.addClassMethods({
     //> @classAttr DataSource.offlineMessage  (string : "This data not available while offline" : IRW)
     // A message returned by a DataSource when it is returning an empty dataset for a fetch
     // because the browser is currently offline and there is no suitable cached offline response.
-    // @group i18nMessages
-    // @visibility offline
+    // @group i18nMessages, offlineGroup
+    // @visibility external
     //<
     offlineMessage: "This data not available while offline"
 
@@ -3567,7 +3601,8 @@ isc.DataSource.addProperties({
     // at a later time if we are offline (ie, the application cannot connect to the server).  
     // Note that by default we do NOT use offline storage for a dataSource.
     // @serverDS allowed
-    // @visibility offline
+    // @group offlineGroup
+    // @visibility external
     //<
 
 
@@ -8666,6 +8701,7 @@ isc.DataSource.addMethods({
     // @visibility xmlBinding
     // @example xmlServerValidationErrors
     //<
+    
     transformResponse : function (dsResponse, dsRequest, data) {
         return dsResponse;
     },
@@ -8794,7 +8830,9 @@ isc.DataSource.addMethods({
     // <P>
     // In contrast to +link{listGrid.fetchData()}, which creates a +link{ResultSet} to manage
     // the returned data, calling <code>dataSource.fetchData()</code> provides the returned
-    // data in the callback as a simple JavaScript Array of JavaScript Objects.  Calling
+    // data in the callback as a 
+    // <var class="smartclient">simple JavaScript Array of JavaScript Objects.</var>
+    // <var class="smartgwt">RecordList or simple Array of Record objects.</var>  Calling
     // <code>dataSource.fetchData()</code> does not automatically update any visual components or
     // caches: code in the callback passed to <code>fetchData()</code> decides what to do with
     // the returned data. 
@@ -8802,7 +8840,12 @@ isc.DataSource.addMethods({
     // For example, given a ListGrid "myGrid" and a DataSource "employees", the following code
     // would populate "myGrid" with data fetched from the DataSource:
     // <pre>
-    //    isc.DataSource.get("employees").fetchData(null, "myGrid.setData(data)");
+    //    <var class="smartclient">isc.DataSource.get("employees").fetchData(null, "myGrid.setData(data)");</var>
+    //    <var class="smartgwt">DataSource.get("employees").fetchData(null, new DSCallback() {
+    //        public void execute(DSResponse response, Object rawData, DSRequest request) {
+    //            myGrid.setData(response.getData());
+    //        }
+    //    });</var>
     // </pre>
     // Unlike calling <code>myGrid.fetchData()</code>, which creates a +link{ResultSet}, the
     // data provided to the grid is "disconnected" data, unmanaged by SmartClient's databinding
@@ -8815,6 +8858,7 @@ isc.DataSource.addMethods({
     // +link{formItem.optionDataSource,optionDataSource} property, the following code shows
     // storing a dataset to derive valueMaps from later:
     // <pre>
+    //    <var class="smartclient">
     //    isc.DataSource.get("countries").fetchData(null, "window.countries = data");
     //
     //    ... later, a form is created dynamically ...
@@ -8826,19 +8870,47 @@ isc.DataSource.addMethods({
     //                valueMap: window.countries.getValueMap("countryId", "countryName")
     //              },
     //       ...
+    //    </var>
+    //    <var class="smartgwt">
+    //    // Assumes "GlobalStore.countries" is a public member variable of type RecordList
+    //    DataSource.get("countries").fetchData(null,  new DSCallback() {
+    //        public void execute(DSResponse response, Object rawData, DSRequest request) {
+    //            GlobalStore.countries = response.getDataAsRecordList();
+    //        }
+    //    });
+    //
+    //    ... later, a form is created dynamically ...
+    //
+    //    public void showForm() {
+    //       DynamicForm myForm = new DynamicForm();
+    //       SelectItem myItem = new SelectItem("country", "Pick Country");
+    //       Map valueMap = GlobalStore.countries.getValueMap("countryId", "countryName");
+    //       myItem.setValueMap(new LinkedHashMap(valueMap));
+    //       ...
+    //    </var>
     // </pre>
     // <P>
     // You can also create a ResultSet from the data retrieved from <code>fetchData()</code>,
     // like so:
     // <pre>
+    //    <var class="smartclient">
     //    isc.DataSource.get("countries").fetchData(null,
     //        function (dsResponse, data) {
-    //           isc.ResultSet.create({
-    //              dataSource:"countries",
-    //              allRows:data
-    //           })
+    //            isc.ResultSet.create({
+    //                dataSource:"countries",
+    //                allRows:data
+    //            })
     //        }
     //    )
+    //    </var>
+    //    <var class="smartgwt">
+    //    DataSource.get("countries").fetchData(null, new DSCallback() {
+    //        public void execute(DSResponse response, Object rawData, DSRequest request) {
+    //            ResultSet rs = new ResultSet(DataSource.get("countries"));
+    //            rs.setAllRows(response.getData());
+    //        }
+    //    });
+    //    </var>
     // </pre>
     // <P>
     // This gives you a dataset that supports client-side filtering (via
@@ -8853,6 +8925,7 @@ isc.DataSource.addMethods({
     // be taken when using this approach.  Large datasets degrade the basic performance of some
     // browsers, so use +link{pickList.optionDataSource,optionDataSource} and similar
     // facilities to manage datasets that may become very large.
+    // <var class="smartclient">
     // <P>
     // <b>Data-Driven Visual Component Creation</b>
     // <P>
@@ -8874,6 +8947,7 @@ isc.DataSource.addMethods({
     // This capability to dynamically create visual components from dynamically fetched data
     // provides a foundation for creating interfaces that can be customized by end users.
     // See also +link{dataSource.inheritsFrom}.
+    // </var>
     //
     //	@param	[criteria]          (Criteria)	  search criteria
     //	@param	[callback]          (DSCallback)  callback to invoke on completion
@@ -9192,15 +9266,42 @@ isc.DataSource.addMethods({
     },
 
     //> @method dataSource.performCustomOperation()
-    // Perform a custom DataSource operation against this DataSource.  A custom operation is
-    // anything that is not one of the 4 CRUD operations - generally, something that is more 
-    // complex than a fetch or an update to a single record.  <code>customOperation</code>s 
-    // are an alternative to using +link{class:RPCRequest,RPCs}; anything that can be sent to
-    // the server as a plain RPC can instead be framed as a DataSource 
-    // <code>customOperation</code>.
+    // Invoke an operation declared with +link{operationBinding.operationType} "custom".
+    // <P>
+    // <b>This is a rarely used API.</b>  If the operation you are performing can be thought of
+    // as one of the standard "CRUD" +link{type:DSOperationType,operation types}, declare it
+    // with a CRUD operationType.  For example, if your operation updates a record, declare it
+    // with operationType "update" and invoke it via +link{updateData()} - this will cause
+    // +link{ResultSet,cache sync} to work correctly.
+    // <P>
+    // In particular:
+    // <ul>
+    // <li> do not use this API just because you need to add additional server-side logic to a
+    // CRUD operation (+link{DMI} allows this)
+    // <li> do not use this API to implement variants of core CRUD operations
+    // (+link{dsRequest.operationId} is the correct way to do this)
+    // <li> do not use this API just because an operation affects more than one record.  Most
+    // kinds of multi-record operations should use +link{RPCManager.startQueue(),queuing}.
+    // <li> do not use this API just because you are calling a stored procedure in SQL - if the
+    // stored procedure performs some kind of CRUD operation on the records of this DataSource,
+    // use a standard CRUD operationType
+    // </ul>
+    // <P>
+    // The primary purpose of this API is to allow operations on a SQLDataSource where
+    // +link{operationBinding.customSQL,customSQL} is defined which performs a SQL operation
+    // other than SELECT, UPDATE, INSERT, DELETE (such as creating a new table).  In this case,
+    // actions that the SQLDataSource normally takes for CRUD operations (such as requiring
+    // primary keys to be passed for updates, or retrieving the updated row to return to the
+    // client) are inappropriate.  By declaring +link{operationBinding.operationType} "custom"
+    // in your .ds.xml file, you cause these actions to be skipped and your &lt;customSQL&gt;
+    // can do arbitrary things.
+    // <P>
+    // The "data" parameter becomes +link{dsRequest.data}.  With the SmartClient Server
+    // Framework, the data is accessible server-side via DSRequest.getValues() and in Velocity
+    // templates (such as &lt;customSQL&gt;) as $values.
     //
     //  @param  operationId         (String)                 the operation ID
-    //	@param	data                (Record Properties)      data to pass to the server
+    //	@param	data                (Record Properties)      data to pass to the server.
     //	@param	[callback]          (DSCallback)  callback to invoke on completion
     //  @param  [requestProperties] (DSRequest Properties)   additional properties to set on
     //                                                       the DSRequest that will be issued
@@ -9560,7 +9661,8 @@ isc.DataSource.addMethods({
     // @param dsResponse (DSResponse) The corresponding dsResponse object returned from 
     //                                offline cache
     // @return (boolean) true to allow this response to be used, false to prevent it
-    // @visibility offline
+    // @group offlineGroup
+    // @visibility external
     //<
     
     
@@ -9788,15 +9890,15 @@ isc.DataSource.addMethods({
 // Timestamp (millisecond value) to indicate when this dsResponse was cached in 
 // +link{class:Offline,offline storage}.  Not applicable if the response has never been 
 // stored offline.
-// 
-// @visibility offline
+// @group offlineGroup
+// @visibility external
 //<
 
 //> @attr dsResponse.fromOfflineCache (boolean : null : R)
 // If set, indicates that this response came from the offline cache, not the server.  This 
 // flag is the only reliable way for application code to determine the source of a response.
-// 
-// @visibility offline
+// @group offlineGroup
+// @visibility external
 //<
 
 // --------------------------------------------------------------------------------------------
@@ -9805,6 +9907,9 @@ isc.DataSource.addMethods({
 // Request sent to the server to initiate a 
 // +link{group:dataSourceOperations,DataSource operation}.  All properties which are legal on
 // +link{class:RPCRequest} are legal, in addition to the properties listed here.
+// <P>
+// 
+// 
 //
 // @inheritsFrom RPCRequest 
 // @treeLocation Client Reference/Data Binding
@@ -10013,8 +10118,8 @@ isc.DataSource.addMethods({
 // <P>
 // For example, by setting the <code>fetchOperation</code> on a particular ListGrid, you could
 // cause it to invoke a different server method via DMI, different
-// +link{operationBinding.dataURL,dataURL} or different +link{operationBinding.wsOperation,web service
-// operation}.
+// +link{operationBinding.dataURL,dataURL} or different 
+// +link{operationBinding.wsOperation,web service operation}.
 // <P>
 // The <code>operationId</code> can also be directly received by the server in order to affect
 // behavior.  When using the SmartClient Server, <code>operationId</code> can be accessed via
@@ -10024,11 +10129,42 @@ isc.DataSource.addMethods({
 // <P>
 // Note that if you +link{dataSource.fetchData,manually invoke} a DataSource operation, you can
 // also specify operationId via the <code>requestProperties</code> parameter.
+// <P>
+// Note that the <code>operationId</code> has special signficance in terms of whether two
+// DSRequests are considered equivalent for caching and synchronization purposes - see
+// +link{group:dsRequestEquivalence}.
 //
 // @group operations
 // @visibility external
 //<
 
+
+//> @groupDef dsRequestEquivalence
+// Various subsystems have a need to compare DataSource requests and understand if
+// they are equivalent or affect the same data (examples include 
+// +link{ResultSet,automatic cache synchronization} and 
+// +link{DataSource.useOfflineCache,offline caching and synchronization}).  
+// <P>
+// Aside from basic properties that would clearly make two DSRequests non-equivalent
+// (dataSource, operationType and data, as well as sortBy, startRow, endRow and textMatchStyle
+// for a "fetch"), +link{dsRequest.operationId} is the only property that will cause two
+// DSRequests to be considered distinct (non-equivalent) requests. 
+// <P>
+// Bearing this in mind, the best practice is:
+// <ul>
+// <li> everything that will be treated as criteria or as values on the server side should be
+// part of +link{dsRequest.data}.  Do not "smuggle" data that will ultimately be used as
+// criteria or values in other dsRequest properties, such as 
+// +link{rpcRequest.params,HTTP parameters}.
+// <li> use +link{dsRequest.operationId} as the sole piece of information in the request that
+// modifies how the request as a whole is executed.  If two or more pieces of information are
+// required, combine or encode them into a single operationId String.  If this becomes awkward
+// because there are many operation variants, consider including additional fields in
+// +link{dsRequest.data} instead.
+// </ul>
+//
+// @visibility external
+//<
 
 //> @attr dsRequest.requestId (String : varies : RA)
 // Automatically generated unique ID for this request. This ID will be required by developers 

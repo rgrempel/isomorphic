@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1890,6 +1890,7 @@ isc.ValuesManager.registerStringMethods ({
     //                      &nbsp;&nbsp;<code>{fieldName:errors}</code><br>
     //                      Where the 'errors' object is either a single string or an array
     //                      of strings containing the error messages for the field.
+    // @return (boolean) false from this method to suppress that behavior
     // @visibility external
     //<
     handleHiddenValidationErrors:"errors",

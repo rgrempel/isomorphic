@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -149,7 +149,7 @@ return this.Super("handleKeyPress",arguments)}
 ,isc.A.hide=function isc_Window_hide(_1,_2,_3,_4){if(this.$7k)isc.Animation.finishAnimation(this.$7k);this.invokeSuper(isc.Window,"hide",_1,_2,_3,_4);if(this.isDrawn()&&this.isModal){if(this.modalTarget){this.modalTarget.hideComponentMask();this.ignoreModalTarget()}else{this.hideClickMask();this.hideModalMask()}}}
 ,isc.A.clear=function isc_Window_clear(_1,_2,_3,_4){if(this.$7k)isc.Animation.finishAnimation(this.$7k);this.invokeSuper(isc.Window,"clear",_1,_2,_3,_4);if(!this.clearingWithModalTarget&&this.isVisible()&&this.isModal){if(this.modalTarget){this.ignoreModalTarget();this.modalTarget.hideComponentMask()}else{this.hideClickMask();this.hideModalMask()}}}
 ,isc.A.parentResized=function isc_Window_parentResized(){this.Super("parentResized",arguments);if(this.autoCenter)this.centerInPage()}
-,isc.A.moved=function isc_Window_moved(){if(this.isDrawn()&&!this.$7j)this.autoCenter=false}
+,isc.A.moved=function isc_Window_moved(){this.Super("moved",arguments);if(this.isDrawn()&&!this.$7j)this.autoCenter=false}
 ,isc.A.centerInPage=function isc_Window_centerInPage(){var _1=this.getVisibleWidth(),_2=this.getVisibleHeight(),_3=this.parentElement?this.parentElement:isc.Page,_4=((_3.getWidth()-_1)/2)+_3.getScrollLeft(),_5=((_3.getHeight()-_2)/2)+_3.getScrollTop();_4=Math.round(_4);_5=Math.max(Math.round(_5),0);this.$7j=true;this.moveTo(_4,_5);this.$7j=null}
 ,isc.A.flash=function isc_Window_flash(_1){var _2=this.showHeader;if(_1==null){if(this.$7l)return false;this.$7l=true;_1=0;if(_2){this.$7m=this.header.getStateName();if(this.headerBackground){this.$7n=this.headerBackground.getStateName();this.$7o=this.headerBackground.src}}else{this.$7p=this.body.backgroundColor}}
 if(_2){var _3=(_1%2==0?this.hiliteHeaderStyle:this.$7m),_4=(_1%2==0?this.hiliteHeaderSrc:this.$7o),_5=(_1%2==0?this.hiliteHeaderStyle:this.$7n);this.header.setStyleName(_3)
@@ -471,7 +471,7 @@ if(this.convertToMethod("keyPress"))return this.keyPress(_1,_2)}
 );isc.B._maxIndex=isc.C+1;isc.TabSet.registerDupProperties("tabs",["pane"]);isc._moduleEnd=isc._Containers_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Containers module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Containers'.");}
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *

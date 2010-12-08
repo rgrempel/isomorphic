@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1141,7 +1141,7 @@ getLoadingMessage : function () {
 // the component has no data because the browser is offline, we instead display the 
 // +link{dataBoundComponent.offlineMessage} or "&amp;nbsp;" if showOfflineMessage is false
 // @return	(string)	HTML output
-// @visibility offline
+// @visibility external
 //<
 emptyMessageHTML : function () {
     

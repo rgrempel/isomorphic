@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1707,6 +1707,23 @@ getEventTitle : function (event) {
     return event[this.nameField];    
 },
 
+// Date / time formatting customization / localization
+
+
+//> @attr calendar.dateFormatter (DateDisplayFormat : null : [IRW])
+// Date formatter for displaying events.
+// Default is to use the system-wide default short date format, configured via
+// +link{Date.setShortDisplayFormat()}.  Specify any valid +link{type:DateDisplayFormat}.
+// @visibility external
+//<
+dateFormatter:null,
+
+//>	@attr calendar.timeFormatter (timeFormatter : "toShortPaddedTime" : [IRW])
+// Display format to use for the time portion of events' date information.
+// @visibility external
+//<
+timeFormatter:"toShortPaddedTime",
+
 //>	@method	calendar.getEventHoverHTML()
 // gets the hover html for an event being hovered over. Override here to return custom 
 // html based upon the parameter event object.
@@ -1718,23 +1735,17 @@ getEventTitle : function (event) {
 //<
 getEventHoverHTML : function (event, eventWindow) {
     var cal = this;
-    // start time
-    var sHrs = event[cal.startDateField].getHours();
-    var sMins = event[cal.startDateField].getMinutes();
-    var sTime = cal._to12HrNotation(sHrs) + (sMins < 10 ? ":0" + sMins : ":" + sMins)
-        + (sHrs > 11 ? "PM" : "AM");  
     
-    // end time
-    var eHrs = event[cal.endDateField].getHours();
-    var eMins = event[cal.endDateField].getMinutes();
-    var eTime = cal._to12HrNotation(eHrs) + (eMins < 10 ? ":0" + eMins : ":" + eMins)
-        + (eHrs > 11 ? "PM" : "AM");
-        
-    return event[cal.startDateField].toShortDate() + " "
-        + sTime + " - " + eTime
+     // format date & times
+    var sDate = event[cal.startDateField].toShortDate(this.dateFormatter);
+    var sTime = isc.Time.toTime(event[cal.startDateField], this.timeFormatter);
+    var eTime = isc.Time.toTime(event[cal.endDateField], this.timeFormatter);
+
+    return sDate + "&nbsp;" + sTime + "&nbsp;-&nbsp;" + eTime
         + "</br></br>"
         + event[cal.nameField] + "</br></br>" 
         + event[cal.descriptionField];       
+
 },
 
 // trickiest case. 3 separate cases to handle:
@@ -2275,6 +2286,8 @@ getNewCriteria : function () {
     return criteria;
 },
 
+_usDateRegex:/^\d{4}.\d\d?.\d\d?$/,
+_jpDateRegex:/^\d\d?.\d\d.\d{4}?$/,
 _setWeekTitles : function () {
     if (!this.weekView) return;
     var nDate = this.chosenWeekStart.duplicate();      
@@ -2286,7 +2299,17 @@ _setWeekTitles : function () {
         // for hidden columns, getFieldNum will return -1. without this check, a logWarn is
         // produced when weekends are hidden
         if (this.weekView.getFieldNum("day" + i) >= 0) {
-            var ntitle = sdNames[nDate.getDay()] + " " + (nDate.getMonth() + 1) + "/" + nDate.getDate();
+            // We want a format like "Mon 28/11" or "Mon 11/28" depending on whether the
+            // dateFormatter specified is Euro / US / Japanese.
+            // We don't currently have anything built into Date for this so get the shortDate
+            // and lop off the year + separator.
+            var dateStr = nDate.toShortDate(this.dateFormatter);
+            
+            if (dateStr.match(this._usDateRegex) != null) dateStr = dateStr.substring(5);
+            else if (dateStr.match(this._jpDateRegex)) dateStr = dateStr.substring(0,dateStr.length-5)
+
+            var ntitle = sdNames[nDate.getDay()] + " " + dateStr;
+            //(nDate.getMonth() + 1) + "/" + nDate.getDate();
             // _dayNum is used in colDisabled()
             // _dateNum, monthNum, yearNum are used in headerClick
             var fieldProps = {
@@ -3195,15 +3218,9 @@ _showEventEditor : function (event) {
 _getEventDialogTitle : function (startDate, endDate) {
     var dayNames = Date.getShortDayNames();
     var monthNames = Date.getShortMonthNames();
-   
-    var sHrs = startDate.getHours(), eHrs = endDate.getHours(), 
-        sMins = startDate.getMinutes(), eMins = endDate.getMinutes(), sStr, eStr;
-    sStr = this._to12HrNotation(sHrs) + (sMins < 10 ? ":0" + sMins : ":" + sMins);
-    eStr = this._to12HrNotation(eHrs) + (eMins < 10 ? ":0" + eMins : ":" + eMins)
-        + (eHrs > 11 ? "pm" : "am");
-    if (!((sHrs < 12 && eHrs < 12) || (sHrs > 11 && eHrs > 11))) sStr += (sHrs > 11 ? "pm" : "am");
-    
-    var timeStr = sStr + " - " + eStr;
+    var sTime = isc.Time.toTime(startDate, this.timeFormatter),
+        eTime = isc.Time.toTime(endDate, this.timeFormatter);
+    var timeStr = sTime + " - " + eTime;
     return dayNames[startDate.getDay()] + ", " + monthNames[startDate.getMonth()]
         + " " + startDate.getDate() + ", " + timeStr ;
 }, 
@@ -3316,8 +3333,7 @@ getDayBodyHTML : function (date, events, calendar, rowNum, colNum) {
         rHeight = this.monthView.getRowHeight(record, 1);
     var retVal = "";
     for (var i = 0; i < evtArr.length; i++) {
-        var eTime = evtArr[i][this.startDateField].getHours();
-        eTime = this._to12HrNotation(eTime) + (eTime > 11 ? "P " : " ");
+        var eTime = isc.Time.toTime(evtArr[i][this.startDateField], this.timeFormatter) + " ";
         if (this.canEditEvent(evtArr[i])) {
             // when clicked, call the the editEvent method of this calendar, passing the
             // row, column, and position of the event in this cell's event array
@@ -3626,7 +3642,7 @@ isc.DaySchedule.addProperties({
     showHeaderContextMenu: false,
     showAllRecords: true,
     fixedRecordHeights: true,
-    labelColumnWidth: 40,
+    labelColumnWidth: 60,
     labelColumnAlign: "right",
     showLabelColumn: true,
     labelColumnPosition: "left",
@@ -3646,11 +3662,10 @@ isc.DaySchedule.addProperties({
             title: " ",
             cellAlign: "right",
             formatCellValue : function (value, record, rowNum, colNum, grid) {
-                var ampm = (rowNum > 23 ? " PM" : " AM"); 
                 if (rowNum % 2 == 0) {
-                    if (rowNum == 0 || rowNum == 48) return "12 " + ampm;
-                    else if (rowNum > 24) return ((rowNum / 2) - 12) + ampm; 
-                    else return (rowNum / 2) + ampm;
+                    var hour = (rowNum /2);
+                    var date = isc.Time.parseInput(hour);
+                    return isc.Time.toTime(date, grid.creator.timeFormatter);
                 }
                 else {
                     return "";
@@ -4387,9 +4402,8 @@ isc.MonthSchedule.addProperties({
             var evtArr = record["event" + fieldIndex];
             var retVal = "";
             for (var i = 0; i < evtArr.length; i++) {
-                var eTime = evtArr[i][this.creator.startDateField].getHours();
-                eTime = this.creator._to12HrNotation(eTime) + (eTime > 11 ? "P " : " "); 
-                retVal += eTime + evtArr[i][this.creator.nameField] + "<br/>";
+                var eTime = isc.Time.toTime(evtArr[i][this.creator.startDateField], this.creator.timeFormatter);
+                retVal += eTime + " " + evtArr[i][this.creator.nameField] + "<br/>";
             }
           
             return retVal;
@@ -4617,10 +4631,9 @@ isc.EventWindow.addProperties({
         if (isc.isA.Number(eTop) && isc.isA.Number(eLeft)) {
             this.moveTo(Math.round(eLeft), Math.round(eTop));
         }
-        var sHrs = event[cal.startDateField].getHours();
-        var sMins = event[cal.startDateField].getMinutes();
-        var eTitle = cal._to12HrNotation(sHrs) + (sMins < 10 ? ":0" + sMins : ":" + sMins)
-                + (sHrs > 11 ? "PM" : "AM") + " " + event[cal.nameField];  
+        
+        var sTime = isc.Time.toTime(event[cal.startDateField], this.calendar.timeFormatter);
+        var eTitle = sTime + " " + event[cal.nameField];
 
         this.setTitle(eTitle);
         this.bringToFront();

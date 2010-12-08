@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -4754,7 +4754,7 @@ isc.EditTree.addMethods({
     // @visibility devTools
     //<
     addNode : function (newNode, parentNode, index, parentProperty, skipParentComponentAdd) {
-        return this.addComponent(newNode, parentNode, index, parentProperty);
+        return this.addComponent(newNode, parentNode, index, parentProperty, skipParentComponentAdd);
     },
     addComponent : function (newNode, parentNode, index, parentProperty, skipParentComponentAdd) {
 

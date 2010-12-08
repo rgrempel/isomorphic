@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1069,8 +1069,8 @@ errorCodes : {
     // response for the request.  
     // 
     // @see class:RPCRequest
-    // @group statusCodes
-    // @visibility offline
+    // @group statusCodes, offlineGroup
+    // @visibility external
     //<
     STATUS_OFFLINE: 1,
 

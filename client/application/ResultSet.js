@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1729,7 +1729,7 @@ sortByProperty : function (property, sortDirection, normalizer, context) {
     // same opDS as this data model's DS, sort by the displayField
     if (context) {
         field = context.getField(property);
-        if (field && field.displayField) {
+        if (field && field.displayField && field.sortByDisplayField != false) {
             var opDs;
             if (field.optionDataSource) {
                 opDs = isc.DataSource.getDataSource(field.optionDataSource);
@@ -1913,7 +1913,7 @@ setSort : function (sortSpecifiers, init) {
         if (item.context) {
             field = item.context.getField(item.property) || 
                         this.getDataSource().getField(item.property);
-            if (field && field.displayField) {
+            if (field && field.displayField && field.sortByDisplayField != false) {
                 var opDs;
                 if (field.optionDataSource) {
                     opDs = isc.DataSource.getDataSource(field.optionDataSource);

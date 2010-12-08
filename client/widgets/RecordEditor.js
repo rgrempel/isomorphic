@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -142,6 +142,10 @@ isc.RecordEditor.addMethods({
             // Pick up field ID and fields from the source widget.
             this.fieldIDProperty = this.sourceWidget.fieldIDProperty;
             this.fields = this.sourceWidget.completeFields.duplicate();
+            
+            // always size our row to fit inside ourselves
+            this.cellHeight = this.getInnerHeight();
+            
         } else {
             this.logWarn("RecordEditor initialized without a sourceWidget property. " +
                          "This widget is not supported as a standalone component.");
@@ -564,6 +568,7 @@ isc.RecordEditor.addMethods({
         if (editField.showPickerIcon != null && filterEditorProps.showPickerIcon === undef) {
             delete item.showPickerIcon;
         }
+        
         return item;
         
     },
