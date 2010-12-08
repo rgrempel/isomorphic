@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -366,12 +366,26 @@ emptyCellValue:"&nbsp;",
 // @visibility external
 //<
 
+//>	@attr	gridRenderer.showOfflineMessage		(boolean : true : [IRW])
+// Indicates whether the text of the offlineMessage property should be displayed if no data
+// is available because we are offline and there is no suitable cached response
+//      @visibility external
+//      @group  emptyMessage, offlineGroup, i18nMessages
+//      @see	offlineMessage
+//<
+
+//>	@attr	gridRenderer.offlineMessageStyle  (CSSStyleName : null : IRW)
+// The CSS style name applied to the offlineMessage string if displayed.
+// @group emptyMessage, offlineGroup, i18nMessages
+// @visibility external
+//<
+
 //>	@attr	gridRenderer.offlineMessage		(string : null : IRW)
 // The string to display in the body of a listGrid with an empty data array, if
 // showOfflineMessage is true and the data array is empty because we are offline and there
-// is no suitable offline cache
-// @group emptyMessage, i18nMessages
-// @visibility offline
+// is no suitable cached responsed
+// @group offlineGroup, emptyMessage, i18nMessages
+// @visibility external
 //      @see	showOfflineMessage
 //      @see    offlineMessageStyle
 //<
@@ -435,6 +449,7 @@ setFastCellUpdates : function (fcu) {
 // --------------------------------------------------------------------------------------------
 overflow:"auto",
 
+
 _avoidRedrawFlash:true,
 
 canFocus:true
@@ -495,7 +510,7 @@ initWidget : function () {
     if (!this.fixedRowHeights && !this.showAllRows) {
         
         
-        this._avoidRedrawFlash = true;
+        //this._avoidRedrawFlash = true;
 
         if (this.showCustomScrollbars == false) {
             this.logInfo("Variable height records cannot be used with native scrollbars;" + 
@@ -543,7 +558,8 @@ getEmptyMessageHTML : function (startCol,endCol,offline) {
         return "<TABLE cellspacing=0 style='width:100%' class='" + this.emptyMessageTableStyle +
                 "'>" +
                 this.grid.getPrintHeaders(startCol, endCol) +
-                "<TR><TD  ALIGN=CENTER VALIGN=TOP class='" + this.emptyMessageStyle +
+                "<TR><TD  ALIGN=CENTER VALIGN=TOP class='" + 
+                (offline ? this.offlineMessageStyle : this.emptyMessageStyle)
                 "' colspan='" + ((endCol-startCol)+1) + "'>" +
                 (offline ? this.getOfflineMessage() : this.getEmptyMessage())
                 + "</TD></TR></TABLE>";
@@ -572,7 +588,8 @@ getEmptyMessageHTML : function (startCol,endCol,offline) {
                 
                 (isc.Browser.isSafari ? "height" + this.getInnerHeight() + ":px;'" 
                                       : "' HEIGHT=100%"),
-            "><TR><TD ALIGN=CENTER VALIGN=TOP CLASS='",this.emptyMessageStyle, 
+            "><TR><TD ALIGN=CENTER VALIGN=TOP CLASS='",
+            (offline ? this.offlineMessageStyle : this.emptyMessageStyle),
             "' style='padding-left:0px;padding-right:0px;'>",
             // NOTE: empty message can't be too tall, or it will introduce vscrolling in
             // shorter grids
@@ -2965,7 +2982,7 @@ updateHeightForEmbeddedComponents : function (record, rowNum, height) {
     if (record && record._embeddedComponents) {
         var details = this._getExtraEmbeddedComponentHeight(record, rowNum);
         if (details.allWithin && details.extraHeight > 0) {
-            height = details.extraHeight;
+            height = Math.max(height, details.extraHeight);
             //this.logWarn("in updateHeightForEmbeddedComponents ("+this.grid+"): details are "+isc.echoAll(details)+"\nheight is "+height);
         } else {
             height += details.extraHeight;

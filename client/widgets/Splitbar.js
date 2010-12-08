@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -228,13 +228,17 @@ isc._SplitbarMethods = {
         if (target.visibility == 'hidden') {
             if (isc.isA.Layout(target.parentElement)) target.parentElement.showMember(target); 
             else target.show();
-
-            this.canDrag = true;
+            
+            if (this._originalCanDrag != null) {
+                this.canDrag = this._originalCanDrag;
+                this._originalCanDrag = null;
+            }
         } else {
             if (isc.isA.Layout(target.parentElement)) target.parentElement.hideMember(target); 
             else target.hide();
 
             // disallow dragging while target is hidden
+            this._originalCanDrag = this.canDrag;
             this.canDrag = false;
         }
         // HACK: fixes problem where the bar can remain stuck in "over" state until the next

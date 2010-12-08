@@ -165,6 +165,37 @@ isc.ExampleTree.create({
                         title:"Printing"
                     },
                     {
+                        descriptionHeight:"150",
+                        id:"offlineSupport",
+                        jsURL:"offline/offlineSupport.js",
+                        title:"Offline support",
+                        tabs:[
+                            {
+                                dataSource:"supplyItem",
+                                name:"supplyItem"
+                            },
+                            {
+                                dataSource:"supplyCategory",
+                                name:"supplyCategory"
+                            }
+                        ],
+                        description:"\n        SmartClient has support for caching server responses in browser storage, allowing\n        these cached responses to be returned to an application at some future point when \n        the application is offline.  Offline support is automatic once enabled - if the user\n        switches the application or browser into offline mode, or the browser detects that it\n        is offline, the framework automatically and transparently starts returning cached \n        responses whenever it can (application code can determine that responses have come \n        from offline cache if necessary)<p>\n        Use the tree to navigate categories; double-click a category to load the grid with\n        matching items.  Now reload the page and click \"Go offline\" (or switch your\n        browser into offline mode).  If you double-click a category that you selected before\n        the reload, you will see that the grid is still populated from the Offline cache; if \n        you double-click a category you did not previously select, or attempt to open a node\n        in the tree that you did not previously open, you will get the \"Data not available\n        while offline\" message.\n        "
+                    },
+                    {
+                        descriptionHeight:"150",
+                        id:"offlinePrefs",
+                        jsURL:"offline/offlinePrefs.js",
+                        title:"Offline preferences",
+                        tabs:[
+                            {
+                                canEdit:"false",
+                                title:"countryDS",
+                                url:"grids/ds/countrySQLDS.ds.xml"
+                            }
+                        ],
+                        description:"\n        SmartClient provides a unified Offline browser storage API that your programs can use \n        for any client-side persistence task.  In this example, we store the ListGrid's \n        viewState to browser-local storage. Try resizing or reordering some columns in the\n        grid, click \"Persist State\", then press F5 to reload, or close and re-open the browser;\n        your changes have been remembered.  Try adding a formula field to the grid and reload \n        again. Persisting a user's preferences like this is a compelling addition to any application, \n        and in this case we don't even need a server.<p>\n        Offline support is provided in modern HTML5 browsers, and also in older versions of \n        Internet Explorer (6 and greater); the underlying technologies used are very different,\n        but the SmartClient API you use is the same regardless of browser.\n        "
+                    },
+                    {
                         icon:"[ISO_DOCS_SKIN]/images/silkicons/database_table.png",
                         ref:"patternReuse",
                         title:"Pattern Reuse"
@@ -4808,6 +4839,13 @@ isc.ExampleTree.create({
                             }
                         ],
                         description:"\n         Dates displayed in the <b>\"Hire Date\"</b> field in this example are formatted\n        using a custom formatting function. Click on a record to edit it in the\n        Form, or double click to edit inline in the ListGrid.\n        "
+                    },
+                    {
+                        dataSource:"supplyItemCurrency",
+                        id:"customDataType",
+                        jsURL:"extending/customDataType.js",
+                        title:"Custom Data Type",
+                        description:"\n         This example demonstrates using a custom SimpleType to provide standard\n        type based validation, formatting and parsing logic across components. The \"unitCost\"\n        field is of type <code>\"currency\"</code> which is explicitly defined in the source\n        as a SimpleType inheriting from float. Both the (editable) ListGrid and the DynamicForm\n        respect the settings defined in this type definition.\n        "
                     },
                     {
                         dataSource:"supplyItem",

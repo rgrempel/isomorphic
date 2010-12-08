@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -927,9 +927,11 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         var grid = this.grid,
             firstRecord = grid.getRecord(newDrawArea[0]),
             lastRecord = grid.getRecord(newDrawArea[1]),
-            dataPresent = (firstRecord != Array.LOADING) && (lastRecord != Array.LOADING);
+            dataPresent = (firstRecord && firstRecord != Array.LOADING) 
+                && (lastRecord && lastRecord != Array.LOADING);
         ;
-        if (dataPresent && !drawArea.equals(newDrawArea)) {
+        if (dataPresent && !drawArea.equals(newDrawArea)) 
+        {
             // the old and new drawAreas differ and the extents of the new data are present - 
             // fire the notification method and update the stored _oldDrawArea
             
@@ -1148,6 +1150,7 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
                 // forces a native scroll which can interfere with user scrolling.
                 // Note: partially out of viewport actually could be ok for text items
                 // where focus will only cause a scroll if the actual text is offscreen.
+                
                 outOfViewport = rect[0] < scrollLeft ||
                                 rect[1] < scrollTop ||
                                 rect[0] + rect[2] > (scrollLeft + viewportWidth) ||
@@ -4950,6 +4953,15 @@ isc.ListGrid.addProperties( {
 	// @group display_values
 	// @visibility external
 	//<
+	
+    //> @attr listGridField.sortByDisplayField (boolean : null : [IRW])
+    // For a field with <code>displayField</code> configured, should client-side sorting
+    // be performed on the display field value? Unless explicitly set to <code>false</code>
+    // the display field value is used.
+    //
+    // @group display_values
+    // @visibility external
+    //<
 	
 	//> @attr listGridField.optionCriteria (Criteria : null : [IRW])
 	// If +link{optionDataSource} is set for this ListGridField, criteria specified in this
@@ -9624,8 +9636,8 @@ setData : function (newData) {
     // if data doesn't support setSort (resultSet and Array do), disable multiSort
     if (!this.data.setSort) 
         this.canMultiSort = false;
-    else if (this.dataSource && this.canMultiSort != false) 
-        this.canMultiSort = this.dataSource.canMultiSort;
+    else if (this.getDataSource() && this.canMultiSort != false) 
+        this.canMultiSort = this.getDataSource().canMultiSort;
     
     var sortSpecifiers = this.getSort();
     if (sortSpecifiers) this.setSort(sortSpecifiers);
@@ -12265,11 +12277,13 @@ setDataSource : function (dataSource, fields) {
     
     this.discardAllEdits();
     // if ds.canMultiSort is specified, set this on the grid also
-    if (!this.data.setSort) 
+    if (!this.data.setSort) {
         this.canMultiSort = false;
-    else if (this.canMultiSort != false) 
+    } else if (this.canMultiSort != false) {
+        dataSource = this.getDataSource();
         this.canMultiSort = (dataSource && dataSource.canMultiSort != null ? 
             dataSource.canMultiSort : true);
+    }
 },
 
 
@@ -14455,6 +14469,12 @@ _drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, bod
         return;
     }
     
+    // draw() fires this method before calculating _fieldWidths, in which case we can't
+    // yet size/position our embedded components. This can occur when we rebuildForFreeze.
+    // Catch this case and return.
+    if (body._fieldWidths == null || 
+        (body._fieldWidths.length == 0 && body.fields.length > 0)) return;
+    
     this._updatingEmbeddedComponents = true;
 
     if (this.logIsInfoEnabled("recordComponentPool")) {
@@ -14818,7 +14838,7 @@ getRecordComponentRowHeight : function () {
     if (this.recordComponentHeight == null) return null;
     var pos = this.getRecordComponentPosition();
     if (pos == this._$expand) return this.cellHeight + this.recordComponentHeight;
-    else return this.recordComponentHeight;
+    else return Math.max(this.recordComponentHeight, this.cellHeight);
 },
 
 // ListGridField.optionDataSource handling
@@ -30553,13 +30573,13 @@ chartData : function (labelField, dataFields, dataRows, properties, labelFieldFi
     return this.createAutoChild("chart", props, this.chartConstructor); 
 },
 
-//> @attr listGrid.chartConstructor (Classname : "FusionChart" : IR)
+//> @attr listGrid.chartConstructor (Classname : "FacetChart" : IR)
 // Name of the SmartClient Class to be used when creating charts.  Must support the
 // +link{Chart} interface.
 //
 // @visibility external
 //<
-chartConstructor: "FusionChart",
+chartConstructor: "FacetChart",
 
 
 //> @attr listGrid.chartType (ChartType : "Column" : IRW)
@@ -30938,7 +30958,14 @@ groupBy : function (groupFieldName) {
     if (isc.isAn.Array(groupFieldName)) {
         fields = groupFieldName;
     } else {
-        fields = arguments;
+        for (var i = 0; i < arguments.length; i++) {
+            fields[i] = arguments[i];
+        }
+    }
+   
+    // fire handleGroupBy notification, and allow grouping to be cancelled if defined.
+    if (this.handleGroupBy != null && this.handleGroupBy(fields) == false) {
+        return;
     }
 
 	// if arguments are null, return to original grouping
@@ -31816,7 +31843,18 @@ isc.ListGrid.registerStringMethods({
     // @return (boolean) returning false will suppress the filter from occurring
     // @visibility external
     //<
-    filterEditorSubmit:"criteria"
+    filterEditorSubmit:"criteria",
+    
+    //> @method listGrid.handleGroupBy()
+    // Callback fired when the listGrid is grouped or ungrouped.
+    // <var class="SmartClient">Return false to cancel grouping</var>
+    // <var class="SmartGwt">This event may be cancelled</var>
+    // @param fields (Array of String) ListGrid field names by which the grid is being grouped.
+    //   If the user is ungrouping the grid, this param will be an empty array.
+    // @return (boolean) return false to cancel groupBy change.
+    // @visibility external
+    //<
+    handleGroupBy:"fields"
 
 });
 

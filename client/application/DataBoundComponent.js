@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -471,8 +471,8 @@ duplicateDragMessage: "Duplicates not allowed",
 //>	@attr	dataBoundComponent.showOfflineMessage		(boolean : true : [IRW])
 // Indicates whether the text of the offlineMessage property should be displayed if no data is
 // available because we do not have a suitable offline cache
-// @visibility offline
-// @group i18n
+// @visibility external
+// @group i18n, offlineGroup
 // @see offlineMessage
 //<
 showOfflineMessage:true,
@@ -482,9 +482,9 @@ showOfflineMessage:true,
 // Message to display when this DataBoundComponent attempts to load data that is not available
 // because the browser is currently offline.  Depending on the component, the message is either
 // displayed in the component's body, or in a pop-up warning dialog.
-// @example offline
-// @group i18nMessages
-// @visibility offline
+// @example offlineSupport
+// @group i18nMessages, offlineGroup
+// @visibility external
 //<
 offlineMessage:"This data not available while offline",
 
@@ -492,8 +492,8 @@ offlineMessage:"This data not available while offline",
 // Message to display when this DataBoundComponent attempts to save data while the application
 // is offline.
 // @example offline
-// @group i18nMessages
-// @visibility offline
+// @group i18nMessages, offlineGroup
+// @visibility external
 //<
 offlineSaveMessage:"Data cannot be saved because you are not online",
 
@@ -6534,7 +6534,8 @@ setFieldCanEdit : function (fieldName, canEdit) {
 // necessarily mean that the component has no data; it may have data that was supplied from
 // the +link{class:Offline,offline cache}.
 // @return (boolean) Offline if true
-// @visibility offline
+// @group offlineGroup
+// @visibility external
 //<
 isOffline : function () {
     if (this.data && this.data._offline) return true;

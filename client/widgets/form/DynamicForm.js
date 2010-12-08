@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1627,8 +1627,10 @@ _addItems : function (newItems, position, fromSetItems, firstInit) {
     else this.items.addListAt(newItems, position);
     
     
-    if (!firstInit) this.setItemValues(null, false, true, newItems);
-
+    if (!firstInit) {
+        this.setItemValues(this.getValues(), false, true, newItems);
+    }
+    
     // enable multipart encoding if upload fields are included
     // NOTE: imperfect: we aren't detecting all the ways you can include an UploadItem, eg
     // editorType:"UploadItem" isn't caught, neither would any subclasses be.
@@ -2540,11 +2542,16 @@ valuesHaveChanged : function (returnChangedVals) {
         changedVals = {};
 
     if (!isc.isAn.Object(oldValues)) oldValues = {};
-    
+
+    var refPropName = "__ref";
+
     for (var prop in values) {
         // ignore functions
         if (isc.isA.Function(values[prop])) continue;
+
         
+        if (prop == refPropName) continue;
+
         // Use compareValues to compare old and new values
         // This will catch cases such as Dates where an '==' comparison is
         // not sufficient.
@@ -3520,7 +3527,7 @@ setFieldErrors : function (fieldName, errors, showErrors) {
 // @group errors
 // @visibility external
 //<
-clearFieldErrors : function (fieldName, show) {
+clearFieldErrors : function (fieldName, show, suppressAutoFocus) {
     if (this.errors == null) return;
     if (!this.errors[fieldName]) return;
     
@@ -3903,12 +3910,6 @@ setItemValues : function (values, onRedraw, initTime, items) {
                 item.saveValue(item._value, true);
             }
         } else {
-            
-            
-//            this.logWarn("setValues() setting item:" + item + 
-//               (setToCriterion == null ? " to value:" + this.echo(value)
-//                                       : " to criterion:" + this.echo(setToCriterion)),
-//                                                              "formValues");        
             
             if (setToCriterion != null) {
                 item.setCriterion(setToCriterion);
@@ -4685,7 +4686,8 @@ _outerTitleCellTemplate:[
     , // 9: possible rowspan
       // NOTE: based on the titleOrientation, this may want to output colSpan OR rowSpan based
       // on the original item size. For now we just respect rowspan
-    ">" // 10
+    , // 10: possible colspan
+    ">" // 11
 ],
 
 _titleClipDivTemplate:[
@@ -4725,6 +4727,8 @@ getTitleCellHTML : function (item, error) {
 
     if (item.getRowSpan() > 1) cellTemplate[9] = " ROWSPAN=" + item.getRowSpan();
     else cellTemplate[9] = null;
+    if (item.getTitleColSpan() > 1) cellTemplate[10] = " COLSPAN=" + item.getTitleColSpan();
+    else cellTemplate[10] = null;
     
     
     
@@ -5627,7 +5631,7 @@ getValidatedValues : function () {
 // Not public - if this method is being called by the user, always re-calculate which fields are
 // visible /hidden. This is cleaner than tracking the hidden errors in a separate object as we'd
 // have to update that each time fields were shown / hidden, etc.
-showErrors : function (errors, hiddenErrors) {
+showErrors : function (errors, hiddenErrors, suppressAutoFocus) {
 
     var undef;
     if (hiddenErrors === undef) hiddenErrors = this.getHiddenErrors();
@@ -5644,7 +5648,7 @@ showErrors : function (errors, hiddenErrors) {
     // also clear visible errors that have been resolved.
     this.markForRedraw("Validation Errors Changed");
 
-    if (errors && !isc.isAn.emptyObject(errors)) {
+    if (errors && !isc.isAn.emptyObject(errors) && !suppressAutoFocus) {
         for (var fieldName in errors) {
             var item = this.getItem(fieldName);
             // if an error item was found, set the focus to that item
@@ -5694,8 +5698,8 @@ getHiddenErrors : function () {
 // the full set of hidden errors. We could have a more fine grained method 
 // like 'handleHiddenFieldValidationErrors()' instead.
 
-showFieldErrors : function (fieldName) {
-    return this.showErrors();
+showFieldErrors : function (fieldName, suppressAutoFocus) {
+    return this.showErrors(null, null, suppressAutoFocus);
 },
 
 // _handleHiddenValidationErrors()
@@ -7889,6 +7893,7 @@ isc.DynamicForm.registerStringMethods({
     //                      &nbsp;&nbsp;<code>{fieldName:errors}</code><br>
     //                      Where the 'errors' object is either a single string or an array
     //                      of strings containing the error messages for the field.
+    // @return (boolean) false from this method to suppress that behavior
     // @visibility external
     //<
     handleHiddenValidationErrors:"errors"

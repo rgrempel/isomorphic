@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -323,8 +323,11 @@ isc.DateChooser.addMethods({
         var returnVal = this.Super("show", arguments);
         
         
-        if (this.autoClose) {            
-			this.showClickMask(this.getID()+".close()",true);
+        if (this.autoClose) {                
+            // pass this dateChooser as an unmasked widget to showClickMask because
+            // when the dateChooser is shown from a modal window, the dateChooser
+            // ends up being masked by its own clickmask for some unknown reason.
+			this.showClickMask(this.getID()+".close();", true, this);        	        	        	
         	this.bringToFront();
         }
     },
@@ -603,7 +606,7 @@ isc.DateChooser.addMethods({
         if (this.disableWeekends && Date.getWeekendDays().contains(date.getDay())) {
             disabled = true;
             action = "return false;";
-        }
+        }           
 		return this.getCellButtonHTML(date.getDate(), action, style, selected, disabled, isc.Canvas.CENTER);
 	},
 
@@ -734,7 +737,7 @@ isc.DateChooser.addMethods({
 		this.yearMenu.showModal();
 	},
 
-	dateClick : function (year, month, day) {
+	dateClick : function (year, month, day) {	    
         var date = this.chosenDate = new Date(year, month, day);
         // set this.month / this.year - this ensures we actually show the selected 
         // date if the user hits the today button while viewing another month

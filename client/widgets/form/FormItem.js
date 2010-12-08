@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1264,6 +1264,17 @@ isc.FormItem.addProperties({
 	//<
 	
 
+    //> @attr formItem.titleColSpan  (number : 1 : IRW)
+    // Number of columns that this item's title spans.  
+    // <P>
+    // This setting only applies for items that are showing a title and whose
+    // +link{titleOrientation} is either "left" or "right".
+    //
+    // @group formLayout
+    // @visibility external
+    //<	
+    titleColSpan:1,
+
     //>	@attr formItem.colSpan		(number : 1 : IRW)
 	// Number of columns that this item spans.  
     // <P>
@@ -2387,15 +2398,19 @@ isc.FormItem.addMethods({
             title = isc.Canvas.hiliteCharacter(title, this.accessKey);
         }
         
-        // If we don't have a data element, the accessKey should have been written into 
-        // whatever our focusable element is (may be a focus proxy)
-        if (!this.hasDataElement()) return title;
-
+        
         // Note: the <LABEL> tag allows us to set an accessKey on the element without writing it
         // directly into the element's HTML.  It also improves on (for example) screen reader 
-        // support
+        // support. It also means clicking the title will put focus into the target form item.
+        
+        var focusElementId;
+        if (this.hasDataElement()) focusElementId = this.getDataElementId();
+        
+        
+        if (!focusElementId) return title;
+    
         return isc.SB.concat(
-            "<LABEL FOR=", this.getDataElementId(),
+            "<LABEL FOR=", focusElementId,
              (this.accessKey != null ? " ACCESSKEY=" + this.accessKey : isc._emptyString),
             ">", title, "</LABEL>");
 	},
@@ -2456,6 +2471,18 @@ isc.FormItem.addMethods({
         if (this.colSpan == 0) this.colSpan = 1;
 		return this.colSpan;
 	},
+
+    //> @method formItem.getTitleColSpan() (A)
+    // Return the titleColSpan for this item
+    // @group formLayout
+    //
+    // @return (number) titleColSpan
+    //<
+    getTitleColSpan : function () {
+        // disallow titleColSpan of zero
+        if (this.titleColSpan == 0) this.titleColSpan = 1;
+        return this.titleColSpan;
+    },
 
     //> @method formItem.isStartRow()   (A)
     // Should this item be drawn on a new row?
@@ -5105,6 +5132,11 @@ isc.FormItem.addMethods({
     
     // Helper to get the prompt for the icon, if there is one.
     getIconPrompt : function (icon) {
+        // don't show icon-specific prompt on hover over disabled icon (or disabled item with
+        // icon, which is obviously also disabled).
+        // We still show item level prompt for disabled items - this is useful for 
+        // telling the user why an item is disabled, for example.
+        if (this.iconIsDisabled(icon)) return null;
         return icon.prompt || this.iconPrompt;
     },
     
@@ -5171,25 +5203,26 @@ isc.FormItem.addMethods({
                     "px;"
                     + (isc.Browser.isMoz ? "-moz-user-focus:" : ""),    // 5
                     ,                           // 6: normal / ignore (MOZ ONLY)
+                    ,                           // 7: cursor:default if disabled, otherwise null
 
-                    "' tabIndex=",               // 7
-                    ,                           // 8: Tab index
+                    "' tabIndex=",               // 8
+                    ,                           // 9: Tab index
                     
                     // Identifiers for the form item event handling system
-                    " ",                        // 9
-                    isc.DynamicForm._containsItem,  // 10
-                    "='",                       // 11
-                    ,                           // 12: itemID
-                    "' ",                       // 13
-                    isc.DynamicForm._itemPart,  // 14
-                    "='",                       // 15
-                    ,                           // 16: iconID
+                    " ",                        // 10
+                    isc.DynamicForm._containsItem,  // 11
+                    "='",                       // 12
+                    ,                           // 13: itemID
+                    "' ",                       // 14
+                    isc.DynamicForm._itemPart,  // 15
+                    "='",                       // 16
+                    ,                           // 17: iconID
 
                     // Allow the ISC event handling system to handle events occurring over
                     // this link.                    
-                    "' handleNativeEvents=false>", // 17
-                    ,                           // 18: this._getIconImgHTML()
-                    "</a>"                      // 19
+                    "' handleNativeEvents=false>", // 18
+                    ,                           // 19: this._getIconImgHTML()
+                    "</a>"                      // 20
                     
 
                 ]
@@ -5198,7 +5231,8 @@ isc.FormItem.addMethods({
             var template = isc.FormItem._iconTemplate;
             
             
-            var tabIndex = (this.iconIsDisabled(icon) || this.canTabToIcons == false) ? -1
+            var disabled = this.iconIsDisabled(icon),
+                tabIndex = (disabled || this.canTabToIcons == false) ? -1
                                               : this._getIconTabIndex(icon);
     
             
@@ -5207,15 +5241,18 @@ isc.FormItem.addMethods({
             var hspaceToLink = this._applyIconHSpaceToLink(icon);
             if (hspaceToLink) template[4] = hspace;
             else template[4] = "0"
+                
 
             //In Moz we need to set -moz-user-focus to disable focus if tabIndex < 0
-            if (isc.Browser.isMoz) template[6] = (tabIndex < 0 ? "ignore" : "normal");
+            if (isc.Browser.isMoz) template[6] = (tabIndex < 0 ? "ignore;" : "normal;");
 
-            template[8] = tabIndex;
+            template[7] = disabled ? "cursor:default;" : null;
             
-            template[12] = itemID;
-            template[16] = iconID;
-            template[18] = this._getIconImgHTML(
+            template[9] = tabIndex;
+            
+            template[13] = itemID;
+            template[17] = iconID;
+            template[19] = this._getIconImgHTML(
                                 this._getIconImgId(iconID),
                                 width, 
                                 height, 
@@ -5506,8 +5543,13 @@ isc.FormItem.addMethods({
             // would be no need for this, as that will also update the tabIndex of icons.
             // However we don't by default because applying the native 'disabled' state to
             // the native HTML form elements will already remove them from the page's tab order.
-            if (!enabled) isc.FormItem.setElementTabIndex(linkElement, -1);
-            else isc.FormItem.setElementTabIndex(linkElement, this._getIconTabIndex(icon))
+            if (!enabled) {
+                isc.FormItem.setElementTabIndex(linkElement, -1);
+                linkElement.style.cursor = "default"
+            } else {
+                isc.FormItem.setElementTabIndex(linkElement, this._getIconTabIndex(icon))
+                linkElement.style.cursor = "";
+            }
         }    
         if (imgElement) {
             var src = this.getIconURL(icon, null, !enabled);
@@ -9926,9 +9968,13 @@ isc.FormItem.addMethods({
 
         var value = this.getValue();
 
-        // If validating on exit and value in editor changed, validate
+        // If validating on exit and either this is a new record or value in editor changed, validate
         if (this.validateOnExit || this.form.validateOnExit) {
-            if (!this.compareValues(value, this._editorEnterValue)) this.validate();
+            if (this.form.isNewRecord() || 
+                !this.compareValues(value, this._editorEnterValue))
+            {
+                this.validate();
+            }
             this._editorEnterValue = null;
         }
 

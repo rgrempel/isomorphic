@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1760,42 +1760,50 @@ isc.PickList.addInterfaceMethods({
         
         var validCriterion = false;
         for (var fieldName in criteria) {
-            var searchString = criteria[fieldName];
-            if (!searchString || isc.isA.emptyString(searchString)) continue;
+            var fieldCriterion = criteria[fieldName];
+            if (!fieldCriterion || isc.isA.emptyString(fieldCriterion)) continue;
 
             validCriterion = true;
             
-            // Do a raw conversion to strings if passed non string values
+            // Handle being passed an array
             
-            if (!isc.isA.String(searchString)) searchString += isc.emptyString;
+            if (!isc.isAn.Array(fieldCriterion)) fieldCriterion = [fieldCriterion];
             
-            searchString = searchString.toLowerCase();
-            
-            var dataLength = data.getLength(),
-                valueFieldName = this.getValueFieldName();
-            for (var i = 0; i < dataLength; i++) {
-                var possibleMatch = data[i][fieldName];
-                // for the valueField, run the record values through mapValueToDisplay() so
-                // they match what the users sees.  XXX running through the valueMap is
-                // appropriate here, but a formatter that returns HTML may screw this up
-                if (this.filterDisplayValue && fieldName == valueFieldName) {
-                    possibleMatch = this.mapValueToDisplay(possibleMatch);
-                }
+            for (var stringIndex = 0; stringIndex < fieldCriterion.length; stringIndex++) {
+                var searchString = fieldCriterion[stringIndex];
                 
-                // For now we'll do a stringwise comparison regardless of the data type of
-                // the possible match
-                if (!isc.isA.String(possibleMatch)) possibleMatch += "";
-            
-                possibleMatch = possibleMatch.toLowerCase();
-                // Remove any mismatches from the list of options
-                if ((this.textMatchStyle == this._$substring &&
-                     !possibleMatch.contains(searchString)) ||
-                    (this.textMatchStyle != this._$substring && // assume startsWith
-                     !isc.startsWith(possibleMatch, searchString))) 
-                {
-                    if (this.showAllOptions) nonMatches.add(data[i]);
-                } else {
-                    matches.add(data[i]);
+                // Do a raw conversion to strings if passed non string values
+                
+                if (!isc.isA.String(searchString)) searchString += isc.emptyString;
+                
+                searchString = searchString.toLowerCase();
+                
+                var dataLength = data.getLength(),
+                    valueFieldName = this.getValueFieldName();
+                for (var i = 0; i < dataLength; i++) {
+                    var possibleMatch = data[i][fieldName];
+                    // for the valueField, run the record values through mapValueToDisplay() so
+                    // they match what the users sees.  XXX running through the valueMap is
+                    // appropriate here, but a formatter that returns HTML may screw this up
+                    if (this.filterDisplayValue && fieldName == valueFieldName) {
+                        possibleMatch = this.mapValueToDisplay(possibleMatch);
+                    }
+                    
+                    // For now we'll do a stringwise comparison regardless of the data type of
+                    // the possible match
+                    if (!isc.isA.String(possibleMatch)) possibleMatch += "";
+                
+                    possibleMatch = possibleMatch.toLowerCase();
+                    // Remove any mismatches from the list of options
+                    if ((this.textMatchStyle == this._$substring &&
+                         !possibleMatch.contains(searchString)) ||
+                        (this.textMatchStyle != this._$substring && // assume startsWith
+                         !isc.startsWith(possibleMatch, searchString))) 
+                    {
+                        if (this.showAllOptions) nonMatches.add(data[i]);
+                    } else {
+                        matches.add(data[i]);
+                    }
                 }
             }
         }

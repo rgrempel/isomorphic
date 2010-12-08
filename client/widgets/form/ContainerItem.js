@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-11-26 (2010-11-26)
+ * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -200,16 +200,32 @@ getItems : function () {
 // override getTitleHTML() to avoid writing a <label> tag around the title, and setting an 
 // accessKey property on that label.  This is appropriate as we are setting up the accessKey
 // directly on the first sub-element in the group (implemented in setItems)
-getTitleHTML : function () {
-
+getTitleHTML : function(){
+    var elementID, focusableItem;
     var title = this.getTitle();
+    
+    if (!this.getCanFocus()) {
+        return title;
+    }
     
     if (this.accessKey != null) {
         title = isc.Canvas.hiliteCharacter(title, this.accessKey);
     }
-            
-    return title;
+    
+    for (var i = 0; i < this.items.length; i++) {
+        if (this.items[i].getCanFocus() && this.items[i].hasDataElement()) {
+            focusableItem = this.items[i];
+            break;
+        }
+    }
+    
+    if (!focusableItem) {
+        return title;
+    }
+    
+    return isc.SB.concat("<LABEL FOR=", focusableItem.getDataElementId(), ">", title, "</LABEL>");
 },
+  
 
 // Override '_setElementTabIndex()', as the superclass implementation forces a form.redraw()
 // for any focusable items without elements, and this may not be necessary.

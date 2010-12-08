@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-11-26/LGPL Development Only (2010-11-26)
+  Version SC_SNAPSHOT-2010-12-07/LGPL Development Only (2010-12-07)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -1353,7 +1353,7 @@ if(this.isLocal()){return false}
 if(_6==-1){return true}else if(_6==1){if(this.shouldUseClientFiltering()){return false}
 return true}}}
 ,isc.A.sortByProperty=function isc_ResultSet_sortByProperty(_1,_2,_3,_4){if(_3==null){var _5=this.getDataSource().getField(_1);if(_5)_3=_5.type}
-if(this.$395==_1&&this.$392==_2&&this.$393==_3)return;var _5;if(_4){_5=_4.getField(_1);if(_5&&_5.displayField){var _6;if(_5.optionDataSource){_6=isc.DataSource.getDataSource(_5.optionDataSource)}
+if(this.$395==_1&&this.$392==_2&&this.$393==_3)return;var _5;if(_4){_5=_4.getField(_1);if(_5&&_5.displayField&&_5.sortByDisplayField!=false){var _6;if(_5.optionDataSource){_6=isc.DataSource.getDataSource(_5.optionDataSource)}
 if(!_6||_6==isc.DataSource.getDataSource(this.dataSource)){_1=_5.displayField}}}
 this.$395=_1;this.$392=_2;this.$393=_3;this.$45g=_4;if(this.isPaged()||!this.shouldUseClientSorting()){this.$39x=(this.$392?"":"-")+this.$395}
 if(this.canSortOnClient()){this.localData.sortByProperties([_1],[_2],[_3],[_4]);if(this.allRows&&(this.localData!==this.allRows)){this.allRows.sortByProperties([_1],[_2],[_3],[_4])}
@@ -1366,7 +1366,7 @@ return}
 this.logInfo("$391: sorting on properties ["+_2.join(",")+"] : "+"directions ["+_3.join(",")+"]"+" : invalidating cache");this.invalidateCache()}
 ,isc.A.getSort=function isc_ResultSet_getSort(){return this.$73p}
 ,isc.A.setSort=function isc_ResultSet_setSort(_1,_2){var _3=[],_4=[],_5;for(var i=0;i<_1.length;i++){var _7=_1[i];if(_7.normalizer==null){var _5=this.getDataSource().getField(_7.property);if(_5){_7.normalizer=_5.type;_7.$78e=_7.normalizer}}
-if(_7.context){_5=_7.context.getField(_7.property)||this.getDataSource().getField(_7.property);if(_5&&_5.displayField){var _8;if(_5.optionDataSource){_8=isc.DataSource.getDataSource(_5.optionDataSource)}
+if(_7.context){_5=_7.context.getField(_7.property)||this.getDataSource().getField(_7.property);if(_5&&_5.displayField&&_5.sortByDisplayField!=false){var _8;if(_5.optionDataSource){_8=isc.DataSource.getDataSource(_5.optionDataSource)}
 if(!_8||_8==isc.DataSource.getDataSource(this.dataSource)){_7.property=_5.displayField}}}
 if(this.isPaged()||!this.shouldUseClientSorting()){_3[i]=(Array.shouldSortAscending(_7.direction)?"":"-")+_7.property}
 if(this.$73p&&this.$73p.length>0){var _9={property:_7.property,direction:_7.direction};if(_7.normalizer!=null&&_7.normalizer!=_7.$78e){_9.normalizer=_7.normalizer}
@@ -2104,7 +2104,7 @@ if(_4!=this){_1=_4.transferDragData()}
 var _5=(isc.isAn.Array(_1)?_1[0]:_1);_5.dropped=true;this.logInfo("sourceWidget is a Palette, dropped node of type: "+_5.type," editing");var _6=this;this.requestLiveObject(_5,function(_9){if(_9==null)return;if(_4==_6){var _7=this.data.getParent(_5);if(_2==_7){var _8=this.data.getChildren(_7).indexOf(_5);if(_8!=null&&_8<=_3)_3--}
 _6.removeComponent(_5,_2,_3)}
 _6.addNode(_9,_2,_3)},_4)}
-,isc.A.addNode=function isc_EditTree_addNode(_1,_2,_3,_4,_5){return this.addComponent(_1,_2,_3,_4)}
+,isc.A.addNode=function isc_EditTree_addNode(_1,_2,_3,_4,_5){return this.addComponent(_1,_2,_3,_4,_5)}
 ,isc.A.addComponent=function isc_EditTree_addComponent(_1,_2,_3,_4,_5){if(_2==null)_2=this.getDefaultParent(_1);var _6=this.getLiveObject(_2);this.logInfo("addComponent will add newNode of type: "+_1.type+" to: "+this.echoLeaf(_6),"editing");var _7=_4||isc.DS.getObjectField(_6,_1.type),_8=isc.DS.getSchemaField(_6,_7);if(!_8){this.logWarn("can't addComponent: can't find a field in parent: "+_6+" for a new child of type: "+_1.type+", newNode is: "+this.echo(_1));return}
 if(!_8.multiple){var _9=isc.DS.getChildObject(_6,_1.type,_4);if(_9){var _10=this.data.getChildren(_2).find("ID",isc.DS.getAutoId(_9));this.logWarn("destroying existing child: "+this.echoLeaf(_9)+" in singular field: "+_7);this.data.remove(_10);if(isc.isA.Class(_9)&&!isc.isA.DataSource(_9))_9.destroy()}}
 var _11;if(_1.generatedType){_11=isc.addProperties({},_1.initData);this.addChildData(_11,this.data.getChildren(_1))}else{_11=_1.liveObject}
@@ -3144,7 +3144,7 @@ isc._moduleEnd=isc._DataBinding_end=(isc.timestamp?isc.timestamp():new Date().ge
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-11-26/LGPL Development Only (2010-11-26)
+  Version SC_SNAPSHOT-2010-12-07/LGPL Development Only (2010-12-07)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
