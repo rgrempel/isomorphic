@@ -971,6 +971,7 @@ border-left:5px;
     background-color:#FFFFFF;
 }
 .loadingDataMessage,
+.offlineMessage,
 .emptyMessage {
     font-family:Arial,sans-serif; font-size:11px; padding:10px;
     color:#333333;

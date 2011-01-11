@@ -646,6 +646,7 @@
 .headerBar {}
 .gridBody {}
 .loadingDataMessage,
+.offlineMessage,
 .emptyMessage {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; color:black;
     padding:10px;

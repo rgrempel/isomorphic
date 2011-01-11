@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -32,10 +32,6 @@ isc.ClassFactory.defineClass("Canvas");
 // properties (so that iterating up the inheritance chain would not be required) but that would
 // slow down init time, and isA.Canvas is 99% of the critical path usage anyway
 isc.isA.Canvas = function (object) { return (object != null && object._isA_Canvas); }
-
-isc.Canvas.neverUseFilters = window.isc_neverUseFilters;
-isc.Canvas.skipFilterNone = window.isc_skipFilterNone;
-isc.Canvas.neverUseOpacityFilter = window.isc_neverUseOpacityFilter;
 
 // define groups for documentation purposes
 
@@ -428,24 +424,164 @@ isc.Canvas.addClassProperties({
                             "fontWeight", "fontStyle", "textDecoration", "textAlign"
                             // Optionally also include: fontSizeAdjust, fontVariant, whiteSpace
                           ],
+
+    // IE Filter settings
+    // ---------------------------------------------------------------------------------------
     			
 
-    // No style doubling
-    // In various places we render widgets as a table nested inside the handle
+    // Preventing style doubling
+    // In various places we render widgets as a <table> inside a <div> but want to
+    // allow a single CSS style for the combined DOM structure.
     // In this case we have to re-apply the css class applied to the widget to the TD as otherwise
-    // text based styling options will not be applied.
-    // However we DON'T want to re-apply every property, otherwise we end up with (for example)
-    // borders around the widget and additional borders around the table cell.
+    // text based styling options will not be applied because it doesn't cascade through table
+    // elements.
+    // However we DON'T want every CSS setting to apply to both the outer <div> and inner <td>
+    // or we end up with (for example) doubled borders.
     // We usually handle this by writing out explicit "null" styling options on the TD to 
     // override the properties we don't want doubled from the css class. These options then take
     // presidence over the attributes specified in the CSS class.
     // Use this central string to clear out 
-    // - margin, border, padding, bg color, filter, background-image
-    _$noStyleDoublingCSS:(!isc.Browser.isIE || isc.Canvas.neverUseFilters || isc.Canvas.skipFilterNone ? "margin:0px;border:0px;padding:0px;background-image:none;background-color:transparent;" 
-                        // Also explicitly clear filter in IE
-                          : "margin:0px;border:0px;padding:0px;background-color:transparent;filter:none;background-image:none;"),
-    
-    
+    // - margin, border, padding, bg color, filter (eg CSS gradient), background-image
+
+    // Note: called once on framework init. May be called after framework init due to
+    // changing the value of neverUseFilters / allowExternalFilters etc.
+    _doublingStringObservers:[],
+    _setDoublingStrings : function () {
+        this._$noStyleDoublingCSS = isc.Browser.isIE && (!this.neverUseFilters || this.allowExternalFilters) 
+                ? "margin:0px;border:0px;padding:0px;background-color:transparent;filter:none;background-image:none;"
+                : "margin:0px;border:0px;padding:0px;background-image:none;background-color:transparent;";
+        // NOTE: actually a constant used in button rendering
+        isc.Canvas.addProperties({
+            _$tableNoStyleDoubling : "' style='" + isc.Canvas._$noStyleDoublingCSS
+        });
+        // Since this string is dynamic (see setNeverUseFilters()), but may be cached 
+        // in various places, those places will need to be notified when it changes
+        // We're using standard 'target' / 'methodName' terminology here and passing in the
+        // new string.
+        for (var i = 0; i < this._doublingStringObservers.length; i++) {
+            var callback = this._doublingStringObservers[i];
+            if (callback.target == null || callback.target.destroyed) continue;
+            callback.target[callback.methodName](this._$noStyleDoublingCSS);
+        }
+    },
+
+    //> @groupDef IEFilters
+    // In order to compensate for various bugs and missing features in Internet Explorer, it's
+    // necessary to use Microsoft-proprietary "filter" settings, as follows:
+    // <ul>
+    // <li> IE6-8: Opacity filter required for opacity to work at all
+    // <li> IE6: AlphaImageLoader filter required for PNG transparency to work at all
+    // <li> IE7-8: AlphaImageLoader filter required for PNG transparency to work properly with
+    //      opacity (eg, translucent rounded windows), otherwise, PNGs will turn entirely black
+    //      or show other severe artifacts when opacity is applied
+    // </ul>
+    // Using these filters has a range of side-effects:
+    // <ul>
+    // <li> AlphaImageLoader will cause the UI to appear frozen until users have downloaded all
+    //      PNG media shown on the page
+    // <li> moderate to severe impact on rendering speed (20-60%)
+    // <li> font smoothing is disabled
+    // </ul>
+    // <P>
+    // For an application that is frequently used (where images will typically be cached) on
+    // recent machines, and where font smoothing is not considered important, no special steps
+    // need to be taken.
+    // <P>
+    // If any of the above side effects are important, our recommendations are:
+    // <ul>
+    // <li> minimize use of PNG media - use .gif instead
+    // <li> for IE7-8, +link{canvas.neverUsePNGWorkaround,disable AlphaImageLoader} and
+    //      +link{canvas.useOpacityFilter,disable Opacity} globally since these browsers
+    //      can only render PNGs correctly in the absence of opacity settings.  Selectively
+    //      enable opacity only in widgets that do not contain PNGs (eg the modalMask shown by
+    //      a Window).  Avoid the use of opacity fades as a transition effect for IE unless you
+    //      have eliminated all or almost all PNG media and the remaining artifacts are considered
+    //      acceptable.  Also eliminate all use of filter effects in CSS, and
+    //      +link{canvas.allowExternalFilters,disable the workaround} that makes this possible.
+    // <li> if IE6 performance is critically important, eliminate all PNG media and all use of
+    //      opacity and +link{canvas.neverUseFilters,disable all filters}.
+    // </ul>
+    // Note that the .gif format does not support partially transparent pixels, hence can't be
+    // used for very high-quality antialiasing effects.  However, certain specific tools can
+    // produce high-quality anti-aliased images in the less known PNG8 format, and this
+    // particular format has the least artifacts in the above situations.  Details
+    // +externalLink{http://blogs.sitepoint.com/2007/09/18/png8-the-clear-winner/, here}.
+    // 
+    // @title Internet Explorer "filter" effects
+    // @visibility external
+    //<
+
+    //> @classAttr Canvas.neverUsePNGWorkaround (boolean : null : IR)
+    // If set, the AlphaImageLoader IE filter will never be used.   Does not remove
+    // AlphaImageLoader usage in already-drawn components.
+    // <P>
+    // See +link{group:IEFilters} for background.
+    //
+    // @group IEFilters
+    // @visibility external
+    //<
+
+    //> @classAttr Canvas.neverUseFilters (boolean : null : IR)
+    // Disables automatic use of filters in IE by default.  Filters will only be used if
+    // +link{canvas.useOpacityFilter} is explicitly set to true on a component.
+    // <P>
+    // Does not remove filters on already drawn components, or which are applied via CSS.
+    // <P>
+    // See +link{group:IEFilters} for background.
+    //
+    // @group IEFilters
+    // @visibility external
+    //<
+
+    //> @classMethod Canvas.setNeverUseFilters()
+    // Changes the system-wide +link{Canvas.neverUseFilters} setting.
+    // @param neverUseFilters (boolean) new setting
+    //
+    // @group IEFilters
+    // @visibility external
+    //<
+    setNeverUseFilters : function (neverUseFilters) {
+        this.neverUseFilters = neverUseFilters;
+        this._setDoublingStrings();
+    },
+
+    //> @classAttr Canvas.allowExternalFilters (boolean : true : IR)
+    // If enabled, uses a moderately expensive workaround to allow the use of IE filters in CSS
+    // to produce gradient effects for buttons, grid rows, and other elements, without the use
+    // of image backgrounds.
+    // <P>
+    // See +link{group:IEFilters} for background.
+    //
+    // @group IEFilters
+    // @visibility external
+    //<
+    allowExternalFilters:true,
+
+    //> @classMethod Canvas.setAllowExternalFilters()
+    // Changes the system-wide +link{Canvas.allowExternalFilters} setting.
+    // @param allExternalFilters (boolean) new setting
+    //
+    // @group IEFilters
+    // @visibility external
+    //<
+    setAllowExternalFilters : function (allowExternalFilters) {
+        this.allowExternalFilters = allowExternalFilters;
+        this._setDoublingStrings();
+    },
+
+    //> @attr canvas.useOpacityFilter (boolean : null : IR)
+    // Configures where the Opacity filter is used for IE6-8.
+    // <P>
+    // With the default of null, opacity filters are used unless
+    // +link{classAttr:Canvas.neverUseFilters} has been set.  When set explicitly to true,
+    // opacity filters are used even if <code>neverUseFilters</code> is true.
+    // <P>
+    // See +link{group:IEFilters} for background.
+    //
+    // @group IEFilters
+    // @visibility external
+    //<
+
 
     // Delayed Redraw
 	// -----------------------------------------------------------------------------------------
@@ -551,7 +687,7 @@ isc.Canvas.addClassProperties({
     //<
     loadingImageSize: 16
 });
-
+isc.Canvas._setDoublingStrings();
 
 isc.Canvas.addProperties({
 
@@ -1633,12 +1769,17 @@ isc.Canvas.addProperties({
 
 	//>	@attr	canvas.contextMenu		(Menu : null : IRWA)
 	// Context menu to show for this object, an instance of the Menu widget.
+	// <P>
+	// Note: if +link{canvas.destroy()} is called on a canvas, any specified context menu is
+	// not automatically destroyed as well. This is in contrast to +link{MenuButton}s which
+	// automatically destroy their specified +link{MenuButton.menu} by default. The behavior
+	// is intentional as context menus are commonly reused across components.
 	//		@group	cues
     //  @see canvas.showContextMenu()
     // @visibility external
     // @example contextMenus
 	//<
-
+	
 	//>	@attr	canvas.contextMenuProperties		(object : object : IRW)
     // Default properties for automatically generated context menus
     //<
@@ -1648,6 +1789,15 @@ isc.Canvas.addProperties({
 		width:200,						
 		showIcons:true
 	},
+	
+	//> @attr canvas.menuConstructor (SCClassName : "Menu" : IR)
+	//  Default class used to construct menus created by this component, including context menus.
+	//
+	// @group	cues
+    // @see canvas.showContextMenu()
+    // @visibility external
+	//<
+	menuConstructor: "Menu",
 	
     //>CornerClips
 	// ----------------------------------------------------------------------------------------- 
@@ -2279,7 +2429,17 @@ isc.Canvas.addProperties({
     // <P>
 	// Possible values: BR, BL, TR, TL, R, L, B, T, C where B=Bottom, T=Top, L=Left, R=right
     // and C=center
-    //
+    // <P>
+    // Standard snapTo behavior will attach the outer edge of the widget to the parent or master
+    // element - for example setting <code>snapTo</code> to <code>"B"</code> would align the
+    // bottom edge of this component with the bottom edge of the master or parent element 
+    // (and center this component horizontally over its master or parent element).
+    // +link{Canvas.snapEdge} can be specified to change this behavior allowing the developer
+    // to, for example, align the top edge of this component with the bottom edge of its
+    // masterElement.
+    // <P>
+    // +link{Canvas.snapOffsetLeft} and +link{Canvas.snapOffsetTop} may also be specified to
+    // offset the element from exact snapTo alignment.
     // @group sizing
     // @see canvas.snapEdge
     // @see canvas.percentBox
@@ -2305,7 +2465,9 @@ isc.Canvas.addProperties({
     // <P>
     // For example if <code>snapTo</code> is specified as <code>"L"</code> and 
     // <code>snapOffsetLeft</code> is set to 6, this widget will be rendered 6px inside the left
-    // edge of its parent or master element.
+    // edge of its parent or master element. Alternatively if <code>snapTo</code> was set
+    // to <code>"R"</code>, a <code>snapOffsetLeft</code> value of -6 would cause the 
+    // component to be rendered 6px inside the right edge of its parent or masterElement.
     // @group sizing
     // @see canvas.snapTo
     // @visibility external
@@ -2317,7 +2479,9 @@ isc.Canvas.addProperties({
     // <P>
     // For example if <code>snapTo</code> is specified as <code>"T"</code> and 
     // <code>snapOffsetTop</code> is set to 6, this widget will be rendered 6px below the top
-    // edge of its parent or master element.
+    // edge of its parent or master element. . Alternatively if <code>snapTo</code> was set
+    // to <code>"B"</code>, a <code>snapOffsetTop</code> value of -6 would cause the 
+    // component to be rendered 6px inside the bottom edge of its parent or masterElement.
     // @group sizing
     // @see canvas.snapTo
     // @visibility external
@@ -4049,12 +4213,7 @@ _clearAccessKeyProxy : function () {
 // Drawing children and peers
 // --------------------------------------------------------------------------------------------
 
-//>	@method	canvas.drawChildren()	(A)
-//			Draw all children of this Canvas
-//		@group	drawing
-//
-//		@param	document
-//<
+// Draw all children of this Canvas
 _$initial_draw : "initial draw",
 drawChildren : function () {
 	
@@ -5715,9 +5874,6 @@ getTagStart : function (dontConcat) {
             focusString,
             nativeTabIndex = this._useNativeTabIndex;
         
-        // initialize for future use by Canvas._updateFloat()
-        this._currentFloatValue = this._calculateFloatValue();
-            
         if (nativeTabIndex && this._canFocus()) {
             focusString = isc.SB.concat(
                 canvas._onFocus, this._getNativeFocusHandlerString(),
@@ -5832,9 +5988,6 @@ getTagStart : function (dontConcat) {
             "' eventProxy='" , eventProxy,
             (this.textDirection != null ? "' dir='" + this.textDirection : ""),            
             "' style='POSITION:relative;VISIBILITY:inherit",
-
-                // nested DIV size detection and float:left - see _shouldFloatLeft()
-                this._currentFloatValue ? ";FLOAT:"+this._currentFloatValue : "",
                 ";Z-INDEX:" , this.zIndex,
                 (cursor == canvas.AUTO ? "" : ";CURSOR:" + cursor),
                 // padding should be included in the drawn content size, so it goes on the
@@ -5961,24 +6114,23 @@ getTagStart : function (dontConcat) {
         }
         divHTML[53] = this._getMarginHTML();
         divHTML[54] = (this.padding != null ? ";PADDING:" + this.padding + isc.px : null);
-       // Unexposed per-side padding
-       if (this.topPadding != null) 
-           divHTML[54] = (divHTML[54] || "") + ";padding-top:" + this.topPadding + "px";
-       if (this.bottomPadding != null) 
-           divHTML[54] = (divHTML[54] || "") + ";padding-bottom:" + this.bottomPadding + "px";
-       if (this.leftPadding != null) 
-           divHTML[54] = (divHTML[54] || "") + ";padding-left:" + this.leftPadding + "px";
-       if (this.rightPadding != null) 
-           divHTML[54] = (divHTML[54] || "") + ";padding-right:" + this.rightPadding + "px";
+        // Unexposed per-side padding
+        if (this.topPadding != null) 
+            divHTML[54] = (divHTML[54] || "") + ";padding-top:" + this.topPadding + "px";
+        if (this.bottomPadding != null) 
+            divHTML[54] = (divHTML[54] || "") + ";padding-bottom:" + this.bottomPadding + "px";
+        if (this.leftPadding != null) 
+            divHTML[54] = (divHTML[54] || "") + ";padding-left:" + this.leftPadding + "px";
+        if (this.rightPadding != null) 
+            divHTML[54] = (divHTML[54] || "") + ";padding-right:" + this.rightPadding + "px";
   
-       divHTML[55] = (this.border ? ";BORDER:" + this.border : null);
+        divHTML[55] = (this.border ? ";BORDER:" + this.border : null);
         if (isc.Browser.isIE) {
-            if (!isc.Canvas.neverUseFilters) {
-                if (!isc.Canvas.neverUseOpacityFilter) {
-                    divHTML[56] = (opacity == null ? null :
+            if (!isc.Canvas.neverUseFilters || this.useOpacityFilter) {
+                divHTML[56] = (opacity == null ? null :
                            ";filter:progid:DXImageTransform.Microsoft.Alpha(opacity="+opacity+")");
-                }
-
+            }
+            if (!isc.Canvas.neverUseFilters) {
                 
                 if (this._avoidRedrawFlash) {
                     divHTML[57] = ";filter:progid:DXImageTransform.Microsoft.iris(irisStyle=circle)"
@@ -6241,11 +6393,16 @@ _adjustHandleSize : function (width, height) {
         } else if (this.useClipDiv) {
             // double DIV content-box, eg, Safari, Opera
             // If padding is explicitly specified, it gets placed on the content div.
-            // If padding is specified in the css style definition, we explicitly zero out
-            // padding on the clip div (no style-doubling css), so it's still applied to
-            // the content div only.
-            // Therefore always adjust for border size only.
-            width -= this.getHBorderSize();
+            // If padding is specified in the css style definition, it's typically placed
+            // on the outer div, so we need to adjust for border and padding.
+            // Exception: If the _suppressOuterDivPadding property has been set we
+            // explicitly zero out padding on the clip div and apply it to the content
+            if (this.padding == null && !this._suppressOuterDivPadding) {
+                width-= this.getHBorderPad();
+            } else {
+                width -= this.getHBorderSize();
+            }
+            
         } else {
             // single DIV content-box, eg, IE strict
             width -= this.getHBorderPad();
@@ -6262,7 +6419,11 @@ _adjustHandleSize : function (width, height) {
 
         if (this.isBorderBox) {
         } else if (this.useClipDiv) {
-            height -= this.getVBorderSize();
+            if (this.padding == null && !this._suppressOuterDivPadding) {
+                height -= this.getVBorderPad();
+            } else {
+                height -= this.getVBorderSize();
+            }
         } else {
             height -= this.getVBorderPad();
         }
@@ -10233,10 +10394,11 @@ getOuterViewportHeight : function () {
 
 
 //>	@method	canvas.getInnerHeight()	(A)
-//  Returns the amount of space available for (an) absolutely positioned child widget(s) or 
-//  HTML content, without introducing clipping, scrolling or overflow.<br>
-//  This is the space within the viewport of the widget (including padding, but excluding 
-//  margins, borders or scrollbars) rendered at its specified size.
+// Returns the amount of space available for (an) absolutely positioned child widget(s) or 
+// absolutely positioned HTML content, without introducing clipping, scrolling or overflow.
+// <P>
+// This is the space within the viewport of the widget (including padding, but excluding 
+// margins, borders or scrollbars) rendered at its specified size.
 //
 //	@group	sizing
 //
@@ -10254,10 +10416,11 @@ getInnerHeight : function() {
 },
 
 //>	@method	canvas.getInnerWidth()	(A)
-//  Returns the amount of space available for (an) absolutely positioned child widget(s) or 
-//  HTML content, without introducing clipping, scrolling or overflow.<br>
-//  This is the space within the viewport of the widget (including padding, but excluding 
-//  margins, borders or scrollbars) rendered at its specified size.
+// Returns the amount of space available for absolutely positioned child widget(s) or 
+// absolutely positioned HTML content, without introducing clipping, scrolling or overflow.
+// <P>
+// This is the space within the viewport of the widget (including padding, but excluding 
+// margins, borders or scrollbars) rendered at its specified size.
 //
 //	@return	(number) inner width of the widget in pixels
 //	@group	sizing
@@ -10274,10 +10437,10 @@ getInnerWidth : function () {
 },
 
 //>	@method	canvas.getInnerContentHeight()	(A)
-//  Returns the amount of space available for interior content (or relatively positioned child
-//  widget(s)) without introducing clipping, scrolling or overflow.<br>
-//  This is the space within the viewport of the widget (not including padding, and excluding 
-//  margins, borders or scrollbars) rendered at its specified size.
+// Returns the amount of space available for interior content (or relatively positioned child
+// widget(s)) without introducing clipping, scrolling or overflow.<br>
+// This is the space within the viewport of the widget (not including padding, and excluding 
+// margins, borders or scrollbars) rendered at its specified size.
 //
 //	@group	sizing
 //
@@ -10829,6 +10992,8 @@ getDelta : function (name, newValue, currentValue) {
     // clear any previously defined percent size -- this is either a valid numeric size, or an
     // invalid value, in which case we'll revert to default size.
     this[percentName] = null;
+    
+    var layoutSetSize = false;
         
     // complain about bad coordinates.
     if (!isc.isA.Number(newValue) || 
@@ -10854,13 +11019,15 @@ getDelta : function (name, newValue, currentValue) {
             var parent = this.parentElement;
             if (isc.isA.Layout(parent) && parent.hasMember(this)) {
                 parent.reflow(this.getID() + " set " + name + " to '*'");
+                layoutSetSize = true;
             }
         }
 
         // if the value we were initialized with is bad, remove it, hence reverting to
-        // defaults.  NOTE: this doesn't affect Layouts, which look under the special
-        // _userWidth/Height variable to find the explicitly specified width/height
-        if (currentValue == this[name] || currentValue == this[propertyName]) {
+        // defaults.  
+        
+        if (!layoutSetSize && (currentValue == this[name] || currentValue == this[propertyName]))
+        {
             currentValue = this.restoreDefaultSize(name == this._$height);
         }
         // Fire adjustOverflow to actually resize the handle to the default size, if necessary
@@ -12685,10 +12852,10 @@ _browserDoneDrawing : function () {
         //
         // clipHandle can be null in canvas.start/end mode if we're doc.write()ing
         var clipHandle = this.getClipHandle();
-         if (clipHandle == null) return false;
+        if (clipHandle == null) return false;
 
         var scrollHeight = clipHandle.scrollHeight;
-        if (scrollHeight == null || scrollHeight == 0) scrollHeight == this.getClipHandle().offsetHeight;
+        if (scrollHeight == null || scrollHeight == 0) scrollHeight = this.getClipHandle().offsetHeight;
         
         return scrollHeight != 0;
     }
@@ -16032,29 +16199,6 @@ setContentsURL : function (url, params) {
     }
 },
 
-// Returns the correct value of the CSS "float" property for this widget's handle,
-// or null if unset, for nested DIV size detection purposes.
-// See the bottom of Canvas.js in sections "native size reporting issues" and
-// "offsetWidth/offsetHeight" for more details.
-//
-
-_calculateFloatValue : function () {
-    var shouldFloatLeft = !this._useMozScrollSize && !isc.Browser.isOpera && 
-        !((isc.Browser.isSafari || isc.Browser.isFirefox) && this.containsIFrame());
-    return shouldFloatLeft ? isc.Canvas._$left : null;
-},
-
-// Update handle's CSS "float" property, to match what the property would have been
-// initialized to on the initial Canvas.draw(), as done by Canvas.getTagStart().
-// this._currentFloatValue is initialized by getTagStart() to identify whether a DOM update
-// is necessary. See _calculateFloatValue() and getTagStart() for more details.
-_updateFloat : function () {
-    var newFloat = this._calculateFloatValue();
-    if (newFloat != this._currentFloatValue)
-        this.getHandle().style.float = this._currentFloatValue = newFloat;
-},
-
-
 // Miscellaneous styling setters
 // --------------------------------------------------------------------------------------------
 
@@ -16190,7 +16334,7 @@ setOpacity : function (newOpacity, animating, forceFilter) {
             else this.getStyleHandle().opacity = opacity;
             
         } else if (isc.Browser.isIE) {
-            if (!isc.Canvas.neverUseFilters && !isc.Canvas.neverUseOpacityFilter) {
+            if (!isc.Canvas.neverUseFilters || this.useOpacityFilter) {
                 // Using proprietary Microsoft filters to achieve opacity
                 this.getStyleHandle().filter = (this.opacity == null ? "" :
                         "progid:DXImageTransform.Microsoft.Alpha(opacity="+this.opacity+")");
@@ -16670,19 +16814,28 @@ handleShowContextMenu : function (event) {
 // On the Mac platform, context menu functionality may be triggered by <code>Command+click</code><br>
 // On the Opera browser, context menu functionality may be triggered by <code>Shift+Ctrl+click</code>
 //<
-showContextMenu : function () {
+showContextMenu : function () {    
     var menu = this.contextMenu;
 	if (menu) {
 		menu.target = this;
-        if (!isc.isA.Canvas(menu)) {
+        if (!isc.isA.Canvas(menu)) {            
             menu.autoDraw = false;
-            this.contextMenu = menu = isc.Menu.create(menu);
+            this.contextMenu = menu = this.getMenuConstructor().create(menu);            
         }
 		menu.showContextMenu();
 	}
 	return (menu == null);
 },
 
+getMenuConstructor : function () { 
+    var menuClass = isc.ClassFactory.getClass(this.menuConstructor); 
+    if (!menuClass) {
+        isc.logWarn("Class not found for menuConstructor:" + this.menuConstructor + 
+            ". Defaulting to isc.Menu class");    
+        menuClass = isc.ClassFactory.getClass("Menu");
+    } 
+    return menuClass;
+},
 
 //>	@method	canvas.hideContextMenu()	(A)
 //
@@ -20165,10 +20318,11 @@ isc.defineClass("ScreenSpan", "Canvas").addMethods({
             //
             // NOTE: if you update this code, also check and update EventHandler.makeEventMask();
             this._cachedContent = isc.Browser.isIE && isc.Browser.version > 6 ?
-                isc.Canvas.blankImgHTML(1600,1200) : isc.Canvas.spacerHTML(1600, 1200);
+                isc.Canvas.imgHTML(this.src, 1600,1200) : isc.Canvas.spacerHTML(1600, 1200);
         }
         return this._cachedContent;
     },
+    src:"[SKINIMG]/blank.gif",
     redrawOnResize:false,
     overflow:"hidden",
 
@@ -20478,33 +20632,9 @@ isc.allowDuplicateStyles = true;
 // offsetHeight/Width can be used as a way to determine sizes, except that:
 // - if you specify a width or height for an element, Moz will report the specified height or
 //   width rather than the actual drawn height or width
-// - the offsetHeight is the height with respect to the offsetParent, which isn't guaranteed to be
-//   any particular element (see "Widget Positioning and Sizing Methods" comment) 
-// - even when the above two circumstances are worked around, the offsetHeight does not seem to
-//   always be reliable.  It's not entirely clear what situations this occurs in, and the
-//   behavior definitely differs between minor version of Moz (eg 1.2 vs 1.3).  A workaround of
-//   setting "FLOAT:LEFT" on the contentDiv seems to solve all instances of this, but
-//   introduces various problems:
-//   - Float:left can cause centered content to be flush left
-//   - Charts draw incorrectly on redraw, with identical HTML, even if the HTML is placed in
-//     another Canvas (thus not even dynamically generated)
-//   - Safari, if you put in IFRAME inside a DIV with float:left set, the IFRAME's contents
-//     (result of the "src" property) doesn't seem to show up at all (not clear why).  Therfore
-//     if we are loading content into an IFRAME, don't write out the FLOAT:left in Safari (it
-//     shouldn't be required in any case since we're sizing the IFRAME to be 100% of the
-//     conaining DIV, so we'll never need the scroll width)
-//   - Mozilla Firefox (PR1.0) simlarly has problems with an IFRAME inside a DIV.
-//     in this browser, the IFRAME renders, but seems to always be 300px wide if the parent
-//     DIV (the content DIV for the Canvas) has FLOAT:left specified.
-//     Disabling float:left in this browser if we are loading content into an IFRAME is
-//     specified 
-//     Note: We should re-test whether this setting is necessary at all in Moz Firefox
-//   - percent-sized elements get the wrong size when placed inside a floated DIV.
-//     - early Safari: 100% height is taken to be full page size
-//     - Moz: 100% width: draws minimum width for content, with misaligned table columns if a
-//       table
-//       - goes away if content has pos:abs and pos:relative is removed from the floated DIV
-//     - IE: 100% height: draws minimum height
+// - we recorded offsetHeight as being intermittently unreliable - and applied a workaround of
+//   writing float:left onto the content div. This workaround has been disabled since
+//   ~dec 2009 with no apparent ill effects in any browsers. Removing entirely.
 //
 // The Moz zero-width table content bug
 // ------------------------------------
@@ -20543,9 +20673,7 @@ isc.allowDuplicateStyles = true;
 // For overflow:visible regions (WITH NO SPECIFIED SIZE), it also reports the 
 // appropriate size, but for overflow:hidden / visible regions, with a specified size it will
 // report the specified size of the handle.
-// The double div solution works around this by not sizing the inner content handle, and setting
-// float:left on it (required to allow scrollWidth to be reported correctly - not clear why)
-
+// The double div solution works around this by not sizing the inner content handle.
 //> @groupDef noFrames
 // Loading the SmartClient framework into multiple frames or iframes within the same browser is
 // not a supported configuration, or more accurately, not a <i>supportable</i> configuration,

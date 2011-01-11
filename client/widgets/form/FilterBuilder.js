@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -541,6 +541,7 @@ buildValueItemList : function (field, operator) {
 // 
 // @param type (FieldType) type of the DataSource field for this filter row
 // @param type (String) name of the DataSource field for this filter row
+// @return (FormItem Properties) properties for the value field
 // @visibility external
 //<
 getValueFieldProperties : function (type, fieldName) {
@@ -603,8 +604,13 @@ getCriterion : function () {
 
     if (this.fieldName) criterion.fieldName = this.fieldName;
 
-    // Flag any dates as logicalDates, so they don't run the risk of timezone conversion
-    if (isc.isA.Date(criterion.value)) criterion.value.logicalDate = true;
+    // flag dates as logicalDates unless the field type inherits from datetime
+    var field = this.getDataSource().getField(fieldName);
+    if (isc.isA.Date(criterion.value) && 
+        (!field || !isc.SimpleType.inheritsFrom(field.type, "datetime"))) 
+    {
+        criterion.value.logicalDate = true;
+    }
 
     // Ignore criteria where no value has been set, unless it is an operator (eg, isNull)
     // that does not require a value, or requires a start/end rather than a value

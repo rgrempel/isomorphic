@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-12-07/LGPL Development Only (2010-12-07)
+  Version SC_SNAPSHOT-2011-01-05/LGPL Development Only (2011-01-05)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -105,7 +105,7 @@ version:{
 name:"version"
 },
 dsXML:{
-length:"50000",
+length:50000,
 name:"dsXML",
 type:"text"
 },
@@ -203,7 +203,7 @@ _3={};isc.addProperties(_3,_1,{canClose:true,pane:this.createAutoChild(_1.paneCl
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-12-07/LGPL Development Only (2010-12-07)
+  Version SC_SNAPSHOT-2011-01-05/LGPL Development Only (2011-01-05)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

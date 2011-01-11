@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1824,10 +1824,10 @@ getSubmenu : function (item) {
         if (isc.isA.String(submenu)) {
             submenu = window[submenu];
         } else if (isc.isAn.Array(submenu)) {
-            submenu = isc.Menu.create({autoDraw: false, data: submenu}, properties);
+            submenu = this.getMenuConstructor().create({autoDraw: false, data: submenu}, properties);
             this._submenus.add(submenu);
         } else if (isc.isAn.Object(submenu)) {
-            submenu = isc.Menu.create(isc.addProperties({autoDraw: false}, properties, submenu));
+            submenu = this.getMenuConstructor().create(isc.addProperties({autoDraw: false}, properties, submenu));
             this._submenus.add(submenu);
         }
         item.submenu = submenu;

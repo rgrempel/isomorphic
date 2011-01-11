@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -3507,15 +3507,6 @@ isc.AutoTest.customizeCalendar = function () {
                 
                 
             }
-            if (locateBy == "name") {
-                this.locateRowsBy = "targetCellValue";
-            } else {
-                this.locateRowsBy = locateBy;
-            }
-            
-            // ignore 'colNum' parameter - we're looking up based on multiple fields 
-            var eventNum = this.getRowNumFromLocatorConfig(config);
-            return this.data.get(eventNum);
         }
         
     });

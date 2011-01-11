@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -222,7 +222,7 @@ fieldKeyDefaults: {_constructor: "ListGrid",
 // @group i18nMessages
 // @visibility external
 //<
-instructionsTextStart: "The following fields are available for use in this ",
+instructionsTextStart: "The following fields are available for use in this \${builderType}",
 
 //> @attr formulaBuilder.instructions (AutoChild Label : null : IR)
 // Label displaying the instruction text above the fieldKey grid.
@@ -298,13 +298,29 @@ cancelButtonDefaults: {_constructor: "IButton",
 //<
 testButtonDefaults: {_constructor: "IButton", 
     autoParent: "buttonLayout",
-    title: "Test", 
     width: 70, 
     extraSpace: 10,
     click: function () {
         this.creator.testFunction();
     }
 },
+
+//> @attr formulaBuilder.saveAddAnotherButton (AutoChild Button : null : IR)
+// Button to Save the formula, by generating it's function, testing it and firing 
+// formulaBuilder.fireOnClose, and then start editing another, new one.
+//
+// @group formulaFields
+// @visibility external
+//<
+saveAddAnotherButtonDefaults: {_constructor: "IButton", 
+    autoParent: "buttonLayout",
+    autoFit: true, 
+    extraSpace: 10,
+    click: function () {
+        if (this.creator.titleForm.validate()) this.creator.saveAddAnother();
+    }
+},
+
 
 //> @attr formulaBuilder.saveButton (AutoChild Button : null : IR)
 // Button to Save the formula, by generating it's function, testing it and firing 
@@ -315,8 +331,7 @@ testButtonDefaults: {_constructor: "IButton",
 //<
 saveButtonDefaults: {_constructor: "IButton", 
     autoParent: "buttonLayout",
-    title: "Save", 
-    width: 70, 
+    autoFit: true, 
     click: function () {
         if (this.creator.titleForm.validate()) this.creator.save();
     }
@@ -413,6 +428,13 @@ sourceFieldColumnTitle: "Source Field",
 //<
 cancelButtonTitle: "Cancel",
 
+//> @attr formulaBuilder.saveAddAnotherButtonTitle (string : "Save /& Add Another" : IRWA)
+// The default title for the "Save & Add Another" button.
+// @group i18nMessages
+// @visibility external
+//<
+saveAddAnotherButtonTitle: "Save & Add Another",
+
 //> @attr formulaBuilder.saveButtonTitle (string : "Save" : IRWA)
 // The default title for the "Save" button.
 // @group i18nMessages
@@ -453,7 +475,14 @@ invalidGeneratedFunctionPrompt: "The generated function is invalid - Check your 
 // @group i18nMessages
 // @visibility external
 //<
-sampleHeaderTitle: "Sample:"
+sampleHeaderTitle: "Sample:",
+
+//> @attr formulaBuilder.testButtonTitle (string : "Test" : IRWA)
+// The default title for the "Test" button.
+// @group i18nMessages
+// @visibility external
+//<
+testButtonTitle: "Test"
 
 });
 
@@ -538,6 +567,8 @@ initWidget : function () {
     // get the dataSource so we know what fields to support
     this.dataSource = isc.DataSource.get(this.dataSource);
 
+    var availableFields = this.getAvailableFields();
+    
     if (!this.field) {
         this.field = {
             name: this.getUniqueFieldName(),
@@ -545,7 +576,8 @@ initWidget : function () {
             type: this.fieldType,
             width: "50",
             canFilter: false,
-            canSortClientOnly: true
+            canSortClientOnly: true,
+            originalOrder: this.availablefields.length
         };
     }
     // --------------
@@ -556,8 +588,6 @@ initWidget : function () {
         contents: this.instructionsTextStart.evalDynamicString(this, { builderType: this.builderTypeText })
     });
     this.addMember(this.instructions);        
-
-    var availableFields = this.getAvailableFields();
 
     this.fieldKeyDS = isc.DataSource.create({
         ID: this.getID()+"DS",
@@ -635,12 +665,13 @@ initWidget : function () {
     // show the buttons in a layout
     this.addAutoChild("buttonLayout");
     this.addAutoChild("cancelButton", { title: this.cancelButtonTitle});
-    if (!this.autoTest) this.addAutoChild("testButton");
+    if (!this.autoTest) this.addAutoChild("testButton", { title: this.testButtonTitle});
+    this.addAutoChild("saveAddAnotherButton", { title: this.saveAddAnotherButtonTitle });
     this.addAutoChild("saveButton", { title: this.saveButtonTitle });
 
     if (this.showTitleField) this.titleForm.focusInItem(this.titleField);
     else this.formulaForm.focusInItem(this.formulaField);
-
+    
     // set the initialValue specific to FormulaBuilder.  Override in subclasses
     this.setInitialValue();
 
@@ -756,7 +787,11 @@ getHoverText : function () {
 },
 
 getAvailableFields : function () {
-    return this.getClass().getAvailableFields(this.getFields(), this.field);
+    if (!this.availableFields) {
+        this.availableFields = this.getClass().getAvailableFields(this.getFields(), this.field);
+    }
+
+    return this.availableFields;
 },
 
 getUsedFields : function () {
@@ -876,6 +911,51 @@ generateFunction : function () {
         this.component);
 },
 
+//> @method formulaBuilder.saveAddAnother()
+// Call to finish working, test the formula and call 
+// +link{FormulaBuilder.fireOnClose(), fireOnClose()}.  If the formula saves ok, don't close
+// the builder but instead reset it, ready to add a new formula-field.
+//
+// @group formulaFields
+// @visibility external
+//<
+saveAddAnother : function () {
+    this.restartBuilder = true;
+    this.save();
+},
+
+//> @attr formulaBuilder.warnDuplicateTitles (string : null : IRWA)
+// Should the user be showed a warning when the entered Title value already exists?
+// @visibility external
+//<
+
+//> @attr formulaBuilder.warnDuplicateTitlesMessage (string : "Another field already has the title '${fieldTitle}'.  Continue anyway?" : IRWA)
+// The message to display when warnDuplicateTitles is true 
+// This is a dynamic string - text within <code>\${...}</code> will be evaluated as JS code
+// when the message is displayed.
+// @group i18nMessages
+// @visibility external
+//<
+warnDuplicateTitlesMessage : "Another field already has the title '${fieldTitle}'.  Continue anyway?",
+
+fieldTitleIsUnique : function (title) {
+    var allFields = this.component ? this.component.getAllFields() : null,
+        fields = allFields ? allFields.findAll({"title": title}) : null,
+        isUnique = true
+    ;
+
+    if (fields && fields.length > 0) {
+        for (var i=0; i<fields.length; i++) {
+            if (fields[i].name != this.field.name) {
+                isUnique = false;
+                break;
+            }
+        }
+    }
+
+    return isUnique;
+},
+
 //> @method formulaBuilder.save()
 // Call to finish working, test the formula and call 
 // +link{FormulaBuilder.fireOnClose(), fireOnClose()}.  Called automatically
@@ -886,6 +966,29 @@ generateFunction : function () {
 //<
 save : function () {
     var result = this.testFunction();
+
+    if (this.warnDuplicateTitles && !this.duplicateTitleAccepted) {
+        var fieldTitle = this.getTitle();
+        if (!this.fieldTitleIsUnique(fieldTitle)) {
+            var msg = this.warnDuplicateTitlesMessage.evalDynamicString(this, { fieldTitle: fieldTitle })
+
+            var _this = this;
+            
+            isc.confirm(msg,
+                function (value) {
+                    if (value) {
+                        _this.duplicateTitleAccepted = true;
+                        _this.delayCall("save");
+                    } else {
+                        _this.restartBuilder = false;
+                    }
+                }
+            );
+            return null;
+        }
+    }
+    
+    delete this.duplicateTitleAccepted;
 
     if (result.emptyTestValue) {
         isc.warn(this.invalidBlankPrompt.evalDynamicString(this, { builderType: this.builderTypeText }));
@@ -920,6 +1023,13 @@ completeEditing : function (cancelled, ignoreSaveCheck) {
         }
     }
     if (this.helpWindow) this.hideHelpWindow();
+    
+    if (this.availableFields) {
+        // restore the original field-order
+        this.availableFields = this.availableFields.sortByProperty("originalOrder", true);
+        this.availableFields.clearProperty("originalOrder");
+    }
+    
     this.fireOnClose();
 },
 
@@ -1033,8 +1143,10 @@ getAvailableFields : function (fields, currentField) {
         var item = fields.get(i),
             type = item.type;
 
+        item.originalOrder = i;
+
         if (item.name == currentField.name) continue;
-            
+
         if (item.userFormula ||
             isc.SimpleType.inheritsFrom(type, "integer") || 
             isc.SimpleType.inheritsFrom(type, "float"))
@@ -1055,12 +1167,16 @@ getAvailableFields : function (fields, currentField) {
             actualField = availableFields.find("name", vars[key]),
             actualFieldKey = actualField.mappingKey
         ;
-        
+
         actualField.mappingKey = mappedField.mappingKey;
         mappedField.mappingKey = actualFieldKey;
     }
 
-    availableFields = availableFields.sortByProperty("mappingKey", true);
+    availableFields = availableFields.sortByProperties(["mappingKey"], [true],
+        [function (item, propertyName, context) {
+            return item[propertyName].length == 1 ? ' '+item[propertyName] : item[propertyName]
+        }]
+    );
 
     return availableFields;
 },
@@ -1072,16 +1188,21 @@ getUsedFields : function (formula, fields, currentField) {
 
     if (!availableFields || !formula) return usedFields;
 
-    availableFields = availableFields.sortByProperties([ "mappingKey" ], [ false ]);
+    availableFields = availableFields.sortByProperties(["mappingKey"], [false],
+        [function (item, propertyName, context) {
+            return item[propertyName].length == 1 ? ' '+item[propertyName] : item[propertyName]
+        }]
+    );
 
     for (var i = 0; i < availableFields.length; i++) {
         var item = availableFields.get(i);
         // check for #key syntax if allowEscapedKeys:true, then just key - both are supported
-        if (this.allowEscapedKeys && (
-            formula.indexOf("#" + item.mappingKey) >= 0 ||
-            formula.indexOf("#{" + item.mappingKey + "}") >= 0)) 
-        {
-            usedFields.add(item);
+        if (this.allowEscapedKeys) {
+            if (formula.indexOf("#" + item.mappingKey) >= 0 ||
+                formula.indexOf("#{" + item.mappingKey + "}") >= 0)
+            {
+                usedFields.add(item);
+            }
         } else if (formula.indexOf(item.mappingKey) >= 0) {
             usedFields.add(item);
         }
@@ -1188,7 +1309,11 @@ generateFunction : function (userFormula, fields, component) {
         missingFields = fieldDetails.missingFields
     ;
 
-    usedFields = usedFields.sortByProperties([ "mappingKey" ], [false]);
+    usedFields = usedFields.sortByProperties([ "mappingKey" ], [false],
+        [function (item, propertyName, context) {
+            return item[propertyName].length == 1 ? ' '+item[propertyName] : item[propertyName]
+        }]
+    );
 
     if (missingFields.length == 0) {
         if (usedFields.length > 0) {
@@ -1453,7 +1578,11 @@ getHoverText : function () {
 },
 
 getAvailableFields : function () {
-    return this.getClass().getAvailableFields(this.getFields(), this.field);
+    if (!this.availableFields) {
+        this.availableFields = this.getClass().getAvailableFields(this.getFields(), this.field);
+    }
+
+    return this.availableFields;
 },
 
 getUsedFields : function () {
@@ -1538,7 +1667,9 @@ getAvailableFields : function (fields, currentField) {
         var item = fields.get(i);
         
         if (item.name == currentField.name) continue;
-        
+
+        item.originalOrder = i;
+
         if (!item.userSummary) {
             item.mappingKey = isc.FormulaBuilder.mappingKeyForIndex(j++);
             if (!item.title) item.title = isc.DataSource.getAutoTitle(item.name);
@@ -1561,7 +1692,11 @@ getAvailableFields : function (fields, currentField) {
         mappedField.mappingKey = actualFieldKey;
     }
 
-    availableFields = availableFields.sortByProperty("mappingKey", true);
+    availableFields = availableFields.sortByProperties(["mappingKey"], [true],
+        [function (item, propertyName, context) {
+            return item[propertyName].length == 1 ? ' '+item[propertyName] : item[propertyName]
+        }]
+    );
 
     return availableFields;
 },
@@ -1573,7 +1708,11 @@ getUsedFields : function (formula, fields, allowBasicMultiCharKeys, currentField
 
     if (!availableFields || !formula) return usedFields;
 
-    availableFields = availableFields.sortByProperties([ "mappingKey" ], [ false ]);
+    availableFields = availableFields.sortByProperties(["mappingKey"], [false],
+        [function (item, propertyName, context) {
+            return item[propertyName].length == 1 ? ' '+item[propertyName] : item[propertyName]
+        }]
+    );
 
     for (var i = 0; i < availableFields.length; i++) {
         var item = availableFields.get(i);
@@ -1621,7 +1760,11 @@ generateFunction : function (userSummary, fields, component) {
         missingFields = fieldDetails.missingFields
     ;
 
-    usedFields = usedFields.sortByProperties([ "mappingKey" ], [false]);
+    usedFields = usedFields.sortByProperties(["mappingKey"], [false],
+        [function (item, propertyName, context) {
+            return item[propertyName].length == 1 ? ' '+item[propertyName] : item[propertyName]
+        }]
+    );
 
     if (usedFields.length > 0) {
         // script local vars for record-values

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -451,7 +451,7 @@ treeIsTied : function (column, node) {
 // This is generally the most recently clicked node unless programmatic navigation has taken
 // place.
 // <P>
-// If only the first column is showing, the root node is returned (which can be deteted via
+// If only the first column is showing, the root node is returned (which can be detected via
 // +link{Tree.isRoot()}).
 //
 // @return (Record) the selected record

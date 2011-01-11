@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -3945,14 +3945,6 @@ _$tablePolicy:"tablePolicy",
 _$colWidthEquals:"<COL WIDTH=",
 
 _$topRowTag:(isc.Browser.isIE ? "<TR STYLE='position:absolute'>" : "<TR>"),
-_$topRowCellStart:[
-    "<TD style='",
-    isc.Canvas._$noStyleDoublingCSS,
-    "height:0px;overflow:hidden;padding:0px;' class='",
-    null,            
-    "'>",
-    (isc.Browser.isSafari ? "<div style='overflow:hidden;height:0px'>" : "")
-],
             
 _$topRowCellEnd:(isc.Browser.isSafari ? "</div></TD>" : "</TD>"),
 _$cellStart:"<TD>",
@@ -4230,9 +4222,10 @@ getInnerHTML : function () {
     // out a row of cells with spacers.  <COL> tags on their own won't enforce minimums.
     output.append(this._$topRowTag);
 
+    var topRowCellStart = isc.DynamicForm._getTopRowCellStart();
     for (var colNum = 0; colNum < colWidths.length; colNum++) {
         if (!isc.isA.Number(colWidths[colNum])) {
-            output.append(this._$topRowCellStart.join(isc.emptyString), this._$topRowCellEnd);
+            output.append(topRowCellStart.join(isc.emptyString), this._$topRowCellEnd);
         } else {
             var innerWidth = colWidths[colNum];
             // NOTE: correct for spacing, but *do not* correct for padding, because we write out
@@ -4243,10 +4236,10 @@ getInnerHTML : function () {
             // We've seen this occur with a stylesheet that globally sets td background-color.
             // handle this by applying standard form cell style
              
-            this._$topRowCellStart[3] = (isc.FormItem ? isc.FormItem.getPrototype().baseStyle : null);
+            topRowCellStart[3] = (isc.FormItem ? isc.FormItem.getPrototype().baseStyle : null);
         
             var spacerHeight = isc.Browser.isIE ? 1 : 0,
-                cellStart = this._$topRowCellStart.join(isc.emptyString);
+                cellStart = topRowCellStart.join(isc.emptyString);
             output.append(cellStart, 
                           this.fixedColWidths ? isc.Canvas.spacerHTML(innerWidth,spacerHeight) : null,
                           this._$topRowCellEnd);
@@ -4592,9 +4585,24 @@ getTitleOrientation : function (item) {
     return (item ? item.titleOrientation : null) || this.titleOrientation || isc.Canvas.LEFT;
 },
 
+//> @attr dynamicForm.titleAlign (Alignment : null : IRW)
+// Default alignment for item titles. If unset default alignment will be derived from
+// +link{Page.isRTL(),text direction} as described in +link{dynamicForm.getTitleAlign()}
+// @visibility external
+//<
+
 //>	@method	dynamicForm.getTitleAlign()	(A)
-// Get the alignment for the title for this item, taking into account RTL vs LTR text direction
-// as a default.
+// Get the alignment for the title for some item. Default implementation is as follows:
+// <ul><li>If +link{formItem.titleAlign} is specified, it will be respected</li>
+//     <li>Otherwise if +link{dynamicForm.titleAlign,this.titleAlign} is set, it will be
+//         respected</li>
+//     <li>Otherwise titles will be aligned according to +link{Page.isRTL(),text direction},
+//         with this method returning <code>"right"</code> if text direction is LTR,
+//         or <code>"left"</code> if text direction is RTL.
+// </ul>
+// @param item (FormItem) item for which we're getting title alignment
+// @return (Alignment) alignment for title
+// @visibility external
 //<
 getTitleAlign : function (item) {
     var form = this.form || this; // for ContainerItem method-stealing hack
@@ -4700,18 +4708,6 @@ _titleClipDivTemplate:[
     "'>" // 4
 ],
 
-_titleInnerTableTemplate:[
-    "<TABLE height=",   // 0
-    , // 1: height
-    " border=0 cellspacing=0 cellpadding=0><tr><td class='", // 2
-    , // 3: className
-    // Override any style attributes that would look wrong double-applied by the className
-    "' style='" + isc.Canvas._$noStyleDoublingCSS + "' ALIGN='", // 4
-    , // 5: this.getTitleAlign(item)
-    "'>",   // 6
-    null    // 7: <NOBR>
-],
-
 getTitleCellHTML : function (item, error) {
 	var output = isc.StringBuffer.create(),
         className = item.getTitleStyle(),
@@ -4744,7 +4740,6 @@ getTitleCellHTML : function (item, error) {
 
 // Content of the title cell
 getTitleCellInnerHTML : function (item, error) {
-        
     // Use the width / height calculated by TableResizePolicy rather than the specified
     // height / titleWidth properties.
     // Note that this is the total available space for the cell rather than the inner
@@ -4816,7 +4811,7 @@ getTitleCellInnerHTML : function (item, error) {
         
         // If we're not in moz, add a nested table to force centering
         if (!isc.Browser.isMoz) {
-            var innerTableTemplate = this._titleInnerTableTemplate;
+            var innerTableTemplate = isc.DynamicForm._getTitleInnerTableTemplate();
             innerTableTemplate[1] = height;
             innerTableTemplate[3] = className;
             innerTableTemplate[5] = titleAlign;
@@ -5699,7 +5694,10 @@ getHiddenErrors : function () {
 // like 'handleHiddenFieldValidationErrors()' instead.
 
 showFieldErrors : function (fieldName, suppressAutoFocus) {
-    return this.showErrors(null, null, suppressAutoFocus);
+
+    // 'null' has meaning to showErrors so use explicit undefined instead
+    var undef;
+    return this.showErrors(undef, undef, suppressAutoFocus);
 },
 
 // _handleHiddenValidationErrors()
@@ -6308,7 +6306,7 @@ _getEventTargetItemInfo : function (event) {
 },
 
 //> @method dynamicForm.getEventItem () 
-// If the current mouse event occured over an item in this dynamicForm, returns that item.
+// If the current mouse event occurred over an item in this dynamicForm, returns that item.
 // @return (FormItem) the current event target item
 // @visibility external
 //<
@@ -6321,12 +6319,12 @@ getEventItem : function () {
 },
 
 //> @object FormItemEventInfo
-// An object containing details for mouse events occuring over a FormItem.
+// An object containing details for mouse events occurring over a FormItem.
 // @visibility external
 //<
 
 //>@attr formItemEventInfo.item (FormItem : null : R)
-// Item over which the event occured.
+// Item over which the event occurred.
 // @visibility external
 //<
 
@@ -6350,7 +6348,7 @@ getEventItem : function () {
 //<
 
 //> @method dynamicForm.getEventItemInfo () 
-// If the current mouse event occured over an item, or the title of an item in this
+// If the current mouse event occurred over an item, or the title of an item in this
 // dynamicForm, return details about where the event occurred.
 // @return (FormItemEventInfo) the current event target item details
 // @visibility external
@@ -7043,7 +7041,7 @@ getItemTableOffsets : function (item, overrideRowTable) {
 
 getItemDropIndex : function (item, dropSide) {
     if (!item) return;
-    if (!dropSide) dropSide == "L"; // by default, drop at item.itemIndex
+    if (!dropSide) dropSide = "L"; // by default, drop at item.itemIndex
 
     var offsets = this.getItemTableOffsets(item),
         rowTable = this.items._rowTable;
@@ -7710,6 +7708,56 @@ getFilterCriteria : function () {
         isc.addProperties(criteria, arg.getFilterCriteria());
     }
     return criteria;
+},
+
+// HTML template generation
+_getTopRowCellStart : function () {
+     if (!this._observingDoublingStrings) {
+        isc.Canvas._doublingStringObservers.add({
+            target:this, 
+            methodName:"_doublingStringsChanged"
+        });
+        this._observingDoublingStrings = true;
+    }
+    if (this._$topRowCellStart == null) {
+        this._$topRowCellStart = [
+            "<TD style='",
+            isc.Canvas._$noStyleDoublingCSS,
+            "height:0px;overflow:hidden;padding:0px;' class='",
+            null,            
+            "'>",
+            (isc.Browser.isSafari ? "<div style='overflow:hidden;height:0px'>" : "")
+        ]
+    }
+    return this._$topRowCellStart;
+},
+_getTitleInnerTableTemplate : function () {
+    if (!this._observingDoublingStrings) {
+        isc.Canvas._doublingStringObservers.add({
+            target:this, 
+            methodName:"_doublingStringsChanged"
+        });
+        this._observingDoublingStrings = true;
+    }
+    if (this._titleInnerTableTemplate == null) {
+        this._titleInnerTableTemplate = [
+            "<TABLE height=",   // 0
+            , // 1: height
+            " border=0 cellspacing=0 cellpadding=0><tr><td class='", // 2
+            , // 3: className
+            // Override any style attributes that would look wrong double-applied by the className
+            "' style='" + isc.Canvas._$noStyleDoublingCSS + "' ALIGN='", // 4
+            , // 5: this.getTitleAlign(item)
+            "'>",   // 6
+            null    // 7: <NOBR>
+        ];
+    }
+    return this._titleInnerTableTemplate;
+},
+
+_doublingStringsChanged:function () {
+    this._$topRowCellStart = null;
+    this._titleInnerTableTemplate = null;
 }
 	
 

@@ -52,7 +52,20 @@ with (theWindow) {
 //----------------------------------------
     isc.Canvas.addProperties({
         showCustomScrollbars:true
-    })
+    });
+
+    if(isc.Browser.isIE && isc.Browser.version >= 7) {
+        isc.Canvas.setAllowExternalFilters(false);
+        isc.Canvas.setNeverUseFilters(true);
+        if(isc.Window) {
+          isc.Window.addProperties({
+                modalMaskOpacity:null,
+                modalMaskStyle:"normal"
+            });
+            isc.Window.changeDefaults("modalMaskDefaults", { src : "[SKIN]opacity.png" });
+        }
+    }
+
     isc.ScrollThumb.addProperties({
         capSize:9
     })

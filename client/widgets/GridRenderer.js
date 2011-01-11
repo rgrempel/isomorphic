@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -383,7 +383,7 @@ emptyCellValue:"&nbsp;",
 //>	@attr	gridRenderer.offlineMessage		(string : null : IRW)
 // The string to display in the body of a listGrid with an empty data array, if
 // showOfflineMessage is true and the data array is empty because we are offline and there
-// is no suitable cached responsed
+// is no suitable cached response
 // @group offlineGroup, emptyMessage, i18nMessages
 // @visibility external
 //      @see	showOfflineMessage
@@ -559,7 +559,7 @@ getEmptyMessageHTML : function (startCol,endCol,offline) {
                 "'>" +
                 this.grid.getPrintHeaders(startCol, endCol) +
                 "<TR><TD  ALIGN=CENTER VALIGN=TOP class='" + 
-                (offline ? this.offlineMessageStyle : this.emptyMessageStyle)
+                (offline ? this.offlineMessageStyle : this.emptyMessageStyle) +
                 "' colspan='" + ((endCol-startCol)+1) + "'>" +
                 (offline ? this.getOfflineMessage() : this.getEmptyMessage())
                 + "</TD></TR></TABLE>";
@@ -3199,6 +3199,7 @@ addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
         // redraw, which will draw the row at the new height and place the component
         this.markForRedraw("added embedded component");
     }
+    return component;
 },
 
 _handleEmbeddedComponentResize : function (component, deltaX, deltaY) {
@@ -3263,6 +3264,9 @@ placeEmbeddedComponent : function (component) {
             cpw = component._percent_width, 
             cph = component._percent_height,
             cw, ch;
+
+        // If positioned offset from the left, shrink the target space
+        if (component.snapOffsetLeft) width -= component.snapOffsetLeft;
 
         if (isc.isA.String(cpw) && cpw.endsWith("%")) {
             cw = Math.round((parseInt(cpw) * width) / 100);   

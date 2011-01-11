@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -873,6 +873,7 @@ isc.EditorActionMethods.addInterfaceMethods({
         // Exceptions 
         // - provide a non obfuscated flag to suppress this data synch
         // - If the server threw an error the data object may be a simple error message
+        
         if (!this.suppressServerDataSync && response && response.status >= 0 && data != null) {
             if (isc.isAn.Array(data)) data = data[0];
             // Note: if request.originalData is present, use this rather than request.data
@@ -898,6 +899,12 @@ isc.EditorActionMethods.addInterfaceMethods({
                     this.setValue(i, data[i]);
                 }
             }
+            
+            // If this was a save operation, drop the currently specified saveOperationType now
+            // if the response included primary key data for the newly added record we're now
+            // updating an existing record. We already have logic to catch this case in
+            // getSaveOperationType().
+            if (this.saveOperationType == "add") delete this.saveOperationType;
         }
         
         this._callbackState = {
@@ -985,6 +992,7 @@ isc.EditorActionMethods.addInterfaceMethods({
     
     // reply to the 'save editor' call
 	saveEditorReply : function (response, data, request) {
+	    
         // error occurred: the presence of results.errors indicates it's a validation error,
         // which we can handle.  XXX should really check for status == validation error constant
 		if (response.status == isc.RPCResponse.STATUS_VALIDATION_ERROR && response.errors) {

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -58,6 +58,7 @@ var Offline = {
     // +link{useNativeOfflineDetection,useNativeOfflineDetection} for important notes on 
     // browser detection of offline state.
 	//
+    // @return (boolean) true if the current browser session is offline
 	// @see Offline.goOffline() 
 	// @see Offline.goOnline() 
 	// @see Offline.useNativeOfflineDetection()

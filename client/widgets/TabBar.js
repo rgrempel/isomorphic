@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -219,12 +219,20 @@ initWidget : function () {
     // have iconClick close the tabs if appropriate
     tabDefaults.iconClick = this._tabIconClickHandler;
     
-    // Override the click or doubleClick handler as necessary to implement title editing
-    if (this.creator.titleEditEvent == "doubleClick") {
-        tabDefaults.doubleClick = this._tabClickHandler;
-    } else {
-        tabDefaults.click = this._tabClickHandler;
+    // Override the click and doubleClick handler as necessary to implement title editing
+    // Note if _editTabTitle returns false this indicates we're editing the title - in this
+    // case suppress any doubleClick etc handler defined by the developer directly on the
+    // tab
+    tabDefaults.handleDoubleClick = function () {
+        var tabSet = this.parentElement.parentElement;
+        if (tabSet && tabSet.titleEditEvent == "doubleClick" && tabSet._editTabTitle(this)) return;
+        return this.Super("handleDoubleClick", arguments);
     }
+    tabDefaults.handleClick = function () {
+        var tabSet = this.parentElement.parentElement;
+        if (tabSet && tabSet.titleEditEvent == "click" && tabSet._editTabTitle(this)) return;
+        return this.Super("handleClick", arguments);
+    },
 
     tabDefaults._generated = true;
     
@@ -243,10 +251,6 @@ isShowingMoreTab : function () {
         this.getMembers(this._moreTabIndex).isVisible &&
         this.getMembers(this._moreTabIndex).isVisible()
     );
-},
-
-_tabClickHandler : function () {
-    this.parentElement.parentElement._editTabTitle(this);
 },
 
 // _tabIconClickHandler - method applied directly to the tabs

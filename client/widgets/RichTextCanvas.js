@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -51,10 +51,11 @@ isc.RichTextCanvas.addProperties({
     canFocus : true,
 
     // Don't write out a focusProxy for RichTextCanvases - we don't want native keyboard 
-    // focus to go to a hidden element - when this Canvas has ISC focus, it should have native
-    // keyboard focus too so the user can edit it the value.
-    
-    _useFocusProxy:false, 
+    // focus to go to a hidden element
+    // Instead - in design mode we apply tabIndex directly to the content frame
+    // otherwise we rely on native tabIndex to allow focus in the widget handle at
+    // the correct times.
+    _useFocusProxy:false,
     
     
     overflow:isc.Canvas.AUTO,
@@ -111,6 +112,13 @@ isc.RichTextCanvas.addMethods({
         if (this.overflow != isc.Canvas.AUTO) {
             this.logWarn('RichTextCanvas class currently only supports an overflow property of "auto"');
             this.overflow = isc.Canvas.AUTO;
+        }
+        
+        // In "design mode" - where we write out an iframe with editable body content, 
+        // turn off native tab index on the handle. We'll instead apply the tabIndex directly
+        // to the iframe
+        if (this._useDesignMode()) {
+            this._useNativeTabIndex = false;
         }
         
         this.Super("initWidget", arguments);
@@ -171,7 +179,7 @@ isc.RichTextCanvas.addMethods({
 
         
             srcArray= [
-                
+                 
                 
                 
 
@@ -181,15 +189,23 @@ isc.RichTextCanvas.addMethods({
                 
                 (isSafari || true ? 
                     " src='" + isc.Page.getURL("[HELPERS]empty.html") + "'" : null),
-                    
-
-                " ONLOAD='", this.getID(), "._frameLoaded();'",
                 
+                " ONLOAD='", this.getID(), "._frameLoaded();'",
+                " TABINDEX=", this.getTabIndex(),
                 " ID='", this.getIFrameID(), "'></IFRAME>"
         ];
-        //this.logWarn(srcArray.join(""));
+        this.logWarn(srcArray.join(""));
         
         return srcArray.join(isc.emptyString);
+    },
+    
+    _setHandleTabIndex : function (index) { 
+        if (this._useDesignMode()) {
+            var frame = this.getContentFrame();
+            if (frame != null) frame.tabIndex = index;
+        } else {
+            return this.Super("_setHandleTabIndex", arguments);
+        }
     },
     
     
@@ -548,7 +564,20 @@ isc.RichTextCanvas.addMethods({
                                                  "var returnValue=" + this.getID() + "._iFrameScroll(event);" +
                                                  "if(returnValue==false && event.preventDefault)event.preventDefault()"
                                                 );
-            }    
+            }
+            
+            if (!this._editFocusHandler) {
+                this._editFocusHandler = new Function(
+                                                "event",
+                                                this.getID() + "._iFrameOnFocus();"
+                                               );
+            }
+            if (!this._editBlurHandler) {
+                this._editBlurHandler = new Function(
+                                                "event",
+                                                this.getID() + "._iFrameOnBlur();"
+                                              );
+            }
             var win = this.getContentWindow();
             
             
@@ -561,7 +590,10 @@ isc.RichTextCanvas.addMethods({
                                                                 false);                                                                                                                                                
             
             win.addEventListener("scroll", this._editScrollHandler, 
-                                                                    false);        
+                                                                    false);
+            win.addEventListener("focus", this._editFocusHandler, false);
+            win.addEventListener("blur", this._editBlurHandler, false);
+            
             var bodyStyle = this.getContentBody().style;
             // Suppress the default margin
             bodyStyle.margin = "0px";
@@ -645,6 +677,18 @@ isc.RichTextCanvas.addMethods({
     // scroll position of this.getScrollHandle() - which points at the IFRAME).
     _iFrameScroll : function (event) {
         return this._handleCSSScroll(event);
+    },
+    
+    _iFrameOnFocus : function () {
+        if (this.destroyed) return;
+        isc.EH.focusInCanvas(this, true);
+        return true;
+    },
+    
+    _iFrameOnBlur : function () {
+        if (this.destroyed) return;
+        isc.EH.blurFocusCanvas(this, true);
+        return true;
     },
     
     // Adjust overflow on keypress - updates recorded scroll width/height
@@ -892,7 +936,7 @@ isc.RichTextCanvas.addMethods({
     // apply a SyntaxHiliter to the contents
     setSyntaxHiliter : function (syntaxHiliter) {
         if (syntaxHiliter == null) {
-            this.removeSyntaxHiliter;
+            this.removeSyntaxHiliter();
             return;
         }
         this.syntaxHiliter = syntaxHiliter;

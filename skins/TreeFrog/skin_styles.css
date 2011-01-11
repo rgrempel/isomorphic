@@ -888,6 +888,7 @@
 .headerBar {}
 .gridBody {}
 .loadingDataMessage,
+.offlineMessage,
 .emptyMessage {
     font-family:Arial,Bitstream Vera Sans,sans-serif; font-size:11px; padding:10px;
 }

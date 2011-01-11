@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -938,18 +938,21 @@ _dragTrackerThickness: 2,
 //		@group	dragging, drawing
 //<
 showDragLineForRecord : function () {
-   
-     if (isc.isAn.Array(this.data)) {
+  // isc.logWarn('tilelayout.showDragLineForRecord: ' + this.data);
+     if (isc.isAn.Array(this.data) || (isc.isA.ResultSet(this.data))) {
         var x = this.getOffsetX(), y = this.getOffsetY(), xBase = this.getPageLeft(), yBase = this.getPageTop();
         if (this.data.getLength() == 0) {
             return;    
         }
+        
         // get index of tile that mouse is over
         var currIndex = this.findIndexForCoord(x, y);
         // keep track of the index where dragging started to detect a self-drop in this.drop()
         // would have used dragStart, but it doesn't fire for tileLayout (does for tileGrid)
         if (this._dragStartIndex == null) this._dragStartIndex = currIndex;
         var tLeft, tTop, tile = this.getRecordTile(currIndex);
+        //isc.logWarn('TL.showDragLine:' + [currIndex, this._dragStartIndex]);
+      
         // make the cursor move to the next tile if the mouse is more than half way 
         // across the current tile
         if (tile != null) {
@@ -996,11 +999,44 @@ showDragLineForRecord : function () {
 },
 
 showDragLine : function (left, top, width, height) {
+    
     // make sure the drag line is set up
 	this.makeDragLine();
+	// make sure the drag line isn't hanging over the top or bottom edges of 
+	// the tilegrid. If it is, adjust the top and height params accordingly.
+	
+	// cache tilegrid visible height
+	var visHeight = this.getVisibleHeight();
+	// calculate the border around this tilegrid
+	var border = Math.round((visHeight - this.getInnerHeight()) / 2); 	
+	// cache the pageTop
+	var pTop = this.getPageTop();
+	// get the top and bottom y coords of the inner part of this tilegrid
+	var gridTop = pTop + border;
+	var gridBottom = pTop + visHeight - border;
+	// if the dragline is sticking out above the grid, make the height = the 
+	// amount its sticking out, and move it down so its aligned with the top edge 
+	// of the tilegrid	
+	if (top < gridTop) {	    	    
+	    height = height - (gridTop - top);
+	    top = gridTop;
+	// otherwise if the dragline is sticking out below the tilegrid, truncate
+	// the dragline so its within the grid borders
+	} else if (top + height > gridBottom ) {
+	    // border condition: if a record is dragged over this tilegrid and 
+	    // we can reorder tiles, there are certain cases where the dragLine
+	    // will placed completely below and outside of the grid. In this case,
+	    // just make the tracker height 0 so it doesn't appear at all.
+        if (top >= gridBottom) {           
+            height = 0;
+        } else {
+            height = height - ((top + height) - gridBottom);
+	    }
+	}
+	
     this._dragLine.moveTo(left, top);
     this._dragLine.resizeTo(width, height);
-    this._dragLine.show();
+    this._dragLine.show();    
 },
 
 dropOut : function () {
@@ -1008,8 +1044,8 @@ dropOut : function () {
     this.hideDragLine();
 },
 
-dropMove: function () {
-     this.showDragLineForRecord();
+dropMove : function () {   
+    this.showDragLineForRecord();
     
 },
 
@@ -1025,14 +1061,15 @@ findIndexForCoord : function (left, top) {
     }
     // obtain the ID of the drag target if it exists. It will be one of the 
     // tiles if dragAppearance = 'target' on the tile
-    var dragTarg = this.ns.EH.dragTarget, dragID;
+    var eh = this.ns.EH;
+    var dragTarg = eh.dragTarget, dragID;
     if (dragTarg) dragID = dragTarg.ID;
     for (var i = start; i < end; i++) {
         var tile = this.getRecordTile(i);
         if (!tile) continue;
         // skip the drag target, otherwise the only valid index will ever be
         // the start index of the target.
-        if (tile.ID == dragID) continue; 
+        if (tile.ID == dragID) continue;       
         if (tile.getLeft() + tile.getVisibleWidth() > left 
             && tile.getTop() + tile.getVisibleHeight() > top) return i;
     }

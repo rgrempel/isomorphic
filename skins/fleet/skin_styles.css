@@ -728,6 +728,7 @@
     border-left:2px solid #1E416C; border-right:2px solid #1E416C;
 }
 .loadingDataMessage,
+.offlineMessage,
 .emptyMessage {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px; padding:10px;
 }

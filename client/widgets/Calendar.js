@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1594,8 +1594,8 @@ removeEvent : function (event, ignoreDataChanged) {
         // when eventAutoArrange is true, refresh the day and week views to reflow the events
         // so that they fill any space made available by the removed event
         if (self.eventAutoArrange) {
-            self.dayView.refreshEvents();
-            self.weekView.refreshEvents();    
+            if (self.dayView) self.dayView.refreshEvents();
+            if (self.weekView) self.weekView.refreshEvents();    
         }
         // fire eventRemoved if present
         if (self.eventRemoved) self.eventRemoved(event);
@@ -2065,14 +2065,7 @@ _prepareAutoArrangeOffsets : function (events, grid) {
         }
         
     }
-   
-    for (var i = 0; i < events.getLength(); i++) {
-        var curr = events.get(i);
-        if (!curr._eventEndOffset || curr._eventEndOffset == 0) { 
-            curr._eventEndOffset == columnCount;
-        }
-    }
-
+  
     return columnCount;
 },
 
@@ -3740,10 +3733,9 @@ isc.DaySchedule.addProperties({
     
     // To be used with calendar.scrollToWorkday 
     scrollToWorkdayStart : function () {
-        var sDate = isc.Time.parseInput(this.creator.workdayStart);
-        var sRow = sDate.getUTCHours() * 2;
-        if (sDate.getUTCMinutes() > 0) sRow++;
-       
+        var sDate = isc.Time.parseInput(this.creator.workdayStart);         
+        var sRow = sDate.getHours() * 2;
+        if (sDate.getMinutes() > 0) sRow++;      
         var sRowTop = this.getRowHeight(null, 0) * sRow;
         //this.scrollRecordIntoView(sRow, false);
         this.body.scrollTo(0, sRowTop);
@@ -3824,7 +3816,7 @@ isc.DaySchedule.addProperties({
        return this.labelColumnAlign;
     },
     
-    cellMouseDown : function (record, rowNum, colNum) {
+    cellMouseDown : function (record, rowNum, colNum) {       
         if (this.isLabelCol(colNum) || this.colDisabled(colNum)) return true; 
         // don't set up selection tracking if canCreateEvents is disabled
         if (!this.creator.canCreateEvents) return true;
@@ -5440,9 +5432,7 @@ isc.TimelineView.addProperties({
             
             var eventRowIndex = this.data.findIndex(cal.eventTypeField, event[cal.eventTypeField]);
            // isc.logWarn('eventRowIndex:' + eventRowIndex);
-            if (eventRowIndex == -1) {
-                //isc.logWarn("null eventRowIndex:" + this.echoFull(event));    
-            }
+            //if (eventRowIndex == -1) isc.logWarn("null eventRowIndex:" + this.echoFull(event));    
             if (this.eventsOverlap(rangeObj, event) && rowRange[0] <= eventRowIndex 
                 && eventRowIndex <= rowRange[1]) {
                 results.add(event);    

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -563,7 +563,7 @@ saveData : function (callback) {
     }
     var dsRequest = form.saveData(this.getID()+".saveDataCallback(dsRequest, dsResponse, data)",
                          {
-                             params: {formID : form.getID(), singleUpload: "true"},
+                             params: {formID : form.getID()},
                              // we want to be notified of an error so we can kill the progressCheck thread
                              willHandleError: true,
                              form: form,

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -256,7 +256,7 @@ isc.Canvas.addProperties({
                 menuItems = (edited.editMenuItems || []).concat(this.standardMenuItems);
             }
 
-            if (!this.contextMenu) this.contextMenu = isc.Menu.create({});
+            if (!this.contextMenu) this.contextMenu = this.getMenuConstructor().create({});
             this.contextMenu.setData(menuItems);
 
             // NOTE: show the menu on our masterElement (the widget we're masking) so that "target"
@@ -844,7 +844,11 @@ isc.Class.addMethods({
         // (eg field "contextMenu", "setContextMenu")
         if (!field.multiple) {
             var props = {};
-            props[fieldName] = child;
+            if (verb == "remove") {
+                props[fieldName] = null;
+            } else {
+                props[fieldName] = child;
+            }
             this.logInfo(verb + "ChildObject calling setProperties for fieldName '" + fieldName +
                          "'", "editing");
             this.setProperties(props);
@@ -984,7 +988,16 @@ isc.Class.addMethods({
                 // realize we took a copy
                 this.editModeOriginalValues[fieldName] = null;
             } else {
-                this.editModeOriginalValues[fieldName] = this[fieldName];
+                if (this[fieldName] && this[fieldName]._isObservation) {
+                    // Pick up the original method, not the notification function set up by
+                    // observation.
+                    // If we ever restore the method we want to be restoring the underlying functionality
+                    // and not restoring a notification function which may no longer be valid.
+                    var origMethodName = isc._obsPrefix + fieldName;
+                    this.editModeOriginalValues[fieldName] = this[origMethodName];
+                } else {
+                    this.editModeOriginalValues[fieldName] = this[fieldName];
+                }
             }
         }
     },
@@ -999,6 +1012,7 @@ isc.Class.addMethods({
             var fieldName = isc.isAn.Object(fieldNames[i]) ? fieldNames[i].name : fieldNames[i];
             if (this.editModeOriginalValues[fieldName] !== undef) {
                 changes[fieldName] = this.editModeOriginalValues[fieldName];
+                
                 // Zap the editModeOriginalValues copy so that future queries will return 
                 // the live value
                 delete this.editModeOriginalValues[fieldName];
@@ -1007,6 +1021,8 @@ isc.Class.addMethods({
         }
         // need to apply via addProperties or StringMethods added to a component in edit mode
         // will not become live functions in live mode
+        // This also means we shouldn't interfere with any observation of methods - addProperties
+        // correctly updates the underlying method and leaves observation intact.
         this.addProperties(changes);
     },
     
@@ -1885,9 +1901,9 @@ editModeDropMove : function () {
         overItem = this.getItemAtPageOffset(event.x, event.y),
         dropItem = this.getNearestItem(event.x, event.y);
 
-    if (this._lastDragOverItem && this._lastDragOverItem != dropItem) {
+    //if (this._lastDragOverItem && this._lastDragOverItem != dropItem) {
         // still over an item but not the same one
-    }
+    //}
 
     // We only consider passing the drop through if the cursor is not over an actual item
     if (overItem) {
@@ -2796,7 +2812,7 @@ editModeClearNoDropIndicator : function (type) {
 // Special editMode version of setNoDropCursor - again, because the base version no-ops in 
 // circumstances where we need it to refresh the cursor.
 editModeSetNoDropIndicator : function () {
-    this.invokeSuper(isc.ListGrid, "setNoDropIndicator");
+    this.Super("setNoDropIndicator", arguments);
     this.body.editModeSetNoDropIndicator();
 },
 
@@ -3211,7 +3227,6 @@ isc.EditContext.addClassMethods({
         if (this._dragHandle) this._dragHandle.hide();
         
         var selectedObject = isc.SelectionOutline.getSelectedObject();
-        
         if (selectedObject && this.observer) {
             this.observer.ignore(selectedObject, "dragMove");
             selectedObject.restoreFromOriginalValues([
@@ -3222,7 +3237,7 @@ isc.EditContext.addClassMethods({
                 "dragMove",
                 "dragStop",
                 "setDragTracker"
-            ])
+            ]);
         }
         
         var underlyingObject,
@@ -3327,7 +3342,6 @@ isc.EditContext.addClassMethods({
                 }
             });
         }
-        
         if (this.draggingObject) {
             this.observer.ignore(this.draggingObject, "dragMove");
             this.observer.ignore(this.draggingObject, "dragStop");
@@ -3351,7 +3365,6 @@ isc.EditContext.addClassMethods({
         if (!this.observer) this.observer = isc.Class.create();
         
         this.draggingObject = dragTarget;
-
         this.observer.observe(this.draggingObject, "dragMove", 
                     "isc.EditContext.positionDragHandle(true)");
         this.observer.observe(this.draggingObject, "dragStop", 
@@ -3360,7 +3373,6 @@ isc.EditContext.addClassMethods({
                     "isc.EditContext._dragHandle.hide()");
         this.observer.observe(this.draggingObject, "destroy", 
                     "isc.EditContext._dragHandle.hide()");
-                    
         this._dragHandle.show();
     },
     
@@ -3374,7 +3386,7 @@ isc.EditContext.addClassMethods({
         var selected = this.draggingObject;
         
         if (selected.destroyed || selected.destroying) {
-            this.logWarn("target of dragHandle: " + isc.echoLeft(selected) + " is invalid: " + 
+            this.logWarn("target of dragHandle: " + isc.Log.echo(selected) + " is invalid: " + 
                          selected.destroyed ? "already destroyed" 
                                             : "currently in destroy()");
             return;
@@ -4680,16 +4692,18 @@ isc.EditTree.addMethods({
 
     willAcceptDrop : function () {
         if (!this.Super("willAcceptDrop",arguments)) return false;
-
 	    var recordNum = this.getEventRow(),
 		    dropTarget = this.getDropFolder(),
             dragData = this.ns.EH.dragTarget.getDragData()
         ;
-
+        
         if (dragData == null) return false;
+        if (isc.isAn.Array(dragData)) {
+            if (dragData.length == 0) return false;
+            dragData = dragData[0];
+        }
+        
         if (dropTarget == null) dropTarget = this.data.getRoot();
-
-        if (isc.isAn.Array(dragData)) dragData = dragData[0];
         var dragType = dragData.className || dragData.type;
 
         this.logInfo("checking dragType: " + dragType + 
@@ -4729,7 +4743,7 @@ isc.EditTree.addMethods({
                     var oldIndex = this.data.getChildren(oldParent).indexOf(newNode);
                     if (oldIndex != null && oldIndex <= index) index--;
                 }
-                editTree.removeComponent(newNode, parent, index);
+                editTree.removeComponent(newNode);
             }
             
             editTree.addNode(node, parent, index);
@@ -4934,7 +4948,7 @@ isc.EditTree.addMethods({
             liveParent = this.getLiveObject(parentNode),
             liveChild = this.getLiveObject(editNode);
 
-        //this.logWarn("removing with initData: " + this.echo(node.initData));
+        //this.logWarn("removing with initData: " + this.echo(editNode.initData));
 
         isc.DS.removeChildObject(liveParent, editNode.type, liveChild);
     },

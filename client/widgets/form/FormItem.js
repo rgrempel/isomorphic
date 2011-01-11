@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -300,7 +300,79 @@ isc.FormItem.addClassMethods({
             errorString += (i > 0 ? "<br>" : "") + errors[i].asHTML();
         };
         return errorString;
+    },
+    
+    
+    // HTML templating involving no-style-doubling string [which may change at runtime]
+    _getOuterTableStartTemplate : function () {
+        if (!this._observingDoublingStrings) {
+            isc.Canvas._doublingStringObservers.add({
+                target:this, 
+                methodName:"_doublingStringsChanged"
+            });
+            this._observingDoublingStrings = true;
+        }
+        if (this._$outerTableStartTemplate == null) {
+            this._$outerTableStartTemplate = [
+                "<TABLE CELLSPACING=0 CELLPADDING=0 BORDER=0 ID='",         // 0
+                ,                                                           // 1 [ID for outer table]
+                // We'll apply the 'cellStyle' for the item to the outer table as styles won't
+                // be inherited by sub elements of the table.
+                // Explicitly avoid getting doubled borders etc.
+                "' STYLE='" + isc.Canvas._$noStyleDoublingCSS,              // 2
+                ,                                                           // 3 [css to override class attrs]
+                "' CLASS='",                                                // 4
+                ,                                                           // 5 [pick up the cellStyle css class]
+                
+                "'><TR>",                                                   // 6
+                ,                                                           // 7 Potential first cell for 
+                                                                            //   error on left...
+                // Main cell - If we're showing a picker this will contain the 'control' table
+                // If we're not showing a picker, this wll contain the 'text box'                                                                    
+                "<TD style='",                                              // 8
+                ,                                                           // 9 [possibly css for text box cell]
+                "' VALIGN=",                                                // 10 
+                        
+                ,                                                           // 11   [v align]
+                ">"                                                         // 12
+                // Either the text box element (returned by getElementHTML()) or an inner control table
+                
+            ];
+        }
+        return this._$outerTableStartTemplate;
+    },
+    _getIconsCellTemplate : function () {
+        if (!this._observingDoublingStrings) {
+            isc.Canvas._doublingStringObservers.add({
+                target:this, 
+                methodName:"_doublingStringsChanged"
+            });
+            this._observingDoublingStrings = true;
+        }
+
+        if (this._$iconsCellTemplate == null) {
+            this._$iconsCellTemplate = [
+                "</TD><TD VALIGN=",     // 0
+                ,                       // 1 [v align property for icons]
+                
+                " WIDTH=",              // 2
+                ,                       // 3 [total icons width]
+                " style='" + isc.Canvas._$noStyleDoublingCSS + "' class='", // 4
+                ,                       // 5 Apply standard cell style to the item
+                "'>",                   // 6
+                null                    // 7 [icons HTML]
+            ];
+        }
+        return this._$iconsCellTemplate;
+    },
+    _doublingStringsChanged : function () {
+    
+        this._$outerTableStartTemplate = null;
+        this._$iconsCellTemplate = null;
     }
+
+    
+    
 });
 
 isc.FormItem.addClassProperties({
@@ -352,9 +424,10 @@ isc.FormItem.addProperties({
     // the value is rendered as a +link{class:LinkItem}.  Otherwise the field is rendered as a
     // +link{class:TextItem}.
     //
-    // @value "image"    
-    // @value "imageFile"
-    // @value "binary"   Rendered as a +link{class:UploadItem}
+    // @value "image"     Rendered as an image if not editable, or as a +link{TextItem} to edit
+    //                    the URL or partial URL if editable
+    // @value "imageFile" Rendered as a +link{class:FileItem}, or a +link{ViewFileItem} if not editable
+    // @value "binary"    Rendered as a +link{class:FileItem}, or a +link{ViewFileItem} if not editable
     //
     // @see attr:FormItem.type
     // @see type:FieldType
@@ -579,7 +652,7 @@ isc.FormItem.addProperties({
     // item ever perform a fetch against this dataSource to retrieve the related record.
     // <P>
     // The fetch occurs if the item value is non null on initial draw of the form
-    // or whever setValue() is called. Once the fetch completes, the returned record 
+    // or whenever setValue() is called. Once the fetch completes, the returned record 
     // is available via the +link{FormItem.getSelectedRecord()} api.
     // <P>
     // By default, a fetch will only occur if +link{formItem.displayField} is specified, and
@@ -3808,31 +3881,6 @@ isc.FormItem.addMethods({
         return img;
     },
     
-    _$outerTableStartTemplate:[
-        "<TABLE CELLSPACING=0 CELLPADDING=0 BORDER=0 ID='",         // 0
-        ,                                                           // 1 [ID for outer table]
-        // We'll apply the 'cellStyle' for the item to the outer table as styles won't
-        // be inherited by sub elements of the table.
-        // Explicitly avoid getting doubled borders etc.
-        "' STYLE='" + isc.Canvas._$noStyleDoublingCSS,              // 2
-        ,                                                           // 3 [css to override class attrs]
-        "' CLASS='",                                                // 4
-        ,                                                           // 5 [pick up the cellStyle css class]
-        
-        "'><TR>",                                                   // 6
-        ,                                                           // 7 Potential first cell for 
-                                                                    //   error on left...
-        // Main cell - If we're showing a picker this will contain the 'control' table
-        // If we're not showing a picker, this wll contain the 'text box'                                                                    
-        "<TD style='",                                              // 8
-        ,                                                           // 9 [possibly css for text box cell]
-        "' VALIGN=",                                                // 10 
-                
-        ,                                                           // 11   [v align]
-        ">"                                                         // 12
-        // Either the text box element (returned by getElementHTML()) or an inner control table
-        
-    ],
     _$outerTableEnd:"</TD></TR></TABLE>",
     
     _$controlTableTemplate:[
@@ -3869,17 +3917,6 @@ isc.FormItem.addMethods({
        "</TD></TR></TABLE>"
     ],
     
-    _$iconsCellTemplate:[
-        "</TD><TD VALIGN=",     // 0
-        ,                       // 1 [v align property for icons]
-        
-        " WIDTH=",              // 2
-        ,                       // 3 [total icons width]
-        " style='" + isc.Canvas._$noStyleDoublingCSS + "' class='", // 4
-        ,                       // 5 Apply standard cell style to the item
-        "'>",                   // 6
-        null                    // 7 [icons HTML]
-    ],
     _$hintCellTemplate : ["</TD><TD ID='", // 0
                             ,              // 1 this._getHintCellID()
                             "' CLASS='",   // 2
@@ -3915,7 +3952,7 @@ isc.FormItem.addMethods({
             writeControlTable = this.showPickerIcon;
         ;
         
-        var template = writeOuterTable ? this._$outerTableStartTemplate : [];
+        var template = writeOuterTable ? isc.FormItem._getOuterTableStartTemplate() : [];
         if (writeOuterTable) {
             
             
@@ -4000,7 +4037,7 @@ isc.FormItem.addMethods({
         if (writeOuterTable) {
             if (this._hasExternalIcons()) {
             
-                var iconsTemplate = this._$iconsCellTemplate;
+                var iconsTemplate = isc.FormItem._getIconsCellTemplate();
                 iconsTemplate[1] = vAlign;
                 iconsTemplate[3] = this.getTotalIconsWidth();
                 iconsTemplate[5] = this.getCellStyle();
@@ -4273,12 +4310,12 @@ isc.FormItem.addMethods({
 
     // Text Box Cell
 
-    // Apply no-style-doublind css to the cell containing the text box. This will prevent
+    // Apply no-style-doubling css to the cell containing the text box. This will prevent
     // globally applied "td" styles from showing up around items with hints / checkboxes etc
     // May be overridden by subclasses
-    textBoxCellCSS:isc.Canvas._$noStyleDoublingCSS,
+    
     getTextBoxCellCSS : function () {
-        return this.textBoxCellCSS;
+        return this.textBoxCellCSS != null ? this.textBoxCellCSS : isc.Canvas._$noStyleDoublingCSS;
     },
     
     // Retrieve style text to apply directly to the text box
@@ -6848,7 +6885,6 @@ isc.FormItem.addMethods({
     // to null as opposed to a call to 'setValue(null)' which will reset to default.
     _$smart:"smart",
 	setValue : function (newValue, allowNullValue) {
-
         
         this._setValueCalled = true;
         // set _selectedRecord to null. It will get set to point to the
@@ -7911,7 +7947,7 @@ isc.FormItem.addMethods({
     // Note that an alternative approach to updating the <code>required</code> flag directly
     // would be to simply use a +link{ValidatorType,requiredIf} type validator.
     // <P>
-    // Note thate this method will not re-validate this item by default or clear any 
+    // Note that this method will not re-validate this item by default or clear any 
     // existing validation errors. If desired, this may be achieved by calling
     // +link{formItem.validate()} or +link{dynamicForm.clearErrors()}.
     // @param required (boolean) new +link{formItem.required} value.
@@ -9825,15 +9861,18 @@ isc.FormItem.addMethods({
     _moveFocusWithinItem : function (forward) {
         var items = this.items,
             icons = this.icons;
-
+        if (this._pickerIcon != null) {
+            icons = [this._pickerIcon];
+            icons.addList(this.icons);
+        }
+        
         // catch the common case where we have only one natively focusable element
         if ((items == null || items.length == 0) && (icons == null || icons.length == 0)) {
             return false;
         }
 
-        var iconIndex = this.getFocusIconIndex(),
+        var iconIndex = this.getFocusIconIndex(true),
             itemIndex;
-
         if (iconIndex == null) {
             var targetItem = isc.EventHandler.lastEvent.keyTarget;
             if (targetItem == this) itemIndex = 0;
@@ -9938,11 +9977,18 @@ isc.FormItem.addMethods({
     // Helper method to determine the index of the icon with focus (or null if no icon has 
     // focus) based on the focus'd HTML element 
     
-    getFocusIconIndex : function () {
+    getFocusIconIndex : function (includePickerIcon) {
         var currentFocusElement = this._getCurrentFocusElement();
-        if (currentFocusElement == null || this.icons == null) return null;
-        for (var i = 0; i < this.icons.length; i++) {
-            if (this._getIconLinkElement(this.icons[i]) == currentFocusElement) return i;
+        var icons;
+        if (includePickerIcon && this._pickerIcon != null) {
+            icons = [this._pickerIcon];
+            icons.addList(this.icons);
+        } else {
+            icons = this.icons;
+        }
+        if (currentFocusElement == null || icons == null || icons.length == 0) return null;
+        for (var i = 0; i < icons.length; i++) {
+            if (this._getIconLinkElement(icons[i]) == currentFocusElement) return i;
         }
         return null;
     },
@@ -10836,7 +10882,20 @@ isc.FormItem.registerStringMethods({
     
     cellClick : "form,item",
     cellDoubleClick : "form,item",
+    
+    //> @method formItem.titleClick()
+    // Notification method fired when the user clicks the title for this item
+    // @param form (DynamicForm) the managing DynamicForm instance
+    // @param item (FormItem) the form item whose title was clicked
+    // @visibility external
+    //<
     titleClick : "form,item",
+    //> @method formItem.titleDoubleClick()
+    // Notification method fired when the user double-clicks the title for this item
+    // @param form (DynamicForm) the managing DynamicForm instance
+    // @param item (FormItem) the form item whose title was double-clicked
+    // @visibility external
+    //<
     titleDoubleClick : "form,item",
 
     mouseMove : "form,item", 

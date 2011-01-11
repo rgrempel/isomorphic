@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -157,7 +157,16 @@ finishedLoading : function () {
     }
     
     // If we're polling for page size changes, kick this off now.
-    if (isc.Page.pollPageSize) isc.EH._pageResize();
+    if (isc.Page.pollPageSize) {
+        isc.EH._pageResize();
+    
+    // Otherwise we've seen a case in some browsers where the scroll size is not calculated
+    // correctly on initial draw from clean cache - force a single pageResize event on
+    // a delay to fix this if necessary
+    
+    } else {
+        isc.EH.delayCall("_pageResize", null,  200);
+    }
     
 },
 
@@ -913,13 +922,18 @@ getWidth : (isc.Browser.isNS ?
             // If the body has been written out, use body.clientWidth to ensure we get the
             // size inside any scrollbars
             
-            var useClientWidth = !isc.Browser.isStrict && !this.leaveScrollbarGap && 
-                                 isc.Browser.geckoVersion >= 20051111 && wd.document.body != null,
+            var isFFPre15 = isc.Browser.geckoVersion != null && isc.Browser.geckoVersion < 20051111;
+            var useClientWidth = !this.leaveScrollbarGap && 
+                                 !isFFPre15 && wd.document.body != null,
                 width;
+               
             if (useClientWidth) {
-                width = wd.document.body.clientWidth;
+                
+                var documentBody = isc.Browser.isStrict 
+                                    ? wd.document.documentElement : wd.document.body;
+                if (documentBody != null) width = documentBody.clientWidth;
             }
-
+            
             // Catch the case where we didn't pick up a width from the body
             
             if (width == null || width == 0) {

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -159,10 +159,31 @@ isc.TabSet.addProperties({
     // If desired a click handler may be assigned to the icon, which will be fired when the user
     // clicks the tab. This method takes a single parameter <code>tab</code>, a pointer to the tab
     // object.
-    // 
+    // <p>
+    // Note that we recommend specifying an explicit size for the icon via +link{tab.iconSize} or
+    // +link{tab.iconWidth} and +link{tab.iconHeight}. Without an explicitly specified size,
+    // tab sizing may be unpredictable the first time the icon image is loaded as its size will
+    // not be known by the browser.
     // @visibility external
     // @example tabsOrientation
     // @see tabSet.tabIconClick
+    //<
+    
+    //> @attr tab.iconSize (integer : null : IRW)
+    // If +link{tab.icon} is specified, this property may be used to specify a size for the icon.
+    // Per side sizing may be specified instead via +link{tab.iconWidth} and +link{tab.iconHeight}.
+    // @visibility external
+    //<
+    
+    
+    //> @attr tab.iconWidth (integer : null : IRW)
+    // If +link{tab.icon} is specified, this property may be used to specify a size for the icon
+    // @visibility external
+    //<
+    
+    //> @attr tab.iconHeight (integer : null : IRW)
+    // If +link{tab.icon} is specified, this property may be used to specify a size for the icon
+    // @visibility external
     //<
     
     //> @attr   tab.canClose    (boolean : null : IRW)
@@ -180,6 +201,12 @@ isc.TabSet.addProperties({
     //> @attr tab.closeIcon (SCImgURL : null : IRW)
     // Custom src for the close icon for this tab to display if it is closeable.
     // See +link{tab.canClose} and +link{tabSet.canCloseTabs}.
+    // @visibility external
+    //<
+    
+    //> @attr tab.closeIconSize (number : null :IRW)
+    // Size of the +link{tab.closeIcon} for this tab. If unspecified the icon will be sized
+    // according to +link{tabSet.closeTabIconSize}
     // @visibility external
     //<
 
@@ -2329,7 +2356,7 @@ showTabPickerMenu : function () {
                         // necessary
                         click:"menu.tabSet.selectTab(item.index)"}
         }
-        this._pickerMenu = isc.Menu.create({tabSet:this, data:items})
+        this._pickerMenu = this.getMenuConstructor().create({tabSet:this, data:items})
     }
     
     // Show it under the button
@@ -2539,7 +2566,7 @@ _tabSelected : function (tab) {
 // method only fires when the tabset is drawn.
 //
 // @param tabSet (TabSet) the tabSet containing the tab.
-// @param tabNum (integer) the index of the deslected tab
+// @param tabNum (integer) the index of the deselected tab
 // @param tabPane (Canvas) the deselected tab's pane if set
 // @param ID (String) the ID of the deselected tab
 // @param tab (tab) pointer to the tab being deselected
@@ -2631,6 +2658,7 @@ _editTabTitle : function (tab) {
     }
     
     if (canEdit) this.editTabTitle(tab);
+    return canEdit;
 },
 
 //>	@method	tabSet.editTabTitle()
@@ -2719,7 +2747,8 @@ saveTabTitle : function () {
     if (this.titleEditorForm != null && this.titleEditorForm.isVisible() 
         && this.titleEditorForm.isDrawn()) 
     {
-        var form = this.titleEditorForm,
+        var cancelEdit = false;
+            form = this.titleEditorForm,
             tab = form.targetTab,
             newTitle = form.getValue("title");
         if (newTitle != tab.title && (this.titleChanged != null)) {
@@ -2729,11 +2758,16 @@ saveTabTitle : function () {
                     [newTitle, tab.title,tab]
                 ) == false) 
             {
-                return;
+                cancelEdit = true;
             }
         }
-        this.setTabTitle(form.targetTab, newTitle);
+        if (!cancelEdit) this.setTabTitle(form.targetTab, newTitle);
     }
+    // Dismiss the editor even if the titleChanged callback returned false, cancelling the
+    // edit.
+    // If we leave the editor up we're likely to get into tricky situations where
+    // for example the developer can change tab with the editor still showing on another tab,
+    
     this.clearTitleEditorForm();
 },
 
@@ -2810,7 +2844,7 @@ showTitleEditor: function() {
     
     if (this._titleEditClickEvent == null) {
         var tabSet = this;
-        function mouseDownHandler () {
+        var mouseDownHandler = function () {
             if (!tabSet.destroyed) {
                 tabSet._clickOutsideDuringTitleEdit();
             }

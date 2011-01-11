@@ -1,0 +1,24 @@
+<DataSource ID="QuartzScheduler"
+			dbName="ANY_DATA"
+			serverConstructor="com.isomorphic.scheduler.QuartzScheduler"
+>
+	<fields>
+		<field name="name" type="text" canEdit="false"/>
+		<field name="state" type="intEnum" canEdit="false">
+			<valueMap>
+				<value ID="0">Shutdown</value>
+				<value ID="1">Standby</value>
+				<value ID="2">Started</value>
+			</valueMap>
+		</field>
+	</fields>
+
+	<operationBinding operationType="custom" operationId="start" />
+	<operationBinding operationType="custom" operationId="shutdown" />
+	<operationBinding operationType="custom" operationId="standby" />
+
+	<operationBinding operationType="custom" operationId="doit">
+        <serverObject className="com.isomorphic.scheduler.QuartzScheduler" methodName="doit" />
+	</operationBinding>
+     
+</DataSource>

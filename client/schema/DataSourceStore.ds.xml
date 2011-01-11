@@ -9,7 +9,7 @@ isc.DataSource.create({
             name:"version"
         },
         dsXML:{
-            length:"50000",
+            length:50000,
             name:"dsXML",
             type:"text"
         },

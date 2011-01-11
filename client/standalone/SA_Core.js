@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -77,14 +77,15 @@ isc.addGlobal("defineStandaloneClass", function (className, classObj) {
         //--------------------------------------------------------------------------------------------------
         // Note: can't provide this as isc.isA because in Core.js we load Object before isA and Object
         // has conditional logic that uses isA
-        isA : {
-            String : function (object) {
-                if (object == null) return false;
-                if (object.constructor && object.constructor.__nativeType != null) {
-                    return object.constructor.__nativeType == 4;
-                }
-                return typeof object == "string";
+        // 
+        // Also, ClassFactory.makeIsAFunc() expect isA to always be a function, so don't stick
+        // an isA object literal on here or it will crash
+        isAString : function (object) {
+            if (object == null) return false;
+            if (object.constructor && object.constructor.__nativeType != null) {
+                return object.constructor.__nativeType == 4;
             }
+            return typeof object == "string";
         }
 
     }); 

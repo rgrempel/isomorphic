@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -330,9 +330,9 @@ _iframeNavigate : function (id, title) {
     this._ignoreHistoryCallback = true;
 
     // need to quote special chars because we're document writing this id into the the iframe
-    var escapedId  = !this.isA.String(id) ? id : id.replace(/\\/g, "\\\\").replace(/\"/g, "\\\"")
-                                                   .replace(/\t/g, "\\t").replace(/\r/g, "\\r")
-                                                   .replace(/\n/g, "\\n");
+    var escapedId  = !this.isAString(id) ? id : id.replace(/\\/g, "\\\\").replace(/\"/g, "\\\"")
+                                                  .replace(/\t/g, "\\t").replace(/\r/g, "\\r")
+                                                  .replace(/\n/g, "\\n");
     var html = "<HTML><HEAD><TITLE>"+
                (title != null ? title : this.historyTitle != null ? this.historyTitle : id)+
                "</TITLE></HEAD><BODY><SCRIPT>var pwin = window.parent;if (pwin && pwin.isc)pwin.isc.History.historyCallback(window,\""+escapedId+"\");</SCRIPT></BODY></HTML>";
@@ -633,7 +633,7 @@ _fireHistoryCallback : function (id) {
     this._lastHistoryId = id;
 
     this.logDebug("history callback: " + id);
-    if (isc.Class && this.isA.String(callback)) {
+    if (isc.Class && this.isAString(callback)) {
         isc.Class.fireCallback(callback, ["id", "data"], [id, data]);
     } else {
         callback = isc.addProperties({}, callback);

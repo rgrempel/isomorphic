@@ -1,0 +1,12 @@
+<DataSource ID="QuartzJobDataMap"
+			dbName="ANY_DATA"
+            serverConstructor="com.isomorphic.scheduler.QuartzJobDataMap"
+>
+
+    <fields>
+        <field name="group" type="string" primaryKey="true" required="true"/>
+        <field name="name" type="string" primaryKey="true" required="true"/>
+        <field name="key" type="string" required="true"/>
+        <field name="value" type="string" required="true"/>
+    </fields>
+</DataSource>
