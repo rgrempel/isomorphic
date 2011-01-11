@@ -16,6 +16,21 @@ isc.loadSkin = function (theWindow) {
             groupBorderCSS :"1px solid #165fa7"
         });
 
+        if(isc.Browser.isIE && isc.Browser.version >= 7) {
+            isc.Canvas.setAllowExternalFilters(false);
+            isc.Canvas.setNeverUseFilters(true);
+            if(isc.Window) {
+              isc.Window.addProperties({
+                    modalMaskOpacity:null,
+                    modalMaskStyle:"normal"
+                });
+                isc.Window.changeDefaults("modalMaskDefaults", { src : "[SKIN]opacity.png" });
+            }
+        }
+
+        if(isc.RPCManager) {
+            isc.RPCManager.addClassProperties({ promptStyle:"cursor" });
+        }
         isc.Button.addProperties({
             height: 23
         });
@@ -258,7 +273,6 @@ isc.loadSkin = function (theWindow) {
                 iconVAlign:"middle"
             });
         }
-
         if (isc.TextItem) {
             isc.TextItem.addProperties({
                 height:22,
@@ -399,7 +413,7 @@ isc.loadSkin = function (theWindow) {
                 defaultLayoutAlign:"center"
             });
             isc.ToolStripResizer.addProperties({
-                backgroundColor:"#558ed9"
+                backgroundColor:"#f6f6f6"
             });
 
             isc.ToolStrip.changeDefaults("formWrapperDefaults",{cellPadding:3});
@@ -461,7 +475,7 @@ isc.loadSkin = function (theWindow) {
             isc.Calendar.changeDefaults("datePickerButtonDefaults", {
                 showDown:false,
                 showOver : false,
-                src:"[SKIN]/DynamicForm/date_control.gif"
+                src:"[SKIN]/DynamicForm/date_control.png"
             });
 
             isc.Calendar.changeDefaults("controlsBarDefaults", {

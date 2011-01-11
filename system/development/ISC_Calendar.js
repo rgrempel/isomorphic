@@ -2,7 +2,7 @@
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-12-07/LGPL Development Only (2010-12-07)
+  Version SC_SNAPSHOT-2011-01-05/LGPL Development Only (2011-01-05)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.
@@ -88,7 +88,7 @@ if(_6)this.$53e=true;if(this.dataSource){isc.DataSource.get(this.dataSource).add
 ,isc.A.removeEvent=function isc_Calendar_removeEvent(_1,_2){var _3=_1[this.startDateField],_4=_1[this.endDateField];var _5=this;var _6=function(){if(_5.$53b(_3,_4)){_5.dayView.removeEvent(_1)}
 if(_5.$53c(_3,_4)){_5.weekView.removeEvent(_1)}
 if(_5.$53d(_3,_4)){_5.monthView.refreshEvents()}
-if(_5.eventAutoArrange){_5.dayView.refreshEvents();_5.weekView.refreshEvents()}
+if(_5.eventAutoArrange){if(_5.dayView)_5.dayView.refreshEvents();if(_5.weekView)_5.weekView.refreshEvents()}
 if(_5.eventRemoved)_5.eventRemoved(_1)}
 if(_2)this.$53e=true;if(this.dataSource){isc.DataSource.get(this.dataSource).removeData(_1,_6,{componentId:this.ID,oldValues:_1});return}else{this.data.remove(_1);_6()}}
 ,isc.A.updateEvent=function isc_Calendar_updateEvent(_1,_2,_3,_4,_5,_6,_7){if(!isc.isAn.Object(_6))_6={};var _8=this;var _9=_1[this.startDateField];var _10=_1[this.endDateField];var _11=function(_17,_18,_19){var _12;if(isc.isAn.Array(_18))_12=_18[0];else _12=_18;if(!_12)_12=_1;if(_8.$53b(_9,_10)||_8.$53b(_2,_3)){_8.dayView.refreshEvents()}
@@ -124,7 +124,6 @@ _20=1}
 _19++;if(_19>_4){_4=_19}
 if(!_21&&_18!=0){_8.$64l=_18;_19=_18+1}else{if(_19<=_18){_8.$64l=_18;_19=_18+1}else{_8.$64l=_4}}}else{if(_21){if(_19==0){if(_18==0){_18=_8.$64k}}else{if(_18==0){if(_8.$64k>_19){_18=_8.$64k}else{_19=_8.$64k+1}}else if(_19<_18){_19=_18+1}}}else{if(_19+1<_18){_19++}else{_19=_18+1}}}
 _3[_17].usedCol=_18;_3[_17].assignedCol=_19;_3[_17].exactTime=_20}}
-for(var i=0;i<_1.getLength();i++){var _8=_1.get(i);if(!_8.$64l||_8.$64l==0){_8.$64l==_4}}
 return _4}
 ,isc.A.getDayEnd=function isc_Calendar_getDayEnd(_1){return new Date(_1.getFullYear(),_1.getMonth(),_1.getDate(),23,59,59)}
 ,isc.A.$64n=function isc_Calendar__renderEventRange(_1,_2,_3){var _4=(_1?this.weekView:this.dayView);if(!_4.isDrawn())return;var _5=_4.getRowHeight(1),_6=_4.getColumnWidth(_4.isLabelCol(0)?1:0);var _7=_2,_8=_3;if(Date.compareDates(_7,_8)<0||(_8.getHours()==0)){_8=this.getDayEnd(_7)}
@@ -243,7 +242,7 @@ if(this.showLabelColumn&&this.labelColumnPosition=="right"){this.fields.add(_1)}
 this.data=isc.DaySchedule.$53o;this.Super("initWidget")}
 ,isc.A.draw=function isc_DaySchedule_draw(_1,_2,_3,_4){this.invokeSuper(isc.DaySchedule,"draw",_1,_2,_3,_4);this.logDebug('draw','calendar');this.refreshEvents();this.setSnapGap();if(this.creator.scrollToWorkday)this.scrollToWorkdayStart()}
 ,isc.A.setSnapGap=function isc_DaySchedule_setSnapGap(){var _1=this.creator.eventSnapGap;this.body.snapVGap=Math.round((_1/ 30)*this.body.getRowSize(0));this.body.snapHGap=null}
-,isc.A.scrollToWorkdayStart=function isc_DaySchedule_scrollToWorkdayStart(){var _1=isc.Time.parseInput(this.creator.workdayStart);var _2=_1.getUTCHours()*2;if(_1.getUTCMinutes()>0)_2++;var _3=this.getRowHeight(null,0)*_2;this.body.scrollTo(0,_3)}
+,isc.A.scrollToWorkdayStart=function isc_DaySchedule_scrollToWorkdayStart(){var _1=isc.Time.parseInput(this.creator.workdayStart);var _2=_1.getHours()*2;if(_1.getMinutes()>0)_2++;var _3=this.getRowHeight(null,0)*_2;this.body.scrollTo(0,_3)}
 ,isc.A.getRowHeight=function isc_DaySchedule_getRowHeight(_1,_2){if(this.creator.scrollToWorkday){var _3=isc.Time.parseInput(this.creator.workdayEnd).getUTCHours()
 -isc.Time.parseInput(this.creator.workdayStart).getUTCHours();if(_3<=0)return this.cellHeight;var _4=Math.floor(this.body.getViewportHeight()/(_3*2));return _4<this.cellHeight?this.cellHeight:_4}else{return this.cellHeight}}
 ,isc.A.getDayFromCol=function isc_DaySchedule_getDayFromCol(_1){var _2=this.fields.get(_1).$654;return _2}
@@ -389,8 +388,7 @@ this.logDebug('draw','calendar');this.refreshEvents()}
 ,isc.A.refreshEvents=function isc_TimelineView_refreshEvents(){if(!this.body||!this.creator.hasData())return;var _1=this.startDate,_2=this.endDate,_3=this.creator;var _4=_3.data.getRange(0,_3.data.getLength());this.logDebug('refreshing events','calendar');this.tagDataForOverlap(_4);this.refreshVisibleEvents()}
 ,isc.A.getVisibleEvents=function isc_TimelineView_getVisibleEvents(){var _1=this.getVisibleDateRange();var _2=this.getVisibleRowRange();var _3=this.creator;var _4=_3.data;var _5=[];for(var i=0;i<_4.getLength();i++){var _7=_4.get(i);if(!_7){isc.logWarn('getVisibleEvents: potentially invalid index: '+i);break}
 var _8={};if(_7[_3.leadingDateField]&&_7[_3.trailingDateField]){_8[_3.leadingDateField]=_1[0];_8[_3.trailingDateField]=_1[1]}else{_8[_3.startDateField]=_1[0];_8[_3.endDateField]=_1[1]}
-var _9=this.data.findIndex(_3.eventTypeField,_7[_3.eventTypeField]);if(_9==-1){}
-if(this.eventsOverlap(_8,_7)&&_2[0]<=_9&&_9<=_2[1]){_5.add(_7)}}
+var _9=this.data.findIndex(_3.eventTypeField,_7[_3.eventTypeField]);if(this.eventsOverlap(_8,_7)&&_2[0]<=_9&&_9<=_2[1]){_5.add(_7)}}
 return _5}
 ,isc.A.findOverlappingEvents=function isc_TimelineView_findOverlappingEvents(_1,_2){var _3=this.creator;var _4=_3.data;var _5=[];for(var i=0;i<_4.getLength();i++){var _7=_4.get(i);if(!_7){isc.logWarn('getVisibleEvents: potentially invalid index: '+i);break}
 if(_3.eventsAreSame(_7,_1)){continue}
@@ -463,7 +461,7 @@ var _1=this.bodies[1].getScrollTop();var _2=this.eventHeight;var _3=this.bodies[
 /*
 
   SmartClient Ajax RIA system
-  Version SC_SNAPSHOT-2010-12-07/LGPL Development Only (2010-12-07)
+  Version SC_SNAPSHOT-2011-01-05/LGPL Development Only (2011-01-05)
 
   Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
   "SmartClient" is a trademark of Isomorphic Software, Inc.

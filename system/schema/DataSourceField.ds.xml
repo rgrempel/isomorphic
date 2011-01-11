@@ -11,7 +11,7 @@
 	    <required type="boolean" title="Required" xmlAttribute="true"/>
 	    <valueMap type="ValueMap"/>
 	    <validators type="Validator" multiple="true" propertiesOnly="true"/>
-	    <length type="positiveInteger" title="Length" xmlAttribute="true"/>
+	    <length type="integer" title="Length" xmlAttribute="true"/>
 
         <!-- XML Schema notion of required: element must be present, but value is unconstrained
              (can by empty) -->

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -24,7 +24,7 @@
 // For information on DataBinding Trees, see +link{group:treeDataBinding}.
 // <p>
 // A TreeGrid works just like a +link{ListGrid}, except one column (specified by
-// +link{TreeGridField.treeField} shows a hierarchical +link{Tree}.  A TreeGrid is not limited
+// +link{TreeGridField.treeField}) shows a hierarchical +link{Tree}.  A TreeGrid is not limited
 // to displaying just the +link{Tree} column - you can define additional columns (via
 // +link{TreeGrid.fields}) which will render just like the columns of a +link{ListGrid}, and
 // support all of the functionality of ListGrid columns, such as
@@ -87,6 +87,7 @@ isc.defineClass("TreeGridBody", isc.GridBody).addProperties({
                     if (customCSSText != null && !isc.isAn.emptyString(customCSSText)) {
                         // we always append no-style-doubling css to the custom css to avoid
                         // doubled borders etc
+                        
                         customCSSText += isc.Canvas._$noStyleDoublingCSS;
                     } else customCSSText = null;
                 }
@@ -216,8 +217,23 @@ isc.defineClass("TreeGridBody", isc.GridBody).addProperties({
             // proceed to super (select the row)
             return this.Super("mouseUp", arguments);
         }
+    },
+
+    // Override to place embedded components for the tree field indented as a title
+    // would be if TG.indentRecordComponents == true.
+    placeEmbeddedComponent : function (component) {
+        if (this.grid.indentRecordComponents) {
+            var colNum = component._currentColNum;
+            if (colNum == this.grid.getTreeFieldNum() && !component.snapOffsetLeft) {
+                var record = component.embeddedRecord;
+                if (record != null) {
+                    component.snapOffsetLeft
+                        = this.grid.getOpenAreaWidth(record) + this.grid.iconPadding;
+                }
+            }
+        }
+        return this.Super("placeEmbeddedComponent", arguments);
     }
-     
 });
 
 isc.TreeGrid.addClassProperties({
@@ -242,7 +258,88 @@ isc.TreeGrid.addClassProperties({
                     // otherwise just return the title of the field, or failing that, the field's name
                     return field.title || field.name;
                 }
+    },
+    
+    // _getTreeCellTemplate - returns the HTML template array used for the start of
+    // tree grid cells.
+    // This is a dynamic method - it incorporates the standard 'noDoublingCSS' string into the
+    // returned HTML template. That string can change at runtime due to setNeverUseFilters()
+    // so we need to react to this and regenerate the template.
+    _getTreeCellTemplate : function () {
+        if (!this._observingDoublingStrings) {
+            isc.Canvas._doublingStringObservers.add({
+                target:this, 
+                methodName:"_doublingStringsChanged"
+            });
+            this._observingDoublingStrings = true;
+        }
+        if (this._$treeCellTemplate == null) {
+            this._$treeCellTemplate = [
+                "<table cellpadding=0 cellspacing=0 class='",       // [0]
+                ,                                                   // [1] - this.getCellStyle()
+                "' style='",                                        // [2]
+                ,                                                   // [3] - getCellCSSText()
+                // use _$noStyleDoublingCSS to suppress any border / background image etc from the
+                // cell style
+                // Also use noStyleDoublingCSS and explicitly re-apply the gridrenderer cell style and 
+                // cell cssText to each cell within the tree-cell table.
+                
+                isc.Canvas._$noStyleDoublingCSS + "'><tr><td style='",// [4] (indent cell)
+                ,                                                     // [5] - getCellCSSText()
+                isc.Canvas._$noStyleDoublingCSS + "' class='",        // [6]                                  
+                ,                                                     // [7] - getCellStyle()
+                "'>",                                                 // [8]             
+                ,                                                     // [9] - indentHTML
+                "</td>"                                                 // [10] 
+                // (we'll write the title cell out using _$treeCellTitleTemplate)
+            ];
+        }
+        return this._$treeCellTemplate;
+    },
+    
+    _getTreeCellTitleTemplate : function () {
+        if (!this._observingDoublingStrings) {
+             isc.Canvas._doublingStringObservers.add({
+                target:this, 
+                methodName:"_doublingStringsChanged"
+            });
+            this._observingDoublingStrings = true;
+        }
+        
+        if (this._$treeCellTitleTemplate == null) {
+            this._$treeCellTitleTemplate = [
+            
+                "<td style='",                                         // [0] (icon(s) cell)
+                ,                                                      // [1] - getCellCSSText()
+                ";" + isc.Canvas._$noStyleDoublingCSS + "' class='",   // [2]
+                ,                                                      // [3] - getCellStyle()
+                
+                "'>" + (isc.Browser.isSafari || isc.Browser.isIE ? "<nobr>" : ""), // [4]
+                ,                                                   // [5] - opener icon HTML
+                ,                                                   // [6] - 'extra' icon if there is one
+                ,                                                   // [7] - icon for item (eg folder/file icon)
+                (isc.Browser.isSafari ? "</nobr>" : "") + 
+                    "</td><td style='",                             // [8] (value cell)
+                ,                                                   // [9] - getCellCSSText()
+                ";" + isc.Canvas._$noStyleDoublingCSS + "padding-left:", // [10]
+                ,                                                   // [11] - this.iconPadding
+                "px;' class='",                                     // [12]
+                ,                                                   // [13] - getCellStyle()
+                "'>",                                               // [14]
+                ,                                                   // [15] - NOBR or null
+                ,                                                   // [16] - value
+                "</td>"                                             // [17]
+                
+            ];
+        }
+        return this._$treeCellTitleTemplate;
+    },
+    
+    _doublingStringsChanged : function () {
+        this._$treeCellTemplate = null;
+        this._$treeCellTitleTemplate = null
     }
+
 
 });
 
@@ -978,6 +1075,18 @@ isc.TreeGrid.addProperties({
     //<
     offlineNodeMessage: "This data not available while offline",
     
+    //> @attr treeGrid.indentRecordComponents (boolean : true : IRW)
+    // For record components placed "within" the +link{TreeGridField.treeField,treeField}
+    // column, should the component be indented to the position where a title would normally
+    // show?
+    // <P>
+    // For more general placement of embedded components, see
+    // +link{ListGrid.addEmbeddedComponent, addEmbeddedComponent}.
+    // 
+    // @visibility external
+    //<
+    indentRecordComponents: true,
+
     // Disble groupBy for TreeGrids altogether - we're already showing data-derived hierarchy!
     canGroupBy: false,
     
@@ -2603,25 +2712,6 @@ _updateComplete : function (dsResponse, data, dsRequest) {
 // iconPadding - padding between the folder open/close icon and text.
 // Make this customizable, but not exposed - very unlikely to be modified
 iconPadding:3,
-_$treeCellTemplate:[
-    "<table cellpadding=0 cellspacing=0 class='",       // [0]
-    ,                                                   // [1] - this.getCellStyle()
-    "' style='",                                        // [2]
-    ,                                                   // [3] - getCellCSSText()
-    // use _$noStyleDoublingCSS to suppress any border / background image etc from the
-    // cell style
-    // Also use noStyleDoublingCSS and explicitly re-apply the gridrenderer cell style and 
-    // cell cssText to each cell within the tree-cell table.
-    
-    isc.Canvas._$noStyleDoublingCSS + "'><tr><td style='",// [4] (indent cell)
-    ,                                                     // [5] - getCellCSSText()
-    isc.Canvas._$noStyleDoublingCSS + "' class='",        // [6]                                  
-    ,                                                     // [7] - getCellStyle()
-    "'>",                                                 // [8]             
-    ,                                                     // [9] - indentHTML
-    "</td>"                                                 // [10] 
-    // (we'll write the title cell out using _$treeCellTitleTemplate)
-],
 _$closeTreeCellTable:"</tr></table>",
 _$semi:";",
 getTreeCellValue : function (value, record, recordNum, fieldNum) {
@@ -2639,7 +2729,7 @@ getTreeCellValue : function (value, record, recordNum, fieldNum) {
     }
 	// get the level of the node
 	var level = this.data.getLevel(record),    
-        template = this._$treeCellTemplate,
+        template = isc.TreeGrid._getTreeCellTemplate(),
         cssText = this.getCellCSSText(record, recordNum, fieldNum),
         styleName = this.getCellStyle(record, recordNum, fieldNum);
         
@@ -2672,37 +2762,13 @@ getTreeCellValue : function (value, record, recordNum, fieldNum) {
 // "title" portion of the treeCell value - that is: the icons and the title, without
 // any indent
 
-_$treeCellTitleTemplate:[
-
-    "<td style='",                                         // [0] (icon(s) cell)
-    ,                                                      // [1] - getCellCSSText()
-    ";" + isc.Canvas._$noStyleDoublingCSS + "' class='",   // [2]
-    ,                                                      // [3] - getCellStyle()
-    
-    "'>" + (isc.Browser.isSafari || isc.Browser.isIE ? "<nobr>" : ""), // [4]
-    ,                                                   // [5] - opener icon HTML
-    ,                                                   // [6] - 'extra' icon if there is one
-    ,                                                   // [7] - icon for item (eg folder/file icon)
-    (isc.Browser.isSafari ? "</nobr>" : "") + 
-        "</td><td style='",                             // [8] (value cell)
-    ,                                                   // [9] - getCellCSSText()
-    ";" + isc.Canvas._$noStyleDoublingCSS + "padding-left:", // [10]
-    ,                                                   // [11] - this.iconPadding
-    "px;' class='",                                     // [12]
-    ,                                                   // [13] - getCellStyle()
-    "'>",                                               // [14]
-    ,                                                   // [15] - NOBR or null
-    ,                                                   // [16] - value
-    "</td>"                                             // [17]
-    
-],
 _getTreeCellTitleArray : function (value, record, recordNum, fieldNum, showOpener,
                                     cellStyle,cellCSSText) {
     
     if (cellCSSText == null) cellCSSText = this.getCellCSSText(record, recordNum, fieldNum);
     if (cellStyle == null) cellStyle = this.getCellStyle(record, recordNum, fieldNum);
     
-    var template = this._$treeCellTitleTemplate;
+    var template = isc.TreeGrid._getTreeCellTitleTemplate();
     template[1] = cellCSSText;
     template[3] = cellStyle;
     if (showOpener) {
@@ -2780,7 +2846,6 @@ getCellValue : function (record, rowNum, colNum, a, b, c, d) {
 bodyDrawing : function (body,a,b,c,d) {
     this._drawCache = {};
     return this.invokeSuper(isc.TreeGrid, "bodyDrawing", a,b,c,d);
-    delete this._drawCache;
 },
 
 //> @method TreeGrid.getNodeTitle()
@@ -3029,9 +3094,6 @@ getOpenIcon : function (record) {
         // punt it over to getOpenerImageURL which will assmble the URL from the state info.
         return this.getOpenerImageURL(hasChildren, isOpen, start, end);
 	}
-
-	// return null as a signal that we don't need an open icon
-	return null;
 },
 
 // _shouldShowPreviousLine

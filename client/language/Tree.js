@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1553,6 +1553,23 @@ isLeaf : function (node) {
 	return ! this.isFolder(node);
 },
 
+//> @method tree.isFirst() (A)
+// Note: because this needs to take the sort order into account, it can be EXTREMELY expensive!
+// @group ancestry			
+// Return true if this item is the first one in it's parents list.
+//
+// @param  node (TreeNode)  node in question
+// @return (boolean)  true == node is the first child of its parent
+//<
+isFirst : function (node) {
+    var parent = this.getParent(node);
+    if (! parent) return true;
+    
+    var kids = this.getChildren(parent, this.opendisplayNodeType, 
+        this._openNormalizer, this.sortDirection, null, this._sortContext);
+    return kids[0] == node;
+},
+
 //>	@method	tree.isLast()	(A)
 // 		Note: because this needs to take the sort order into account, it can be EXTREMELY expensive!
 //		@group	ancestry			
@@ -2191,6 +2208,10 @@ dataChanged : function () {},
 // written onto it, etc. We may want to duplicate it before adding, then return a pointer
 // to the node as added.
 add : function (node, parent, position) {
+    if (parent == null && this.modelType == isc.Tree.PARENT) {
+        var parentId = node[this.parentIdField];
+        if (parentId != null) parent = this.findById(parentId);
+    }
 	// normalize the parent parameter into a node
 	if (isc.isA.String(parent)) {
         parent = this.find(parent);

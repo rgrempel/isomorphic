@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -108,13 +108,17 @@ isc.TextItem.addProperties({
     _dataElementIsTextBox:true,
 
     //> @attr   textItem.emptyStringValue   (any : null : IRW)
-    //      Should the empty string be mapped to null, or stored as an empty string.
-    //      Updated on 'setValue(null)' or 'setValue("")'
+    // How should an empty string entered by the user be stored?
+    // This value is typically set to <code>null</code> or <code>""</code>.
+    // <P>
+    // Note that a call to +link{setValue(),setValue(null)} or +link{setValue(),setValue("")}
+    // automatically updates this property to ensure that "empty" values are stored in a 
+    // consistent format.
     // @group formValues
-    // @visibility   internal
+    // @visibility   external
     //<    
     
-    _emptyStringValue:null,
+    emptyStringValue:null,
     
     // Override redrawOnShowFormIcon - we can handle dynamically updating the item's HTML to
     // show / hide text item icons
@@ -207,7 +211,7 @@ isc.TextItem.addProperties({
     
     //>@attr TextItem.printFullText (boolean : false : IRW)
     // When generating a print-view of the component containing this TextItem, should
-    // the form item expand to accomodate its value? If set to false the text box will not expand
+    // the form item expand to accommodate its value? If set to false the text box will not expand
     // to fit its content in the print view, instead showing exactly as it does in the
     // live form.
     // @visibility external
@@ -542,6 +546,25 @@ isc.TextItem.addMethods({
         return template.join(isc.emptyString);
     },
     
+    //> @method textItem.getEnteredValue()
+    // Returns the raw text value typed into this form field, which can differ from 
+    // +link{formItem.getValue()} in various cases - for example:
+    // <ul>
+    // <li>for items that constrain the value range, such as a +link{DateItem} with
+    // +link{DateItem.enforceDate,enforceDate}:true, or a +link{ComboBoxItem} with
+    // +link{ComboBoxItem.addUnknownValues,addUnknownValues}:false</li>
+    // <li>for items with a defined valueMap or edit value formatter and parser functions
+    // which converts display value to data value</li>
+    // <li>while the item has focus if +link{changeOnKeypress} is false
+    // </li></ul>
+    // @return (string) current entered value
+    // @visibility external
+    //<
+    getEnteredValue : function () {
+        return this.getElementValue();
+    },
+    
+    
     //>@method textItem.mapValueToDisplay()  (A)
     // Map from the internal value for this item to the display value.
     // @param   internalValue   (string)   Internal value for this item.
@@ -575,16 +598,17 @@ isc.TextItem.addMethods({
     // @return  (string)   Internal value corresponding to that display value.
     //<
     mapDisplayToValue : function (displayValue) {
+        var value;
        
         if (this.mask) {
-            var value = this._unmaskValue(displayValue);
+            value = this._unmaskValue(displayValue);
         } else {
             value = this._unmapKey(displayValue);
         }
         value = this._parseDisplayValue(value);
 
         // if the value to be saved is an empty string, map it to 'null' if necessary
-        if (isc.is.emptyString(value)) value = this._emptyStringValue;
+        if (isc.is.emptyString(value)) value = this.emptyStringValue;
         return value;
     },
     
@@ -609,7 +633,7 @@ isc.TextItem.addMethods({
 
         var undef;
         if (value !== undef && (value == null || isc.is.emptyString(value)))
-            this._emptyStringValue = value;
+            this.emptyStringValue = value;
 
         // Translate incoming value based on characterCasing if needed
         if (value !== undef && value != null && this.characterCasing != isc.TextItem.DEFAULT) {

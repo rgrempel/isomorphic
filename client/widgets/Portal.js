@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -153,7 +153,7 @@ isc.defineClass("PortalColumnHeader", "HLayout").addProperties({
 
         this.addMember(isc.LayoutSpacer.create());
 
-        this.menu = isc.Menu.create({
+        this.menu = this.getMenuConstructor().create({
             width: 150,
             portalColumn: this.portalColumn,
             data:[

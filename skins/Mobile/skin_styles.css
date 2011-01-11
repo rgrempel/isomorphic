@@ -8,7 +8,7 @@ General
 ============================================================*/
 
 body {
-    color : #333333;
+    color : black;
     font-family: Helvetica;
     margin: 0;
     padding: 0;
@@ -25,7 +25,7 @@ a:link {
 
 .pageBackground {
     font-family:Arial,Verdana,sans-serif; font-size:16px;
-    color:#333333;
+    color:black;
     background:#FAFAFA;
 }
 
@@ -68,7 +68,7 @@ a:link {
 /* group label */
 .groupLabel {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:11px;
-    color:#333333;
+    color:black;
     padding-left:5px; padding-right:5px;
 }
 
@@ -568,12 +568,18 @@ Button (also used as MenuButton base style)
 .labelAnchorFocused {
     font-family:Verdana,Bitstream Vera Sans,sans-serif; font-size:16px;
 }
+
+.formTitle,
+.formTitleFocused  {
+    color:#003168;
+}
+
 .formCellError,
 .formTitleError {
     font-weight:bold; color:#204268;
 }
 .formHint {
-    color:#666666; padding:3px;
+    color:#455668; padding:3px;
 }
 
 /* headerItem */
@@ -628,14 +634,14 @@ Button (also used as MenuButton base style)
 
 /* selectItem */
 .selectItemTextFocused {
-    color:#333333;
+    color:black;
     -moz-outline-offset:-1;
     border:1px solid #5678ac;
 }
 
 .textItemFocused,
 .selectItemTextFocused {
-    color:#333333;
+    color:black;
     -moz-outline-offset:-1;
 	border-top:1px solid #5678ac;
     border-left:1px solid #bccde6;
@@ -658,7 +664,7 @@ Button (also used as MenuButton base style)
 }
 
 .pickListMenuBody {
-    border:1px solid #333333;
+    border:1px solid black;
 }
 
 .pickListCell,
@@ -675,7 +681,7 @@ Button (also used as MenuButton base style)
 
 .tallPickListCellSelected,
 .tallPickListCellSelectedDark {
-    color:#333333;
+    color:black;
     background:#B2DFEE;
 }
 
@@ -865,7 +871,7 @@ Button (also used as MenuButton base style)
 .dateChooserWeekendSelectedDown,
 .dateChooserWeekendDisabled {
     cursor:pointer;
-    color:#333333;
+    color:black;
     border:2px solid white;
     background-color:white;
 }
@@ -986,6 +992,7 @@ Button (also used as MenuButton base style)
     border: 1px solid #A7ABB4;
 }
 .loadingDataMessage,
+.offlineMessage,
 .emptyMessage {
 	font-family:Arial,Verdana,sans-serif; font-size:16px;
     padding:10px;
@@ -1066,14 +1073,14 @@ Button (also used as MenuButton base style)
 .specialColDisabled,
 .groupNode {
 	font-family:Arial,Verdana,sans-serif; font-size:16px; text-overflow:ellipsis;
-	color:#333333;
+	color:black;
     border-bottom:1px solid;
     border-bottom-color: #e2e2e2;
 }
 
 .specialCol {
 	font-family:Arial,Verdana,sans-serif; font-size:11px; text-overflow:ellipsis;
-	color:#333333;
+	color:black;
     background-color:#edf3fe;
 }
 
@@ -1226,7 +1233,7 @@ Button (also used as MenuButton base style)
 .treeTallCellDisabled,
 .treeTallCellDisabledDark {
 	font-family:Arial,Verdana,sans-serif; font-size:11px; text-overflow:ellipsis;
-	color:#333333;
+	color:black;
 }
 
 .treeTallCell,
@@ -1374,11 +1381,11 @@ Button (also used as MenuButton base style)
 }
 
 .tileValueSelected {
-    color: #333333;
+    color: black;
 }
 
 .tileValueSelectedOver {
-    color: #333333;
+    color: black;
 }
 
 .simpleTile, 
@@ -2196,7 +2203,7 @@ a.calMonthEventLink:active {color:blue; text-decoration:none}
 
 .eventWindowBody {
     font-family:Arial,Verdana,Bitstream Vera Sans,sans-serif; font-size: 9px;
-    color:#333333;
+    color:black;
     background-color:#EBF4FF;
     padding: 3px;
     

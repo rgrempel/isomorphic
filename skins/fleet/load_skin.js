@@ -39,6 +39,18 @@ with (theWindow) {
 		showCustomScrollbars:true
 	});
 
+    if(isc.Browser.isIE && isc.Browser.version >= 7) {
+        isc.Canvas.setAllowExternalFilters(false);
+        isc.Canvas.setNeverUseFilters(true);
+        if(isc.Window) {
+          isc.Window.addProperties({
+                modalMaskOpacity:null,
+                modalMaskStyle:"normal"
+            });
+            isc.Window.changeDefaults("modalMaskDefaults", { src : "[SKIN]opacity.png" });
+        }
+    }
+
     // define IButton so examples that support the new SmartClient skin image-based
     // button will fall back on the CSS-based Button with this skin
 	isc.ClassFactory.defineClass("IButton", "Button");

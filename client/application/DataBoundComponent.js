@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -261,7 +261,7 @@ isc.Canvas.addProperties({
 //< 
 
 //> @attr dataBoundComponent.dataPageSize (number : 75 : IRW)
-// When using data paging, how many records to fetch at a time.  The value of this
+// When using +link{dataFetchMode,data paging}, how many records to fetch at a time.  The value of this
 // attribute is passed on to the auto-constructed +link{class:ResultSet} object for this
 // component.  In effect, this gives you control over the +link{attr:ResultSet.resultSize}
 // attribute for this component.
@@ -487,6 +487,13 @@ showOfflineMessage:true,
 // @visibility external
 //<
 offlineMessage:"This data not available while offline",
+
+//>	@attr listGrid.offlineMessageStyle (CSSStyleName : "offlineMessage" : [IRW])
+// The CSS style name applied to the +link{offlineMessage} if displayed.
+// @group i18Messages, offlineGroup
+// @visibility external
+//<
+offlineMessageStyle:"offlineMessage",
 
 //>	@attr dataBoundComponent.offlineSaveMessage (string : "Data cannot be saved because you are not online" : [IRW])
 // Message to display when this DataBoundComponent attempts to save data while the application
@@ -987,6 +994,7 @@ registerWithDataView : function (dataView) {
 // useAllDataSourceFields is false but we want to include fields picked up from the DataSource
 // but mark them as not visible in the grid. This is used to achieve the
 // +link{listGrid.canPickOmittedFields} behavior.
+_dateEditorTypes:{date:true,DateItem:true},
 bindToDataSource : function (fields, hideExtraDSFields) {
     //this.logWarn("bindToDataSource called with fields " + this.echoLeaf(fields));
     // call 'setDataPath' to ensure if we have a dataPath specified we bind to the correct
@@ -1034,6 +1042,14 @@ bindToDataSource : function (fields, hideExtraDSFields) {
             // type defaults are auto-applied to DS fields and combined fields, but we need to
             // do it here for any field that doesn't apear in the DataSource
             for (var i = 0; i < fields.length; i++) {
+                // For items with editorType set to DateItem or date, default the data type
+                // to date also so we pick up type validators etc.
+                
+                if (fields[i].type == null &&
+                    this._dateEditorTypes[fields[i].editorType] == true) 
+                {
+                    fields[i].type = "date";
+                }
                 isc.SimpleType.addTypeDefaults(fields[i]);
             }
         }
@@ -1064,16 +1080,38 @@ bindToDataSource : function (fields, hideExtraDSFields) {
 	// Case 3: dataSource and fields specified
     // fields provided to this instance act as an overlay on DataSource fields
     if (ds != null && !noSpecifiedFields) {
+        
+        // Loop through local fields and apply type defaults.
+        // This allows local fields to specify a type which takes precedence over 
+        // the DS field type.
+        // Also ensure that any specified field with editorType set to "DateItem" has type
+        // set to date if type isn't explicitly defined on either the item or the
+        // corresponding dataSource field.
+        
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields[i];
+            if (field == null) continue;
+            
+            if (field.type == null && this._dateEditorTypes[field.editorType] == true) {
+                var name = field.name;
+                var dsField = (name != null) ? ds.getField(name) : null;
+                if (dsField == null || dsField.type == null) {
+                    field.type = "date";
+                }
+            }
+            
+            // Always apply type defaults to the local fields. This allows 
+            // local field.type to be specified and override ds field.type.
+            // addTypeDefaults will bail immediately if it's already been applied
+            if (field.type != null) isc.SimpleType.addTypeDefaults(field);
+        }
+        
         if (this.useAllDataSourceFields || hideExtraDSFields) {
             var canvas = this;
             var bothFields = ds.combineFieldOrders(
                         dsFields, fields, 
                         function (field, ds) { return canvas.shouldUseField(field, ds) });
-            if (hideExtraDSFields) {
-                for (var i = 0; i < bothFields.length; i++) {
-                   
-                }
-            }
+ 
             // Loop through the combined fields:
             // - if hideExtraDSFields is true, hide any fields picked up from the
             //   DS that weren't explicitly specified
@@ -1101,14 +1139,6 @@ bindToDataSource : function (fields, hideExtraDSFields) {
             for (var i = 0; i < fields.length; i++) {
                 var field = fields[i];
                 if (!field) continue;
-
-                // this field isn't a datasource field - it's just intended to be passed through
-                // to the underlying widget (like a form spacer)
-                //
-                // always addTypeDefaults b/c local field spec may override field type
-                // addTypeDefaults will bail immediately if it's already been applied
-                isc.SimpleType.addTypeDefaults(field);
-
                 field = this.combineFieldData(field);
             }
             this.addFieldValidators(fields);
@@ -1362,7 +1392,7 @@ getFieldState : function (includeTitle) {
         }
     }
 
-    return isc.Comm.serialize(fieldStates);
+    return isc.Comm.serialize(fieldStates, false);
 },
 
 // get the state for a given field by name
@@ -3406,8 +3436,8 @@ unboundApplyFilter : function (data, criteria) {
     return matches;
 },
 evaluateCriterion : function (record, criterion) {
-
-    var op = isc.DataSource._operators.find("ID", criterion.operator);
+    
+    var op = isc.DataSource._operators[criterion.operator];
     if (op == null) {
         isc.logWarn("Attempted to use unknown operator " + criterion.operator);
         return false;
@@ -4872,7 +4902,7 @@ editFormulaField : function (field) {
 
     if (!editMode) {
         // new field - gen a unique field-name in the format formulaFieldxxx
-        field = { name: component.getUniqueFieldName("formulaField"), title: "New Field",
+        field = { name: component.getUniqueFieldName(this.formulaFieldNamePrefix), title: "New Field",
             width: "50", canFilter: false, canExport: false, canSortClientOnly: true};
     }
 
@@ -4999,7 +5029,7 @@ editSummaryField : function (field) {
 
     if (!editMode) {
         // new field - gen a unique field-name in the format summaryFieldxxx
-        field = { name: component.getUniqueFieldName("summaryField"), title: "New Field",
+        field = { name: component.getUniqueFieldName(this.summaryFieldNamePrefix), title: "New Field",
             width: "50", canFilter: false, canExport: false, canSortClientOnly: true};
     }
 
@@ -5074,13 +5104,24 @@ userFieldCallback : function (builder) {
 
     if (this.markForRedraw) this.markForRedraw();
 
+    var restart = builder.restartBuilder,
+        type = builder.builderTypeText;
+
     editorWindow.destroy();
+
+    if (restart) {
+        if (type == "Formula") this.addFormulaField();
+        else this.addSummaryField();
+    }
+
 },
 
-
+formulaFieldNamePrefix: "formulaField",
+summaryFieldNamePrefix: "summaryField",
+uniqueFieldNamePrefix: "field",
 getUniqueFieldName : function (namePrefix) {
     // assume return values in the format "fieldXXX" if namePrefix isn't passed
-    if (!namePrefix || namePrefix == "") namePrefix = "field";
+    if (!namePrefix || namePrefix == "") namePrefix = this.uniqueFieldNamePrefix;
     var fields = this.getFields(),
         maxIncrement = 1,
         keyLength = namePrefix.length;
@@ -5754,56 +5795,6 @@ getFormattingProperties : function (field, value) {
     }
 },
 
-//>	@object	ExportSettings
-//	Properties describing settings for a data export.  
-//	@see DataBoundComponent.exportClientData
-//	@visibility external
-//<
-
-//>	@type	ExportOutputType
-// The output type (format) to use for a data export.
-// @value	"csv"    Export in CSV (Comma Separated Values) format. Note that the separator
-//                   does not have to be a comma, despite the name - see 
-//                   +link{exportSettings.delimiter}
-// @value	"json"   Export in JSON (JavaScript Object Notation) format.  Note that this 
-//                   format is not supported for purely client-specified requests, for
-//                   security reasons.
-// @value	"xml"    Export in XML format
-// @value	"xls"    Export in Microsoft Excel 97 format
-// @value   "ooxml"  Export in Microsoft Excel 2007 format (also called "xlsx")
-//	@visibility external
-//<
-
-//>	@type	ExportLineBreakStyle
-// The type of line breaks to use for a data export.
-// @value	"unix"    UNIX-style line breaks (LF only)
-// @value	"mac"     Apple Mac-style line breaks (CR only)
-// @value	"dos"     DOS/Windows-style line breaks (CR and LF)
-// @value	"default" The server's default line break style
-//	@visibility external
-//<
-
-//> @attr exportSettings.outputType (ExportOutputType : null : IRW)
-// The output type of the export.
-// @visibility external 
-//<    
-
-//> @attr exportSettings.lineBreakStyle (ExportLineBreakStyle : null : IRW)
-// The line break style to use for the export.
-// @visibility external 
-//<    
-
-//> @attr exportSettings.delimiter (String : "," : IRW)
-// The character to use as a separator for output styles that require separators
-// @visibility external 
-//<    
-
-//> @attr exportSettings.columnOrder (Array of String : null : IRW)
-// A list of field names to export.  If provided, this property controls both which fields to
-// export, and the order in which to export them.
-// @visibility external 
-//<    
-
 
 //> @method dataBoundComponent.exportClientData()
 // Exports this component's data with client-side formatters applied, so is suitable for direct
@@ -5816,19 +5807,30 @@ getFormattingProperties : function (field, value) {
 // @param [requestProperties] (DSRequest Properties) Request properties for the export.
 //  Note that specifying +link{DSRequest.exportData,exportData} on the request properties
 //  allows the developer to pass in an explicit data set to export.
-// @param [exportSettings] (ExportSettings) Optional settings for the export.
 // @see dataSource.exportClientData
 // @visibility external
 //<
-exportClientData : function (requestProperties, exportSettings) {
-    var workProperties = isc.addProperties({}, requestProperties);
-    workProperties.exportSettings = exportSettings;
-    this.getClientExportData(workProperties, 
+exportClientData : function (requestProperties) {
+    this.getClientExportData(requestProperties, 
         this.getID()+".exportClientDataReply(data,context)");
     return;
 },
 
+
+//> @attr dataBoundComponent.emptyExportMessage (string : "You are attempting to export an empty dataset" : [IRW])
+// The message to display to the user if an export of a DataBoundComponent's data is attempted
+// while the DataBoundComponent's data is null or an empty list.
+// @see dataBoundComponent.exportClientData
+// @visibility internal - for now
+//<
+emptyExportMessage: "You are attempting to export an empty dataset",
+
 exportClientDataReply : function (data, context) {
+
+    if (data == null || data.length == 0) {
+        isc.warn(this.emptyExportMessage);
+    }
+
     var props = context,
         format = props && props.exportAs ? props.exportAs : "csv",
         fileName = props && props.exportFilename ? props.exportFilename : "export",
@@ -5844,7 +5846,15 @@ exportClientDataReply : function (data, context) {
         download_filename: (exportDisplay == "window" ? fileName : null)
     };
     
-    var settings = context.exportSettings ? context.exportSettings : {};
+    var settings = {
+        exportAs: props.exportAs,
+        exportDelimiter: props.exportDelimiter,
+        exportFields: props.exportFields,
+        exportHeader: props.exportHeader,
+        exportFooter: props.exportFooter,
+        exportTitleSeparatorChar: props.exportTitleSeparatorChar,
+        lineBreakStyle: props.lineBreakStyle
+    };
 
     isc.DMI.callBuiltin({
         methodName: "downloadClientExport",

@@ -19,6 +19,33 @@ isc.loadSkin = function (theWindow) {
             groupBorderCSS :"1px solid #165fa7"
         });
 
+        if(isc.Browser.isIE && isc.Browser.version >= 7) {
+            isc.Canvas.setAllowExternalFilters(false);
+            isc.Canvas.setNeverUseFilters(true);
+            if(isc.Window) {
+              isc.Window.addProperties({
+                    modalMaskOpacity:null,
+                    modalMaskStyle:"normal"
+                });
+                isc.Window.changeDefaults("modalMaskDefaults", { src : "[SKIN]opacity.png" });
+            }
+        }
+
+        if (isc.Dialog.Prompt) {
+            isc.addProperties(isc.Dialog.Prompt, {
+                showEdges:false,
+                border:"1px solid #ccc",
+                backgroundColor:"white",
+                width:'auto',
+                height:50
+            });
+            isc.addProperties(isc.Dialog.Prompt.blurbDefaults, {
+                height: 50,
+                width: 'auto',
+                padding : 3
+            });
+        }
+
         // Skinned to matches "Round Rect Button" from native iPhone SDK.
         // Rarely used in native apps, example at Maps -> Drop Pin -> buttons along bottom)
         isc.Button.addProperties({
@@ -310,7 +337,6 @@ isc.loadSkin = function (theWindow) {
                 iconVAlign:"middle"
             });
         }
-
         if (isc.TextItem) {
             isc.TextItem.addProperties({
                 height:27,

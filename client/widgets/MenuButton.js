@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -178,6 +178,25 @@ isc._commonMenuButtonProperties = {
     initWidget : function (a,b,c,d) {
         if (this.showMenuButtonImage)  this._setUpIcon();
         return this.invokeSuper(isc.MenuButton, "initWidget", a,b,c,d);
+    },
+    
+    //> @attr menuButton.autoDestroyMenu (boolean : true : IRW)
+    // If this menuButton is +link{canvas.destroy(),destroyed}, should it also destroy
+    // its +link{menuButton.menu}?
+    // @visibility external
+    //<
+    //> @attr iMenuButton.autoDestroyMenu (boolean : true : IRW)
+    // @include menuButton.autoDestroyMenu
+    //<
+    autoDestroyMenu:true,
+    destroy : function (a,b,c,d,e) {
+        if (this.menu != null && this.autoDestroyMenu && this.menu.destroy != null &&
+            !this.menu.destroyed && !this.menu.destroying)
+        {
+            this.menu.destroy();
+            this.menu = null;
+        }
+        return this.invokeSuper(isc.MenuButton, "destroy", a,b,c,d,e);
     },
     
     // setter for showMenuButtonImage and showMenuBelow - required since we need to update the 

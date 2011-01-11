@@ -1,0 +1,32 @@
+<DataSource ID="QuartzJobs"
+			dbName="ANY_DATA"
+			serverConstructor="com.isomorphic.scheduler.QuartzJobs"
+>
+
+	<fields>
+		<field name="group" type="string" primaryKey="true" required="true"/>
+		<field name="name" type="string" primaryKey="true" required="true"/>
+		<field name="description" type="string"/>
+		<field name="class" type="string" required="true"/>
+
+		<field name="dataMap" type="string"/>
+
+		<!-- Trigger -->
+		<field name="state" type="intEnum" canEdit="false">
+			<valueMap>
+				<value ID="0">Normal</value>
+				<value ID="1">Paused</value>
+				<value ID="2">Complete</value>
+				<value ID="3">Error</value>
+				<value ID="4">Blocked</value>
+				<value ID="-1">None</value>
+			</valueMap>
+		</field>
+
+		<field name="startTime" type="datetime"/>
+		<field name="endTime" type="datetime"/>
+
+		<field name="cronExpression" type="text"/>
+		<field name="timeZone" type="text"/>
+	</fields>
+</DataSource>

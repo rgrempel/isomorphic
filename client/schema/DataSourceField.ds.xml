@@ -40,7 +40,7 @@ isc.DataSource.create({
         },
         length:{
             title:"Length",
-            type:"positiveInteger",
+            type:"integer",
             xmlAttribute:"true"
         },
         xmlRequired:{

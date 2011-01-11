@@ -21,6 +21,19 @@ isc.Page.loadStyleSheet("[ISOMORPHIC]/skins/ToolSkin/skin_styles.css", theWindow
 
 
 
+
+if(isc.Browser.isIE && isc.Browser.version >= 7) {
+    isc.Canvas.setAllowExternalFilters(false);
+    isc.Canvas.setNeverUseFilters(true);
+    if(isc.Window) {
+      isc.Window.addProperties({
+            modalMaskOpacity:null,
+            modalMaskStyle:"normal"
+        });
+        isc.Window.changeDefaults("modalMaskDefaults", { src : "[SKIN]opacity.png" });
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Scrollbar and scroll thumb  
 isc.defineClass("TScrollThumb", "ScrollThumb");

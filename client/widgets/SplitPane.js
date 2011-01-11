@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -18,7 +18,7 @@
 // <P>
 // The SplitPane's main components are the +link{navigationPane} and the +link{detailPane}.
 // Both components will be displayed side by side as columns when viewed on a
-// descktop device or a tablet in landscape mode.<br>
+// desktop device or a tablet in landscape mode.<br>
 // Only one pane will be shown at a time when viewed on a handset sized device
 // (such as iPhone), or a tablet in portrait orientation. By default the +link{detailPane} is 
 // shown, and the +link{showNavigationPane()} / +link{showDetailPane()} methods may be called
@@ -247,11 +247,11 @@ isc.SplitPane.addProperties({
                 if (this.navigationPopUp == null) {
                     
                     // We expect to only load the mobile skin where PopupWindow is defined
-                    var constructor = isc.PopupWindow || isc.Window;
+                    var cs = isc.PopupWindow || isc.Window;
                     
                     this.navigationPopUp = this.createAutoChild(
                         "navigationPopUp",
-                        {   _constructor:constructor,
+                        {   _constructor:cs,
                             headerControls:[this.navigationBar],
                             items:[this.navigationPane],
                             width:"50%",
@@ -285,11 +285,11 @@ isc.SplitPane.addProperties({
                 if (this.listPopUp == null) {
                     
                     // We expect to only load the mobile skin where PopupWindow is defined
-                    var constructor = isc.PopupWindow || isc.Window;
+                    var cs = isc.PopupWindow || isc.Window;
                     
                     this.listPopUp = this.createAutoChild(
                         "listPopUp",
-                        {   _constructor:constructor,
+                        {   _constructor:cs,
                             headerControls:[this.navigationBar],
                             items:[this.listPane],
                             width:"50%",

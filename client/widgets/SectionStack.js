@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -969,9 +969,9 @@ isc.SectionStack.addMethods({
                 continue;
             }
 
-            // If section.showSection is true and the section isn't visible, show it
+            // If section.showHeader is true and the section isn't visible, show it
             // (whether we're expanding or showing)
-            if (section.showSection && section.hidden && (showSection || expandSection)) {
+            if (section.showHeader && section.hidden && (showSection || expandSection)) {
                 itemsToShow.add(section);
                 section.hidden = false;
             }

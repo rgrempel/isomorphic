@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -332,7 +332,34 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         
         return this.Super("handleKeyDown", arguments);
     },
+    
+    // Expose getEnteredValue() - commonly useful for pickLists
+    //> @method comboBoxItem.getEnteredValue()
+    // @include textItem.getEnteredValue()
+    // @visibility external
+    //<
 
+    //> @attr comboBoxItem.addUnknownValues (boolean : true : IRW)
+    // If set to false, if a value has been entered that does not match an entry in the
+    // +link{valueMap} or a value loaded from the +link{optionDataSource}, it will be discarded if the
+    // user leaves the field.
+    // <P>
+    // When this mode is enabled, +link{getValue()} will return null unless the value typed in by the
+    // user has valid matches.  Use +link{getEnteredValue()} to get the raw value typed in by the
+    // user.
+    // <P>
+    // Note that this flag effectively enables +link{completeOnTab}, since leaving the field in
+    // general (whether by tab or another means) will attempt completion, and discard the value if no
+    // valid completion exists.  As with <code>completeOnTab</code>, if the typed in value has more
+    // than one match, the first match will be used.
+    // <P>
+    // If setting this property to <code>false</code> on a databound ComboBoxItem, data paging should
+    // be disabled - this is required since the ComboBoxItem requires all data to be present in 
+    // order to determine whether an entered value is new. Data Paging can be disabled by modifying
+    // the +link{listGrid.dataFetchMode,dataFetchMode} on the +link{pickListProperties} for this
+    // item.
+    // @visibility external
+    //<
     addUnknownValues:true,
 
     // when addUnknownValues is false, on field exit, drop any value that doesn't have a valid
@@ -360,6 +387,7 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
 
     // when addUnknownValues is false, don't allow values that have no valid completions to
     // become this item's value, trigger change()/changed() or be saved to the form
+    
     _updateValue : function (value, forceSave) {
         
         // when a value is selected, the element value is changed to show the display value.
@@ -373,12 +401,12 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         // pickList.
         this._displayValueModified = (!unchanged && !this._valuePicked);
         
-        if (this.addUnknownValues || forceSave) return this.Super("_updateValue", arguments);
-
+        if (this.addUnknownValues || forceSave) {
+            return this.Super("_updateValue", arguments);
+        }
         if (unchanged) return;
 
         var displayValue = this.mapValueToDisplay(value);
-        //this.logWarn("_updateValue: value: " + value + " has display value: " + displayValue);
         if (displayValue == value) {
             // if the user-entered value doesn't match anything in the current pickList, the
             // official value is now considered null
@@ -896,7 +924,9 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
         
         if (this._pickedReverseValueMap) {
             for (var i in this._pickedReverseValueMap) {
-                if (i == value) return this._pickedReverseValueMap[i];
+                if (i == value) {
+                    return this._pickedReverseValueMap[i];
+                }
             }
             delete this._pickedReverseValueMap;
         }
@@ -905,7 +935,6 @@ isc.defineClass("ComboBoxItem", "TextItem", "PickList").addMethods({
             displayValue = this._translateValueFieldValue(value, true);
             if (displayValue != null) value = displayValue;
         }
-            
         return this.invokeSuper(isc.ComboBoxItem, "mapDisplayToValue", value, a,b,c);
     }
 });

@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -378,7 +378,6 @@ makeNamedItem : function (itemName, extraProperties) {
 //		@param	values	(string)	Value of the element (unused).
 //		@return			(string)	HTML to draw this item.
 //<
-_$suppressDoublingCSS:isc.Canvas._$noStyleDoublingCSS,
 getInnerHTML : function (values, includeHint, includeErrors, returnArray) {
     
 	if (!values) values = {};
@@ -543,7 +542,7 @@ getInnerHTML : function (values, includeHint, includeErrors, returnArray) {
                 // can leave height, extrastuff unspecified
                 null, null, 
                 // Avoid double border/margin/padding
-                this._$suppressDoublingCSS,
+                isc.Canvas._$noStyleDoublingCSS,
                 // Don't pass in itemID or formID - don't write out a click handler on this cell
                 null, null, null,
                 // Suppress wrapping of icons (if we have more than one in the cell)

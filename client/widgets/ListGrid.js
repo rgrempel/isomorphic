@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -739,6 +739,7 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
     // Override _getDrawRows()
     // Have the frozen body rely on the unfrozen body to handle drawAhead / quickDrawAhead
     // etc and keep set of drawn rows in synch
+    
     _getDrawRows : function () {
         if (this.frozen && this.grid) {
             var grid = this.grid;
@@ -796,6 +797,20 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
 
     },
     
+    // embedded components can be per row or per cell.
+    // When per-cell the GR APIs act by colNum only, not by field name.
+    // However for us to handle field reorder, show/hide, etc it's useful to hang fieldName
+    // onto the embeddedComponents as well
+    addEmbeddedComponent : function (component, record, rowNum, colNum, position) {
+        var comp = this.invokeSuper(isc.GridBody, "addEmbeddedComponent", component, record, 
+                                    rowNum, colNum, position);
+        if (component._currentColNum != null && component._currentColNum != -1) {
+            var colNum = component._currentColNum;
+            component._currentFieldName = this.fields[colNum].name;
+        }
+        return component;
+    },
+    
     // Override _getExtraEmbeddedComponentHeight() / upateHeightForEmbeddedComponents to
     // respect listGrid.recordComponentHeight if specified, even if there are no
     // embedded components for this record.
@@ -809,7 +824,7 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
             // when there are no embeddedComponents on the row.
             var details = this._getExtraEmbeddedComponentHeight(record, rowNum);
             if (details.allWithin && details.extraHeight > 0) {
-                height = details.extraHeight;
+                height = Math.max(height,details.extraHeight);
                 //this.logWarn("in updateHeightForEmbeddedComponents ("+this.grid+"): details are "+isc.echoAll(details)+"\nheight is "+height);
             } else {
                 height += details.extraHeight;
@@ -935,11 +950,23 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
             // the old and new drawAreas differ and the extents of the new data are present - 
             // fire the notification method and update the stored _oldDrawArea
             
-            
-            if (!this.frozen || reason != "scrolled") { 
+            if (!this.frozen) { 
                 grid._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3], this);
+                this._oldDrawArea = newDrawArea;
             }
-            this._oldDrawArea = newDrawArea;
+        }
+        
+        // Always update all recordComponents on redraw().
+        // don't rely on the draw area changing since we may be showing the same set of
+        // rowNum/colNums but having underlying data or field meaning changes.
+        // Note: updateRecordComponents() updates components in frozen and unfrozen bodies.
+        // If this is a redraw of the frozen body, don't call updateRecordComponents() if
+        // the redraw was tripped by scrolling or data change as in this case we'll also
+        // get a redraw of the unfrozen body which can handle updating the RC's.
+        // (DO still call the method in other cases as it may imply the fields in the frozen
+        // body have changed, etc).
+        if (!(this.frozen && (reason == this._$dataChanged || reason == "scrolled"))) {
+            grid.updateRecordComponents();
         }
         
 
@@ -1181,7 +1208,9 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
     cellMove : function (record,rowNum,colNum) {
        
         var nativeTarget = isc.EH.lastEvent ? isc.EH.lastEvent.nativeTarget : null;
-        if (nativeTarget && (nativeTarget.getAttribute("isErrorIcon") == "true")) {
+        if (nativeTarget && nativeTarget.getAttribute != null &&
+            (nativeTarget.getAttribute("isErrorIcon") == "true")) 
+        {
             if (this.grid._overErrorIcon != null) {
                 var lastRow = this.grid._overErrorIcon[0],
                     lastCol = this.grid._overErrorIcon[1];
@@ -1421,12 +1450,30 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
         var lg = this.grid;
         
         if (lg.getEditRow() != null) {
+            
             var rowNum = lg.getEditRow(),
                 record = lg.getRecord(rowNum),
                 fieldNum = lg.getEditCol(),
                 form = lg._editRowForm,
-                items = lg.getEditRowItems(record, rowNum, fieldNum, lg.editByCell);                  
-            form.setItems(items);
+                items = lg.getEditRowItems(record, rowNum, fieldNum, lg.editByCell),
+                liveItems = form.getItems();
+               
+            var setItems = liveItems == null || items.length != liveItems.length;
+            if (!setItems) {
+                var liveItemNames = liveItems.getProperty("name");
+                for (var i = 0; i < items.length; i++) {
+                    if (!liveItemNames.contains(items[i].name)) {
+                        setItems = true;
+                        break;
+                    }
+                }
+            }
+            if (setItems) {
+                this.logDebug("calling setItems on form from body draw","gridEdit");
+                form.setItems(items);
+            } else {
+                this.logDebug("Skipping setItems() on form from body draw", "gridEdit");
+            }
             
             
             form._setValuesPending = true;
@@ -1453,17 +1500,11 @@ isc.defineClass("GridBody", isc.GridRenderer).addProperties({
             delete lg._scrollCell;
         }
 
+        // Call 'updateRecordComponents()' on initial draw to set up recordComponents
+        // If this is a ResultSet rather than an array, the updateRecordComponents method
+        // will be able to skip all records and we'll render out the components on redraw.
+        this.grid.updateRecordComponents();
         
-        if (!this._oldDrawArea && this == this.grid.body &&
-              (!isc.isA.ResultSet(this.grid.data) || !this.grid.autoFetchData)) 
-        {
-            if (this.logIsInfoEnabled("recordComponentPool")) {
-                this.logInfo("forcing _drawAreaChanged() to create record/backgroundComponents");
-            }
-            if (!this._oldDrawArea) this._oldDrawArea = [0,0,0,0];
-            var da = this._oldDrawArea;
-            this.grid._drawAreaChanged(da[0],da[1],da[2],da[3], this.body);
-        }
     },
 
 	// rerun ListGrid-level layout if the body's scrolling state changes, to allow sizing
@@ -5086,6 +5127,10 @@ isc.ListGrid.addProperties( {
     // @visibility external
     // @example databoundFetch
     //<
+    
+    //> @attr listGrid.dataFetchMode (FetchMode : "paged" : IRW)
+    // @include dataBoundComponent.dataFetchMode
+    //<
 
     // configures ResultSet.fetchDelay, delay in MS before fetches are triggered
     
@@ -5124,7 +5169,7 @@ isc.ListGrid.addProperties( {
 	//<
     bodyBackgroundColor:"white",			
     
-	//>	@attr listGrid.bodyStyleName (CSSStyleName : null : IR)
+	//>	@attr listGrid.bodyStyleName (CSSStyleName : null : IRW)
 	// CSS style used for the body of this grid.  If applying a background-color to the body
     // via a CSS style applied using this property, be sure to set 
     // +link{ListGrid.bodyBackgroundColor} to <code>null</code>.
@@ -5331,6 +5376,8 @@ isc.ListGrid.addProperties( {
     // <ul>
     //  <li> whenever the dataset is completely changed or rows are added or removed
     //  <li> whenever a field which is autofitting is changed
+    //  <li> on a manual call to +link{listGrid.autoFitField()} or
+    //       +link{listGrid.autoFitFields()}
     // </ul>
     // Autofitting behavior continues until the user resizes the field manually, at which
     // point it stops. The user can also perform a one-time auto-fit of fields via
@@ -5370,6 +5417,9 @@ isc.ListGrid.addProperties( {
     // are wide enough that horizontal scrolling would be introduced, this attribute may be
     // set to an array of fieldNames, causing those fields to be clipped rather than
     // forcing horizontal scrollbars to appear.
+    // <P>
+    // Note: If any +link{ListGridField.frozen,frozen columns} are included in this list they
+    // will not be clipped.
     // @group autoFitFields
     // @visibility external
     //<
@@ -5381,6 +5431,8 @@ isc.ListGrid.addProperties( {
     // and avoid leaving a gap.
     // <P>
     // If true, the field to expand may be specified via +link{autoFitExpandField}
+    // <P>
+    // Note this logic will not expand a +link{ListGridField.frozen,frozen column}.
     // 
     // @group autoFitFields
     // @visibility external
@@ -5395,6 +5447,8 @@ isc.ListGrid.addProperties( {
     // If unset, will default to the text field with the longest 
     // +link{dataSourceField.length} if length is set, otherwise, the first text
     // field with no width specified.
+    // <P>
+    // Note that expanding +link{ListGridField.frozen,frozen columns} is not supported.
     // @group autoFitFields
     // @visibility external
     //<
@@ -5432,9 +5486,9 @@ isc.ListGrid.addProperties( {
     // How should fields of +link{listGridFieldType,type:"icon"} be sized by default?
     // @value "none" Apply no special sizing to icon fields - treat them like any other 
     //   field in the grid
-    // @value "iconWidth" size the field to accomodate the width of the icon
-    // @value "title" size the field to accomodate the title (or the width of the icon if
-    //   it exceds the width of the title.
+    // @value "iconWidth" size the field to accommodate the width of the icon
+    // @value "title" size the field to accommodate the title (or the width of the icon if
+    //   it exceeds the width of the title.
     //
     // @group autoFitFields
     // @visibility external
@@ -5470,7 +5524,7 @@ isc.ListGrid.addProperties( {
     
     
     // By default, fields that show only an icon, including +link{listGridFieldType,listGridFieldType:"icon"}) are automatically assigned a width that 
-    // accomodates the icon.  This may cause the title to be clipped - if so, consider using
+    // accommodates the icon.  This may cause the title to be clipped - if so, consider using
     // an abbreviated title, using an icon as the title, enabling autoFitting to titles,
     // setting an explicit width on the field, or finally, disabling this setting if it's 
     // inconvenient.
@@ -6132,7 +6186,7 @@ isc.ListGrid.addProperties( {
     // This is not supported in conjunction with +link{ListGridField.frozen,frozen fields}.
     // If you are using recordComponents in a listGrid with frozenFields, you can specify an
     // explicit +link{listGrid.recordComponentHeight} to ensure every row in the grid renders
-    // tall enough to accomodate the recordComponents, and as such virtual scrolling is not
+    // tall enough to accommodate the recordComponents, and as such virtual scrolling is not
     // required.
     //
     // @see recordComponentPosition
@@ -6165,7 +6219,9 @@ isc.ListGrid.addProperties( {
     // the cell. Valid options are 
     // <ul><li><code>"within"</code>: the component will be rendered inside the record / cell.
     //  +link{canvas.snapTo} may be set to specify where the component should render within
-    //  the row or cell. Note that if unset, the component will show up at the top/left edge
+    //  the row or cell, and +link{canvas.snapOffsetTop} / +link{canvas.snapOffsetLeft} may
+    //  be set to indent recordComponents within their parent cells.
+    //  Note that if unset, the component will show up at the top/left edge
     //  for components embedded within an entire row, or for per-cell components, cell
     //  align and valign will be respected.  Note also that, when rendering components "within"
     //  cells, specified component heights will be respected and will change the height of the 
@@ -6287,7 +6343,15 @@ isc.ListGrid.addProperties( {
     // @visibility external
     //<
 
+    //> @attr listgrid.showBackgroundComponent (boolean : false : IRW)
+    // If <code>true</code> this grid will create and show per-row backgroundComponents 
+    // as detailed +link{listGrid.backgroundComponent,here}.
+    // @visibility external
+    //<
+    
 	//> @attr listGrid.backgroundComponent (Canvas : null : IR)
+	// Has no effect unless +link{listGrid.showBackgroundComponent} is <code>true</code>.
+	// <P>
     // Canvas created and embedded in the body behind a given record.   When 
     // +link{listGridRecord.backgroundComponent} is set, this autoChild canvas 
     // will be constructed (if listGridRecord.backgroundComponent is not already a Canvas) and 
@@ -8785,12 +8849,15 @@ isc.ListGrid.addProperties( {
         cellAlign: "center",
         recordClick: function (viewer, record, recordNum, field, fieldNum, value, rawValue) {
             if (!viewer.canExpandRecords || !field._isExpansionField) return;
-            if (!viewer.canExpandRecord(record, recordNum)) return;
+            if (!viewer._canExpandRecord(record, recordNum)) return;
             if (record.expanded) viewer.collapseRecord(record);
             else viewer.expandRecord(record);
         },
         formatCellValue : function (value, record, rowNum, colNum, grid) {
-            if (!grid.canExpandRecord(record, rowNum)) return null;
+            // This ensures that if we're looking at an edit row for a new record we
+            // don't show the expansion icon
+            record = grid.getCellRecord(rowNum, colNum);
+            if (!grid._canExpandRecord(record, rowNum)) return null;
             return grid.getValueIconHTML(
                 record.expanded ? grid.expansionFieldTrueImage : grid.expansionFieldFalseImage, 
                 this
@@ -8921,12 +8988,20 @@ isc.ListGrid.addProperties( {
         else return this.showRowNumbers ? 1 : 0;
     },
 
+    _canExpandRecord:function (record,rowNum) {
+        if (record == null) record = this.getRecord(rowNum);
+        if (record == null) return false;
+        return this.canExpandRecord(record,rowNum);
+    },
     //> @method listGrid.canExpandRecord()
     // Indicates whether a given record or rowNum can be expanded.  The default implementation
     // checks the value of +link{listGrid.canExpandRecords} and 
     // <code>record[+link{listGrid.canExpandRecordProperty}]</code>.
     // <P>
     // Override this method for more specific control over individual record expansion.
+    // <P>
+    // <b>Note:</b> Rows with no underlying record in the data array - for example newly 
+    // added edit rows that have not yet been saved - cannot be expanded.
     // 
     // @param record (ListGridRecord) record to work with
     // @param rowNum (Number) rowNum of the record to work with
@@ -8935,8 +9010,6 @@ isc.ListGrid.addProperties( {
     // @visibility external
     //<
     canExpandRecord : function (record, rowNum) {
-        record = record ? record : rowNum != null ? this.getRecord(rowNum) : null;
-        if (record == null) return false;
         return record[this.canExpandRecordProperty] == false ? false : 
             true && (this.canExpandRecords != false);
     },
@@ -9273,6 +9346,8 @@ isc.ListGrid.addProperties( {
     },
 
     //> @attr listGridRecord.backgroundComponent (Canvas : null : IR)
+    // Has no effect unless +link{listGrid.showBackgroundComponent} is <code>true</code>.
+	// <P>
     // Canvas created and embedded in the body behind a given record.   When set, either as
     // a Canvas or Canvas Properties, will be constructed if necessary, combined with the 
     // autoChild properties specified for +link{listGrid.backgroundComponent} and displayed 
@@ -9664,14 +9739,6 @@ setData : function (newData) {
         this.setSelectedState(this._lastStoredSelectedState);
         delete this._lastStoredSelectedState;
     }
-
-    if (this.body && this.data && this.data.length > 0) {
-        var drawArea = this.body._oldDrawArea;
-
-        // the old and new drawAreas differ and the extents of the new data are present - 
-        // fire the notification method and update the stored _oldDrawArea
-        if (drawArea != null) this._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3]);
-    }
     
     // if any fields are marked as autoFitWidth, recalculate their sizes
     this.updateFieldWidthsForAutoFitValue("setData called.");
@@ -9704,7 +9771,8 @@ getAutoFitExpandField : function () {
         var field = this.getField(this.autoFitExpandField);
         // We don't support auto-expanding a frozen field at this time
         
-        if (field != null && this.fields && this.fields.contains(field) && (!this.frozenFields || !this.frozenFields.contains(field)))
+        if (field != null && this.fields && this.fields.contains(field) && 
+            (!this.frozenFields || !this.frozenFields.contains(field)))
         {
             return field;
         }
@@ -9717,6 +9785,7 @@ getAutoFitExpandField : function () {
             if (!field.showValueIconOnly && 
                (field.type == "text" || field.type == null)) 
             {
+                if (field.frozen) continue;
                 fields.add(field);
                 if (fields[i] != null && fields[i].length != null) {
                    lengthFields.add(fields[i]);
@@ -9731,16 +9800,15 @@ getAutoFitExpandField : function () {
         if (lengthFields.last().length >= this.autoFitExpandLengthThreshold ||
             lengthFields.length == fields.length) 
         {
-            this.logWarn("if case:" + [
-                    lengthFields.last().length >= this.autoFitExpandLengthThreshold ,
-            lengthFields.length == fields.length]);
             return lengthFields[0];
         }
     }
     if (fields.length > 0) {
         var i = 0;
             field = fields[i]
-        while (field != null && field.length != null && field.length < this.autoFitExpandLengthThreshold) {
+        while (field != null && field.length != null &&
+                    field.length < this.autoFitExpandLengthThreshold)
+        {
             i++;
             field = fields[i];
         }
@@ -9769,7 +9837,6 @@ updateFieldWidthsForAutoFitValue : function (reason) {
         var approach = this.getAutoFitWidthApproach(fields[i]);
         
         if (approach == "value" || approach == "both") {
-            
             this.fields._appliedInitialAutoFitWidth = false;
             this.body._fieldWidthsDirty = "Updating field widths for field auto-fit" + 
                                       (reason ? (":" + reason) : ".");
@@ -10280,6 +10347,7 @@ _observeData : function (data) {
 //
 // Note that this method is only fired when an existing groupTree changes - not when regroup()
 // is run, creating a new groupTree.
+_$dataChanged:"dataChanged",
 groupTreeChanged : function () {
     
     // If the groupTree was updated from underlying data change, no need to
@@ -10295,7 +10363,7 @@ groupTreeChanged : function () {
     if (this._lastRecordClicked > lastRow) delete this._lastRecordClicked;
     
     if (this.hilites) this.applyHilites();
-    if (!this._suppressRedrawOnDataChanged) this._markBodyForRedraw("dataChanged");
+    if (!this._suppressRedrawOnDataChanged) this._markBodyForRedraw(this._$dataChanged);
     
 },
 //>	@method listGrid._observeGroupData() (A)
@@ -10351,8 +10419,6 @@ toggleFolder : function (node) {
         
         if (this.frozenBody) this.frozenBody.markForRedraw();
     }
-
-//    this.forceRecordComponentProcess();
 },
 
 //> @method treeGrid.openFolder() ([A])
@@ -10689,9 +10755,9 @@ dataChanged : function (type, originalRecord, rowNum, updateData, filterChanged)
     
     if (!this._suppressRedrawOnDataChanged) {
         // recalculate autoFitWidth field widths to fit the new data
-        if (resetAutoFitWidths) this.updateFieldWidthsForAutoFitValue("dataChanged");
+        if (resetAutoFitWidths) this.updateFieldWidthsForAutoFitValue(this._$dataChanged);
         
-        this._markBodyForRedraw("dataChanged");
+        this._markBodyForRedraw(this._$dataChanged);
         
         // recalculate grid summaries
         if (this.summaryRow && this.showGridSummary) this.summaryRow.recalculateSummaries();
@@ -10760,26 +10826,8 @@ _dataArrived : function (startRow, endRow) {
     }
 
     this.dataArrived(startRow, endRow);
-
-//    this.forceRecordComponentProcess();
 },
 
-forceRecordComponentProcess : function () {
-    if (this.isDrawn()) {
-        var drawArea = this.body._oldDrawArea;
-
-        if (drawArea) {
-            var grid = this,
-                firstRecord = grid.getRecord(drawArea[0]),
-                lastRecord = grid.getRecord(drawArea[1]),
-                dataPresent = (firstRecord != Array.LOADING) && (lastRecord != Array.LOADING);
-            ;
-            if (dataPresent) {
-                grid._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3]);
-            }
-        }
-    }
-},
 
 // doc'd in registerStringMethods block
 dataArrived : function (startRow, endRow) {},
@@ -10898,9 +10946,9 @@ applyFieldDefaults : function (fields) {
                 }
             }
             
-            // check autoFitIconFields -- if set, set min width to accomodate the
+            // check autoFitIconFields -- if set, set min width to accommodate the
             // icons and set autoFitWidth:true / autoFitWidthApproach such that
-            // it'll expand to accomodate the title if appropriate
+            // it'll expand to accommodate the title if appropriate
             if (field.width == null && field.autoFitWidth == null) {
                 if (this.autoFitIconFields != "none") {
                     field.autoFitWidth = true;
@@ -11120,6 +11168,7 @@ showField : function (field, suppressRelayout) {
         this.setFields(this.completeFields || this.fields);
         this.fieldStateChanged();
         return;
+        
     } else {
     	// If this.fields. contains the object, we can assume it's already visible if we're drawn
         // and will show up when we get drawn otherwise.
@@ -11191,7 +11240,10 @@ showField : function (field, suppressRelayout) {
         }
 
         this.body.fields = this.normalFields || this.fields;
-        this.setBodyFieldWidths(this.getFieldWidths());        
+        this.setBodyFieldWidths(this.getFieldWidths());
+
+        this._remapEmbeddedComponentColumns(this.body);
+        
     	// instant redraw rather than markForRedraw because we have to avoid dropping
     	// values
         if (this.body.isDrawn()) this.body.redraw("show field");
@@ -11204,13 +11256,6 @@ showField : function (field, suppressRelayout) {
         this.summaryRow.showField(field, suppressRelayout);
     }
 
-    if (this.body) {
-        var drawArea = this.body._oldDrawArea;
-
-        // the old and new drawAreas differ and the extents of the new data are present - 
-        // fire the notification method and update the stored _oldDrawArea
-        this._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3]);
-    }
     this.markForRedraw("showField");
 
     this.fieldStateChanged();
@@ -11273,6 +11318,7 @@ hideField : function (field, suppressRelayout) {
         this.setFields(this.completeFields || this.fields);
         this.fieldStateChanged();
         return;
+        
     }
     
     // If necessary, update the UI here, rather than going through 
@@ -11371,7 +11417,9 @@ hideField : function (field, suppressRelayout) {
 	// tell the body about the new fields
     if (this.body) {
         this.body.fields = this.normalFields || this.fields;
-        this.setBodyFieldWidths(this.getFieldWidths());        
+        this.setBodyFieldWidths(this.getFieldWidths());
+
+        this._remapEmbeddedComponentColumns(this.body);        
     	// instant redraw rather than markForRedraw because we have to avoid dropping
     	// values
         if (this.body.isDrawn()) this.body.redraw("hide field");
@@ -11396,7 +11444,8 @@ hideField : function (field, suppressRelayout) {
         this.summaryRow.recalculateSummaries();
         this.summaryRow.hideField(field, suppressRelayout);
     }
-
+    
+    
     this._remapEmbeddedComponents();
 
     this.fieldStateChanged();
@@ -12075,7 +12124,7 @@ getSelectedState : function (supressWarnings) {
         selectedState[i] = this.getPrimaryKeys(selection[i]);
     }
     
-    return isc.Comm.serialize(selectedState);
+    return isc.Comm.serialize(selectedState,false);
 },
 
 //>	@method	listGrid.setSelectedState() 
@@ -12171,7 +12220,7 @@ getSortState : function () {
 
     // eval() of a string containing object literal text will js error - enclose in "(" ... ")" to 
     // avoid this.
-    return "(" + isc.Comm.serialize(sortState) + ")";
+    return "(" + isc.Comm.serialize(sortState,false) + ")";
 },
 
 
@@ -12319,31 +12368,60 @@ getFieldWidths : function (reason) {
 	// - after setFields(): anytime before the body is redrawn
 
 	var sizes = this._getCalculatedFieldWidths();
-    
 	// When autoFitFieldWidths is true, we may need to tweak these values to either
 	// fill the available space, or clip certain fields if we're overflowing the
 	// available space.
-       
-    if (this.autoFitFieldWidths) {
-        var unfrozenWidths = sizes.duplicate();
+    if (this.autoFitFieldWidths && !this._calculatingAutoFitFieldWidths) {
+        this._calculatingAutoFitFieldWidths = true;
+        var unfrozenWidths = sizes.duplicate(),
+            frozenWidths = null;
+            
         if (this.frozenFields != null) {
             var left = this.freezeLeft;
-            unfrozenWidths = unfrozenWidths.slice(
-                                left ? this.frozenFields.length : 0,
-                                left ? null : unfrozenWidths.length-this.frozenFields.length);
+            if (left) {
+                frozenWidths = unfrozenWidths.slice(0, this.frozenFields.length);
+                unfrozenWidths = unfrozenWidths.slice(this.frozenFields.length);
+            } else {
+                frozenWidths = unfrozenWidths.slice(this.frozenFields.length);
+                unfrozenWidths = unfrozenWidths.slice(0, this.frozenFields.length);
+            }
         }
         
         var availableSpace = this.getAvailableFieldWidth(),
             totalSize = unfrozenWidths.sum();
 
-        if (totalSize < availableSpace) {
+        var unfrozenSpace = availableSpace;
+        if (frozenWidths != null) unfrozenSpace -= frozenWidths.sum();
+
+                
+        
+        // Case 1: the fields don't fill the available space.
+        // Expand the autoFitExpandField to fill the available space in the body.
+        // Note: We don't auto-expand frozen fields - that would require resizing the
+        // frozen body as well. The getAutoFitExpandField() method already handles not
+        // returning frozen fields.
+        // NOTE: If we're fitting to data, but data is currently loading, don't expand a field
+        // now - wait until we redraw with loaded data. Otherwise we don't really know the
+        // rendered sizes of all fields, so we won't know how much to expand the expansion field
+        // by. Then when data arrives and the other fields all resize, we end up rendering the
+        // expansion field potentially too wide since the other fields may now overflow available
+        // space.
+        
+        var validData = true;
+        if (this.autoFitWidthApproach != "title") {
+            var dA = this.getDrawArea();
+            if (!this.data || Array.isLoading(this.data.get(dA[0]))) {
+                validData = false;
+            }
+        }
+        if (totalSize < unfrozenSpace && validData) {
             var expandField = this.getAutoFitExpandField();
             if (expandField) {
                 // we want to update the sizes array (includes both frozen and
                 // unfrozen fields) so get the global fieldNum for the expand field
                 // and update that value.
                 var expandFieldNum = this.getFieldNum(expandField);
-                var diff = availableSpace - totalSize;
+                var diff = unfrozenSpace - totalSize;
                 sizes[expandFieldNum] += diff;
                 
                 // If we're showing a header for the field we have to resize
@@ -12354,7 +12432,10 @@ getFieldWidths : function (reason) {
                     button.setWidth(sizes[expandFieldNum]);
                 }
             }
-        } else if (totalSize > availableSpace && this.autoFitClipFields != null) {
+        // case 2: the auto-fit fields are overflowing the available space, clip them
+        // if appropriate.
+        // Note: we don't clip frozen fields - that would require resizing the actual bodies.
+        } else if (totalSize > unfrozenSpace && this.autoFitClipFields != null) {
             
             // If any autoFitFields are marked as clippable, and we're now overflowing
             // horizontally, we want to re-run stretchResize logic ignoring 
@@ -12377,6 +12458,17 @@ getFieldWidths : function (reason) {
                     fieldNum = this.getFieldNum(field);
                 if (field == null || fieldNum < 0) continue;
                 
+                // Don't attempt to clip frozen fields since that would require resizing
+               // the frozen body.
+                if (field.frozen) {
+                    this.logInfo("auto-fitting field:" + field.name + 
+                        " is present in the autoFitClipFields array for this grid, but is" +
+                        " currently frozen. This is not supported - the field will not be clipped.",
+                        "frozenFields");
+                    continue;
+                }
+
+                
                 // deleting the calculated autoFitWidth ensures that when 
                 // _getCalcualtedFieldWidths runs stretchResizePolicy will simply resize
                 // the row to fit if possible, or if a header is showing, the header reflow
@@ -12385,16 +12477,20 @@ getFieldWidths : function (reason) {
                 var header = this.getFieldHeader(fieldNum);
                 if (header && header.isDrawn()) {
                     button = header.getMember(this.getLocalFieldNum(fieldNum));
+                    
                     button.setWidth(field.width || "*");
-                    button.setOverflow("visible");
+                    
+                    button.setOverflow("hidden");
                 }
             }
             if (this.header && this.header.isDrawn()) {
-                this.header.reflowNow();
+                var reflowReason = this._$gettingFieldWidths;
+                if (reason != null) reflowReason += reason;
+                this.header.reflowNow(reflowReason);
                 this.header.hPolicy = policy;
                 if (this.frozenHeader) {
                     this.frozenHeader.hPolicy = "fill";
-                    this.frozenHeader.reflowNow();
+                    this.frozenHeader.reflowNow(reflowReason);
                     this.frozenHeader.hPolicy = policy;
                 }
             }
@@ -12405,12 +12501,15 @@ getFieldWidths : function (reason) {
             // headers
             sizes = this._getCalculatedFieldWidths();
         }
+        this._calculatingAutoFitFieldWidths = false;
     }
-
+    
+//    this.logWarn("getFieldWidths() ultimately gave sizes:" + sizes);
     
     return sizes;
     
 },
+_$gettingFieldWidths:"Getting listGrid fieldWidths. ",
 
 // helper for getFieldWidths() - returns the stretch-resize calculated widths
 // (based on the header if appropriate).
@@ -12421,7 +12520,18 @@ _getCalculatedFieldWidths : function () {
 
     var header = this.header;
     if (isc.isA.Layout(header) && header.isDrawn()) {
-         // this.logWarn("using header-based field widths");
+        // this.logWarn("using header-based field widths");
+        
+        // Force an immediate redraw of any dirty buttons.
+        // This is required to ensure sizes are correct -- if redrawOnResize is true for
+        // the button or label with overflow:"visible", and setWidth() is called on it
+        // the redraw isn't immediate - we need to force a redraw now if it hasn't occurred
+        // so getVisibleWidth() returns the new size.
+        var buttons = header.members;
+        for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].isDirty()) buttons[i].redraw();
+            if (buttons[i].label != null && buttons[i].label.isDirty()) buttons[i].label.redraw();
+        }
 
     	// derive field widths from header sizes
         var sizes = header.getMemberSizes();
@@ -12559,7 +12669,6 @@ _adjustLastFieldForBodyStyling : function (size, totalFieldsWidth, vertical) {
 },
 
 setBodyFieldWidths : function (sizes) {
-
 	// set the _fieldWidths array to the list passed in
     this._fieldWidths = sizes;
     
@@ -12676,7 +12785,6 @@ _updateFieldWidths : function (reason, b,c) {
     // wipe out fieldWidths on resize so they'll be recalculated.  
 	
     this._fieldWidths = null;
-    
     // If any fields has autoFitWidth set to true, calculate the auto-fit size for the
     // column apply it to the field
     // Note that we only care about the cases where we're fitting to the body content - if
@@ -12690,10 +12798,8 @@ _updateFieldWidths : function (reason, b,c) {
                 if (autoFitFieldWidths[i] == null) continue;
                 var field = this.fields[i];
                 var minWidth = field.width || this.minFieldWidth;
-
                 if (minWidth < autoFitFieldWidths[i]) {
                     field._calculatedAutoFitWidth = autoFitFieldWidths[i];
-        
                     // update the header if there is one
                     // Note: If autoFitWidthApproach is "both", the header title can
                     // still overflow this new specified size (giving us the desired behavior
@@ -12703,11 +12809,20 @@ _updateFieldWidths : function (reason, b,c) {
                         headerButton.setWidth(autoFitFieldWidths[i]);
                         headerButton.parentElement.reflow();
                     }
+                } else if (field._calculatedAutoFitWidth != null) {
+                    field._calculatedAutoFitWidth = null;
+                    
+                    var headerButton = this.getFieldHeaderButton(i);
+                    if (headerButton != null) {
+                        headerButton.setWidth(minWidth);
+                        headerButton.parentElement.reflow();
+                    }
                 }
+                    
             }
             // Hang a flag on the array to avoid re-calculating the width every time we
             // run stretchResizePolicy, etc
-            this.fields._appliedInitialAutoFitWidth = true;
+            this.fields._appliedInitialAutoFitWidth = true; 
         }
         
     }
@@ -12752,7 +12867,7 @@ _updateFieldWidths : function (reason, b,c) {
                 // running getFieldWidths before the header is drawn
                 // to determine how much space will be required for the frozen header
                 // (see _getCalculatedFieldWidths for explanation)
-                var fieldWidths = this.getFieldWidths(),
+                var fieldWidths = this.getFieldWidths(reason),
                     frozenWidths = this.getFrozenSlots(fieldWidths);
                 this.frozenHeader.setWidth(frozenWidths.sum());
                 this.headerLayout.draw()
@@ -13503,19 +13618,20 @@ getCellValue : function (record, recordNum, fieldNum, gridBody) {
             // If there's no icon write out the empty cell value. This avoids us having
             // un-styled cells.
             if (!iconHTML || isc.isAn.emptyString(iconHTML)) iconHTML = this.emptyCellValue;
-            return iconHTML;
-        }
-        // use formatCellValue() to perform any additional formatting
-        value = this._formatCellValue(value, record, field, recordNum, fieldNum);
-        // apply hilites to capture htmlBefore/after
-        var hilites = this.getFieldHilites(record, field);
-        if (hilites) value = this.applyHiliteHTML(hilites, value);
-        
-        if (iconHTML) {
-            if (field.valueIconOrientation != isc.Canvas.RIGHT)
-                value = iconHTML + value;
-            else
-                value = value + iconHTML;
+            value = iconHTML;
+        } else {
+            // use formatCellValue() to perform any additional formatting
+            value = this._formatCellValue(value, record, field, recordNum, fieldNum);
+            // apply hilites to capture htmlBefore/after
+            var hilites = this.getFieldHilites(record, field);
+            if (hilites) value = this.applyHiliteHTML(hilites, value);
+            
+            if (iconHTML) {
+                if (field.valueIconOrientation != isc.Canvas.RIGHT)
+                    value = iconHTML + value;
+                else
+                    value = value + iconHTML;
+            }
         }
         
         // Only show error icon HTML if we're not showing an editor for the cell - otherwise
@@ -14307,27 +14423,16 @@ setShowRecordComponents : function (showRC) {
         this.drawAllMaxCells = 0;
         if (this.body != null) this.body.drawAllMaxCells = 0;
       
-        this.markForRedraw();
     } else {
         if (this._oldDrawAllMaxCells != null) {
             this.drawAllMaxCells = this._oldDrawAllMaxCells;
             if (this.body != null) this.body.drawAllMaxCells = this._oldDrawAllMaxCells;
             delete this._oldDrawAllMaxCells;
         }
-        if (this.body != null && this.body._embeddedComponents) {
-            var ecs = [];
-            ecs.addList(this.body._embeddedComponents);
-            for (var i = 0; i < ecs.length; i++) {
-                var ec = ecs[i];
-                if (ec  == null) continue;
-                if (ec.isRecordComponent) {
-                    this.removeEmbeddedComponent(ec);
-                }
-            }
-            this.markForRedraw();
-        }
         
     }
+    this.invalidateRecordComponents();
+
     
 },
 
@@ -14385,7 +14490,12 @@ _updateVirtualScrollingForRecordComponents : function () {
 
 
 //>	@method	listGrid.getDrawArea()	(A)
-//  Returns the extents of the rows and columns current visible in this grid's viewport.
+// Returns the extents of the rows and columns current visible in this grid's viewport.
+// <P>
+// Note: if there are any +link{listGridField.frozen,frozen fields}, they are not included
+// in the draw area range returned by this method. Frozen fields are assumed to never be 
+// scrolled out of view.  The column coordinates returned by this method will only include
+// unfrozen columns.
 //
 // @return	(Array of Number)	The row/col co-ordinates currently visible in the viewport as
 //    [startRow, endRow, startCol, endCol].
@@ -14393,78 +14503,66 @@ _updateVirtualScrollingForRecordComponents : function () {
 //<
 
 getDrawArea : function () {
-    if (this.body) return this.body.getDrawArea();
+    if (this.body) {
+        var drawArea = this.body.getDrawArea();
+        if (this.frozenFields && this.freezeLeft()) {
+            drawArea[2] += this.frozenFields.length;
+            drawArea[3] += this.frozenFields.length;
+        }
+        return drawArea;
+    }
     
     return null;
 },
 
-// default internal method called from GR.redraw() to prepare recordComponents (and, now, 
-// backgroundComponents) when the drawArea changes - fires LG.drawAreaChanged() if it exists
+// _drawAreaChanged() - notification fired on GridRenderer.redraw() when the
+// previous draw area doesn't match the new draw area
 
 _drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, body) {
-    
-    var oldDrawArea = [oldStartRow, oldEndRow, oldStartCol, oldEndCol],
-        newDrawArea = this.getDrawArea(),
-        removeArea = oldDrawArea.duplicate(),
-        addArea = newDrawArea.duplicate()
-    ;
-
-    if (!body) body = this.body;
-
-    if (newDrawArea[0] > oldDrawArea[1] || newDrawArea[1] < oldDrawArea[0]) {
-        // all the old rows are outside the drawArea - remove all the oldArea components (from
-        // all cells)
-    } else {
-        if (newDrawArea[0] > oldDrawArea[0] && newDrawArea[1] > oldDrawArea[1]) {
-            // the first chunk of the old drawArea is now due for removal and the last bit of
-            // the new drawArea if due for adding
-            removeArea[1] = newDrawArea[0] - 1;
-            addArea[0] = oldDrawArea[1];
-        } else if (newDrawArea[0] < oldDrawArea[0] && newDrawArea[1] < oldDrawArea[1]) {
-            // the last chunk of the old drawArea is now due for removal and the last bit of
-            // the new drawArea if due for adding
-            removeArea[0] = newDrawArea[1] == 0 ? 0 : newDrawArea[1] + 1;
-            addArea[1] = oldDrawArea[0] - 1;
-        }
-        // decide whether any of the fields have been scrolled out of the viewport
-        if (newDrawArea[2] > oldDrawArea[2] && newDrawArea[3] > oldDrawArea[3]) {
-            // the left-hand chunk of the old drawArea is now due for removal and the right
-            // of the new drawArea if due for adding
-            removeArea[3] = newDrawArea[2] - 1;
-            addArea[2] = oldDrawArea[3];
-        } else if (newDrawArea[2] < oldDrawArea[2] && newDrawArea[3] < oldDrawArea[3]) {
-            // the right-hand chunk of the old drawArea is now due for removal and the left
-            // of the new drawArea if due for adding
-            removeArea[2] = newDrawArea[3] == 0 ? 0 : newDrawArea[3] + 1;
-            addArea[3] = oldDrawArea[2] - 1;
-        }
+    if (this.frozenFields && this.freezeLeft()) {
+        oldStartCol += this.frozenFields.length;
+        oldEndCol += this.frozenFields.length;
     }
+    var oldDrawArea = [oldStartRow, oldEndRow, oldStartCol, oldEndCol];
+    if (oldDrawArea.equals(this.getDrawArea())) return;
+    this.drawAreaChanged(oldStartRow,oldEndRow,oldStartCol,oldEndCol);
+},
 
-    if (this.frozenBody && body != this.frozenBody) {
-        var frozenCount = this.frozenFields.length;
-        // if we have a frozenBody, we (potentially) need to loop over two sets of fields:
-        // - always over the frozen fields, which are sure to be visible
-        // - over whatever range of body fields are visible
-        var removeStartCol = removeArea[2],
-            removeEndCol = removeArea[3];
-        removeArea[2] = [0, removeStartCol+frozenCount];
-        removeArea[3] = [frozenCount-1, removeEndCol+frozenCount];
+// documented in registerStringMethods
+drawAreaChanged:function () {},
 
-        var addStartCol = addArea[2],
-            addEndCol = addArea[3];
-        addArea[2] = [0, addStartCol+frozenCount];
-        addArea[3] = [frozenCount-1, addEndCol+frozenCount];
-    }
 
-    var firstRecord = this.getRecord(addArea[0]),
-        lastRecord = this.getRecord(addArea[1]),
-        dataPresent = (firstRecord != Array.LOADING) && (lastRecord != Array.LOADING);
+// updateRecordComponents() - fired from redraw on grid body (or frozen body).
+// This method essentially iterates through our current draw area and ensures that if
+// showRecordComponents is true, we're showing recordComponents for each row (or cell),
+// calling 'createRecordComponent()' or 'updateRecordComponent()' as necessary to create
+// new components, and discarding (or pooling) record components that we previously created
+// which are no longer visible.
+// This method should not need to be called by developers directly.
+// To force an explicit invalidation and refresh of recordComponents, use 
+// invalidateRecordComponents()
+// *Note: This method also handles updating backgroundComponents if specified
 
-    if (!dataPresent) return;
+updateRecordComponents : function () {
     
-    // If we're performing a show/hide row height animation, bail.
+    // Sanity check to avoid infinite loops if adding embedded components trips redraw of
+    // body for example
+    var debugLog = this.logIsDebugEnabled("recordComponents");
+    if (this._updatingRecordComponents) {
+        if (debugLog) {
+            this.logDebug("updateRecordComponents called recursively - returning",
+                "recordComponents");
+        }
+        return;
+    }
+    
+     // If we're performing a show/hide row height animation, bail.
     // In this case the HTML in the body won't match the set of records in our data set
     // so we can't update / place embedded components properly
+    var body = this.body,
+        frozenBody = this.frozenBody;
+    if (body == null) return;
+    
     if (body._animatedShowStartRow !=  null) {
         return;
     }
@@ -14472,264 +14570,427 @@ _drawAreaChanged : function (oldStartRow, oldEndRow, oldStartCol, oldEndCol, bod
     // draw() fires this method before calculating _fieldWidths, in which case we can't
     // yet size/position our embedded components. This can occur when we rebuildForFreeze.
     // Catch this case and return.
-    if (body._fieldWidths == null || 
-        (body._fieldWidths.length == 0 && body.fields.length > 0)) return;
+    if ((body._fieldWidths == null || 
+        (body._fieldWidths.length == 0 && body.fields.length > 0)) ||
+        (frozenBody && 
+            (frozenBody._fieldWidths == null || 
+            (frozenBody._fieldWidths.length == 0 && frozenBody.fields.length > 0)))) return;
     
-    this._updatingEmbeddedComponents = true;
-
-    if (this.logIsInfoEnabled("recordComponentPool")) {
-        this.logInfo("\n_drawAreaChanged: drawArea details: "+
-            "\noldDrawArea: "+oldDrawArea+
-            "\nnewDrawArea: "+newDrawArea+
-            "\nremoveArea: "+removeArea+
-            "\naddArea: "+addArea+
-            "\n", "recordComponentPool");
-
-        this.logInfo("\n_drawAreaChanged: Before processing: "+
-            "\ngrid._recordComponentPool has "+
-            (this._recordComponentPool ? this._recordComponentPool.length : 0) +" entries"+
-            "\nbody._embeddedComponents has "+
-            (body._embeddedComponents ? body._embeddedComponents.length : 0) +" entries"+
-            "\n", "recordComponentPool");
-    }
-
-    var colNum;
-
-    // first off, clear out components that have now left the drawArea
-    if (body && (body._embeddedComponents != null || this._recordComponentPool != null)) {
-        for (var rowNum = removeArea[0]; rowNum <= removeArea[1]; rowNum++) {
-            var record = this.getRecord(rowNum); 
+    this._updatingRecordComponents = true;
+    
+    // Implementation overview: The concept here is that if showRecordComponents is true,
+    // we call a method 'createRecordComponent()' [or potentially 'updateRecordComponent']
+    // for every visible row, or if showing by cell, every visible cell, lazily as its rendered
+    // out.
+    // When new cells are rendered out we want to
+    // - call createRecordComponent() [or updateRC] for newly rendered cells
+    // - *not* call createRC for cells that were visible and still are (regardless of whether
+    //   createRecordComponent returned an actual component or just null)
+    // - for cells that are no longer visible, clear up the created record components, 
+    //   clearing them, destroying them or adding them to our 'recordComponentPool' depending on
+    //   the recordComponentPoolingMode.
+    // Rather than trying to achieve this by tracking viewports (which has the major disadvantage
+    // of being fragile on data change or field config change), we take this approach:
+    // We store all generated record components in 2 places:
+    // - on the records themselves, indexed by fieldName, under record._recordComponents
+    // - on the ListGrid in both an array and an object mapping componentIDs to true
+    // If the createRecordComponent method returned null for any cell, we store a special
+    // nullMarker object on the record._recordComponents object as well.
+    //
+    // When this method runs we can then iterate through all visible records / fields
+    // - determine if we have visible record components already present, or null markers,
+    //   in which case we leave the component alone
+    // - otherwise run the method to create a new record component / get one from the pool and
+    //   apply it to the cell.
+    // Once we've gone through all visible cells we iterate through all the recordComponents
+    // we previously created and wipe out (either clear, destroy or recycle) any that weren't
+    // noted as being attached to a visible cell in the previous step.
+    
+    // _liveRecordComponents / _liveRecordComponentsObj is the full set of recordComponents
+    // generated last time this method was run.
+    var oldRecordCompArr = this._liveRecordComponents || [],
+        oldRecordCompObj = this._liveRecordComponentsObj || {};
+        
+    this._liveRecordComponentsObj = {};
+    this._liveRecordComponents = [];
+    
+    // If showRecordComponents is false we can skip all logic to create
+    // new recordComponents. If we had any previously created recordComponents we'll clear
+    // them below. This will handle the showRecordComponents setting being changed dynamically.
+    if (this.showRecordComponents || this.showBackgroundComponents) {
+        
+        // Determine what our current draw area is - set of drawn fields and rows.
+        // This method is being called as part of redraw, before the render has occurred, so
+        // we can't just look at body._firstDrawnRow / _lastDrawnRow etc - we need
+        // to call the getDrawArea() APIs on the body to actually calculate the new values
+        
+        var drawArea = this.body.getDrawArea(),
+            cellComponents = this.showRecordComponentsByCell,
+            bodyID = this.body.getID(),
+            frozenBodyID = this.frozenBody ? this.frozenBody.getID() : null;
             
-            if (record == Array.LOADING) continue;
-
-            if (this.showRecordComponents && record) {
-                
-                if (record._embeddedComponents && record._embeddedComponents.length > 0) {
-
-                    var blocks = isc.isAn.Array(removeArea[2]) ? 2 : 1;
-                    for (var block = 0; block < blocks; block++) {
-                        var startCol=0, endCol=0;
-                        if (this.showRecordComponentsByCell) {
-                            if (blocks == 2) {
-                                startCol = removeArea[2][block];
-                                endCol = removeArea[3][block];
-                            } else {
-                                startCol = removeArea[2];
-                                endCol = removeArea[3];
-                            }
-                        } 
-                        for (var i = startCol; i <= endCol; i++) {
-                            var component = null;
-                            if (this.showRecordComponentsByCell) {
-                                if (record._embeddedComponents) {
-                                    for (var ii = 0; ii < record._embeddedComponents.length; ii++) {
-                                        var ec = record._embeddedComponents[ii];
-                                        if (ec.isRecordComponent && ec._currentColNum == i) {
-                                            component = ec;
-                                            break;
-                                        }
-                                    }
-                                }
-                            } else {
-                                colNum = null;
-                                component = record._embeddedComponents ? 
-                                    record._embeddedComponents.find("isRecordComponent",true) : null;
-                            }
-                            if (!component) continue;
-
-                            if (this.recordComponentPoolingMode == "data") {
-                                // just clear the component - will be redrawn automatically when the record
-                                // is rendered and re-mapped or removed automatically by 
-                                // _remapEmbeddedComponents when the record is cached/uncached
-                                component.clear();
-                            } else if (this.recordComponentPoolingMode == "viewport") {
-                                // remove the component and destroy it when out of the viewport
-                                this.removeEmbeddedComponent(component, colNum);
-                                component.markForDestroy();
-                            } else if (this.recordComponentPoolingMode == "recycle") {
-                                //record._embeddedComponents.remove(component);
-                                if (!component.destroying && !component.destroyed)
-                                    this.addToRecordComponentPool(component);
-                                this.removeEmbeddedComponent(component, colNum);
-                            }
-                        }
-                    }
-                }
-            } 
-            if (record && isc.isA.Canvas(record.backgroundComponent)) {
-//            record.backgroundComponent.clear();
-            }
+        if (debugLog) {
+            this.logDebug("updating to potentially show recordComponents for drawArea:" 
+                + drawArea, "recordComponents");
         }
-    }
-
-    if (this.logIsInfoEnabled("recordComponentPool")) {
-        this.logInfo("\n_drawAreaChanged: After removals: "+
-            "\ngrid._recordComponentPool has "+
-            (this._recordComponentPool ? this._recordComponentPool.length : 0) +" entries"+
-            "\nbody._embeddedComponents has "+
-            (body._embeddedComponents ? body._embeddedComponents.length : 0) +" entries"+
-            "\n", "recordComponentPool");
-    }
-
-    // iterate over the rows and cols that are new to the drawArea and apply components to
-    // them as applicable
-    for (var rowNum = addArea[0]; rowNum <= addArea[1]; rowNum++) { 
-        var record = this.getRecord(rowNum);
-
-        if (record == Array.LOADING) continue;
-
-        if (this.showRecordComponents && record && !record._isGroup) {
-            var startCol=0, endCol=0,
-                shouldShowRecordRecordComponent;
-
-            var blocks = isc.isAn.Array(removeArea[2]) ? 2 : 1;
-            for (var block = 0; block < blocks; block++) {
-                if (this.showRecordComponentsByCell) {
-                    if (blocks == 2) {
-                        startCol = addArea[2][block];
-                        endCol = addArea[3][block];
-                    } else {
-                        startCol = addArea[2];
-                        endCol = addArea[3];
-                    }
-                } else {
-                    shouldShowRecordComponent = this.showRecordComponent(record);
-                }
-
-                // If showRecordComponentsByCell is false this loop will always run just once
-                // and the colNum is essentially ignored!
-                for (var i = startCol; i <= endCol; i++) {
-                    var component=null,
-                        fieldName = this.getFieldName(i);
-
-                    if (this.showRecordComponentsByCell) {
-                        var colNum = i;
-                        // if a component already exists in the record for this column, retrieve it
-                        if (record._embeddedComponents) {
-                            for (var ii = 0; ii < record._embeddedComponents.length; ii++) {
-                                var ec = record._embeddedComponents[ii];
-                                if (ec.isRecordComponent) {
-                                    if (ec.currentFieldName == fieldName) {
-                                        ec._currentColNum = i;
-                                        component = ec;
-                                        break;
-                                    } 
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        colNum = null;
-                        // if a component already exists in the record, retrieve it
-                        if (record._embeddedComponents) {
-                            component = record._embeddedComponents.find("isRecordComponent", true);
-                        }
-                    }
+        for (var rowNum = drawArea[0]; rowNum <= drawArea[1]; rowNum++) {
+            var record = this.getRecord(rowNum);
+            
+            if (record == null || Array.isLoading(record)) continue;
+            
+            if (this.showRecordComponents) {
                 
-                    var shouldShowRecordComponent = this.showRecordComponent(record, colNum);
-                
-                    if (!shouldShowRecordComponent) {
-                        // If we *have* a recordComponent for the cell (or record), this implies
-                        // showRecordComponent(..)'s return val has changed from true to false.
-                        // Drop the component (and add to pool if appropriate).
-                        if (component != null) {
-                        
-                            var pool = this.recordComponentPoolingMode == "recycle";
-                            if (pool) {
-                                //record._embeddedComponents.remove(component);
-                                if (!component.destroying && !component.destroyed)
-                                    this.addToRecordComponentPool(component);
-                            }
-                            this.removeEmbeddedComponent(component, colNum);
-                            if (!pool) {
-                                component.markForDestroy();
-                            }
-                        }
-                    
-                    } else {
-                       
-    
-                        // attempt to recycle a component from the recordComponentPool - pass in the 
-                        // record and return a component that was previously on this record if possible
-                        // - this may mean no processing is necessary in updateRecordComponent()
-                        if (!component) component = this.getFromRecordComponentPool(record, fieldName);
-                        if (!component) {
-                            if (this.createRecordComponent && isc.isA.Function(this.createRecordComponent)) {
-                                component = this.createRecordComponent(record, colNum);
+                // If we don't have cell components we will add components to the (unfrozen) body,
+                // one per row.
+                if (!cellComponents) {
+                     
+                    var shouldShowRecordComponent = this.shouldShowRecordComponent(record),
+                        liveComp = null;
+                    if (shouldShowRecordComponent) {
+                        // getLiveRecordComponent() will pick up the record component we've already
+                        // applied to the record/field.
+                        // NOTE: If createRecordComponent ran and returned null we store a special
+                        // null-marker object which we'll get back here as well. This means we
+                        // don't re-run createRecordComponent() unless we actually want to.
+                        liveComp = this._getLiveRecordComponent(record, null, bodyID);
+                        if (liveComp != null) {
+                            if (liveComp.isNullMarker) {
+                                liveComp = null;
+                            } else {
+                                var ID = liveComp.getID();
+                                oldRecordCompObj[ID] = null;
                             }
                         } else {
-                            if (this.updateRecordComponent && isc.isA.Function(this.updateRecordComponent)) {
-                                var sameRow = (component._currentRowNum == rowNum);
-                                if (!sameRow) {
-                                    delete component._currentRowNum;
-                                    delete component._currentColNum;
-                                }
-                                component = this.updateRecordComponent(record, colNum, component, 
-                                        !sameRow);
+                            liveComp = this._applyNewRecordComponent(record, null, this.body, rowNum);
+                        }
+                    }
+                    
+                    // Store pointers to both the component and its ID
+                    if (liveComp != null) {
+                        var ID = liveComp.getID();
+                        this._liveRecordComponentsObj[ID] = true;
+                        this._liveRecordComponents[this._liveRecordComponents.length] = liveComp;
+                    }
+                    
+                // same logic as above, but applied per cell to both the frozen and
+                // unfrozen body.
+                } else {
+                
+                    if (this.frozenBody != null) {
+                        for (var fieldNum = 0; fieldNum < this.frozenBody.fields.length; fieldNum++) {
+                            var field = this.frozenBody.fields[fieldNum],
+                                fieldName = field.name;
                             
-                                if (component == null) {
-                                    this.logWarn("showRecordComponents: updateRecordComponent() method " +
-                                        "failed to return an updated component.");
+                            var shouldShowRecordComponent = this.shouldShowRecordComponent(record, field.masterIndex),
+                                liveComp = null;
+                                
+                            if (shouldShowRecordComponent) {
+                                liveComp = this._getLiveRecordComponent(record, fieldName, frozenBodyID);
+                                if (liveComp != null) {
+                                    if (!liveComp.isNullMarker) {
+                                        var ID = liveComp.getID();
+                                        oldRecordCompObj[ID] = null;
+                                    } else {
+                                        liveComp = null;
+                                    }
+                                } else {
+                                    liveComp = this._applyNewRecordComponent(record, fieldName, this.frozenBody,
+                                                    rowNum, fieldNum);
                                 }
                             }
+                            if (liveComp != null) {
+                                var ID = liveComp.getID();
+                                this._liveRecordComponentsObj[ID] = true;
+                                this._liveRecordComponents[this._liveRecordComponents.length] = liveComp;
+                            }
                         }
-
-                        if (component) {
-                            // set the 'isRecordComponent' flag on it so we can remove as appropate etc
-                            component.isRecordComponent = true;
-                            component.currentFieldName = this.getFieldName(colNum);
-                            this.addEmbeddedComponent(component, record, rowNum, colNum,
-                                this.getRecordComponentPosition());
+                    }
+                    for (var bodyCol = drawArea[2]; bodyCol <= drawArea[3]; bodyCol++) {
+                        var field = this.body.fields[bodyCol],
+                            fieldName = field.name;
+                            
+                        var shouldShowRecordComponent = this.shouldShowRecordComponent(record, field.masterIndex),
+                            liveComp = null;
+                        if (shouldShowRecordComponent) {
+                            var liveComp = this._getLiveRecordComponent(record, fieldName, bodyID);
+                            if (liveComp != null) {
+                                if (!liveComp.isNullMarker) {
+                                     var ID = liveComp.getID();
+                                     oldRecordCompObj[ID] = null;
+                                } else {
+                                    liveComp = null;
+                                }
+                            } else {
+                                liveComp = this._applyNewRecordComponent(record, fieldName, this.body,
+                                            rowNum, bodyCol);
+                            }
+                        }
+                        
+                        if (liveComp != null) {
+                            var ID = liveComp.getID();
+                            
+                            this._liveRecordComponentsObj[ID] = true;
+                            this._liveRecordComponents[this._liveRecordComponents.length] = liveComp;
                         }
                     }
                 }
             }
             
-        }
-        if (record && record.backgroundComponent) {
-            var component = record._embeddedComponents ? 
-                    record._embeddedComponents.find("isBackgroundComponent", true) : null;
-
-            if (!component) {
-                // should be showing a backgroundComponent but it's not present yet - add it now
-                if (isc.isA.Canvas(record.backgroundComponent)) {
-                    // backgroundComponent is specified as a canvas
-                    var comp = record.backgroundComponent.addProperties(
-                        this.backgroundComponentProperties,
-                        { isBackgroundComponent: true }
-                    );
-                } else {
-                    // backgroundComponent is specified as properties
-                    var props = isc.addProperties({ isBackgroundComponent: true },
-                        this.backgroundComponentProperties,
-                        record.backgroundComponent);
-                    var comp = this.createAutoChild("backgroundComponent", props);
+            
+            if (this.showBackgroundComponents) {
+                if (record && record.backgroundComponent) {
+                    var component = record._embeddedComponents ? 
+                            record._embeddedComponents.find("isBackgroundComponent", true) : null;
+        
+                    if (!component) {
+                        // should be showing a backgroundComponent but it's not present yet - add it now
+                        if (isc.isA.Canvas(record.backgroundComponent)) {
+                            // backgroundComponent is specified as a canvas
+                            var comp = record.backgroundComponent.addProperties(
+                                this.backgroundComponentProperties,
+                                { isBackgroundComponent: true }
+                            );
+                        } else {
+                            // backgroundComponent is specified as properties
+                            var props = isc.addProperties({ isBackgroundComponent: true },
+                                this.backgroundComponentProperties,
+                                record.backgroundComponent);
+                            var comp = this.createAutoChild("backgroundComponent", props);
+                        }
+        
+                        var tableIndex = body.getTableZIndex();
+                        comp.setZIndex(tableIndex - 49);
+                        comp.setWidth("100%");
+                        comp.setHeight("100%");
+                        comp.setOverflow("hidden");
+                        
+                        
+                        this.addEmbeddedComponent(record.backgroundComponent, record, rowNum, null, "within");
+                        
+                        // This should stick with the record until it's wiped due to data change
+                        // or similar (EG remapEmbeddedComponents)
+                        // At that point, if this method runs again it'll be cleared
+                    }
                 }
-
-                var tableIndex = body.getTableZIndex();
-                comp.setZIndex(tableIndex - 49);
-                comp.setWidth("100%");
-                comp.setHeight("100%");
-                comp.setOverflow("hidden");
-                record.backgroundComponent = comp;
-                this.addEmbeddedComponent(record.backgroundComponent, record, rowNum, null, "within");
             }
         }
     }
+    
+    if (this.logIsInfoEnabled("recordComponents")) {
+        this.logInfo("updateRecordComponents - new recordComponents:" + 
+            this.echo(this._liveRecordComponentsObj) +
+            ", old record components (will be cleaned up if value is 'true'):" + 
+            this.echo(oldRecordCompObj), "recordComponents");
+    }
+    
+    // At this point we've iterated through our draw area (or showRecordComponents is false,
+    // in which case we want to drop all pre existant Record Components).
+    // Any pre-existant recordComponents that are still visible have been removed from
+    // the 'oldRecordCompObj'.
+    // Iterate through pre-existant record components that are left and clear them up
+    // (remove from DOM if necessary, destroy / pool if necessary)
+    for (var i = 0; i < oldRecordCompArr.length; i++) {
+        // if it's been cleared from the oldRecordCompObj we know its still visible / being used
+        var ID = oldRecordCompArr[i].getID();
+        if (oldRecordCompObj[ID] != true) {
+            continue;
+        }
+        //this.logWarn("cleaning up RecordComponent:" + oldRecordCompArr[i]);
+        this._cleanUpRecordComponent(oldRecordCompArr[i]);
+    }
+    delete this._updatingRecordComponents;
+},
 
-    delete this._updatingEmbeddedComponents;
-
-    this.logInfo("\n_drawAreaChanged: After additions: "+
-        "\ngrid._recordComponentPool has "+
-        (this._recordComponentPool ? this._recordComponentPool.length : 0) +" entries"+
-        "\nbody._embeddedComponents has "+
-        (body._embeddedComponents ? body._embeddedComponents.length : 0) +" entries"+
-        "\n", "recordComponentPool");
-
-    if (this.drawAreaChanged && isc.isA.Function(this.drawAreaChanged)) 
-        this.drawAreaChanged(oldStartRow, oldEndRow, oldStartCol, oldEndCol);
-
+// _applyNewRecordComponent()
+// This method will run 'createRecordComponent()' or 'updateRecordComponent()' to
+// get the recordComponent for some record or cell.
+_applyNewRecordComponent : function (record, fieldName, body, rowNum, bodyCol) {
+    
+    if (this.logIsDebugEnabled("recordComponents")) {
+        this.logDebug("getting record component for row/field:" + [rowNum,fieldName],
+            "recordComponents");
+    }
+    
+    var bodyID = body.getID();
+    
+    var pool = this.recordComponentPoolingMode == "recycle",
+        component,
+        // same row variable - only used if we're picking up a pooled component
+        sameRow,
+        colNum = fieldName == null ? null : this.getColNum(fieldName);
         
+    if (pool) {
+        var compConfig = this.getFromRecordComponentPool(record, fieldName);
+        component = compConfig ? compConfig[0] : null;
+        sameRow = compConfig ? compConfig[1] : null;
+    }
+    
+    if (!component) {
+        if (this.createRecordComponent && isc.isA.Function(this.createRecordComponent)) {
+            component = this.createRecordComponent(record, this.getColNum(fieldName));
+            if (component != null) component.isRecordComponent = true;
+            this.logDebug("created new record component:" + component, "recordComponents");
+        }
+    } else {
+        if (this.updateRecordComponent && isc.isA.Function(this.updateRecordComponent)) {
+
+            component = this.updateRecordComponent(record, colNum, component, !sameRow);
+
+            // component may well be null
+            if (component == null) {
+                if (this.logIsInfoEnabled("recordComponents")) {
+                    this.logInfo("showRecordComponents: updateRecordComponent() method " +
+                        "failed to return an updated component.", "recordComponents");
+                }
+            }
+            this.logDebug("updated record component from pool:" + component, "recordComponents");
+        }
+    }
+    var addNullMarker = component == null;
+    if (addNullMarker) {
+        component = {
+            isNullMarker:true,
+            _embedBody:bodyID,
+            _recordComponentBatch:this._recordComponentSequence
+        }
+    }
+    if (record._recordComponents == null) {
+        record._recordComponents = {};
+    }
+    if (fieldName == null) fieldName = this._$noFieldString;
+    
+    record._recordComponents[fieldName] = component;
+    // We're applying a "currentFieldName" / "currentRecord" flag in addition
+    // to the _currentFieldName applied by the embeddedComponents code. This is
+    // intentional - we use these flags in pooling mode to pick up the component that
+    // matched the previous record (if possible) and previous field if
+    // poolComponentsPerColumn is true. Don't want to rely on the flags that are set up and
+    // potentially cleared by the standard embeddedComponent subsystem.
+    if (pool && !addNullMarker) {
+        component.currentFieldName = fieldName;
+        component.currentRecord = record;
+    }
+    if (!addNullMarker) {
+        //this.logWarn("created component:" + component + ", adding to:" + [rowNum,fieldName]);
+        return body.addEmbeddedComponent(component, record, rowNum, bodyCol, this.getRecordComponentPosition());
+    }
+},
+
+// fired when a recordComponent's cell is no longer visible. Behavior depends on 
+// recordComponentPoolingMode.
+_cleanUpRecordComponent : function (component, forceDestroy) {
+    if (this.logIsDebugEnabled("recordComponents")) {
+        this.logDebug("cleaning up recordComponent:" + component,
+            "recordComponents");
+    }
+
+    var poolingMode = this.recordComponentPoolingMode;
+    // If passed the forceDestroy parameter, behave in 'viewport' mode regardless of
+    // the actual pooling mode - this means we'll destroy the component passed in.
+    if (forceDestroy) poolingMode = "viewport";
+    
+    if (poolingMode == "data") {
+        
+        // Nothing to do here:
+        // If the record is still around, placeEmbeddedComponent() will have cleared it and
+        // it'll simply re-render when scrolled back into view, etc.
+        //
+        // If the record is no longer present in the data array, remapEmbeddedComponents()
+        // will have already marked it for destruction, and updateRecordComponents() has
+        // already rebuilt the array of _liveRecordComponents so we won't be hanging onto
+        // a pointer to it anymore.
+
+    } else {
+        var body = isc.Canvas.getById(component._embedBody),
+            record = component.embeddedRecord,
+            fieldName = component._currentFieldName;
+
+        delete record._recordComponents[fieldName];
+        
+        // this component may have already been removed from the body, for example by
+        // _remapEmbeddedComponentColumns(). In this case _embedBody will have been null
+        // so we can detect this by the body var being unset here.
+        if (body != null) {
+            body.removeEmbeddedComponent(component.embeddedRecord, component);
+        }
+        
+        if (poolingMode == "viewport") {
+            component.markForDestroy();
+        } else {
+            
+            if (component.destroying || component.destroyed || component._pendingDestroy) return;
+            this.addToRecordComponentPool(component);
+        }
+    }
+},
+
+// Helper method - look at a record and see if we currently have a recordComponent for it.
+
+_$noFieldString:"_noField",
+_recordComponentSequence:0,
+_getLiveRecordComponent : function (record, fieldName, bodyID) {
+    
+    if (fieldName == null) fieldName = this._$noFieldString;
+    
+    var recordComponents = record._recordComponents;
+    
+    if (recordComponents == null || recordComponents[fieldName] == null) return null;
+    
+    var component = recordComponents[fieldName];
+    
+    if (component._embedBody != bodyID) {
+        return null;
+    }
+    if (component.isNullMarker && component._recordComponentBatch != this._recordComponenSequence) {
+        return null;
+    }
+    
+    // We should never see this but if a component gets destroyed without first being
+    // cleared out of the record._recordComponents block, wipe it out now. This will force
+    // creation of a new recordComponent in calling code.
+    if (component.destroyed || component.destroying || component._pendingDestroy) {
+        this.logWarn("Destroyed or Destroying record component:" + component + 
+            " present on record. Ignoring", "recordComponents");
+        recordComponents[fieldName] = null;
+        return null;
+    }
+    
+    return component;
+},
+
+//> @method listGrid.invalidateRecordComponents()
+// Invalidates the currently visible set of +link{listGrid.showRecordComponents,recordComponents}
+// and gets fresh ones for the visible rows in the grid according to the 
+// +link{listGrid.recordComponentPoolingMode}
+// @visibility external
+//<
+invalidateRecordComponents : function () {
+    
+    // force destruction of the visible recordComponents - otherwise this
+    // method would have no visible effect in 'data' pooling mode.
+    this.dropRecordComponents(true);
+    
+    if (this.showRecordComponents && this.isDrawn()) {
+        this.updateRecordComponents();
+    }
+},
+
+dropRecordComponents : function (forceDestroy) {
+    
+    // up the recordComponentSequence count. This is used to identify our special null markers
+    // and essentially invalidates them, meaning we'll re-run the createRecordComponent logic
+    // for records with null markers we've already set at this point.
+    
+    this._recordComponentSequence++;
+    
+    var oldRecordCompArr = this._liveRecordComponents || [];
+        
+    delete this._liveRecordComponents;
+    delete this._liveRecordComponentsObj;
+    
+    for (var i = 0; i < oldRecordCompArr.length; i++) {
+        this._cleanUpRecordComponent(oldRecordCompArr[i], forceDestroy);
+    }
 },
 
 getRecordComponentPosition : function () {
@@ -14742,27 +15003,34 @@ getRecordComponentPool : function () {
     return this._recordComponentPool;
 },
 
+// we want to indicate whether the record changed. Handle this by returning a 2 element array
+// - the component and a boolean.
 getFromRecordComponentPool : function (record, fieldName) {
     var components = this.getRecordComponentPool(),
         subList = [],
-        subList2 = [],
         component;
-    if (components.length > 0) {
-        if (this.poolComponentsPerColumn == true) {
-            subList = components.findAll("currentFieldName", fieldName);
-            component = subList && subList.length > 0 ? subList[0] : null;
-            if (component) this._recordComponentPool.remove(component);
-            return component;
-        } else if (record) {
-            subList = components.findAll("embeddedRecord", record);
-            if (subList) subList2 = subList.findAll("currentFieldName", fieldName);
-            if (subList2 && subList2.length > 0) component = subList2[0];
-            else component = subList && subList.length > 0 ? subList[0] : null;
-        }
-        if (!component) component = components[0];
-        if (component) this._recordComponentPool.remove(component);
+    
+    if (!components || components.length == 0) return null;
+    
+    if (this.poolComponentsPerColumn == true) {
+        subList = components.findAll("currentFieldName", fieldName);
+    } else {
+        subList = components;
     }
-    return component;
+    if (!subList || subList.length == 0) return null;
+    
+    for (var i = 0; i < subList.length; i++) {
+        component = subList[i];
+        var prevRecord = component.currentRecord;
+        if (this.comparePrimaryKeys(prevRecord, record)) {
+            components.remove(component);
+            return [component,true];
+        }
+    }
+    // we didn't find a component that previously sat in this record, just return an arbitrary
+    // one - the last one on the list.
+    components.length -= 1;
+    return [component,false];
 },
 
 addToRecordComponentPool : function (component) {
@@ -14771,9 +15039,24 @@ addToRecordComponentPool : function (component) {
     components.add(component);
 },
 
-// doc'd in registerStringMethods block
-showRecordComponent : function (record, colNum) {
-    return (this.showRecordComponents == null ? false : this.showRecordComponents);
+// Should we show a recordComponent for this record/col?
+// checks for various records we want to skip, like the separator rows, and
+// fires the public 'showRecordComponent()' method to allow custom suppression of RCs for
+// certain rows or cells.
+shouldShowRecordComponent : function (record, colNum) {
+    
+    if (record == null || record._isGroup || record[this.isSeparatorProperty]
+        || Array.isLoading(record))
+    {
+        return false
+    }
+    return this.showRecordComponent(record,colNum);
+},
+
+// Override point documented in registerStringMethods().
+
+showRecordComponent : function () {
+    return true;
 },
 
 // notification from each body when getInnerHTML is called.
@@ -14802,7 +15085,7 @@ bodyDrawing : function (body) {
 //> @attr listGrid.recordComponentHeight (Integer : null : IRWA)
 // If +link{listGrid.showRecordComponents} is true, this attribute may be used to
 // specify a standard height for record components.
-// If specified every row in the grid will be sized tall enough to accomodate a recordComponent
+// If specified every row in the grid will be sized tall enough to accommodate a recordComponent
 // of this size.
 // <P>
 // Note that if this property is unset, row heights will be unpredictable and 
@@ -15631,7 +15914,7 @@ _cellContextClick : function (record, rowNum, colNum) {
 	if (this.showCellContextMenus) {
 	
 		// create the cellContextMenu if necessary
-		if (!this.cellContextMenu) this.cellContextMenu = isc.Menu.create(this.contextMenuProperties);
+		if (!this.cellContextMenu) this.cellContextMenu = this.getMenuConstructor().create(this.contextMenuProperties);
 
 		// get standard menu items if the handler above did not set custom items
 		if (!this.cellContextItems) {
@@ -15847,7 +16130,7 @@ _getCellHoverComponent : function (record, rowNum, colNum) {
 // method to have the default hover component generated, then further customize it.
 // <P>
 // By default, components returned by <code>getCellHoverComponent()</code> will be
-// automatically destroyed when the hover is hidden.  To preven this, set
+// automatically destroyed when the hover is hidden.  To prevent this, set
 // +link{canvas.hoverAutoDestroy} to false on the returned component.
 //
 // @param record (ListGridRecord) record to get the hoverComponent for
@@ -16439,7 +16722,6 @@ scrollCellCallback : function (rowNum, colNum, center, alwaysCenter, stamp) {
 // alwaysCenter: scroll even if the cell is already in view (center it or place at left/top
 //               according to "center" parameter
 scrollCellIntoView : function (rowNum, colNum, center, alwaysCenter) {
-    
     if ((isc.isAn.Array(this.data) && this.data.length == 0 && this.dataSource)
         || (isc.ResultSet && isc.isA.ResultSet(this.data) && !this.data.lengthIsKnown())) {
         // keep track of conscective calls to scrollToRow() so we can only perform the most
@@ -18888,7 +19170,8 @@ _showEditForm : function (rowNum, colNum, forceRedraw) {
         for (var i = 0; i < fields.length; i++) {
             if (this.isCheckboxField(fields[i])) continue;
                 
-            var fieldName = fields[i][this.fieldIdProperty],
+            var field = fields[i],
+                fieldName = fields[i][this.fieldIdProperty],
                 formItem = this._editRowForm.getItem(fieldName),
                 colNum = formItem.colNum,
                 
@@ -18902,7 +19185,7 @@ _showEditForm : function (rowNum, colNum, forceRedraw) {
             //   will not be showing  rollovers for the edit row.
             // - ensure the row shows up in the 'selected' state if selectOnEdit is true
             else if (this.selectOnEdit || this.lastOverRow) {
-                var body = this.getField(fieldName).frozen ? this.frozenBody : this.body;
+                var body = field.frozen ? this.frozenBody : this.body;
                 body._updateCellStyle(this.getCellRecord(rowNum, colNum), rowNum, colNum);
             }
         }
@@ -19208,7 +19491,6 @@ _parkFocus : function (focusItem, editField) {
 // It's up to the calling function to handle displaying these edit form items in the DOM.
 updateEditorItemsInPlace:true,
 makeEditForm : function (rowNum, colNum) {
-
     var record = this.getCellRecord(rowNum, colNum),
     	// get the values for the form
         
@@ -19259,7 +19541,7 @@ makeEditForm : function (rowNum, colNum) {
                     props = this.getEditItem(editField, record, editedRecord,
                                             rowNum, editColNum, widths[i], true);
                 liveItem.setProperties(props);
-                if (this.getField(fieldName).frozen) {
+                if (editField.frozen) {
                     liveItem.containerWidget = this.frozenBody;
                 } else {
                     liveItem.containerWidget = this.body;
@@ -19267,10 +19549,8 @@ makeEditForm : function (rowNum, colNum) {
             }
             
         } else {
-            
             // get currently visible items
             var items = this.getEditRowItems(record, rowNum, colNum, this.editByCell);
-                
             // just update the items array and current values if the form already exists
             //this.logWarn("rebuilding editRowForm");// + this.getStackTrace());
             this._editRowForm.setItems(items);
@@ -19279,7 +19559,6 @@ makeEditForm : function (rowNum, colNum) {
         
     } else {
         var items = this.getEditRowItems(record, rowNum, colNum, this.editByCell);
-           
     	//this.logWarn("creating editRowForm..." + this.getStackTrace());
     	// create the editForm.  Done once only per grid lifetime
         this._editRowForm = isc.DynamicForm.create(this.editFormDefaults, {
@@ -20021,6 +20300,7 @@ getEditItem : function (editField, record, editedRecord, rowNum, colNum, width, 
             }
             
             // supppress doubled borders etc
+            
             item.textBoxCellCSS = isc.Canvas._$noStyleDoublingCSS
     
             // Apply the custom keydown & keypress handlers to the pop up text area's textArea
@@ -20099,7 +20379,10 @@ _editItemStringMethodCache:{},
 // override refreshCell just to pass the additional params through to refreshCellValue()
 refreshCell : function (rowNum, colNum, refreshingRow, allowEditCellRefresh) {
     if (rowNum == null) {
-        this.logWarn("ListGrid.refreshCell(): first parameter rowNum not present, returning");
+        
+        this.logInfo("ListGrid.refreshCell(): first parameter rowNum not present, returning");
+        
+        
         return;
     }
     if (!this.isDrawn() || !this.body) return;
@@ -21246,7 +21529,8 @@ clearEditValue : function (editValuesID, colNum, suppressDisplay, dontDropAll) {
                                                : this.getEditSessionRowNum(editValuesID));
 
     var fieldName = colNum;
-    if (isc.isA.Number(fieldName)) fieldName == this.getEditorName(rowNum, fieldName);
+    if (isc.isA.Number(fieldName)) fieldName = this.getEditorName(rowNum, fieldName);
+    else colNum = this.getColNum(fieldName);
     
     // If the user is currently editing this field, ensure the current value in the edit form
     // item is stored in this.editValues before clearing it, (so that the focused field is
@@ -21314,8 +21598,6 @@ clearEditValue : function (editValuesID, colNum, suppressDisplay, dontDropAll) {
     // cell.
     
     if (suppressDisplay || rowNum == null) return;
-
-    var colNum = this.getColNum(fieldName);
 
 	// Update the display:
 	// - If the edit form is showing for the row always set its value for the field
@@ -21681,72 +21963,71 @@ _remapEmbeddedComponents : function () {
                     delete this._currentExpandedRecord;
             }
             this.body._embeddedComponents.remove(item);
-            item.markForDestroy();
+            if (this.shouldDestroyOnUnembed(item, this._$dataChanged)) {
+                item.markForDestroy();
+            } else {
+                item.deparent();
+            }
         }
     }
 },
 
-// Called when cols are reordered  Will update per-cell embedded components
-// to match the new column order.
-// 
-// Parameter is a map of oldColNum to newColNum.
-// EG:  {2:1, 3:2} 
-// Would imply the column previously in position 2 is now in position 1, and
-// the column in position 3 is now in position 2.
-//
-// Note that if a column is newly shown we assume it doesn't yet have an embedded component
-// so no need to attempt to update one here -- instead for auto-generated recordComponents we'll
-// create/update the component as part of _drawAreaChanged(), and for explicitly added
-// components calling code will handle creating the component as necessary.
-_remapEmbeddedComponentColumns : function (movedCols) {
+// Helper method to update all per-cell embedded components' "_currentColNum" based on the stored
+// field name for the component
+// Called per body when we reorder fields, show/hide fields etc.
+// Note: this method updates all embedded components. It doesn't re run any specific
+// recordComponent logic to re-create recordComponents on column reorder, or to re-pool components
+// that are no longer visible. This is all handled by updateRecordComponents() which fires on
+// redraw.
+_$columnRemap:"column remap",
+_remapEmbeddedComponentColumns : function (body) {
     
-    if (!this.body || this.body._embeddedComponents == null) return;
-    
-    
-
-    var components = this.body._embeddedComponents,
-        poolingMode = this.recordComponentPoolingMode;
-
+    if (body._embeddedComponents == null) return;
+    var components = body._embeddedComponents,
+        fieldMap = {},
+        changes = false;
+    for (var i = 0; i < body.fields.length; i++) {
+        fieldMap[body.fields[i].name] = i;
+    }
+    // clear embedded components that are no longer visible once we've iterated through
+    // this loop to avoid the array length being effected.
+    var componentsToClear = [];
     for (var i = 0; i < components.length; i++) {
-        var component = components[i],
-            colNum = component._currentColNum;
-        if (colNum == null || movedCols[colNum] == null) continue;
+        var fieldName = components[i]._currentFieldName;
+        // this is expected - it's not a per-cell component.
+        if (fieldName == null) {
+            continue;
+        }
+        var colNum = fieldMap[fieldName];
         
-        var newCol = movedCols[colNum];
-        // -1: column is hidden
         
-        if (movedCols[colNum] == -1) {
-            var reuse;
-            if (component.isRecordComponent) {
-                reuse = (poolingMode == "recycle");
-                if (reuse) this.addToRecordComponentPool(component);
-            }
-            
-            this.removeEmbeddedComponent(component, colNum);
-                
-            // If this is a recordComponent and poolingMode is "viewport" or "data",
-            // just destroy the component.
-            
-            if (reuse == false) component.markForDestroy();
-              
-        // Column number has changed to a new column - update the _currentColNum
-        // and for recordComponents, call the method to update the component
+        // If the field has been hidden just remove the embedded component.
+        
+        if (colNum == null) {
+            componentsToClear[componentsToClear.length] = components[i];
         } else {
-            
-            
-            component._currentColNum = newCol;
-            // If this is a recordComponent, give the developer a chance to react to this
-            if (component.isRecordComponent && 
-                    this.updateRecordComponent && isc.isA.Function(this.updateRecordComponent)) 
-            {
-                this.updateRecordComponent(component.embeddedRecord, 
-                                           newCol,
-                                           component, false);
+            if (components[i]._currentColNum != colNum) {
+                changes = true;
+                components[i]._currentColNum = colNum;
             }
         }
-    } 
+    }
+    if (componentsToClear.length > 0) {
+        for (var i = 0; i < componentsToClear.length; i++) {
+            var comp = componentsToClear[i];
+            body.removeEmbeddedComponent(comp.embeddedRecord, comp);
+            if (this.shouldDestroyOnUnembed(comp, this._$columnRemap)) {
+                comp.markForDestroy();
+            }
+            // already cleared by removeEmbeddedComponent() so no need to clear() or
+            // deparent() here if we didn't mark for destroy
+        }   
+    }
+    
+    if (changes) {
+        body._placeEmbeddedComponents();
+    }
 },
-
 
 // calculateCell - helper for remapEditRows - given an editSession determine which cell it
 // currently belongs to so we can update editSession._rowNum/colNum etc
@@ -23468,7 +23749,7 @@ cellHasChanges : function (rowNum, colNum, checkEditor) {
 //  of the specified rows. Note that if there are no pending edits to be saved this callback will
 //  not fire - you can check for this condition using +link{ListGrid.hasChanges()} or 
 //  +link{ListGrid.rowHasChanges()}.  Use +link{editFailed} to find out about failures
-//  encounted during saving (on a per-row basis).
+//  encountered during saving (on a per-row basis).
 // @return (boolean) true if a save has been initiated (at least one row had changes, passed
 //                   client-side validation, and a save has been attempted).  False otherwise
 // @group editing
@@ -26301,9 +26582,15 @@ rebuildForFreeze : function (forceRebuild) {
     
     // will recreate bodies if necessary, otherwise just refresh fields
     this.updateBody(forceRebuild);
-
     this.layoutChildren(this._$toggleFrozen);
-    
+    // If we have a frozen body, the 'getDrawRows()' method delegates to the unfrozen body.
+    // Since they're both rendered in a layout we can end up with the frozen body being sized
+    // and drawn first, meaning the unfrozen body's getDrawRows() is initially unreliable.
+    // Handle this by always doing a single immediate redraw of the frozen body after 
+    // layoutChildren sizes and renders everything.
+    if (this.frozenBody) {
+        this.frozenBody.markForRedraw("Recalculating draw area from initial sizing of body");
+    }
     // If we're showing a gridSummary row, freeze it as well
     if (this.summaryRow && this.showGridSummary) {
         this.summaryRow.setFields(this.completeFields.duplicate());
@@ -26477,7 +26764,8 @@ refreshCellStyle : function (rowNum, colNum, className) {
 // Freeze the indicated field, so that it remains in place and visible when horizontal
 // scrolling occurs.
 //
-// @param field (ListGridField or colNum or ListGridField.name)
+// @param field (ListGridField or Integer or String or Array) field or fields to freeze.
+//  fields may be specified as ListGridField objects, field names or colNum.
 // @group frozenFields
 // @visibility external
 //<
@@ -26489,7 +26777,8 @@ freezeField : function (field) {
 // Unfreeze a frozen field, so that it will now scroll along with other fields when horizontal
 // scrolling occurs.
 //
-// @param field (ListGridField or colNum or ListGridField.name)
+// @param field (ListGridField or Integer or String or Array) field or fields to unfreeze.
+//  fields may be specified as ListGridField objects, field names or colNum.
 // @group frozenFields
 // @visibility external
 //<
@@ -26502,27 +26791,36 @@ unfreezeField : function (field) {
 // <P>
 // Called when the ListGrid freezes or unfreezes fields by user action.
 //
-// @param field (ListGridField or colNum or ListGridField.name)
+// @param field (ListGridField or Integer or String or Array) field or fields to freeze.
+//  fields may be specified as ListGridField objects, field names or colNum.
 // @group frozenFields
 // @visibility external
 //<
+// isFrozen parameter undocumented - developer would typically call freezeField or unfreezeField
+// directly
 toggleFrozen : function (field, isFrozen) {
-    var field = this.getField(field);
-    if (!field || !this.fieldIsVisible(field) || this.isCheckboxField(field)) return false;
+    if (!isc.isAn.Array(field)) field = [field];
+    var changed = false;
+    for (var i = 0; i < field.length; i++) {
+        var currentField = this.getField(field[i]);
+        if (!currentField || !this.fieldIsVisible(currentField) ||
+            this.isCheckboxField(currentField)) 
+        {
+            continue;
+        }
+        var shouldFreeze = isFrozen;
+        if (shouldFreeze == null) shouldFreeze = !currentField.frozen;
+        if (currentField.frozen == isFrozen) continue; // field frozeness did not change
+        
+        changed = true;
+        currentField.frozen = shouldFreeze;
+    }
     
-    if (field.frozen == isFrozen) return false; // field frozeness did not change
-
-    field.frozen = isFrozen;
+    if (!changed) return false;
 
     this.rebuildForFreeze();
-
-    if (this.body) {
-        var drawArea = this.body._oldDrawArea;
-
-        // the old and new drawAreas differ and the extents of the new data are present - 
-        // fire the notification method and update the stored _oldDrawArea
-        this._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3]);
-    }
+    // Note: rebuildForFreeze will ultimately call updateBody() which
+    // remaps any embedded components to the appropriate colNum based on field name.
     
     return true; // field frozeness changed
 },
@@ -26538,6 +26836,11 @@ updateBody : function (forceRebuild) {
         (this.frozenFields && !this.frozenBody) || 
         (this.frozenBody && !this.frozenFields)) 
     {
+        forceRebuild = true;
+        // We're going to destroy the current body or bodies. Drop all recordComponents first
+        // so we don't get confused by pointers to destroyed recordComponents.
+        this.dropRecordComponents();
+        
         if (this.frozenFields) {
             this._showUnfrozenRollOverCanvas = this.showRollOverCanvas;
             this._showUnfrozenSelectionCanvas = this.showSelectionCanvas;
@@ -26553,24 +26856,9 @@ updateBody : function (forceRebuild) {
         }
 
         if (this.body) {
-            var components = this.body._embeddedComponents;
-
-            if (components) {
-                for (var i=0; i<components.length; i++) {
-                    var record = components[i].embeddedRecord,
-                        shouldCollapse = false;
-                    if (record._embeddedComponents) {
-                        for (var j=0; j<record._embeddedComponents.length; j++) {
-                            var component = record._embeddedComponents[j];
-                            shouldCollapse = shouldCollapse || component.isExpansionComponent;
-                            component.markForDestroy();
-                        }
-                        record._embeddedComponents = null;
-                        if (shouldCollapse) record.expanded = false;
-                        delete record._embeddedComponents;
-                    }
-                }
-            }
+            // Un-embed and Destroy all embedded components.
+            
+            this._destroyEmbeddedComponentsForRebuild();
         }
 
         // frozen body being introduced or going away, or freeze side changing
@@ -26582,11 +26870,78 @@ updateBody : function (forceRebuild) {
 
     if (this.body) {
         this.body.fields = this.normalFields || this.fields;
+        if (!forceRebuild) this._remapEmbeddedComponentColumns(this.body);
         this.body.markForRedraw("fields change");
     }
     if (this.frozenBody) {
         this.frozenBody.fields = this.frozenFields;
+        if (!forceRebuild) this._remapEmbeddedComponentColumns(this.frozenBody);
         this.frozenBody.markForRedraw("fields change");
+    }
+},
+
+// In various circumstances we automatically unembed embedded components.
+// - rebuilding bodies for freeze / unfreeze
+// - data change such that an embedded components' record is no longer present in the
+//   data set
+// - field visibility changes to show/hide cells containing components.
+// Should we auto-destroy components when this occurs?
+
+shouldDestroyOnUnembed : function (embeddedComponent, reason) {
+    if (embeddedComponent.isBackgroundComponent) {
+        // if we created the backgroundComponent for some record, and the record has now
+        // been lost from our data-set, drop it
+        if (reason == this._$dataChanged && embeddedComponent.creator == this) return true;
+        // Otherwise keep it around (either the developer explicitly created the canvas,
+        // or we are simply changing fields / rebuilding for freeze but still have the
+        // data around).
+        return false;
+    }
+    
+    if (embeddedComponent.isRecordComponent) {
+        if (reason == this._$dataChanged) return true;
+        return false;
+    }
+    
+    if (embeddedComponent.destroyOnUnembed != null) return embeddedComponent.destroyOnUnembed;
+    
+    // Keep components around if we just changed columns, otherwise destroy
+    if (reason == this._$columnRemap) return false;
+    return true;
+},
+
+// Used by updateBody - when we rebuild the entire body we just wipe out all embedded
+// components.
+_$rebuildingBody:"rebuilding body",
+_destroyEmbeddedComponentsForRebuild : function () {
+    var components = this.body._embeddedComponents;
+    if (this.frozenBody) {
+        var allComponents = [];
+        if (components == null) components = allComponents;
+        else components = allComponents.addList(components);
+        components.addList(this.frozenBody._embeddedComponents || []);
+    }
+
+    if (components && components.length > 0) {
+        for (var i=0; i<components.length; i++) {
+            var record = components[i].embeddedRecord,
+                shouldCollapse = false;
+            if (record._embeddedComponents) {
+                for (var j=0; j<record._embeddedComponents.length; j++) {
+                    var component = record._embeddedComponents[j];
+                    shouldCollapse = shouldCollapse || component.isExpansionComponent;
+                    
+                    if (this.shouldDestroyOnUnembed(component, this._$rebuildingBody)) {
+                        component.markForDestroy();
+                    } else {
+                        component.deparent();
+                    }
+                }
+                record._embeddedComponents = null;
+                if (shouldCollapse) record.expanded = false;
+                delete record._embeddedComponents;
+            }
+        }
     }
 },
 
@@ -26646,7 +27001,6 @@ bodyOverflowed : function () {
     this.frozenBody.setEndSpace(this.body.hscrollOn && !this.shrinkForFreeze 
                                     ? this.body.getScrollbarSize() : 0);
 },
-
 createBody : function (ID, fields, frozen) {
 	// create a body object to show the body of the list
     var body = isc.ClassFactory.getClass(this.bodyConstructor).createRaw();
@@ -27024,6 +27378,7 @@ getHeaderButtonProperties : function (props) {
     isc.addProperties(
                 properties,
 				{
+				    
                     // header button selection is mutex
                     
                     defaultRadioGroup: this.getID()+"_header_radioGroup",
@@ -28104,6 +28459,7 @@ reorderFields : function (start, end, moveDelta) {
     
     // find the header for this field
     var header;
+    
     if (!this.frozenFields) {
         header = this.getFieldHeader(start);
         // reorder the header items
@@ -28154,68 +28510,33 @@ reorderFields : function (start, end, moveDelta) {
         this._editColNum = this.fields.indexOf(editField);
     }
 
-    if (this.body) {
+    // We want to remap embedded comopnents to catch the cell change
+    // for any components embedded by cell.
+    // Note we don't expect a simple reorder of fields to impact frozen/unfrozen
+    // state so we need to update either the frozen or unfrozen body embedded
+    // columns only
+    var body = this.body;
+    if (this.frozenFields && start < this.frozenFields.length) {
+        body = this.frozenBody;
+    }
+    
+    if (body) {
+        // this may not all be ncessary if we rebuilt for freeze.
         this.body.fields = this.normalFields || this.fields;
-        // give the body the reordered field widths
+        if (this.frozenBody) this.frozenBody.fields = this.frozenFields;
+        
+        // give the bodies the reordered field widths
         this.setBodyFieldWidths(this._fieldWidths);
         
-        // We want to remap embedded comopnents to catch the cell change
-        // for any components embedded by cell.
-        if (this.body._embeddedComponents != null) {
-            var colMap = this._getColNumRemap(start, end, moveDelta);
-            
-            this._remapEmbeddedComponentColumns(colMap);
+        if (body._embeddedComponents != null) {
+            this._remapEmbeddedComponentColumns(body);
         }
     
         // redraw (may be required if fields had matching widths)
-        if (!this.body.isDirty()) this._markBodyForRedraw("reorderFields");
+        if (!body.isDirty()) this._markBodyForRedraw("reorderFields");
     }
 	
     this.fieldStateChanged();
-},
-
-// Helper method - on a column reorder, return a map which shows for each field that's changed
-// position, the old and new colNum.
-//
-// So if we have:
-// A, B, C, D, E
-// And we shift D and E to the beginning we end up with 
-// D, E, A, B, C
-// In this case the colMap returned would be 
-// {0:2, 1:3, 2:4, 3:0, 4:1}
-//
-// Used for remapping colNums on embedded component in response to field-reorder.
-
-
-_getColNumRemap : function (start,end,moveDelta) {
-    var colMap = {};
-    
-    if (moveDelta > 0) {
-        var md = moveDelta;
-        moveDelta = (start-end);
-        
-        start = end;
-        end = end + md; 
-    }
-    
-    // Start by picking up the cols from start/end in their new positions
-    for (var i = start; i < end; i++) {
-        var currTarget = i + moveDelta;
-        colMap[i] = i + moveDelta;
-    }
-    
-    // Now pick up indices that were shifted to make room for the
-    // new cols.
-    var targetIndex = start + moveDelta,
-        numShuffled = -moveDelta,
-        shuffleDelta = (end - start);
-    
-    for (var i = targetIndex; i < targetIndex + numShuffled; i++) {
-        var newPos = i + shuffleDelta;
-        colMap[i] = newPos;
-    }
-    return colMap;
-    
 },
 
 // Ensure that the .colNum property is up to date on our editors
@@ -28457,7 +28778,7 @@ headerSpanContextClick : function (span) {
     if (!menuItems || menuItems.length == 0) return false;
 
     if (!this._spanContextMenu) {
-       this._spanContextMenu = isc.Menu.create({
+       this._spanContextMenu = this.getMenuConstructor().create({
            items: menuItems
        });
     } else {	 
@@ -30153,6 +30474,9 @@ sortData : function () {
 // helper to get the current count of embeddedComponents
 getEmbeddedComponentCount : function (componentType) {
     var components = this.body ? this.body._embeddedComponents : null;
+    if (this.frozenBody && this.frozenBody._embeddedComponents != null) {
+        components = (components ? components.duplicate() : []).addList(this.frozenBody._embeddedComponents);
+    }
 
     if (!components) return 0;
 
@@ -30162,12 +30486,13 @@ getEmbeddedComponentCount : function (componentType) {
         components = components.findAll("isBackgroundComponent", true);
     }
 
-    return components.length;
+    return components == null ? 0 : components.length;
 },
 
 //> @method listGrid.addEmbeddedComponent() [A]
 // Attaches the component to the provided record. If <code>position</code> is specified as 
-// <code>"within"</code> +link{canvas.snapTo} may be set to specify where the component
+// <code>"within"</code> +link{canvas.snapTo} and +link{canvas.snapOffsetLeft}, 
+// +link{canvas.snapOffsetTop} may be set to specify where the component
 // will render within the cell or record. If unset, for components embedded within a record
 // we will default to embedding at the top/left coordinate, and for components embedded within
 // a cell, we will respect the align / valign properties for the cell in question. Any 
@@ -30858,13 +31183,6 @@ regroup : function (fromSetData) {
         delete this._lastStoredSelectedState;
     }
     
-    if (this.body) {
-        var drawArea = this.body._oldDrawArea;
-
-        // the old and new drawAreas differ and the extents of the new data are present - 
-        // fire the notification method and update the stored _oldDrawArea
-        if (drawArea != null) this._drawAreaChanged(drawArea[0], drawArea[1], drawArea[2], drawArea[3]);
-    }
     this.markForRedraw("regroup");
 
 },
@@ -31750,6 +32068,10 @@ isc.ListGrid.registerStringMethods({
     //  Notification method that fires when the drawArea changes due to scrolling.  Receives  
     // the previous drawArea co-ordinates as parameters.  Call +link{listGrid.getDrawArea()} to  
     // get the new drawArea co-ordinates.
+    // <P>
+    // Note that if this grid is showing any +link{listGridField.frozen,frozen fields}, they
+    // will not be included in the <code>oldStartCol</code>, <code>oldEndCol</code> range
+    // reported by this method. Frozen fields are assumed never to be scrolled out of view.
     //
     // @param oldStartRow (number) the startRow from before the drawArea changed
     // @param oldEndRow (number) the endRow from before the drawArea changed

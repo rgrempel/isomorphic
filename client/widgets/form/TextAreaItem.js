@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -105,14 +105,11 @@ isc.TextAreaItem.addProperties({
     // data element - appropriate for native text boxes, text areas and selects.
     _dataElementIsTextBox:true,
 
-    //> @attr   textAreaItem._emptyStringValue   (any : null : IRW)
-    //      Should the empty string be mapped to null, or stored as an empty string.
-    //      Updated on 'setValue(null)' or 'setValue("")'
-    // @group formValues
-    // @visibility   internal
-    //<    
+    //> @attr   textAreaItem.emptyStringValue   (any : null : IRW)
+    // @include textItem.emptyStringValue
+    //<
     
-    _emptyStringValue:null,
+    emptyStringValue:null,
     
     //> @attr   textAreaItem.lineBreakValue  (string : "\n" : IRW)
     //  What character string should be used to represent line breaks?<br>
@@ -145,6 +142,14 @@ isc.TextAreaItem.addProperties({
     
             } : null
         )
+    },
+    
+    //> @method textAreaItem.getEnteredValue()
+    // @include textItem.getEnteredValue()
+    // @visibility external
+    //<
+    getEnteredValue : function () {
+        return this.getElementValue();
     },
   
     //>@attr TextAreaItem.browserSpellCheck (boolean : null : IRWA)
@@ -206,7 +211,7 @@ isc.TextAreaItem.addProperties({
     
     //>@attr TextAreaItem.printFullText (boolean : true : IRW)
     // When generating a print-view of the component containing this TextArea, should
-    // the form item expand to accomodate its value? If set to false the text box not expand
+    // the form item expand to accommodate its value? If set to false the text box not expand
     // to fit its content in the print view, instead showing exactly as it does in the
     // live form, possibly with scrollbars.
     // @visibility external
@@ -448,7 +453,7 @@ isc.TextAreaItem.addMethods({
 
 		var value = this._unmapKey(displayValue);
         // if the value to be saved is an empty string, map it to 'null' if necessary
-        if (isc.is.emptyString(value)) value = this._emptyStringValue;
+        if (isc.is.emptyString(value)) value = this.emptyStringValue;
         return value;
         
 	},
@@ -468,7 +473,7 @@ isc.TextAreaItem.addMethods({
         
         var undef;
         if (value !== undef && (value == null || isc.is.emptyString(value))) 
-            this._emptyStringValue = value;
+            this.emptyStringValue = value;
 
         // Also clear out the '_hasEditedValue' flag, used to handle line break conversions
         // (See comments by the 'lineBreakValue' property)

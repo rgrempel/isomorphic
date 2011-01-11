@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -1283,7 +1283,7 @@ isc.Log.addClassMethods({
 	//>	@classMethod		Log.timeMethod()
     // 
     //  Observe a method on an object, logging execution time whenever the method is called.
-    // <P>
+    //  <P>
     //  Call a second time with identical arguments to disable tracing.
     //
 	//	@param	object		(object)	object to observe
@@ -1292,6 +1292,32 @@ isc.Log.addClassMethods({
 	//	@group	debug
 	//	@visibility external
     //<
+    // storeTotals: execution times of methods and totals for that method will be store in a
+    //              central structure Log.classMethodTimes, like:
+    //            {
+    //                className: { // also "All"
+    //                   totalTime:0, calls:0, minTime:0, maxTime:0, avgTime:0
+    //                }
+    //            }
+    // dontLog: means that individual executions will not be logged (typically used with
+    //          storeTotals:true when timing methods where logging itself would be significant)
+    //
+    // Typical use cases:
+    // 1. profile a mixture of operations (eg lots of components drawing) to get a breakdown of
+    //    time spent in particular methods
+    //
+    //    isc.Log.timeMethod(someClass, someMethod, true, true); // several times
+    //    isc.Log.resetTotals();
+    //    ... run test code ...
+    //    isc.logWarn(isc.echoFull(isc.Log.classMethodTimes));
+    // 
+    // 2. time a specific codepath to see the time breakdown (high resolution timer only)
+    //
+    //    isc.Log.timeMethod(someClass, someMethod, true, false); // several times
+    //    isc.Log.deferTimerLogs = true;
+    //    ... run test code ...
+    //    isc.Log.logDeferred(); // alll deferred logs are dumped
+    //
 	_methodPrefix:"$T_",
     timeMethod : function (obj, methodName, storeTotals, dontLog, causeGC) {
 

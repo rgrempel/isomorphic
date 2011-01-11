@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -2470,7 +2470,6 @@ _handleLongTouch : function () {
 	EH.bubbleEvent(EH.mouseDownTarget(), EH.LONG_TOUCH);
 },
 
-
 _handleTouchMove : function (DOMevent) {
 	
         var EH = isc.EH;
@@ -4095,7 +4094,11 @@ isKeyEvent : function (eventType) {
 
 // Did the current mouse event occur over a native CSS scrollbar?
 _eventOverCSSScrollbar : function (iscTarget, eventType, event) {
-   // this.logWarn("event over css scrollbar");
+
+    
+    if (isc.Browser.isTouch) return false;
+
+    //this.logWarn("checking event over css scrollbar");
     var EH = this;
     
     		

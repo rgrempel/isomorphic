@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -608,13 +608,11 @@ isc.Dialog.Prompt = {
     
 		// first add the properties specified
 		this.setProperties(properties);
-    
         this.message = newMessage.evalDynamicString(this, {
             loadingImage: this.imgHTML(isc.Canvas.loadingImageSrc, 
                                        isc.Canvas.loadingImageSize, 
                                        isc.Canvas.loadingImageSize)
             });
-
         // Note: we lazily create children on draw, so verify that the items have been
         // initialized before manipulating the label
         if (!this._isInitialized) this.createChildren();
@@ -623,7 +621,7 @@ isc.Dialog.Prompt = {
         this.addAutoChild("blurb", null, isc.Label, this.body);
         // Support custom styling of the blurb        
         if (this.messageStyle != null) this.blurb.setBaseStyle(this.messageStyle); 
-        this.blurb.setContents(this.message);
+        this.blurb.setContents(this.message == null ? "&nbsp;" : this.message);
 		
 		this.show();
 	},
@@ -799,7 +797,7 @@ isc.Dialog.Warn = {
 
         // Update the label in the body        
         if (this.messageStyle != null) this.blurb.setBaseStyle(this.messageStyle);
-        this.blurb.setContents(this.message);
+        this.blurb.setContents(this.message == null ? "&nbsp;" : this.message);
 
         if (this.icon) {
             this.iconImg.setSrc(this.getImgURL(this.icon));

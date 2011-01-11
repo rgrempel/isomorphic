@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -337,6 +337,7 @@ initWidget : function () {
                     "Use a TileLayout instead for flow layout.");    
     }
 
+    this._setUpDragProperties();
     // skip tileLayout init; we want to completely replace that here
     this.invokeSuper(isc.TileLayout, "initWidget");
     if (!this.tiles) this.tiles = [];
@@ -841,6 +842,7 @@ makeTile : function (record, tileNum) {
         ID: this._getTileID(tileNum),
         tileNum: tileNum,
         canHover: true,
+        //canDragReposition: true,
         handleHover : function () {
             if (this.creator.itemHover) this.creator.fireCallback("itemHover", "item", [this]);
         },
@@ -863,8 +865,9 @@ makeTile : function (record, tileNum) {
             var tileRecord = this.creator.getTileRecord(this);
             return this.creator.recordDoubleClick(this.creator, this, tileRecord);
         }
-        
+                
     };
+    
     if (record.tileProperties) isc.addProperties(props, record.tileProperties);
     var theConstructor = record.tileConstructor ? record.tileConstructor : this.tileConstructor;
     // store new tile in a local var for debug purposes
@@ -1351,6 +1354,51 @@ hasAllVisibleTiles : function (range, fetch) {
 dragAppearance:isc.EH.TRACKER,
 dragTrackerMode: "title",
 
+_setUpDragProperties : function () {
+    
+	// set up our specific drag-and-drop properties
+	
+	// set these properties before we set canDrag internally. If canDrag has
+	// been set by the user, we want these props to be set as well.
+	this.canReorderTiles = (this.canDrag || this.canReorderTiles);
+	this.canDragTilesOut = (this.canDrag || this.canDragTilesOut);
+	// like above, if canAcceptDrop is explicitly set, make sure that canAcceptDroppedRecords
+	// is also set to keep backwards compatability
+	this.canAcceptDroppedRecords = (this.canAcceptDrop || this.canAcceptDroppedRecords)
+	    
+	this.canDrag = (this.canDrag || this.canDragTilesOut || this.canReorderTiles);
+	//this.canDrop = (this.canDrop || this.canDragRecordsOut || this.canReorderRecords);
+	this.canAcceptDrop = (this.canAcceptDrop || this.canAcceptDroppedRecords || this.canReorderTiles);
+
+},
+
+//>	@attr	TileGrid.tileDragAppearance		(DragAppearance : isc.EventHandler.TRACKER : IRWA)
+//  Visual appearance to show when the tile is being dragged.
+//  @visibility external
+//  @see Canvas.dragAppearance
+//  @group	dragdrop
+//<
+tileDragAppearance: isc.EH.TRACKER,
+
+//>	@attr tileGrid.canReorderTiles (boolean : false : [IRW])
+// Indicates whether tiles can be reordered by dragging within this tileGrid.
+// @visibility external
+// @group  dragging
+//<
+
+//>	@attr tileGrid.canDragTilesOut (boolean : false : [IRW])
+// Indicates whether tiles can be dragged from this tileGrid and dropped elsewhere.
+// @visibility external
+// @group  dragging
+//<
+
+//>	@attr tileGrid.canAcceptDroppedRecords (boolean : false : [IRW])
+// Indicates whether records can be dropped into this TileGrid.
+// @visibility external
+// @group  dragging
+// @example dragListMove
+//<
+	
 //>@method  tileGrid.setDragTracker()
 // @include dataBoundComponent.setDragTracker()
 // @visibility external
@@ -1382,12 +1430,13 @@ dragTrackerMode: "title",
 // @group dragTracker
 // @visibility external
 //<
-getDragTrackerTitle : function (record) {
+getDragTrackerTitle : function (record) {     
+    //if (this.tileDragAppearance == "tracker") {
     var titleField = this.getTitleField(),
         value = record[titleField];
     //if (!value) value = record[0];
     return "<nobr>" + value + "</nobr>";
-            
+  
 },
 
 //>	@method	tileGrid.drop()	(A)
@@ -1396,23 +1445,24 @@ getDragTrackerTitle : function (record) {
 //							false if disabled, no selection, or otherwise
 //		@group	events, dragging
 //<
-drop : function () {
-    var index = this._lastDropIndex || 0;
+drop : function () {   
+    var index = this._lastDropIndex || 0;    
     // the check below fixes an issue that occurs when dropping multiple tiles by dragging from 
     // an empty area of the grid. _lastDropIndex would get set to current data length
     // (see tileLayout.showDragLineForRecord()), but when the tiles were dropped and removed, 
     // this index is no longer valid.
     if (index > this.data.getLength()) index = 0;
     var source = this.ns.EH.dragTarget;
+    
     var dragStartIndex = this._dragStartIndex;
     // reset _dragStartIndex so the next drag will start over
-    this._dragStartIndex = null;  
+    this._dragStartIndex = null;      
     // don't check willAcceptDrop() this is essentially a parallel mechanism, so the developer 
     // shouldn't have to set that property directly.
    
     var sourceDS = source.getDataSource(),
         dropRecords = source.cloneDragData();
-            
+             
     var targetRecord = this.data.get(index);
     this.transferRecords(dropRecords, targetRecord, index, source);
     // relayout tiles when dragDataAction of source is copy. Otherwise, the tile
@@ -1421,6 +1471,105 @@ drop : function () {
         // use a timer, or re-layout may not catch 
         //isc.Timer.setTimeout(source.ID + ".layoutTiles()", 1000);
     //}
+},
+
+dropMove: function () {     
+    // if the TileGrid can't be reordered, bail
+	if (!this.canReorderTiles) return true;
+    // bail on drops from foreign widgets if not configured to accept foreign drops
+    if (!this.canAcceptDroppedRecords && isc.EH.dragTarget != this) return true;
+	 
+    this.showDragLineForRecord();
+    
+},
+
+dragMove : function () {
+    // if you're not allowed to drag tiles out, cancel dragging over anything that isn't this
+    // grid
+    var dropTarget = isc.EH.dropTarget;
+    if (!this.canDragTilesOut && dropTarget != null && 
+        dropTarget != this)
+    {
+        return false;
+    }
+    var record = this.getSelectedRecord();
+    if (this.tileDragAppearance == "outline") {
+        var EH = this.ns.EH;
+        var tId = this.getTileID(record);
+    
+        var tile = window[tId];
+        
+        //EH.dragMoveTarget = EH.getDragOutline(tile);
+        //if (!EH.dragMoveAction) EH.dragMoveAction = EH._moveDragMoveTarget;
+        var trackerHTML = "<div style='width:" + tile.getVisibleWidth() +  
+                            ";height:" + tile.getVisibleHeight() + "'>" + 
+                            EH.getDragOutline(tile).getInnerHTML() + "</div>";
+        EH.setDragTracker(trackerHTML);
+    } else if (this.tileDragAppearance == "target") {
+        var EH = this.ns.EH;
+        var tId = this.getTileID(record);
+        // create the tracker html by wrapping the tile innerHTML in a div
+        // that creates a fixed size boundary for the tile html
+        // The approach of just using the tile itself as the dragMoveTarget
+        // didn't work well because the tile was stuck inside of its parent
+        // and wouldn't follow the mouse outside of this tilegrid.
+        var tile = window[tId];
+        var trackerHTML = "<div style='width:" + tile.getVisibleWidth() +  
+                            ";height:" + tile.getVisibleHeight() + "'>" + 
+                            tile.getInnerHTML() + "</div>";
+           
+        EH.setDragTracker(trackerHTML);
+        // hide the tile to simulate what it would look like if the tile itself
+        // were the dragMoveTarget
+        tile.hide();
+        this._hiddenDragTile = tile;
+        
+        if (!EH.dragMoveAction)  EH.dragMoveAction = EH._moveDragMoveTarget;
+        
+        // If the canvas wants to show a shadow on drag, show it now.
+        if (EH.dragTarget.showDragShadow) EH._showTargetDragShadow();
+		
+        // If the canvas should change opacity on drag, handle this now.
+        if (EH.dragTarget.dragOpacity != null) EH._setTargetDragOpacity();
+    }
+},
+
+willAcceptDrop : function () {
+    
+    var EH = this.ns.EH;
+    if (!this.Super("willAcceptDrop",arguments)) return false;
+    var theTarget = EH.dragTarget;
+   
+    //isc.logWarn('willAcceptDrop:' + theTarget);
+    if (theTarget == this) {
+        // Bail if we're attempting to drag records within TileGrid, and we can't reorder
+        if (!this.canReorderTiles) return false;
+    } else {
+        // Bail if we're attempting to drag from elsewhere and canAcceptDroppedRecords is false
+        // This gives us the granularity to allow drag reording (which will always set
+        // canAcceptDrop to true, see _setUpDragProperties), but disable dropping from
+        // external sources
+        if (!this.canAcceptDroppedRecords) return false;
+    }
+
+	// if the 'getDragData' for the dragTarget doesn't give us a suitable object (Array or
+    // Object), bail
+    if (!isc.isAn.Object(theTarget.getDragData())) return false;     
+    
+    return true;
+},
+
+dragStop : function () {
+    this.Super("dropOut",arguments);
+    // clean up potentially hidden tile. This happens when tileDragAppearance is
+    // 'target'; we set _hiddenDragTile to point to the tile being dragged, because
+    // that tile is manually hidden to properly simulate the 'target' appearance.
+    // This means we have to manually show() it again after drag completes, if the
+    // drop is not allowed.        
+    if (this._hiddenDragTile) {
+        this._hiddenDragTile.show();
+        this._hiddenDragTile = null;
+    }
 },
 
 //>	@method	tileGrid.transferDragData()

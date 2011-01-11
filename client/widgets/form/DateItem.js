@@ -1,6 +1,6 @@
 /*
  * Isomorphic SmartClient
- * Version SC_SNAPSHOT-2010-12-07 (2010-12-07)
+ * Version SC_SNAPSHOT-2011-01-05 (2011-01-05)
  * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
  * "SmartClient" is a trademark of Isomorphic Software, Inc.
  *
@@ -658,6 +658,19 @@ isc.DateItem.addMethods({
     // Override isEditable() to indicate that the user can edit this items value directly
     isEditable : function () {
         return true;
+    },
+    
+    
+    //> @method dateItem.getEnteredValue()
+    // Returns the raw text value typed into this items text field if +link{dateItem.useTextField} 
+    // is true (otherwise returns the result of this.getValue()).
+    // @visibility external
+    //<
+    getEnteredValue : function () {
+        if (this.useTextField && this.textField != null) {
+            return this.textField.getEnteredValue();
+        }
+        return this.getValue();
     },
 
 	//>	@method	dateItem.setValue()	(A)
